@@ -1,0 +1,35 @@
+Several small utility programs:
+
+convert_2Dplot.f90
+
+   converts the 2D gnuplot file into a more general file with just the data for plotting with other software
+
+gen_PW.f90
+
+   generates the input file cpw.in by answering a few questions about the crystal cell.  It can be adapted later in any text editor.
+
+pre_relax.f90
+
+   For tetrahedral bonded crystals it applies a valence force field model to guess the relaxed geometries.   It reads a cpw.in file and writes the corresponding relaxed file.
+
+   It must be compiled against the main libpw library and have the esdf modules.  For example:
+   cp ../src/esdf.mod esdf.mod
+   cp ../src/esdf_key.mod esdf_key.mod
+   ifort -mkl pre_relax_vff.f90 ../libpw.a
+
+pw_rho_v_2.old.f90
+
+   Changes the format of PW_RHO_V.DAT to an older format.
+
+   It must be compiled against the main libpw library
+
+pw_rho_v_2_xsf.f90
+
+   Writes a file in the xsf format for plotting the crystal structure in vesta or xcrysden
+
+pwdat2cpwin.f90
+
+   Converts the old fixed format PW.DAT file into the new cpw.in input file in a format for being parsed.  Examples are in the Structures/OLD_format.
+
+   It must be compiled against the main libpw library
+

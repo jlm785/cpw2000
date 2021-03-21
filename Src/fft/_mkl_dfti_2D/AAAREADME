@@ -1,0 +1,8 @@
+This directory contains interface subroutines to 
+the 2-dimensional mkl dfti subroutines.
+It is mainly an hack to have a compatibility with the other
+subroutines. 
+They can be found at software.intel.com/en-us/intel-mkl and are very fast.
+
+
+

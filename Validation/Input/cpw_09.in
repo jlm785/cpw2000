@@ -1,0 +1,130 @@
+########################################################################
+#                                                                      #
+#      cpw.in input file                                               #
+#                                                                      #
+########################################################################
+ 
+ 
+ 
+#------------------------------------------------
+# Crystal structure
+#------------------------------------------------
+ 
+LatticeConstant               9.26310648     bohr
+ 
+%block LatticeVectors
+         0.70710678        -1.00000000         0.00000000
+         0.70710678         1.00000000         0.00000000
+         0.00000000         0.00000000         0.70710678
+%endblock LatticeVectors
+ 
+NumberOfSpecies                2
+ 
+NumberOfAtoms                8
+ 
+%block Chemical_Species_Label
+     1      14   Si
+     2      32   Ge
+%endblock Chemical_Species_Label
+ 
+AtomicCoordinatesFormat     Fractional
+ 
+%block AtomicCoordinatesAndAtomicSpecies
+         0.50000000      0.50000000      0.00000000        1     #  Si       1
+        -0.12500000      0.62500000      0.00000000        1     #  Si       2
+         0.00000000      0.00000000      0.00000000        1     #  Si       3
+         0.37500000      0.12500000      0.00000000        1     #  Si       4
+         0.50000000      0.00000000      0.50000000        2     #  Ge       1
+         0.00000000      0.50000000      0.50000000        1     #  Si       1
+         0.37500000      0.62500000      0.50000000        2     #  Ge       1
+        -0.12500000      0.12500000      0.50000000        2     #  Ge       2
+%endblock AtomicCoordinatesAndAtomicSpecies
+ 
+StructureSource               cpw2000
+ 
+#------------------------------------------------
+# Energy cutoff, bands,  and Brillouin mesh
+#------------------------------------------------
+ 
+PWEnergyCutoff                  10.0000      hartree
+ 
+NumberOfEigenStates                  24
+ 
+%block kgrid_Monkhorst_Pack
+               2       0       0       0.500000
+               0       2       0       0.500000
+               0       0       2       0.500000
+%endblock kgrid_Monkhorst_Pack
+ 
+ 
+#------------------------------------------------
+# Active options
+#------------------------------------------------
+ 
+MD.TypeOfRun                  VCSLBF         # ONE,EPILBF,MICRO,LANG,LBFSYM,VCSLNG,VCSLBF,RSTRT
+ 
+UseSymmetry                   .true.        # .true. , .false. 
+ 
+MD.UseKeatingCorrections      .false.        # .true. , .false. 
+ 
+TypeOfScfDiag                 PW            # PW,AO,AOJC,AOJCPW
+ 
+DualApproximation             .true.         #  .true. , .false.
+  
+MD.CG.UseFixedkplusG             .true.       # .true. , .false. 
+
+XC.Authors                    CA            # CA, PBE, TBL
+ 
+Xc.TBL.C                      1.04            # sets Tran-Blaha constant (if negative use calculated)
+ 
+PrintingLevel                 1              # 1, 2, 3
+ 
+
+MD.NumberOfSteps             100             #
+MD.CG.Tolerance         0.00001 'har/bohr'  #
+
+MD.TargetPressure            10 GPa           #
+
+MD.CG.FixedkplusGTol    0.01 'har/bohr'      #
+
+
+
+#------------------------------------------------
+# MD Inactive options
+#------------------------------------------------
+ 
+#MD.InitialTemperature        300 K           #
+#MD.TargetTemperature         300 K           #
+#MD.TargetPressure            0 GPa           #
+ 
+#MD.NumberOfSteps             10              #
+#MD.LengthTimeStep            2.4 fs          #
+#MD.FrictionFracInvTimeStep   20.0            #
+ 
+#MD.CG.Tolerance         0.0001 'har/bohr'  #
+#MD.CG.StepMax                0.01 bohr       #
+ 
+#%block MD.TargetStress                       #
+   0.0 0.0 0.0                                #
+   0.0 0.0 0.0                                #
+   0.0 0.0 0.0                                #
+#%endblock   MD.TargetStress                  #
+ 
+#MD.CellMass                   5.0            #
+#MD.Seed                      76978           #
+ 
+#------------------------------------------------
+# Electronic Structure Inactive options
+#------------------------------------------------
+ 
+#MaxSCFIterations             20              #
+ 
+#MaxSCFIterations             20              #
+#TypeOfPseudoMixing           BROYD1          # BROYD1, BFGS#
+ 
+#ElectronicTemperature        1000 K          #
+#TypeOfPseudopotential        PSEUKB          # PSEUKB
+ 
+#ScfTolerance                 0.00005         #
+#DiagTolerance                0.0001          #
+#SymmTolerance                1.0E-5          #

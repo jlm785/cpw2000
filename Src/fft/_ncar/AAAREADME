@@ -1,0 +1,8 @@
+This directory contains interface subroutines for fast fourier transforms
+that have the same call as the old cray subroutines.
+
+They interface with the FFTs were written by Paul N Shwarztrauber at NCAR. See LIBS/ncar
+
+
+
+

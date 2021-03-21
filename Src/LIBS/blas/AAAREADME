@@ -1,0 +1,31 @@
+This directory contains fortran source for the BLAS subroutines
+used in the program.
+
+They are taken from   www.netlib.org
+
+They have double precision by default. For single precision see below.
+
+If your machine as a compiled blas library you should use it. That is
+do not compile these subroutines in the libpw.a library.
+
+f77 .....  -lblas       should do the trick
+
+If you replace at least dgemm.f dgemv.f and ddot.f (the others are not
+important for running times) by vendor-optimized compiled versions of 
+the subroutines, you should see an significant (eg 10%) increase in
+execution speed. If you have good FFTs the speedup could be larger... 
+
+Single precision....
+
+If in your machine single precision is real*8 you may have to use
+the single precision blas subroutines of the vendor to obtain
+a nice speedup. Here is how you can get it:
+
+Copy the subroutines in directory _single to this directory, replacing
+dgemm.f dgemv.f and ddot.f. Those subroutines call semm.f sgemv.f and
+sdot.f.
+
+Compile into the library libpw.a all those subroutines.
+Link with the blas library. You should see a speedup of the program.
+
+

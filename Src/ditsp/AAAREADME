@@ -1,0 +1,3 @@
+This folder contains the subroutines related to the iterative diagonalization procedure.
+
+The ditsp* subroutines are the result of splitting ditspc.f into more manageable subroutines.

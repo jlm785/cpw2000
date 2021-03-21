@@ -1,0 +1,45 @@
+Orbital Information User Interface
+
+version 0.1
+
+copyright Carlos Loia Reis, José Luís Martins, INESC-MN
+
+Instructions
+
+1. You should have python3 and PyQt5 installed
+   
+   sudo pip install PyQt5
+
+   or whatever it takes in your distribution
+
+2. You should have xmgrace installed.  (https://plasma-gate.weizmann.ac.il/Grace/)
+   You need to identify the path to grace_np.h, which can be /usr/include or /opt/local/include
+   and the path to libgrace_np.a, which can be /usr/lib or /usr/lib64 or /opt/local/lib.
+   Use the find command to find them.
+
+   If in step 4 you get an error related to "-fPIC" (position independent code) you
+   will have to compile libgrace_np.a from source.  In the Makefile of the grace_np directory add
+   that option to CFLAGS:
+
+   CFLAGS=$(CFLAGS0) -I$(TOP) -I. $(CPPFLAGS) -fPIC
+
+   then in the grace top level run .configure (you may have to install motif and other stuff)
+   and in the grace_np directory just run make with the altered Makefile.
+
+3. Compile the command line version 
+
+   ifort BandInfo.f90 out_band_fold_xmgrace.f90 -o BandInfo.exe
+
+   You can find out_band_fold_xmgrace.f90 in ../../_source/out_band_dos_opt.  Just link here.
+
+4. Compile the dynamic library (adapt paths for your system)
+
+   gcc -I /usr/include/ -shared gracedyn.c -o gracedyn.so -L /usr/lib -lgrace_np
+
+5.  Run the user interface
+
+    python3 BandInfo.py
+
+6. Inside the Ui navigate to the directory where you have BAND.DAT and BAND_SO.DAT files
+
+

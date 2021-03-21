@@ -1,0 +1,29 @@
+Here are the subroutines whose prefix indicate what type of calculations they do
+
+
+dos:       density of states (dos) and integrals of a function f with dos (dosf).
+
+move:      molecular dynamics and structure optimization.
+
+for_str:   calculate forces and stresses.  It only works with s, p, and d pseudopotentials.
+
+kdotp:     kdotp post-post_process
+
+metric:    This group of files should identify the lattice from the dot product of the lattice vectors.
+           It is based on a senior project by Alvaro Ladeira.
+
+opt:       Optical calculations
+
+out:       Output for bands, density of sates (dos) and optical (opt)
+
+plot:      Plots of the density (rho), potential (v) and wavefunction (psi) in 1D, 2D or 3D.
+
+pw_rho_v:  read and write the "PW_RHO_V.DAT" file which is the output from cpw and input for cpw_post_process.
+
+size:      calculate array sizes
+
+sym:       identify the space group operations
+
+vff:       add the energy of a keating model to the first principles total energy.
+
+xc:        exchange and correlation

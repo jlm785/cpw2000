@@ -1,0 +1,11 @@
+This directory contains subroutines for fast fourier transforms
+that have the same call as the old cray subroutines.
+
+The FFTs were written by Norman Troullier and are impressively fast.
+
+In principle this directory should be empty unless you work with jlm.
+
+IF THIS DIRECTORY IS NOT EMPTY AND YOU WANT TO USE
+THE SUBROUTINES PLEASE GET THE NECESSARY AUTHORIZATION
+AS YOU ARE ACCESSING NON-PUBLIC SOURCE CODE
+

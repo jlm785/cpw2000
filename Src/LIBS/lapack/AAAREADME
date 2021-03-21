@@ -1,0 +1,5 @@
+here you can find the lapack subroutines that are used by cpw2000.
+
+It is preferable to use vendor supplied subroutines.
+
+Notice that dlaed4.f was modified from the original netlib file!

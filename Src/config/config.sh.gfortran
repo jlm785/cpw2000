@@ -1,0 +1,111 @@
+#
+#   definition of the variables for the shell script to make the pw library.
+#
+
+# chooses compiler
+
+F77="gfortran"
+
+
+# indicates if blas and lapack must be compiled (true/false)
+
+COMPBLAS="false"
+# COMPBLAS="true"
+
+
+# debugging option (true, false)
+
+DEBUG="false"
+# DEBUG="true"
+
+
+# chooses libraries
+
+if [ $COMPBLAS = "true" ]
+then
+   if [ $DEBUG = "true" ]
+   then
+      LIBS=" "
+   else
+      LIBS="-lpthread -lm -lgomp"
+   fi
+else
+
+   # MKL
+   LIBS="-lmkl_gf_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -lgomp"
+
+   # atlas
+   # LIBDIR ="/usr/local/lib"
+   # LIBS ="-L$(LIBDIR)  -llapack -lf77blas -lcblas -latlas"
+
+   # openblas
+   # LIBS="-lopenblas -lpthread -lgomp"
+
+   # AMD-blis
+   # LIBDIR ="/opt/AMD/aocl/aocl-linux-gcc-2.2.0/lib"
+   # LIBS="-L$(LIBDIR) -lflame -lblis -lfftw3"
+
+fi
+
+
+
+# profiling option (-g,empty)
+
+PROF=" "
+# PROF="-g"
+
+
+# other flags
+
+if [ $DEBUG = "false" ]
+then
+   FCOPTS="-fomit-frame-pointer -O3 -mtune=native ${PROF}"
+   FCOMP="-fopenmp"
+   FCEXTRA="-funroll-all-loops -ffast-math"
+else
+   FCOPTS="-g -Wall -fbounds-check -pedantic-errors -ffpe-trap=zero,invalid,overflow,underflow"
+   FCOMP=" "
+   FCEXTRA=" "
+fi
+
+
+# special flags for special cases
+
+FCSAFE="-O0"
+
+
+# suffix for executables if you want to compare compilers
+
+SUFFIX="_gfortran"
+# SUFFIX=""
+if [ $DEBUG = "true" ]
+then
+   SUFFIX="${SUFFIX}_debug"
+fi
+
+
+
+# choice of FFT package (ncar/vfft/fftw3/mkldfti)
+
+FFT="vfft"
+# FFT="ncar"
+# FFT="fftw3"
+# FFT="mkldfti"
+
+# compatibility with older compilers, before fortran2008 (true/false)
+
+PRE2008="false"
+# PRE2008="true"
+
+# choice of hk_psi implementation (reference, mkldfti)
+
+HKPSI="mkldfti"
+# HKPSI="reference"
+
+if [ $DEBUG = "true" ]
+then
+   HKPSI="reference"
+fi
+
+
+

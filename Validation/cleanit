@@ -1,0 +1,15 @@
+#/bin/bash
+
+/bin/rm diff*
+
+/bin/rm *.out
+
+/bin/rm band*
+
+/bin/rm dos*.gp
+
+/bin/rm toto*
+
+/bin/rm PW_RHO_V.DAT BAND_LINES.DAT replay_post.dat cpw.in DOS_MESH.DAT
+
+/bin/rm RESTART.DAT BAND.DAT BAND_SO.DAT dos_file.dat DOS_QUAD.DAT

@@ -1,0 +1,16 @@
+This directory contains some basic numerical subroutines.
+
+None of them is critical for cpu time.
+
+erf and erfc are available from the CERN library 
+
+ran2 was adapted from the Numerical Recipes book.
+
+sorting is adapted from the rosetta code
+
+gasdev and ran2 are not threadsafe.  All others should be.
+
+
+
+
+

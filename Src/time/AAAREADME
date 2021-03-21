@@ -1,0 +1,15 @@
+This directory contains timing subroutines.
+
+They suffer from the infamous Y2K bug.
+
+I will correct them next millenium :-))))) 
+
+In the meantime I am worrying about the Y10K bug...
+
+The subroutines here work with gfortran and ifort
+and should work with a compliant Fortran 95 compiler
+as far as I know.
+
+If they do not work, just compile and link with the subroutines
+in the _dummy directory, or search in the fossil area
+something that may work. 

@@ -1,0 +1,4 @@
+This directory contains the subroutines the esdf module and the subroutines that use it.
+
+The esdf_mod.f90 was modified in June 2017 to revert to some previous version
+and to have the correct behavior with missing data.

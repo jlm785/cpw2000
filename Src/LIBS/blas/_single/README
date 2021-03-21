@@ -1,0 +1,9 @@
+This directory contains blas translation subroutines that handles 
+those nasty single/double precisions problems...
+
+As I do not have an account in an old Cray I haven't tested them!!!!!!!
+
+BE VERY CAREFUL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+If you test and they work let me know so I can remove this warning :-)
+

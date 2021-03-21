@@ -1,0 +1,13 @@
+           1    main task
+   10.0000000000000         emax
+ y   dual
+ n   modify precision
+          2    cpw_analysis task
+           2    method
+ y   Blade Runner test
+ y   default GLK values
+           0    cpw_analysis task
+           4    main task
+           1    dos plot control
+ y   results with spin-orbit
+           0    main task

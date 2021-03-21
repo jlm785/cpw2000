@@ -1,0 +1,8 @@
+This folder contains the input and output subroutines
+
+In June 2017 there was a major change in the subroutines
+
+read_esdf uses the "old" iargc getarg functions.
+
+To use command_argument_count and get_command_argument from the 2003 standard just change the
+relevant code lines to the commented lines.

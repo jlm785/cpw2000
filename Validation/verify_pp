@@ -1,0 +1,226 @@
+#/bin/bash
+
+echo 'building PW_RHO_V.DAT for Ge'
+
+cp Input/cpw_ge.in cpw.in
+../cpw.exe > pw.out
+
+
+
+cp Input/band_lines_fcc.dat BAND_LINES.DAT
+
+echo 'Testing band structure full PW diagonalization (21)'
+
+../cpw_post_process.exe < Input/replay_21.dat > pw_pp_21.out
+
+sleep 0.2
+
+cat band_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d'  > toto1
+cat Output/band_21_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$3)^2), sqrt(($2-$4)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_so.agr band_21_so.agr
+mv band.agr band_21.agr
+
+/bin/rm band*.gp
+
+echo '21 checking finished'
+echo '  '
+
+
+
+echo 'Testing band structure in LK basis (single k-point (22)'
+
+../cpw_post_process.exe < Input/replay_22.dat > pw_pp_22.out
+
+sleep 0.2
+
+cat band_so_lk.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d'  > toto1
+cat Output/band_22_so_lk.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$3)^2), sqrt(($2-$4)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_so_lk.agr band_22_so_lk.agr
+mv band_lk.agr band_22_lk.agr
+
+/bin/rm band*.gp
+
+echo '22 checking finished'
+echo '  '
+
+
+
+echo 'Testing band structure in k.p (23)'
+
+../cpw_post_process.exe < Input/replay_23.dat > pw_pp_23.out
+
+sleep 0.2
+
+cat band_so_kp.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d'  > toto1
+cat Output/band_23_so_kp.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$3)^2), sqrt(($2-$4)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_so_kp.agr band_23_so_kp.agr
+mv band_kp.agr band_23_kp.agr
+
+/bin/rm band*.gp
+
+/bin/rm matrix*.dat
+
+echo '23 checking finished'
+echo '  '
+
+
+
+echo 'Testing band structure in 2 point LK interpolation (24)'
+
+../cpw_post_process.exe < Input/replay_24.dat > pw_pp_24.out
+
+sleep 0.2
+
+cat band_lk_int_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d'  > toto1
+cat Output/band_24_lk_int_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$3)^2), sqrt(($2-$4)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_lk_int_so.agr band_24_lk_int_so.agr
+mv band_lk_int.agr band_24_lk_int.agr
+
+echo '24 checking finished'
+echo '  '
+
+
+
+echo 'Testing band structure with full diagonalization and (fake) unfolding (25)'
+
+../cpw_post_process.exe < Input/replay_25.dat > pw_pp_25.out
+
+sleep 0.2
+
+cat band_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8  > toto1
+cat Output/band_25_so_unfold.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8  > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$4)^2), sqrt(($2-$5)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_so.agr band_25_so_unfold.agr
+mv band.agr band_25_unfold.agr
+
+/bin/rm band_fold_rec.dat
+
+echo '25 checking finished'
+echo '  '
+
+
+
+echo 'Creating file for later plotting with atomic orbital info (26)'
+
+../cpw_post_process.exe < Input/replay_26.dat > pw_pp_26.out
+
+sleep 0.2
+
+cat band_fld_ref_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8 > toto1
+cat Output/band_26_fld_ref_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8 > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$4)^2), sqrt(($2-$5)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_fld_ref_so.agr band_26_fld_ref_so.agr
+mv band_fld_ref.agr band_26_fld_ref.agr
+
+/bin/rm band_info_rec.dat BAND.DAT BAND_SO.DAT
+
+echo '26 checking finished'
+echo '  '
+
+
+
+
+echo 'Testing band structure with LK interpolation and (fake) unfolding (27)'
+
+../cpw_post_process.exe < Input/replay_27.dat > pw_pp_27.out
+
+sleep 0.2
+
+cat band_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8  > toto1
+cat Output/band_27_so.agr | sed /^@/d | sed /^#/d | sed '/^ *$/d' | head -n -8  > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$4)^2), sqrt(($2-$5)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv band_so.agr band_27_so.agr
+mv band.agr band_27.agr
+
+echo '27 checking finished'
+echo '  '
+
+
+
+
+cp Input/dos_mesh.dat DOS_MESH.DAT
+
+
+echo 'Testing density of states with full diagonalization (28)'
+
+../cpw_post_process.exe < Input/replay_28.dat > pw_pp_28.out
+
+sleep 0.2
+
+cat dos_quad.gp | tail -n +12  > toto1
+cat Output/dos_quad_28.gp | tail -n +12  > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$4)^2), sqrt(($2-$5)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv dos_quad.gp dos_quad_28.gp
+
+/bin/rm dos_file.dat DOS_QUAD.DAT
+
+echo '28 checking finished'
+echo '  '
+
+
+
+echo 'Testing density of states with LK interpolation (29)'
+
+../cpw_post_process.exe < Input/replay_29.dat > pw_pp_29.out
+
+sleep 0.2
+
+cat dos_quad.gp | tail -n +12  > toto1
+cat Output/dos_quad_29.gp | tail -n +12  > toto2
+
+echo ' '
+echo 'maximum difference in data'
+paste toto1 toto2 | awk '{print sqrt(($1-$4)^2), sqrt(($2-$5)^2)}' | awk 'BEGIN {max=0}{if($2>max) max=$2} END {print max}'
+echo ' '
+
+mv dos_quad.gp dos_quad_29.gp
+
+/bin/rm dos_file.dat DOS_QUAD.DAT
+
+echo '29 checking finished'
+echo '  '
+

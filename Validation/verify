@@ -1,0 +1,170 @@
+#/bin/bash
+
+echo 'checking 01 (ONE)'
+
+cp Input/cpw_01.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_01.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_01
+grep totalenergy toto1 > toto3
+grep totalenergy toto2 > toto4
+diff toto3 toto4
+
+echo '01 checking finished'
+echo ' '
+
+
+echo 'checking 02 (MICRO)'
+
+cp Input/cpw_02.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_02.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_02
+grep totalenergy toto1 > toto3
+grep totalenergy toto2 > toto4
+diff toto3 toto4
+
+echo '02 checking finished'
+echo ' '
+
+
+
+echo 'checking 03 (MICRO,KEATING)'
+
+cp Input/cpw_03.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_03.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_03
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '03 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 04 (LANG)'
+
+cp Input/cpw_04.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_04.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_04
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '04 checking finished'
+echo ' '
+
+
+
+
+
+echo 'checking 05 (VCSLNG)'
+
+cp Input/cpw_05.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_05.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_05
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '05 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 06 (EPILBF)'
+
+cp Input/cpw_06.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_06.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_06
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '06 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 07 (LBFSYM)'
+
+cp Input/cpw_07.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_07.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_07
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '07 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 08 (VCSLBF)'
+
+cp Input/cpw_08.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_08.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_08
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '08 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 09 (VCSLBF,FLGKPLUSG)'
+
+cp Input/cpw_09.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_09.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_09
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '09 checking finished'
+echo ' '
+
+
+
+
+echo 'checking 10 (EPILNG)'
+
+cp Input/cpw_10.in cpw.in
+../cpw.exe > pw.out
+grep -v omputing pw.out | grep -v "program version" | grep -v "run on" | awk NF  > toto1
+grep -v omputing Output/pw_ref_10.out | grep -v "program version" | grep -v "run on" | awk NF  > toto2
+diff -B toto1 toto2 > diff_10
+grep totalenergy toto1 | tail -2 > toto3
+grep totalenergy toto2 | tail -2 > toto4
+diff toto3 toto4
+
+echo '10 checking finished'
+echo ' '
+
+
+
+

@@ -1,0 +1,15 @@
+
+for_str:   implement f channel in for_str_nl_kb
+
+kdotp:     implement real kdotp for a subset of the bands
+
+sym:       The "normal" algorithm to find the space group assumes
+           that the lattice supplied is minimal. In the case of a superlattice
+           this is not true. The current subroutines have a quick fix that
+           produces space-group that is a sub-group of the true space-group
+           of the crystal. That choice is arbitrary, so some thought on
+           the problem may be needed.
+
+vff:       This is a quick fix.  Needs some further thought.
+
+xc:        Revisit link to libxc.  Implement the spin versions.

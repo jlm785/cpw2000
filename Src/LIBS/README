@@ -1,0 +1,20 @@
+Subroutines taken from existing libraries.  See each case for copyright
+
+blas and lapack contain the linear algebra subroutines required by the code.
+They are here so that you can always run the code in the absence of other versions.
+You are strongly advised to link with the other versions as they are much faster in general.
+
+lbfgs and esdf_read can be obtained from their source, but as they are not critical, it is better
+to use the present implementations because they have been MODIFIED.  Otherwise you will have to
+adapt the original subroutines.
+
+The original subroutines are at
+
+http://www.netlib.org/blas/
+
+http://www.netlib.org/lapack/
+
+http://users.iems.northwestern.edu/~nocedal/lbfgs.html
+
+https://www.netlib.org/fftpack   (ncar) with some name changes from the old times...
+

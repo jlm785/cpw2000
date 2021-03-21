@@ -1,0 +1,8 @@
+           1    main task
+   10.0000000000000         emax
+ y   dual
+ n   modify precision
+           1    cpw_analysis task
+           1    method
+           0    cpw_analysis task
+           0    main task

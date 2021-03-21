@@ -1,0 +1,163 @@
+This is a short version.
+
+
+The code you are using is very portable. That
+means speed was a bit compromised.
+
+The good news is that it is fairly easy for anyone who is fortran literate
+to tune the code to his/her specific computer.
+Most of the cpu time (over 90%) is spent in the Basic Linear Algebra
+Subroutines (BLAS) dgemm.f, dgemv.f, and sdot.f, and in the
+Fast Fourier Transform (FFT) subroutine cfft_mlt_c16.f,
+so only a few subroutines have to be optimized.
+
+Some key subroutines also have openmp directives.  They give a reasonable speedup
+by just compiling with openmp.
+
+The very good news is that you can easily get a factor of two to five
+improvement in speed just optimizing those subroutines.
+Optimizing other subroutines is not worth my time, as one
+would get just a negligeable speedup.
+
+Some speedup can be gained by tuning the convergence
+criteria at a cost of accuracy and stability.
+
+
+COMPILER options
+
+If you look at the Src/config files you find compiler
+flags for several operating systems. The rule is to use conservative
+optimization for most subroutines and agressive optimization
+just where it is needed.
+
+
+BLAS and LAPACK optimization:
+
+BLAS and LAPACK are available from www.netlib.org
+
+Do not compile the subroutines in Src/LIBS/blas or Src/LIBS/lapack
+into your libpw.a library. When compiling the main program link to an existing
+blas library.  There is a 50% chance that -lblas will work...
+
+The intel ifort compiler libraries also include efficient blas
+libraries in MKL. The simple flag -mkl works in intel CPUs.  The Intel
+compiler ifort detects if you are running in a AMD CPU and makes sure
+that the codes runs slowly.
+
+In gnu/linux machines you can find easily an rpm or deb with blas for your
+distribution. (It is for example included in most lapack packages).
+
+If you do not have a tuned BLAS for your machine you can try the atlas library.
+For linux/x86 you get a really impressive speedup. The atlas
+library is available at http://math-atlas.sourceforge.net,
+and they have pre-compiled binaries for many machines.
+Make sure you know the cache-size of your machine, otherwise recompile it.
+My recommendation is to recompile it for your machine, that is where the automatically tuned gives the best results!
+
+In the old days and if you trusted closed sourced software,
+you could use the libgoto that was very fast.
+(internet archive  https://web.archive.org/web/20030311083230/http://www.cs.utexas.edu/users/kgoto/).
+Its algorithms were adapted by Intel MKL (Goto went to work for Intel)
+and by openblas, I mention it because the work of Kasushige Goto
+was outstanding at the time, and it is still been used!
+You can get a modern open source implementation
+in www.openblas.net, or the rpm/deb in your distribution
+if you are using gnu/linux.
+
+In ifort you just have to compile the program with the -mkl flag.
+
+For gfortran and MKL compile the final program with
+
+gfortran cpw.f libpw.a -lmkl_gf_lp64 -lmkl_core -lmkl_gnu_thread -ldl -lpthread -lm -lgomp -o cpw.exe
+
+or something equivalent.
+
+To see how those library choices may impact your coalculations, take a look at
+https://www.pugetsystems.com/labs/hpc/AMD-Ryzen-3900X-vs-Intel-Xeon-2175W-Python-numpy---MKL-vs-OpenBLAS-1560/
+
+A final word, you can try at your own risk to use a fast MKL with AMD CPUs
+MKL_DEBUG_CPU_TYPE=5 is the trick...
+
+
+
+FFT optimization:
+
+For compiled FFTs I use a FFT package from Norman Troullier in Src/LIBS/vfft.
+It cannot be distributed, which is a pity because it is very
+fast, faster than MKL in the old days, and was compatible with the
+old cray libraries (scilib).
+Therefore you find also a public domain FFT (fftpack from NCAR) that is very
+reliable but slow in Src/LIBD/ncar.
+
+Since version 4.40 you have the option of using the FFTW, currrently FFTW3.
+It calls a package from www.fftw.org. It gives very good results for gnu/linux.
+They are very fast. You also have FFTW3 wrappers in MKL. There are
+some rpm/deb packages with FFTW.  You should recompile it to get the automatic tunning.
+
+To be able to interface with all these packages there are
+several interface subroutines that call one another.
+Just compile with the right subdirectory of _source/_fft
+and, in the case of fftw link with the appropriate
+library to get the most of your computer.
+
+There are two issues that make the FFT optimization tricky.
+One is the coding of data in real or complex format.
+The other is that Goedecker's trick in cfft_wf.f requires
+a control of the details of the 3D FFT.
+
+In the older (before 4.4) versions I had specific subroutines
+for DEC,IBM, or SGI libraries. I do not think it is worthwhile
+to try to readapt them to the new program....  However I
+do have a specific subroutine that interfaces with MKL.
+
+To use the MKL version, you should have in config.sh
+
+#
+# uncomment one of these three lines (must have library)
+#
+# $F77 -c $FFLAGS $FFEXTRA $FFOMP hk_psi/reference/*.f90
+$F77 -c $FFLAGS $FFEXTRA $FFOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90
+# $F77 -c $FFLAGS hk_psi/cuda/*.f90
+
+To use Norm's library you should have in config.sh
+
+#
+#  uncomment one of the next group of lines
+#
+# $F77 -c $FFLAGS fft/_ncar/*.f
+# $F77 -c $FFLAGS fft/_fftw3/*.f
+# $F77 -c $FFLAGS fft/_mkl_dfti_2D/mkl*.f90 -I mkl_dfti.h ; $F77 -c $FFLAGS _fft/_mkl_dfti_2D/cfft*.f90 -I mkl_dfti.h
+$F77 -c $FFLAGS $FFEXTRA fft/_vfft/*.f
+
+#
+# uncomment one of these three lines (must have library)
+#
+$F77 -c $FFLAGS $FFEXTRA $FFOMP hk_psi/reference/*.f90
+# $F77 -c $FFLAGS $FFEXTRA $FFOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90
+# $F77 -c $FFLAGS hk_psi/cuda/*.f90
+
+
+
+PARALLELIZATION
+
+MKL, openblas, FFTW3 and atlas are parallelized (multithreaded).
+The FFTs and the subroutines in Src/omp can run in parallel with openmp directives.
+Read the files in the fft subdirectory, as it is tricky to use it.
+
+To run with openmp you may have to issue this commands indicating the number
+of physical cores (using hyperthreading may make the program to run slower).
+My recommendation is that if your machine is dedicated to computing to turn off
+hyperthreading in the BIOS!
+
+export OMP_NUM_THREADS=4
+
+for example for 4 physical cores.
+
+export OMP_PROC_BIND=TRUE
+export OMP_PLACES=cores
+
+can also be useful...
+
+
+
+

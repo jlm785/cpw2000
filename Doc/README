@@ -1,0 +1,8 @@
+This directory contains detailed information of the interfaces of all files.
+
+Make sure that OUTPUT_DIRECTORY and INPUT are correct in Doxyfile.
+
+If documentation.html is not present, check that your computer has doxygen and graphviz installed 
+and run doxygen in the doxy directory.  Then just link html/index.html to here
+
+If the documentation is already present just refresh "ln -s html/index.html documentation.html"

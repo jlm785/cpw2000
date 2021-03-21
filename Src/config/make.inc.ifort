@@ -1,0 +1,75 @@
+#
+#   definition of the variables for the shell script to make the pw library.
+#
+
+# chooses compiler and libraries
+
+F77= ifort
+LIBS=-mkl
+
+
+# debugging option (true, false)
+
+DEBUG=false
+# DEBUG=true
+
+
+# profiling option (-g,empty)
+
+PROF=
+# PROF=-g
+
+
+# other flags
+
+ifeq ($(DEBUG),false)
+   FCOPTS=-xHost -O3 $(PROF)
+   FCOMP=-qopenmp
+else
+   FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g
+   FCOMP=
+endif
+
+# special flags for special cases
+
+FCEXTRA=
+FCSAFE=-O0
+
+ESDFDIR=LIBS/esdf_read
+
+# suffix for executables if you want to compare compilers
+
+SUFFIX:=_ifort
+# SUFFIX=
+ifeq ($(DEBUG),true)
+   SUFFIX:=$(SUFFIX)_debug"
+endif
+
+
+# indicates if blas and lapack must be compiled (true/false)
+
+COMPBLAS=false
+# COMPBLAS=true
+
+
+# choice of FFT package (ncar/vfft/fftw3/mkldfti)
+
+FFT=vfft
+# FFT=ncar
+# FFT=fftw3
+# FFT=mkldfti
+
+# compatibility with older compilers, before fortran2008 (true/false)
+
+PRE2008=false
+# PRE2008=true
+
+# choice of hk_psi implementation (reference, mkldfti)
+
+HKPSI=mkldfti
+# HKPSI=reference
+
+ifeq ($(DEBUG),true)
+then
+   HKPSI=reference
+endif

@@ -1,0 +1,134 @@
+How to get started with cpw2000
+
+1) Compile the library of subroutines using a shell script or make.
+
+   a)  Script instructions:
+
+       Go to the Src directory.
+
+       _pw-5.XY >  cd Src
+
+       Copy a "include" shell script from config
+
+       Src > cp config/config.sh.xyz config.sh
+
+       choosing the xyz that is the closest to your machine.
+
+            At first compile everything and do not use other libraries.
+            Once you get familiar with the code then you can read the OPTIMIZATION file
+            to make it run faster.
+
+            For gfortran (sudo apt install gfortran) use
+
+            Src > cp config/config.sh.gfortran.all config.sh
+
+            For ifort (https://software.intel.com/content/www/us/en/develop/tools/oneapi.html) one can assume that MKL is available and it is safe to compile
+            only part of the subroutines, use
+
+            Src > cp config/config.sh.ifort config.sh
+
+
+       Then run the compiling script
+
+       Src > ./Mklibpw.sh
+
+
+
+   b)  Make instructions:
+
+       Go to the Src directory.
+
+       _pw-5.XY >  cd Src
+
+       Copy a "include" shell script from config
+
+       Src > cp config/make.inc.xyz make.inc
+
+       choosing the xyz that is the closest to your machine.  Then run make
+
+       Src > make
+
+       you may clean it with make clean later.
+
+
+2)  first test:
+
+    Create links in the parent directory
+
+    Src > ln -s cpw_xyz.exe ../cpw.exe
+
+    Check if you got a good executable with a simple job
+
+    Src > cd ../Validation
+    Validation> ./verify_short
+
+    At the end the script will compare the pw.out output with Output/pw_ref_01.output
+    differences should be minimal
+
+
+
+3) Get a cpw.in file with a crystal structure
+
+   Copy a data file from the Structures subdirectory
+   to a working directory and rename it cpw.in.  For example for diamond use
+
+   _pw-5.XX >  cp Structures/X/cpw_diamond.in <WORK>/cpw.in
+
+   This file describes the starting geometry, energy cutoff (Hartree) and
+   k-point integration mesh.  The format is compatible with the SIESTA code.
+   https://siesta-project.org/SIESTA_MATERIAL/Docs/Manuals/manuals.html
+   should answer 95% of your questions.
+
+   The Tools/gen_PW.f90 helps you generate a cpw.in file,
+   if you do not find a file to adapt in Structures.
+   The generated file is named cpw.out  to avoid overwriting a "good"
+   cpw.in file, so you must use "mv cpw.out cpw.in" to use it.
+
+4) Get a pseudopotential data file:
+
+   In the validation directory you find pseudopotentials for Si, Ge and C
+
+   _pw-5.XX >  cp C_POTKB_F.DAT <WORK>/C_POTKB_F.DAT
+
+   For other cases and in general you should construct the pseudopotential
+
+   https://fenix.tecnico.ulisboa.pt/homepage/ist13146/pseudopotential
+
+   If you use atom-5.695 or earlier you get unformatted files.
+   For carbon the unformatted file should be named C_POTKB.DAT,
+   for Si it should be Si_POTKB.DAT etc. (mv <atom-dir>/potfourkb.dat C_POTKB.DAT)
+   But you should really use atom-5.696 or later and use the
+   formatted pseudopotential files that contain information
+   about the atomic orbitals. For carbon the formatted file
+   should be named C_POTKB_F.DAT, for Si it should be Si_POTKB_F.DAT, etc...
+   (mv <atom-dir>/pot_kb_new.dat <WORK>/C_POTKB_F.DAT)
+
+
+5) Link the executable in your working directory and run it
+
+   _pw-5.XX >  ln -s cpw.exe <WORK>/cpw.exe
+   _pw-5.XX >  cd <WORK>
+   WORK>  cpw.exe | tee pw.out
+
+   check if the result makes sense.
+
+   The pw.out is a human readable file that has tags that allow the easy analysis of
+   the output with grep and gnuplot for the case of large molecular dynamics files.
+   PW_RHO_V.DAT is the input file for the analysis program.
+
+6) Optimization.
+
+   Read the optimization instructions. Try them for your machine.
+   Adapt the make.inc or config.sh files, recompile the code and update the links.
+
+   Once you have an optimized executable go to the Validation directory and run tests
+
+   _pw-5.XX >  cd Validation
+   Validation >  ./verify
+   Validation >  ./verify_pp
+
+   Check if everything looks normal.
+
+
+Enjoy
+

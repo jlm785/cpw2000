@@ -1,0 +1,3 @@
+Interfaces for the fft libraries compatible with late 80s cray software!!!
+
+compile againt one of the other directories at this level _ncat, _vfft,...

@@ -1,0 +1,65 @@
+This directory contains the top-level subroutines for
+Fast Fourier Transforms and directories with different
+flavors of implementations.
+
+As of 2006 an openmp version has been implemented
+for version 4.5 (tested in 4.42).
+
+The good news is that thanks to a series of interface
+subroutines you can compile into the code any of the
+three subdirectories (but obviously only one).
+
+This has been all modified in version 4.4 to allow
+the use of fftw. Mainly I changed
+     CHDR(MXDFFT),CHDI(MXDFFT)  -->   CHD(2,MXDFFT)
+
+
+
+The only subroutines called are 
+   CFFT_PREPARE
+   CFFT_MLT_C16
+   CFFT_FINISH
+which maybe different in each subdirectory.
+
+The work array WRK has different requirements for different
+implementations
+
+As this is the critical part of the program you should
+try which is the fastest option on your computer:-)
+
+_ncar:
+This is a traditional collection of FFTs which are
+slow and are not thread safe. They are here to give you a 
+program that works with a 100% source code. Do not use
+it with openmp.
+
+_vfft:
+This are Norm Troullier's subroutines. As they are
+not public, the directory should be empty.
+This subroutines are very fast! They are thread safe.
+
+_scilib:
+Relegated to the fossil section.
+
+_fftw:
+Relegated to the fossil section.
+
+_fftw3:
+Advertised as the new version (3) of the fastest fourier transforms in the west,
+this subroutines are very fast. The mkl intel library includes wrappers
+for the fftw3 calls. I was unable to get them working with openmp
+(if you do send me an e-mail). But as the wrapped functions are themselves
+threaded (the origin of the problem) they run in parallel.
+You can also compile the original fftw3 package (www.fftw.org).
+That package is thread safe and it ties with vfft for the fastest
+Fourier transform for the plane-wave package.
+
+_mkl_dfti_2D
+These calls directly the mkl DFT subroutines. 
+I was unable to get them working with openmp
+(if you do send me an e-mail). But as the mkl functions are themselves
+threaded (the origin of the problem) they run in parallel.
+They are also fast, although not the fastest.
+
+
+

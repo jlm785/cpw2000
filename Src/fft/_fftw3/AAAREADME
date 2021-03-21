@@ -1,0 +1,6 @@
+This directory contains interface subroutines to be
+used with the open source fftw3 package. They can be
+found at www.fftw.org and are very fast.
+
+
+

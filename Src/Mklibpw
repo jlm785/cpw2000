@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+#   shell script to make the pw library. Comment/uncomment
+#   the following lines to choose the compiler and compilation flags
+#   and alter them according to your machine
+#
+
+source config.sh
+
+/bin/rm *.o *.mod libpw$SUFFIX.a cpw$SUFFIX.exe cpw_post_process$SUFFIX.exe
+
+$F77 -c cpw_variables.f90
+
+
+#  conditional compilation of blas and LAPACK
+
+if [ $COMPBLAS = "true" ]
+then
+    $F77 -c $FCOPTS $FCEXTRA LIBS/blas/*.f
+    $F77 -c $FCOPTS LIBS/lapack/*.f
+fi
+
+
+#  choice of FFT, default vfft
+
+if [ $FFT = "ncar" ]
+then
+   $F77 -c $FCOPTS fft/_ncar/*.f
+   $F77 -c $FCOPTS LIBS/ncar/*.f
+elif [ $FFT = "fftw3" ]
+then
+   $F77 -c $FCOPTS fft/_fftw3/*.f
+elif [ $FFT = "mkldfti" ]
+then
+   $F77 -c $FCOPTS fft/_mkl_dfti_2D/mkl*.f90 -I mkl_dfti.h ; $F77 -c $FCOPTS fft/_mkl_dfti_2D/cfft*.f90 -I mkl_dfti.h
+else
+   $F77 -c $FCOPTS fft/_vfft/*.f
+   $F77 -c $FCOPTS $FCEXTRA LIBS/vfft/*.f
+fi
+
+
+# back compatibility
+
+if [ $PRE2008 = "true" ]
+then
+   $F77 -c $FCOPTS time/dummy/ze*.f90
+   $F77 -c back_compat/*.f90
+else
+   $F77 -c $FCOPTS time/ze*.f90
+fi
+
+
+
+# choice of hk_psi
+
+if [ $HKPSI="mkldfti" ]
+then
+   $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90
+else
+   $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/reference/*.f90
+fi
+
+
+
+# implements openmp parallelism on critical subroutines
+# do not use debugging flags in cfft...
+
+if [ $DEBUG = "true" ]
+then
+   $F77 -c fft/_cfft/*.f
+else
+   $F77 -c $FCOPTS $FCEXTRA $FCOMP fft/_cfft/*.f
+fi
+
+$F77 -c $FCOPTS $FCEXTRA $FCOMP omp/*.f90
+
+
+
+
+$F77 -c $FCOPTS cpw/*.f90
+
+$F77 -c $FCOPTS cpw_lib/*.f90
+
+$F77 -c $FCOPTS cpw_pp_lib/*.f90
+
+$F77 -c $FCOPTS LIBS/esdf_read/esdf_key_mod.f90 LIBS/esdf_read/esdf_mod.f90
+
+$F77 -c $FCOPTS LIBS/lbfgs/*.f
+$F77 -c $FCSAFE LIBS/lbfgs/dpmeps.f
+
+$F77 -c $FCOPTS ao_interpolation/irredbzinit.f90 ao_interpolation/fourier_interpolation.f90 ao_interpolation/nonorthointerp.f90
+$F77 -c $FCOPTS ao_interpolation/ao*.f90
+
+$F77 -c $FCOPTS ALFA/*.f90
+
+$F77 -c $FCOPTS crystal/*.f90
+
+$F77 -c $FCOPTS ditsp/*.f90
+
+$F77 -c $FCOPTS mesh/*.f90
+
+$F77 -c $FCOPTS numeric/*.f90
+
+$F77 -c $FCOPTS read_print/*.f90
+
+
+
+ar -r libpw$SUFFIX.a *.o
+
+$F77 -o cpw$SUFFIX.exe $FCOPTS cpw.f90 libpw$SUFFIX.a $LIBS
+
+$F77 -o cpw_post_process$SUFFIX.exe $FCOPTS cpw_post_process.f90 libpw$SUFFIX.a $LIBS
+
+/bin/rm *.o *.mod
+
+
+
+

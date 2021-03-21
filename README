@@ -1,0 +1,33 @@
+This is a plane-wave pseudopotential package for materials
+simulation.
+
+This is still a test version. Use at your own risk.
+
+Please report any bug to jlmartins@inesc-mn.pt
+
+see HOWTORUN and afterwards OPTIMIZATION for details
+on how to run and optimize the codes.
+
+version 4.38  25 July 2000
+version 4.382 31 July 2001
+version 4.40  July 2002
+version 4.41  September 2002
+version 4.42  March 2004
+version 4.50  February 2008
+version 4.52  July 2013
+version 4.53  October 2013  This is a development version, not a "frozen" version
+version 4.53.1  May 2014    First snapshot of the 4.53 development branch
+version 4.53.2  May 2014    Include etsf and TB in the development branch.
+version 4.53.3  May 2014    Bug tracking. Plotting.
+version 4.54  August 2014
+version 4.60  September 2015  Changed iterative diagonalization.  Beware!!!
+....
+version 4.76  December 2016   Small increments and bug squashing
+.....
+version 4.92  March 2018   All converted to f90,
+                           lots of improvements in analysis
+                           input from esdf, etc...
+.....
+version 4.95  March 2020   Documentation, lots of fixes
+.....
+version 5.00  March 2021   Lots of cleanup and bug fixes

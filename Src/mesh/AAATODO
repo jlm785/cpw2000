@@ -1,0 +1,39 @@
+ 
+         Call tree of mesh suroutines in cpw (not analysis)
+
+cube_to_star         <--  extrapol_density    <--   cpw           den(ns)  <--  chdsave(nsave)
+
+star_to_cube         <--  save_density        <--   cpw           chdsave(nsave)  <--  den(ns)
+
+
+
+
+star_of_g_fold       <--  ( lap_rho       )   <--   scf_kb_c16   <--  cpw         den(ns)  <--  den(ng)
+                          ( tau_by_fft    )
+                          ( v_hartree_xc  )
+                          ( charge_by_fft )
+
+star_of_g_unfold     <--  lap_rho             <--   scf_kb_c16   <--  cpw         den(ng)  <--  den(ns)
+
+
+
+
+MESH_SET             <--  v_hartree_xc        <--   scf_kb_c16   <--  cpw         rho(nscr)  <--  den(ns)     (rho is real)
+
+mesh_fold            <--  ( v_hartree_xc  )   <--   scf_kb_c16   <--  cpw          den(ng)  <--  den(nscr)
+                          ( charge_by_fft )
+
+mesh_unfold          <--  pot_local           <--                <--,--   scf_kb_c16   <--  cpw     den(nscr)  <--  den(ns)
+                          MESH_SET            <--  v_hartree_xc  <--'     scf_kb_c16    
+
+
+pot_local should call modified mesh_set
+
+mesh_unfold should be the inverse of mesh_fold  (ns, ng)  and calls to mesh_unfold
+replaced by calls to new mesh_unfold followed by call star_of_fold
+
+call to size_fft should be taken out of mesh_set
+
+
+
+

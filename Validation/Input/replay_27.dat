@@ -1,0 +1,13 @@
+           1    main task
+   10.0000000000000         emax
+ y   dual
+ n   modify precision
+           1    cpw_analysis task
+           7    method
+ y   Blade Runner test
+ n   default GLK values
+           2    diagonal. method in LK DOS
+   4.00000000000000         csvd in GLK
+  1.000000000000000E-003    xsvd in GLK
+           0    cpw_analysis task
+           0    main task
