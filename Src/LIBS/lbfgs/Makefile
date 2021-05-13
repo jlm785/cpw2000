@@ -18,6 +18,6 @@ dpmeps.o: dpmeps.f
 	$(F77) -c $(FCOPTS)  $<
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *genmod*
 
 .PHONY:   clean libadd

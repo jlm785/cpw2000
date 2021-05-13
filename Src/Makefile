@@ -4,10 +4,10 @@ include make.inc
 all: cpw.exe cpw_post_process.exe
 
 cpw.exe:  libpw  cpw_variables.mod cpw.f90
-	ifort -o cpw$(SUFFIX).exe $(FCOPTS) cpw.f90 libpw$(SUFFIX).a $(LIBS)
+	$(F77) -o cpw$(SUFFIX).exe $(FCOPTS) cpw.f90 libpw$(SUFFIX).a $(LIBS)
 
 cpw_post_process.exe:  libpw  cpw_variables.mod cpw_post_process.f90
-	ifort -o cpw_post_process$(SUFFIX).exe $(FCOPTS) cpw_post_process.f90 libpw$(SUFFIX).a $(LIBS)
+	$(F77) -o cpw_post_process$(SUFFIX).exe $(FCOPTS) cpw_post_process.f90 libpw$(SUFFIX).a $(LIBS)
 
 libpw:     fftlib  timelib  hkpsilib    esdflib  blas
 	(cd cpw               &&  make libadd )
@@ -92,6 +92,8 @@ clean:
 	(cd $(ESDFDIR)        &&  make clean )
 	(cd LIBS/blas         &&  make clean )
 	(cd LIBS/lapack       &&  make clean )
+	(cd LIBS/ncar         &&  make clean )
+	(cd LIBS/vfft         &&  make clean )
 	(cd fft/_ncar         &&  make clean )
 	(cd fft/_fftw3        &&  make clean )
 	(cd fft/_mkl_dfti_2D  &&  make clean )
@@ -101,5 +103,6 @@ clean:
 	(cd back_compat       &&  make clean )
 	(cd hk_psi/mkl_3D     &&  make clean )
 	(cd hk_psi/reference  &&  make clean )
+	(rm *.mod)
 
 .PHONY:   clean libpw  blas  esdflib  fftlib  timelib  hkpsilib

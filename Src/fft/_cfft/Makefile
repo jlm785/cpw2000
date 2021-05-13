@@ -15,6 +15,6 @@ libadd:    $(obj)
 	$(F77) -c $(FCOPTS) $(FCEXTRA) $(FCOMP) $<
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *genmod*
 
 .PHONY:   clean libadd

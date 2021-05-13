@@ -31,19 +31,22 @@ then
    fi
 else
 
+   # choose one set of libraries
+
    # MKL
    LIBS="-lmkl_gf_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -lgomp"
 
-   # atlas
+   # atlas  adjust LIBDIR
    # LIBDIR ="/usr/local/lib"
-   # LIBS ="-L$(LIBDIR)  -llapack -lf77blas -lcblas -latlas"
+   # LIBS ="-L$LIBDIR  -llapack -lf77blas -lcblas -latlas"
 
    # openblas
    # LIBS="-lopenblas -lpthread -lgomp"
 
-   # AMD-blis
+   # AMD-blis  adjust LIBDIR,  fftw3 has problems...
    # LIBDIR ="/opt/AMD/aocl/aocl-linux-gcc-2.2.0/lib"
-   # LIBS="-L$(LIBDIR) -lflame -lblis -lfftw3"
+   # LIBS="-L$LIBDIR -lflame -lblis"
+   # LIBS="-L$LIBDIR -lflame -lblis -lfftw3"
 
 fi
 
@@ -77,10 +80,10 @@ FCSAFE="-O0"
 # suffix for executables if you want to compare compilers
 
 SUFFIX="_gfortran"
-# SUFFIX=""
+# SUFFIX:=""
 if [ $DEBUG = "true" ]
 then
-   SUFFIX="${SUFFIX}_debug"
+   SUFFIX:="${SUFFIX}_debug"
 fi
 
 
@@ -99,8 +102,8 @@ PRE2008="false"
 
 # choice of hk_psi implementation (reference, mkldfti)
 
-HKPSI="mkldfti"
-# HKPSI="reference"
+# HKPSI="mkldfti"
+HKPSI="reference"
 
 if [ $DEBUG = "true" ]
 then

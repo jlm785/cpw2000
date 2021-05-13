@@ -293,7 +293,7 @@
 
   close(unit=22)
 
-  call execute_command_line ("rm ./wan.nnkp ; source /opt/intel/bin/compilervars.sh intel64 ; wannier90.x -pp wan")
+  call execute_command_line ("rm ./wan.nnkp  ; wannier90.x -pp wan")
 
   call system ('grep -A1 "begin nnkpts" wan.nnkp | tail -n 1 > inf.txt')
 

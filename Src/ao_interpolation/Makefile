@@ -71,6 +71,6 @@ ao_interpolation_write_wt_in.o:  ao_interpolation_write_wt_in.f90 nonorthointerp
 
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *genmod*
 
 .PHONY:   clean libadd mods

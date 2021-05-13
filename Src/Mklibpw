@@ -53,7 +53,7 @@ fi
 
 # choice of hk_psi
 
-if [ $HKPSI="mkldfti" ]
+if [ $HKPSI = "mkldfti" ]
 then
    $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90
 else

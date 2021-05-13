@@ -14,6 +14,6 @@ esdf_mod.o: esdf_mod.f90   esdf_key_mod.o
 	$(F77) -c $(FCOPTS) esdf_mod.f90
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *genmod*
 
 .PHONY:   clean libadd

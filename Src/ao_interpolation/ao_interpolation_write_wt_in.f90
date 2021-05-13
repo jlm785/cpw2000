@@ -33,8 +33,9 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   integer, intent(in)           :: mxdlao
 
   real(REAL64) :: avec(3,3), bvec(3,3)
-  integer :: i,j,k, ntotal_atoms, nproj, numoccupied
-
+  integer      :: ntotal_atoms, nproj, numoccupied
+  integer      :: itype, iatom, k, iorb, iline
+  
   character(len=40) :: hrfile
   logical           :: BulkBand_calc
   integer           :: soc
@@ -52,7 +53,6 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   character(len=6) label_start, label_mid, label_end
 
 !
-
   orb_name(1) = "s"
   orb_name(2) = "px"
   orb_name(3) = "py"
@@ -63,10 +63,9 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   orb_name(8) = "dx2-y2"
   orb_name(9) = "dz2"
 
-  do i=1, 9
-    write(*,*) 'orb', i, orb_name(i)
+  do iorb=1, 9
+    write(*,*) 'orb', iorb, orb_name(iorb)
   enddo
-
 
   open(unit=22, file="wt.in", form="formatted")
 
@@ -100,9 +99,10 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
 
   write(22,*)
 
+
   ntotal_atoms = 0
-  do i=1, ntype
-  do j=1, natom(ntype)
+  do itype=1, ntype
+  do iatom=1, natom(itype)
     ntotal_atoms = ntotal_atoms + 1
   enddo
   enddo
@@ -110,9 +110,9 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   write(22,'("ATOM_POSITIONS")')
   write(22,'(i5)') ntotal_atoms
   write(22,'("Direct")')
-  do i=1, ntype
-  do j=1, natom(ntype)
-      write(22,'(a2, 3f14.8)') nameat(i), rat(:,j,i)
+  do itype=1, ntype
+  do iatom=1, natom(itype)
+      write(22,'(a2, 3f14.8)') nameat(itype), rat(:,iatom,itype)
   enddo
   enddo
 
@@ -120,12 +120,12 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
 
   write(22,'("PROJECTORS")')
 !  write(22,'(50i5)') ((norbat(i), i=1, ntype),
-  do i=1, ntype
-  do j=1, natom(ntype)
+  do itype=1, ntype
+  do iatom=1, natom(itype)
 
     nproj = 0
-    do k = 1,  norbat(i)
-      nproj = nproj + (2*lorb(k,i) +1)
+    do k = 1,  norbat(itype)
+      nproj = nproj + (2*lorb(k,itype) +1)
     enddo
 
     write(22,'(i5)', advance='no') nproj
@@ -135,9 +135,9 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
 
   write(22,*)
 
-  do i=1, ntype
-  do j=1, natom(ntype)
-    write(22,'(a2,a36)') nameat(i), "  s px py pz dxy dyz dzx dx2-y2 dz2"
+  do itype=1, ntype
+  do iatom=1, natom(itype)
+    write(22,'(a2,a36)') nameat(itype), "  s px py pz dxy dyz dzx dx2-y2 dz2"
   enddo
   enddo
 
@@ -154,7 +154,7 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   write(22,'("KPATH_BULK")')
   write(22,*) nlines
 
-  do i=1, nlines
+  do iline=1, nlines
     read(44,*) k_start(1),k_start(2),k_start(3), k_end(1),k_end(2),k_end(3), ndum, label_start, label_mid, label_end
     write(22,'(a6,2x,3f14.8,2x,a6,2x, 3f14.8)') label_start, k_start, label_end, k_end
   enddo

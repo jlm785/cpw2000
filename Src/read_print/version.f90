@@ -11,26 +11,29 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     hardcoded library version
+!>  hardcoded library version
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.01
+!>  \date         9 May 2021
+!>  \copyright    GNU Public License v2
 
-       subroutine version(cpwversion,ldevel)
+subroutine version(cpwversion, ldevel)
 
-!      Written October 12, 2018. jlm
-!      Modified February 2019. JLM
-!      Copyright INESC-MN/Jose Luis Martins
+!  Written October 12, 2018. jlm
+!  Modified February 2019. JLM
+!  Copyright INESC-MN/Jose Luis Martins
 
-!      version 5.00
+   implicit none
 
-       implicit none
+!  output
 
-!      output
+   character(len=4), intent(out)      ::  cpwversion                 !<  hardcoded library version
+   logical, intent(out)               ::  ldevel                     !<  development branch, minor version may be incompatible
 
-       character(len=4), intent(out)      ::  cpwversion                 !<  hardcoded library version
-       logical, intent(out)               ::  ldevel                     !<  development branch, minor version may be incompatible
+   cpwversion = '5.01'
+   ldevel = .FALSE.
 
-       cpwversion = '5.00'
-       ldevel = .TRUE.
-
-       return
-       end subroutine version
+   return
+end subroutine version
 

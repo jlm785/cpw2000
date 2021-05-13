@@ -12,341 +12,335 @@
 !------------------------------------------------------------!
 
 !>     writes the cpw.out file with final geometry to be used as
-!!     basis for next cpw.in input file with new geometry
+!>     basis for next cpw.in input file with new geometry
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.01
+!>  \date         June 2017
+!>  \copyright    GNU Public License v2
 
-       subroutine write_cpwout(meta_pwdat,                               &
-     & adot,ntype,natom,nameat,rat,atmass,alatt,                         &
-     & emax,nbandin,nx,ny,nz,sx,sy,sz,                                   &
-     & lkeat,ltbl,                                                       &
-     & mxdtyp,mxdatm)
+subroutine write_cpwout(meta_pwdat,                                      &
+  adot, ntype, natom, nameat, rat, atmass, alatt,                        &
+  emax, nbandin, nx,ny,nz, sx,sy,sz,                                     &
+  lkeat, ltbl,                                                           &
+  mxdtyp, mxdatm)
 
-!      Adapted June 2017. JLM
-!      Bug squashed (metadata not from rede) September 2017.
-!      
-!      Copyright  J.L.Martins, INESC-MN.
+! Adapted June 2017. JLM
+! Bug squashed (metadata not from rede) September 2017.
+!
+! Copyright  J.L.Martins, INESC-MN.
 
-!      version 4.94
+  implicit none
 
-       implicit none
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-       integer, parameter  :: REAL64 = selected_real_kind(12)
+! input:
 
-!      input:
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(in)                ::  mxdatm                          !<  array dimension of types of atoms
 
-       integer, intent(in)                ::  mxdtyp                     !<  array dimension of types of atoms
-       integer, intent(in)                ::  mxdatm                     !<  array dimension of types of atoms
+  character(len=250), intent(in)     ::  meta_pwdat                      !<  metadata from cpw_in or PW.DAT
 
-       character(len=250), intent(in)     ::  meta_pwdat                 !<  metadata from cpw_in or PW.DAT
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
+  character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
+  real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
+  real(REAL64), intent(in)           ::  atmass(mxdtyp)                  !<  atomic mass (in a.u.) of atom of type i
 
-       real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
-       integer, intent(in)                ::  ntype                      !<  number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
-       character(len=2), intent(in)       ::  nameat(mxdtyp)             !<  chemical symbol for the type i
-       real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)       !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-       real(REAL64), intent(in)           ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i 
+  real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
 
-       real(REAL64), intent(in)           ::  alatt                      !<  lattice constant
+  real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
+  integer, intent(in)                ::  nbandin                         !<  target for number of bands
 
-       real(REAL64), intent(in)           ::  emax                       !<  kinetic energy cutoff of plane wave expansion (Hartree).
-       integer, intent(in)                ::  nbandin                    !<  target for number of bands      
+  integer, intent(in)                ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
+  real(REAL64), intent(in)           ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
 
-       integer, intent(in)                ::  nx, ny, nz                 !<  size of the integration mesh in k-space (nx*ny*nz)
-       real(REAL64), intent(in)           ::  sx, sy, sz                 !<  offset of the integration mesh (usually 0.5)
+  logical, intent(in)                ::  lkeat                           !<  sets the keating option
+  logical, intent(in)                ::  ltbl                            !<  toggles XC between TBL and CA
 
-       logical, intent(in)                ::  lkeat                      !<  sets the keating option
-       logical, intent(in)                ::  ltbl                       !<  toggles XC between TBL and CA
+! local:
 
-!      local:
-       
-       real(REAL64)      ::  avec(3,3),bvec(3,3)
+  real(REAL64)      ::  avec(3,3),bvec(3,3)
 
-       integer            ::  nlatpl                                     ! number of lattice planes
-       character(len=3)   ::  vers                                       ! program version
-       character(len=50)  ::  title                                      ! title of the calculation
-       character(len=140) ::  metadata                                   ! metadata of the calculation
+  integer            ::  nlatpl                                          ! number of lattice planes
+  character(len=3)   ::  vers                                            ! program version
+  character(len=50)  ::  title                                           ! title of the calculation
+  character(len=140) ::  metadata                                        ! metadata of the calculation
 
-       integer  ::  isl1(3),isl2(3),isl3(3)
-       integer  ::  nat
-       integer  ::  istart, iend, ioerr
+  integer  ::  isl1(3),isl2(3),isl3(3)
+  integer  ::  nat
+  integer  ::  istart, iend, ioerr
 
-       integer  ::   io                         !  tape number
+  integer  ::   io                         !  tape number
 
-!      counters
+! counters
 
-       integer       ::  nt, n, i, j
+  integer       ::  nt, n, i, j
 
 
-!      open file
+! open file
 
-       io = 10
-       open(unit = io, file = 'cpw.out',status='UNKNOWN',                &
-     &                  form='FORMATTED')
-     
-       write(io,'(72a1)') ("#",j=1,72)
-       write(io,'("#",70x,"#")')
-       write(io,'("#",6x,"cpw.in input file generated by a previous",   &
-     &       " cpw2000 run ",10x,"#")')
-       write(io,'("#",70x,"#")')
-       write(io,'(72a1)') ("#",j=1,72)
+  io = 10
+  open(unit = io, file = 'cpw.out', status='UNKNOWN', form='FORMATTED')
 
-       read(meta_pwdat,'(3(3i4,2x),8x,i3,3x,a3,1x,a50,a140)',            &
-     &      iostat=ioerr)                                                &
-     &            (isl1(i),i=1,3),(isl2(i),i=1,3),(isl3(i),i=1,3),       &
-     &            nlatpl,vers,title,metadata
+  write(io,'(72a1)') ("#",j=1,72)
+  write(io,'("#",70x,"#")')
+  write(io,'("#",6x,"cpw.in input file generated by a previous",         &
+        " cpw2000 run ",10x,"#")')
+  write(io,'("#",70x,"#")')
+  write(io,'(72a1)') ("#",j=1,72)
 
-       if(ioerr == 0) then
+  read(meta_pwdat,'(3(3i4,2x),8x,i3,3x,a3,1x,a50,a140)', iostat=ioerr)   &
+             (isl1(i),i=1,3), (isl2(i),i=1,3), (isl3(i),i=1,3),          &
+             nlatpl, vers, title, metadata
 
-         write(io,*)
-         write(io,'("#------------------------------------------------")')
-         write(io,'("# Rede metadata")')
-         write(io,'("#------------------------------------------------")')
-         write(io,*)
-
-         write(io,'("%block Rede.Superlattice")')
-         write(io,'(12x,3i6)') (isl1(i),i=1,3)
-         write(io,'(12x,3i6)') (isl2(i),i=1,3)
-         write(io,'(12x,3i6)') (isl3(i),i=1,3)
-         write(io,'("%endblock Rede.Superlattice")')
-         write(io,*)
-
-         write(io,'("Rede.NumberOfLatticePlanes",3x,i6)') nlatpl
-         write(io,*)
-
-         write(io,'("Rede.Version",18x,a3)') vers
-         write(io,*)
-
-         write(io,'("Rede.Title",10x,a50)') title
-         write(io,*)
-
-         istart = 1
-         do i=1,135
-           if(metadata(i:i+4) == '#NAME') then
-             istart = i+6
-
-             exit
-
-           endif
-         enddo
-
-         iend = 140
-         do i=1,125
-           if(metadata(i:i+4) == '#DATE') then
-             iend = i-1
-             write(io,'("Rede.Date",21x,a9)') metadata(i+6:i+15)
-             write(io,*)
-
-             exit
-
-           endif
-         enddo
-    
-         do i=1,126
-           if(metadata(i:i+4) == '#TIME') then
-             write(io,'("Rede.Time",21x,a8)') metadata(i+6:i+14)
-             write(io,*)
-
-             exit
-
-           endif
-         enddo
-
-         write(io,'("Rede.Name",21x,140a1)')                             &
-     &                   (metadata(i:i),i=istart,iend)
-         write(io,*)
-
-         write(io,'("SystemLabel",19x,140a1)')                           &
-     &                   (metadata(i:i),i=istart,iend)
-         write(io,*)
-
-       else
-
-         write(io,*)
-         write(io,'("SystemLabel",19x,20a1)')                            &
-     &                   (meta_pwdat(i:i),i=1,20)
-         write(io,*)
-       endif
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Crystal structure")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-       write(io,'("LatticeConstant",10x,f16.8,5x,"bohr")') alatt
-       write(io,*)
-       
-       call adot_to_avec_sym(adot,avec,bvec)
-
-       write(io,'("%block LatticeVectors")')
-       write(io,'(3(3x,f16.8))') avec(1,1)/alatt,avec(2,1)/alatt,        &
-     &                           avec(3,1)/alatt
-       write(io,'(3(3x,f16.8))') avec(1,2)/alatt,avec(2,2)/alatt,        &
-     &                           avec(3,2)/alatt
-       write(io,'(3(3x,f16.8))') avec(1,3)/alatt,avec(2,3)/alatt,         &
-     &                           avec(3,3)/alatt
-       write(io,'("%endblock LatticeVectors")')
-       write(io,*)
-
-!      Finds total number of atoms
-
-       nat = 0
-       do i=1,ntype
-         nat = nat + natom(i)
-       enddo
-
-       write(io,'("NumberOfSpecies",9x,i8)') ntype
-       write(io,*)
-       
-       write(io,'("NumberOfAtoms",9x,i8)') nat
-       write(io,*)
-       
-       write(io,'("%block Chemical_Species_Label")')
-       do i = 1,ntype
-         call p_tbl_charge(nameat(i),n)
-         write(io,'(i6,3x,i5,3x,a2)') i,n,nameat(i)
-       enddo
-       write(io,'("%endblock Chemical_Species_Label")')
-       write(io,*)
-       
-       write(io,'("AtomicCoordinatesFormat",5x,"Fractional")')
-       write(io,*)
-       
-       
-       write(io,'("%block AtomicCoordinatesAndAtomicSpecies")')
-       
-       do nt = 1,ntype
-       do i = 1,natom(nt)
-          write(io,'(3x,3f16.8,4x,i5,5x,"#  ",a2,3x,i5)')                 &
-     &          (rat(j,i,nt),j=1,3),nt,nameat(nt),i
-       enddo
-       enddo
-       write(io,'("%endblock AtomicCoordinatesAndAtomicSpecies")')
-       write(io,*)
-
-       write(io,'("StructureSource",15x,"cpw2000")')
-       write(io,*)
-
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Energy cutoff, bands,  and Brillouin mesh")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("PWEnergyCutoff",13x,f12.4,6x,"hartree")')  emax
-       write(io,*)
-
-       write(io,'("NumberOfEigenStates",12x,i8)') nbandin
-       write(io,*)
-
-       write(io,'("%block kgrid_Monkhorst_Pack")')
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  nx,0,0,sx
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  0,ny,0,sy
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  0,0,nz,sz
-       write(io,'("%endblock kgrid_Monkhorst_Pack")')
-       write(io,*)
-      
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Active options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("MD.TypeOfRun                  ONE           ",        &
-     &      "# ONE,EPILBF,MICRO,LANG,LBFSYM,VCSLNG,VCSLBF,RSTRT")')
-       write(io,*)
-
-       write(io,'("UseSymmetry                   .true.        ",        &
-     &      "# .true. , .false. ")')
-       write(io,*)
-
-       if(lkeat) then
-         write(io,'("MD.UseKeatingCorrections      .true.        ",      &
-     &      "# .true. , .false. ")')
-       else
-         write(io,'("MD.UseKeatingCorrections      .false.       ",      &
-     &      "# .true. , .false. ")')
-       endif
-       write(io,*)
-
-       write(io,'("MD.UseFixedkplusG             .true.        ",        &
-     &      "# .true. , .false. ")')
-       write(io,*)
-
-
-       write(io,'("TypeOfScfDiag                 PW            ",        &
-     &      "# PW,AO,AOJC,AOJCPW")')
-       write(io,*)
-
-       write(io,'("DualApproximation             .true.         ",       &
-     &      "#  .true. , .false.")')
-       write(io,*)
-
-       if(ltbl) then
-         write(io,'("XC.Authors                    TBL            ",     &
-     &      "# CA, PBE, TBL")')
-       else
-         write(io,'("XC.Authors                    CA             ",     &
-     &      "# CA, PBE, TBL")')
-       endif
-       write(io,*)
-
-       write(io,'("Xc.TBL.C                      1.04            #",     &
-     &      " sets Tran-Blaha constant (if negative use calculated)")')
-       write(io,*)
-
-       write(io,'("PrintingLevel                 2              ",       &
-     &      "# 1, 2, 3")')
-       write(io,*)
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# MD Inactive options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("#MD.InitialTemperature        300 K           #")')
-       write(io,'("#MD.TargetTemperature         300 K           #")')
-       write(io,'("#MD.TargetPressure            0 GPa           #")')
-       write(io,*)
-       write(io,'("#MD.NumberOfSteps             10              #")')
-       write(io,'("#MD.LengthTimeStep            2.4 fs          #")')
-       write(io,'("#MD.FrictionFracInvTimeStep   20.0            #")')
-       write(io,*)
-       write(io,'("#MD.CG.Tolerance         0.0001 ''har/bohr''  #")')
-       write(io,'("#MD.CG.StepMax                0.01 bohr       #")')
-       write(io,'("#MD.CG.FixedkplusGTol    0.01 ''har/bohr''    #")')
-       write(io,*)
-       write(io,'("#%block MD.TargetStress                       #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("#%endblock   MD.TargetStress                  #")')
-       write(io,*)
-       write(io,'("#MD.CellMass                  10.0            #")')
-       write(io,'("#MD.Seed                      76978           #")')
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Electronic Structure Inactive options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("#MaxSCFIterations             20              #")')
-       write(io,*)
-       write(io,'("#MaxSCFIterations             20              #")')
-       write(io,'("#TypeOfPseudoMixing           BROYD1          #",     &
-     &      " BROYD1, BFGS#")')
-       write(io,*)
-       write(io,'("#ElectronicTemperature        1000 K          #")')
-       write(io,'("#TypeOfPseudopotential        PSEUKB          #",     &
-     &      " PSEUKB")')
-       write(io,*)
-       write(io,'("#ScfTolerance                 0.00005         #")')
-       write(io,'("#DiagTolerance                0.0001          #")')
-       write(io,'("#SymmTolerance                1.0E-5          #")')
-
-       close(unit = io)
-
-       return
-
-       end subroutine write_cpwout
+  if(ioerr == 0) then
+
+    write(io,*)
+    write(io,'("#------------------------------------------------")')
+    write(io,'("# Rede metadata")')
+    write(io,'("#------------------------------------------------")')
+    write(io,*)
+
+    write(io,'("%block Rede.Superlattice")')
+    write(io,'(12x,3i6)') (isl1(i),i=1,3)
+    write(io,'(12x,3i6)') (isl2(i),i=1,3)
+    write(io,'(12x,3i6)') (isl3(i),i=1,3)
+    write(io,'("%endblock Rede.Superlattice")')
+    write(io,*)
+
+    write(io,'("Rede.NumberOfLatticePlanes",3x,i6)') nlatpl
+    write(io,*)
+
+    write(io,'("Rede.Version",18x,a3)') vers
+    write(io,*)
+
+    write(io,'("Rede.Title",10x,a50)') title
+    write(io,*)
+
+    istart = 1
+    do i=1,135
+      if(metadata(i:i+4) == '#NAME') then
+        istart = i+6
+
+        exit
+
+      endif
+    enddo
+
+    iend = 140
+    do i=1,125
+      if(metadata(i:i+4) == '#DATE') then
+        iend = i-1
+        write(io,'("Rede.Date",21x,a9)') metadata(i+6:i+15)
+        write(io,*)
+
+        exit
+
+      endif
+    enddo
+
+    do i=1,126
+      if(metadata(i:i+4) == '#TIME') then
+        write(io,'("Rede.Time",21x,a8)') metadata(i+6:i+14)
+        write(io,*)
+
+        exit
+
+      endif
+    enddo
+
+    write(io,'("Rede.Name",21x,140a1)') (metadata(i:i),i=istart,iend)
+    write(io,*)
+
+    write(io,'("SystemLabel",19x,140a1)') (metadata(i:i),i=istart,iend)
+    write(io,*)
+
+  else
+
+    write(io,*)
+    write(io,'("SystemLabel",19x,20a1)') (meta_pwdat(i:i),i=1,20)
+    write(io,*)
+  endif
+
+  write(io,*)
+  write(io,'("#------------------------------------------------")')
+  write(io,'("# Crystal structure")')
+  write(io,'("#------------------------------------------------")')
+  write(io,*)
+  write(io,'("LatticeConstant",10x,f16.8,5x,"bohr")') alatt
+  write(io,*)
+
+  call adot_to_avec_sym(adot,avec,bvec)
+
+  write(io,'("%block LatticeVectors")')
+  write(io,'(3(3x,f16.8))') avec(1,1)/alatt,avec(2,1)/alatt,avec(3,1)/alatt
+  write(io,'(3(3x,f16.8))') avec(1,2)/alatt,avec(2,2)/alatt,avec(3,2)/alatt
+  write(io,'(3(3x,f16.8))') avec(1,3)/alatt,avec(2,3)/alatt,avec(3,3)/alatt
+  write(io,'("%endblock LatticeVectors")')
+  write(io,*)
+
+! Finds total number of atoms
+
+  nat = 0
+  do i=1,ntype
+    nat = nat + natom(i)
+  enddo
+
+  write(io,'("NumberOfSpecies",9x,i8)') ntype
+  write(io,*)
+
+  write(io,'("NumberOfAtoms",9x,i8)') nat
+  write(io,*)
+
+  write(io,'("%block Chemical_Species_Label")')
+  do i = 1,ntype
+    call p_tbl_charge(nameat(i),n)
+    write(io,'(i6,3x,i5,3x,a2)') i,n,nameat(i)
+  enddo
+  write(io,'("%endblock Chemical_Species_Label")')
+  write(io,*)
+
+  write(io,'("AtomicCoordinatesFormat",5x,"Fractional")')
+  write(io,*)
+
+
+  write(io,'("%block AtomicCoordinatesAndAtomicSpecies")')
+
+  do nt = 1,ntype
+  do i = 1,natom(nt)
+     write(io,'(3x,3f16.8,4x,i5,5x,"#  ",a2,3x,i5)')                     &
+           (rat(j,i,nt),j=1,3),nt,nameat(nt),i
+  enddo
+  enddo
+  write(io,'("%endblock AtomicCoordinatesAndAtomicSpecies")')
+  write(io,*)
+
+  write(io,'("StructureSource",15x,"cpw2000")')
+  write(io,*)
+
+  write(io,'("#------------------------------------------------")')
+  write(io,'("# Energy cutoff, bands,  and Brillouin mesh")')
+  write(io,'("#------------------------------------------------")')
+  write(io,*)
+
+  write(io,'("PWEnergyCutoff",13x,f12.4,6x,"hartree")')  emax
+  write(io,*)
+
+  write(io,'("NumberOfEigenStates",12x,i8)') nbandin
+  write(io,*)
+
+  write(io,'("%block kgrid_Monkhorst_Pack")')
+  write(io,'(8x,3(2x,i6),3x,f12.6)')  nx,0,0,sx
+  write(io,'(8x,3(2x,i6),3x,f12.6)')  0,ny,0,sy
+  write(io,'(8x,3(2x,i6),3x,f12.6)')  0,0,nz,sz
+  write(io,'("%endblock kgrid_Monkhorst_Pack")')
+  write(io,*)
+
+
+  write(io,*)
+  write(io,'("#------------------------------------------------")')
+  write(io,'("# Active options")')
+  write(io,'("#------------------------------------------------")')
+  write(io,*)
+
+  write(io,'("MD.TypeOfRun                  ONE           ",             &
+       "# ONE,EPILBF,MICRO,LANG,LBFSYM,VCSLNG,VCSLBF,RSTRT")')
+  write(io,*)
+
+  write(io,'("UseSymmetry                   .true.        ",             &
+       "# .true. , .false. ")')
+  write(io,*)
+
+  if(lkeat) then
+    write(io,'("MD.UseKeatingCorrections      .true.        ",           &
+       "# .true. , .false. ")')
+  else
+    write(io,'("MD.UseKeatingCorrections      .false.       ",           &
+       "# .true. , .false. ")')
+  endif
+  write(io,*)
+
+  write(io,'("MD.UseFixedkplusG             .true.        ",             &
+       "# .true. , .false. ")')
+  write(io,*)
+
+
+  write(io,'("TypeOfScfDiag                 PW            ",             &
+       "# PW,AO,AOJC,AOJCPW")')
+  write(io,*)
+
+  write(io,'("DualApproximation             .true.         ",            &
+       "#  .true. , .false.")')
+  write(io,*)
+
+  if(ltbl) then
+    write(io,'("XC.Authors                    TBL            ",          &
+       "# CA, PBE, TBL")')
+  else
+    write(io,'("XC.Authors                    CA             ",          &
+       "# CA, PBE, TBL")')
+  endif
+  write(io,*)
+
+  write(io,'("Xc.TBL.C                      1.04            #",          &
+       " sets Tran-Blaha constant (if negative use calculated)")')
+  write(io,*)
+
+  write(io,'("PrintingLevel                 2              # 1, 2, 3")')
+  write(io,*)
+
+  write(io,*)
+  write(io,'("#------------------------------------------------")')
+  write(io,'("# MD Inactive options")')
+  write(io,'("#------------------------------------------------")')
+  write(io,*)
+
+  write(io,'("#MD.InitialTemperature        300 K           #")')
+  write(io,'("#MD.TargetTemperature         300 K           #")')
+  write(io,'("#MD.TargetPressure            0 GPa           #")')
+  write(io,*)
+  write(io,'("#MD.NumberOfSteps             10              #")')
+  write(io,'("#MD.LengthTimeStep            2.4 fs          #")')
+  write(io,'("#MD.FrictionFracInvTimeStep   20.0            #")')
+  write(io,*)
+  write(io,'("#MD.CG.Tolerance         0.0001 ''har/bohr''  #")')
+  write(io,'("#MD.CG.StepMax                0.01 bohr       #")')
+  write(io,'("#MD.CG.FixedkplusGTol    0.01 ''har/bohr''    #")')
+  write(io,*)
+  write(io,'("#%block MD.TargetStress                       #")')
+  write(io,'("   0.0 0.0 0.0                                #")')
+  write(io,'("   0.0 0.0 0.0                                #")')
+  write(io,'("   0.0 0.0 0.0                                #")')
+  write(io,'("#%endblock   MD.TargetStress                  #")')
+  write(io,*)
+  write(io,'("#MD.CellMass                  10.0            #")')
+  write(io,'("#MD.Seed                      76978           #")')
+
+  write(io,*)
+  write(io,'("#------------------------------------------------")')
+  write(io,'("# Electronic Structure Inactive options")')
+  write(io,'("#------------------------------------------------")')
+  write(io,*)
+
+  write(io,'("#MaxSCFIterations             20              #")')
+  write(io,*)
+  write(io,'("#MaxSCFIterations             20              #")')
+  write(io,'("#TypeOfPseudoMixing           BROYD1          #",          &
+       " BROYD1, BFGS#")')
+  write(io,*)
+  write(io,'("#ElectronicTemperature        1000 K          #")')
+  write(io,'("#TypeOfPseudopotential        PSEUKB          #",          &
+       " PSEUKB")')
+  write(io,*)
+  write(io,'("#ScfTolerance                 0.00005         #")')
+  write(io,'("#DiagTolerance                0.0001          #")')
+  write(io,'("#SymmTolerance                1.0E-5          #")')
+
+  close(unit = io)
+
+  return
+
+end subroutine write_cpwout
 

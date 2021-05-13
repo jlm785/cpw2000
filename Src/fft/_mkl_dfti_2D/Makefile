@@ -21,6 +21,6 @@ mkl_handle.o:  mkl_handle.f90 mkl_dfti.o
 	$(F77) -c $(FCOPTS)  -I mkl_dfti.h $<
 
 clean:
-	rm -f *.o *.mod
+	rm -f *.o *.mod *genmod*
 
 .PHONY:   clean libadd
