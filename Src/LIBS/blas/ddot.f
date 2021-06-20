@@ -1,48 +1,148 @@
-      REAL*8 FUNCTION DDOT(N,SX,INCX,SY,INCY)
-C
-C     FORMS THE DOT PRODUCT OF TWO VECTORS.
-C     USES UNROLLED LOOPS FOR INCREMENTS EQUAL TO ONE.
-C     JACK DONGARRA, LINPACK, 3/11/78.
-C
-      REAL*8 SX(1),SY(1),TEMP
-      INTEGER I,INCX,INCY,IX,IY,M,MP1,N
-C
-      DDOT = 0.0D0
-      TEMP = 0.0D0
-      IF(N.LE.0)RETURN
-      IF(INCX.EQ.1.AND.INCY.EQ.1)GO TO 20
-C
-C        CODE FOR UNEQUAL INCREMENTS OR EQUAL INCREMENTS
-C          NOT EQUAL TO 1
-C
-      IX = 1
-      IY = 1
-      IF(INCX.LT.0)IX = (-N+1)*INCX + 1
-      IF(INCY.LT.0)IY = (-N+1)*INCY + 1
-      DO 10 I = 1,N
-        TEMP = TEMP + SX(IX)*SY(IY)
-        IX = IX + INCX
-        IY = IY + INCY
-   10 CONTINUE
-      DDOT = TEMP
-      RETURN
-C
-C        CODE FOR BOTH INCREMENTS EQUAL TO 1
-C
-C
-C        CLEAN-UP LOOP
-C
-   20 M = MOD(N,5)
-      IF( M .EQ. 0 ) GO TO 40
-      DO 30 I = 1,M
-        TEMP = TEMP + SX(I)*SY(I)
-   30 CONTINUE
-      IF( N .LT. 5 ) GO TO 60
-   40 MP1 = M + 1
-      DO 50 I = MP1,N,5
-        TEMP = TEMP + SX(I)*SY(I) + SX(I + 1)*SY(I + 1) +
-     *   SX(I + 2)*SY(I + 2) + SX(I + 3)*SY(I + 3) + SX(I + 4)*SY(I + 4)
-   50 CONTINUE
-   60 DDOT = TEMP
+*> \brief \b DDOT
+*
+*  =========== DOCUMENTATION ===========
+*
+* Online html documentation available at
+*            http://www.netlib.org/lapack/explore-html/
+*
+*  Definition:
+*  ===========
+*
+*       DOUBLE PRECISION FUNCTION DDOT(N,DX,INCX,DY,INCY)
+*
+*       .. Scalar Arguments ..
+*       INTEGER INCX,INCY,N
+*       ..
+*       .. Array Arguments ..
+*       DOUBLE PRECISION DX(*),DY(*)
+*       ..
+*
+*
+*> \par Purpose:
+*  =============
+*>
+*> \verbatim
+*>
+*>    DDOT forms the dot product of two vectors.
+*>    uses unrolled loops for increments equal to one.
+*> \endverbatim
+*
+*  Arguments:
+*  ==========
+*
+*> \param[in] N
+*> \verbatim
+*>          N is INTEGER
+*>         number of elements in input vector(s)
+*> \endverbatim
+*>
+*> \param[in] DX
+*> \verbatim
+*>          DX is DOUBLE PRECISION array, dimension ( 1 + ( N - 1 )*abs( INCX ) )
+*> \endverbatim
+*>
+*> \param[in] INCX
+*> \verbatim
+*>          INCX is INTEGER
+*>         storage spacing between elements of DX
+*> \endverbatim
+*>
+*> \param[in] DY
+*> \verbatim
+*>          DY is DOUBLE PRECISION array, dimension ( 1 + ( N - 1 )*abs( INCY ) )
+*> \endverbatim
+*>
+*> \param[in] INCY
+*> \verbatim
+*>          INCY is INTEGER
+*>         storage spacing between elements of DY
+*> \endverbatim
+*
+*  Authors:
+*  ========
+*
+*> \author Univ. of Tennessee
+*> \author Univ. of California Berkeley
+*> \author Univ. of Colorado Denver
+*> \author NAG Ltd.
+*
+*> \date November 2017
+*
+*> \ingroup double_blas_level1
+*
+*> \par Further Details:
+*  =====================
+*>
+*> \verbatim
+*>
+*>     jack dongarra, linpack, 3/11/78.
+*>     modified 12/3/93, array(1) declarations changed to array(*)
+*> \endverbatim
+*>
+*  =====================================================================
+      DOUBLE PRECISION FUNCTION DDOT(N,DX,INCX,DY,INCY)
+*
+*  -- Reference BLAS level1 routine (version 3.8.0) --
+*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    --
+*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+*     November 2017
+*
+*     .. Scalar Arguments ..
+      INTEGER INCX,INCY,N
+*     ..
+*     .. Array Arguments ..
+      DOUBLE PRECISION DX(*),DY(*)
+*     ..
+*
+*  =====================================================================
+*
+*     .. Local Scalars ..
+      DOUBLE PRECISION DTEMP
+      INTEGER I,IX,IY,M,MP1
+*     ..
+*     .. Intrinsic Functions ..
+      INTRINSIC MOD
+*     ..
+      DDOT = 0.0d0
+      DTEMP = 0.0d0
+      IF (N.LE.0) RETURN
+      IF (INCX.EQ.1 .AND. INCY.EQ.1) THEN
+*
+*        code for both increments equal to 1
+*
+*
+*        clean-up loop
+*
+         M = MOD(N,5)
+         IF (M.NE.0) THEN
+            DO I = 1,M
+               DTEMP = DTEMP + DX(I)*DY(I)
+            END DO
+            IF (N.LT.5) THEN
+               DDOT=DTEMP
+            RETURN
+            END IF
+         END IF
+         MP1 = M + 1
+         DO I = MP1,N,5
+          DTEMP = DTEMP + DX(I)*DY(I) + DX(I+1)*DY(I+1) +
+     $            DX(I+2)*DY(I+2) + DX(I+3)*DY(I+3) + DX(I+4)*DY(I+4)
+         END DO
+      ELSE
+*
+*        code for unequal increments or equal increments
+*          not equal to 1
+*
+         IX = 1
+         IY = 1
+         IF (INCX.LT.0) IX = (-N+1)*INCX + 1
+         IF (INCY.LT.0) IY = (-N+1)*INCY + 1
+         DO I = 1,N
+            DTEMP = DTEMP + DX(IX)*DY(IY)
+            IX = IX + INCX
+            IY = IY + INCY
+         END DO
+      END IF
+      DDOT = DTEMP
       RETURN
       END
