@@ -109,7 +109,7 @@ subroutine hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                    &
   if(mxdwrk > mxdscr) then
     write(6,*)
     write(6,'("   STOPPED in hk_psi_c16.  mxdwrk = ",i8,                 &
-           " is greater than mxdscr = ",2i8)') mxdwrk, mxdscr, ng
+           &  " is greater than mxdscr = ",2i8)') mxdwrk, mxdscr, ng
 
     stop
 

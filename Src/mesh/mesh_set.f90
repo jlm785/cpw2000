@@ -90,7 +90,7 @@
   if(mxdfft > mxdscr) then
     write(6,*)
     write(6,'("   STOPPED in mesh_set.  mxdfft = ",i8,                   &
-           " is greater than mxdscr = ",i8)') mxdfft, mxdscr
+          & " is greater than mxdscr = ",i8)') mxdfft, mxdscr
     write(6,*) purpose
 
     stop

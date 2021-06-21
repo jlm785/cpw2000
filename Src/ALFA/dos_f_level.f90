@@ -160,7 +160,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 
   endif
 
-  del = max(ehist(nvbm+1)-ehist(nvbm),ehist(nvbm)-ehist(nvbm-1),    &
+  del = max(ehist(nvbm+1)-ehist(nvbm),ehist(nvbm)-ehist(nvbm-1),        &
             ehist(ncbm+1)-ehist(ncbm),ehist(ncbm)-ehist(ncbm-1) )
 
 ! checks if the the calculation is reasonably accurate
@@ -168,8 +168,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   if(tau < 2*del) then
 
     write(6,*)
-    write(6,'("  The energy mesh is too coarse for such low ",      &
-        " temperature")')
+    write(6,'("  The energy mesh is too coarse for such low temperature")')
     write(6,*)
 
     return
@@ -179,18 +178,17 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   if(tau < 6*del) then
 
     write(6,*)
-    write(6,'("  The energy mesh is too coarse for such low ",      &
-        " temperature")')
+    write(6,'("  The energy mesh is too coarse for such low temperature")')
     write(6,'("  The accuracy of calculated values will be low")')
 
   endif
 
-  if(tau > (ehist(nhist) - ehist(ncbm))/5 .or.                     &
+  if(tau > (ehist(nhist) - ehist(ncbm))/5 .or.                           &
      tau > (ehist(nvbm) - ehist(1))/5 ) then
 
     write(6,*)
-    write(6,'("  The energy mesh range is too small for such ",     &
-        "high temperature")')
+    write(6,'("  The energy mesh range is too small for such ",          &
+        & "high temperature")')
     write(6,'("  The accuracy of calculated values will be low")')
     write(6,*)
 
@@ -210,7 +208,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
     xl = ehist(n)
     m = n
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xl,nvbm,ncbm,     &
+    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xl,nvbm,ncbm,           &
                                  nhist,ehist,dhist)
 
     if(xp > xn) exit
@@ -220,7 +218,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   do n = m,nhist
     xh = ehist(n)
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xh,nvbm,ncbm,     &
+    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xh,nvbm,ncbm,          &
                                   nhist,ehist,dhist)
 
     if(xp < xn) exit
@@ -231,14 +229,14 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   dx = abs(xh - xl) / 2
   dxold = dx
 
-  call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,       &
+  call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,            &
                                   nhist,ehist,dhist)
   f = xn - xp
   df = dxndef - dxpdef
 
   do n = 1,maxit
     m = n
-    if(((ef - xh)*df - f)*((ef - xl)*df - f) > ZERO .or.            &
+    if(((ef - xh)*df - f)*((ef - xl)*df - f) > ZERO .or.                 &
           abs(2*f) > abs(dxold*df)) then
 
 !     bisection
@@ -264,7 +262,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 
     if (abs(dx) < EPS*EPS) exit
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,     &
+    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,          &
                                   nhist,ehist,dhist)
     f = xn - xp
     df = dxndef - dxpdef
@@ -303,31 +301,28 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   write(6,*)
   write(6,'("  The Fermi level is at ",f10.3," eV")') ef*HARTREE
   write(6,*)
-  write(6,'("  It is ",f10.3," eV  above VBM")')                    &
-                           (ef-ehist(nvbm))*HARTREE
-  write(6,'("  and ",f10.3," eV  below CBM")')                      &
-                           (ehist(ncbm)-ef)*HARTREE
+  write(6,'("  It is ",f10.3," eV  above VBM")') (ef-ehist(nvbm))*HARTREE
+  write(6,'("  and ",f10.3," eV  below CBM")') (ehist(ncbm)-ef)*HARTREE
   write(6,*)
   if(del > 0.001) then
-     write(6,'("  The accuracy of those values is ",f10.3," eV")')  &
-            del
+     write(6,'("  The accuracy of those values is ",f10.3," eV")') del
     write(6,*)
   endif
-  write(6,'("  The band gap is between ",f10.3," and ",f10.3,       &
-          " eV")')  (ehist(ncbm)-ehist(nvbm))*HARTREE,              &
+  write(6,'("  The band gap is between ",f10.3," and ",f10.3, " eV")')   &
+           (ehist(ncbm)-ehist(nvbm))*HARTREE,                            &
            (ehist(ncbm+1)-ehist(nvbm-1))*HARTREE
   write(6,*)
   write(6,*)
-  write(6,'("  The intrinsic carrier concentration is ",e12.3,      &
-           " per unit cell")') xn
+  write(6,'("  The intrinsic carrier concentration is ",e12.3,           &
+           & " per unit cell")') xn
   write(6,*)
-  write(6,'("  The intrinsic carrier concentration is ",e12.3,      &
-           " per cubic centimeter")')                               &
+  write(6,'("  The intrinsic carrier concentration is ",e12.3,           &
+           & " per cubic centimeter")')                                  &
           1.0E24 * xn / (vcell*BOHR*BOHR*BOHR)
   write(6,*)
-  write(6,'("  The DOS effective mass is ",f10.3," for the ",       &
-    "valence band and ",f10.3," for the conduction band")')         &
-    xmdosv,xmdosc
+  write(6,'("  The DOS effective mass is ",f10.3," for the ",            &
+       & "valence band and ",f10.3," for the conduction band")')         &
+       xmdosv,xmdosc
   write(6,*)
   write(6,*)
 

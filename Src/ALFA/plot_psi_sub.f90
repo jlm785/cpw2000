@@ -339,7 +339,7 @@ subroutine plot_psi_sub(ioreplay)
     write(6,*) '  enter number of bands'
     write(6,*)
     write(6,'("   if the number is zero or negative exits  the ",        &
-              " wave-function plot")')
+              & " wave-function plot")')
     write(6,*)
     write(6,'("   the number of electrons is: ",i5)') nint(pseudo_%ztot)
     write(6,'("   in doubt enter: ",i5)') nint(pseudo_%ztot)/2 + 10

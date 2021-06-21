@@ -321,7 +321,7 @@ subroutine dos_sub(ioreplay)
 
   write(6,*)
   write(6,'("  The new reference energy (new zero) for the ",            &
-      "density of states is at",f10.3," eV")') ezero*HARTREE
+      & "density of states is at",f10.3," eV")') ezero*HARTREE
   write(6,'("  with respect to the average potential")')
   write(6,*)
 
@@ -503,7 +503,7 @@ subroutine dos_sub(ioreplay)
     do i=1,100
       write(6,*)
       write(6,'("  Enter desired temperature (in K) for carrier ",  &
-        " concentration and Fermi level. (Negative exits)")')
+        & " concentration and Fermi level. (Negative exits)")')
       read(5,*) tempk
       write(ioreplay,*) tempk,'   temperature (K)'
 

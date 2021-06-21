@@ -228,7 +228,7 @@ subroutine sym_identify(isym, ipr, tol,                                  &
       enddo
 
       write(6,'("  WARNING         ",i5," atoms of type ",i3,            &
-         "are considered different to fix superlattice bug")')           &
+        & "are considered different to fix superlattice bug")')          &
                  nsup,isup
 
       call sym_space_group(ntrans, mtrx, tnp, tol,                       &
@@ -256,7 +256,7 @@ subroutine sym_identify(isym, ipr, tol,                                  &
     write(6,*)
     write(6,*)
     write(6,'(4x,"rotation matrices and fractional",                     &
-        " translations in lattice coordinates")')
+        & " translations in lattice coordinates")')
     write(6,*)
     do n=1,ntrans
       write(6,'(i5,3(3x,3i3),4x,3f17.10,"    symmetry op.")')            &
@@ -309,8 +309,7 @@ subroutine sym_identify(isym, ipr, tol,                                  &
   if(ipr > 1) then
     write(6,*)
     write(6,*)  '  The atomic positions were symmetrized'
-    write(6,'("   The maximum value of the correction was",              &
-            f18.8)')  difmax
+    write(6,'("   The maximum value of the correction was",f18.8)') difmax
     write(6,*)
   endif
 

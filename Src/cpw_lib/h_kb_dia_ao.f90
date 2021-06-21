@@ -192,7 +192,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 
   if(neig > nbasorb) then
     write(6,'("   STOPPED in h_kb_dia_ao   number of orbitals ",         &
-     "is smaller than number of eigenvectors",2i8)') nbasorb,neig
+      & "is smaller than number of eigenvectors",2i8)') nbasorb,neig
 
     stop
 

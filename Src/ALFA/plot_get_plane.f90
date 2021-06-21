@@ -99,12 +99,12 @@ subroutine plot_get_plane(ioreplay, adot,                                &
     write(6,*)
     write(6,*) '   The primitive lattice vectors are: '
     write(6,*)
-    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",       &
-        f8.4,")")') avec(1,1),avec(1,2),avec(1,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",      &
-        f8.4,")")') avec(2,1),avec(2,2),avec(2,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",      &
-        f8.4,")")') avec(3,1),avec(3,2),avec(3,3)
+    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",f8.4,")")')   &
+        avec(1,1),avec(1,2),avec(1,3)
+     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
+        avec(2,1),avec(2,2),avec(2,3)
+     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
+        avec(3,1),avec(3,2),avec(3,3)
      write(6,*)
 
   elseif(icoor == 2) then
@@ -120,12 +120,12 @@ subroutine plot_get_plane(ioreplay, adot,                                &
     write(6,*)
     write(6,*) '   The conventional lattice vectors are: '
     write(6,*)
-    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",       &
-        f8.4,")")') aconv(1,1),aconv(1,2),aconv(1,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",      &
-        f8.4,")")') aconv(2,1),aconv(2,2),aconv(2,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",      &
-        f8.4,")")') aconv(3,1),aconv(3,2),aconv(3,3)
+    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",f8.4,")")')   &
+         aconv(1,1),aconv(1,2),aconv(1,3)
+     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
+         aconv(2,1),aconv(2,2),aconv(2,3)
+     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
+         aconv(3,1),aconv(3,2),aconv(3,3)
      write(6,*)
 
   endif

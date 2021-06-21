@@ -111,7 +111,7 @@ subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
 !   commands
 
     write(io,'("set terminal wxt size ",g12.3,",",g12.3,            &
-        " enhanced")') 800*xscl,800*yscl
+        & " enhanced")') 800*xscl,800*yscl
     write(io,*)
     write(io,*) 'set noparam'
     write(io,*) 'set contour base'
@@ -124,7 +124,7 @@ subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
     write(io,*) 'set nosurface'
     write(io,*) 'set view 0,0'
     write(io,'("set cntrparam levels incremental",e10.3," ,  ",     &
-         e10.3," , ",e10.3)') zmin,zincr,zmax
+         & e10.3," , ",e10.3)') zmin,zincr,zmax
     write(io,*)  "splot '-' w lines notitle; pause -1 "
 
     write(io,'("#  mesh size is:",2i5)') nx,ny
@@ -186,7 +186,7 @@ subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
     write(io,*) 'set nosurface'
     write(io,*) 'set view 0,0'
     write(io,'("set cntrparam levels incremental",e10.3," ,  ",     &
-         e10.3," , ",e10.3)') zmin,zincr,zmax
+         & e10.3," , ",e10.3)') zmin,zincr,zmax
     write(io,*)  "splot '-' w lines notitle "
 
     write(io,'("#  mesh size is:",2i5)') nx,ny

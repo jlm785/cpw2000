@@ -86,7 +86,7 @@ subroutine voronoi_neighb_print(adot, ntype, natom, nameat, rat,         &
       enddo
       write(io,*)
       write(io,'(8x,a2," atom at ",3f10.3," has ",i2," + ",i2,           &
-              " neighbors")') nameat(nt),(rcar(j),j=1,3),                &
+             & " neighbors")') nameat(nt),(rcar(j),j=1,3),               &
                          nclose, nneighb(ja,nt)-nclose
       write(io,*)
       write(io,'(8x,"Element",4x,"Distance",4x,"Bond strength",20x,"Direction")')

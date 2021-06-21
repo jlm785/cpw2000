@@ -558,11 +558,11 @@ subroutine opt_rad_sub(ioreplay)
     write(6,*)
     write(6,'("  Estimate of recombination coefficient B = ",f12.6," au")') bcoef
     write(6,'("  Estimate of recombination coefficient B = ",e11.3,               &
-               " m^3 / s  (SI)")') bcoef*BOHR*BOHR*BOHR/AUT
+              & " m^3 / s  (SI)")') bcoef*BOHR*BOHR*BOHR/AUT
     write(6,*)
     write(6,*)
     write(6,'("  Estimate of recombination coefficient B = ",e11.3,               &
-               " cm^3 / s  (cgs)")') 1.0E+6*bcoef*BOHR*BOHR*BOHR/AUT
+              & " cm^3 / s  (cgs)")') 1.0E+6*bcoef*BOHR*BOHR*BOHR/AUT
     write(6,*)
     write(6,*)
 
@@ -605,7 +605,7 @@ subroutine opt_rad_sub(ioreplay)
   xni = sqrt(xnp*exp(-egap/tau))
   xnisi = xni/(BOHR**3)
   write(6,'("  intrinsic carrier concentration ",e12.3," au",5x,e12.3," SI",5x,e12.3,         &
-                 " per cubic cm" )') xni, xnisi, 1.0E-6*xnisi
+               &  " per cubic cm" )') xni, xnisi, 1.0E-6*xnisi
   write(6,*)
 
   write(6,'("  radiative recombination rate  ",e12.3," au")') rsint

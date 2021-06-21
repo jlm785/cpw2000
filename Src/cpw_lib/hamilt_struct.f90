@@ -134,7 +134,7 @@
        endif
 
        if(mtxd > mxddim) then
-         mtry = mxddim * (emax / ekin(irow(mxddim)))**1.5
+         mtry = nint(mxddim * (emax / ekin(irow(mxddim)))**1.5)
          write(6,'("   STOPPED in hamilt_struct:    Try to increase",    &
      &      " mxddim to about",i8)') mtry
      

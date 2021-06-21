@@ -95,7 +95,7 @@ subroutine cpw_pp_band_prepare(ioreplay,                                 &
 
   write(6,*)
   write(6,'("  The original calculation used a maximum energy",          &
-     " PW cutoff of",f10.3," Hartree")') emaxin
+     & " PW cutoff of",f10.3," Hartree")') emaxin
   write(6,*) '  Enter maximum energy in Hartree '
   read(5,*) pwexp_%emax
   write(ioreplay,*) pwexp_%emax,'   emax'

@@ -128,7 +128,7 @@ subroutine proj_nl_kb_der_c16(rkpt, mtxd, isort, nanl, nder,             &
 
   if(nder < 0 .OR. nder > 2) then
     write(6,'("  proj_nl_kb_der_c16:    cannot calculate",               &
-             " derivatives up to ",i4)')  nder
+           &  " derivatives up to ",i4)')  nder
 
     stop
 
@@ -164,7 +164,7 @@ subroutine proj_nl_kb_der_c16(rkpt, mtxd, isort, nanl, nder,             &
   nanl = ind
   if(nanl > mxdanl) then
     write(6,'("  proj_nl_kb:    increase mxdanl from ",i8,               &
-             " to ",2i8)')  mxdanl, nanl, ng
+           &  " to ",2i8)')  mxdanl, nanl, ng
 
     stop
 
@@ -172,7 +172,7 @@ subroutine proj_nl_kb_der_c16(rkpt, mtxd, isort, nanl, nder,             &
 
   if(lmax > 3) then
     write(6,'("  proj_nl_kb:    lmax = ",i8,                            &
-             " > 3 (max allowed in code)")')  lmax
+           &  " > 3 (max allowed in code)")')  lmax
 
     stop
 

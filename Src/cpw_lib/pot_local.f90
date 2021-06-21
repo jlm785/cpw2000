@@ -106,7 +106,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
   if(mxdwrk > mxdscr) then
     write(6,*)
     write(6,'("   STOPPED in pot_local.  mxdwrk = ",i8,                  &
-           " is greater than mxdscr = ",i8)') mxdwrk,mxdscr
+          & " is greater than mxdscr = ",i8)') mxdwrk,mxdscr
 
     stop
 
@@ -163,12 +163,12 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
   if (ierr /= 0) then
     write(6,*)
     write(6,'("    WARNING in pot_local:  complex potential in",         &
-              i12," points, cmax = ",e12.4)') ierr,cmax
+           &  i12," points, cmax = ",e12.4)') ierr,cmax
   endif
   if (cmax > 1000.0*small) then
     write(6,*)
     write(6,'("    STOPPED in pot_local:   complex potential",           &
-             " density. cmax = ",e12.4)') cmax
+           &  " density. cmax = ",e12.4)') cmax
 
     stop
 

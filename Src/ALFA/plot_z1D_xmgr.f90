@@ -107,8 +107,7 @@
   write(io,'("@    title font 6 ")')
   if(nw == 0) then
   else
-    write(io,"('@   subtitle  ""Planar average and',i3,             &
-          ' z-averages"" ')") nw
+    write(io,"('@   subtitle  ""Planar average and',i3,' z-averages"" ')") nw
     write(io,'("@   subtitle font 6 ")')
   endif
 

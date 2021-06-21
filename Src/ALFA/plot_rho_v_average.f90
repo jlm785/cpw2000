@@ -136,7 +136,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
     write(6,*) 
     write(6,'("  Program will generate files for later plotting ",       &
-            "with gnuplot")')
+            & "with gnuplot")')
     write(6,'("  BEWARE: plots may hide below each other")') 
     write(6,*)
 
@@ -146,7 +146,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
     write(6,*) 
     write(6,'("  Program will generate files for later plotting ",       &
-            "with xmgrace")')
+            & "with xmgrace")')
     write(6,*)
 
   endif
@@ -414,23 +414,22 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   write(6,*) ' You have to choose both the number and'
   write(6,*) ' width of the square well averages'
   write(6,*)
-  write(6,'("  Width from number of planes: ",g14.6)')              &
-          height/nplane
+  write(6,'("  Width from number of planes: ",g14.6)') height/nplane
 
   write(6,*)
-  write(6,'(" Width from electron density autocorrelation: ",       &
-        g14.6)') ifirst*height/nn
+  write(6,'(" Width from electron density autocorrelation: ",g14.6)')    &
+         ifirst*height/nn
   write(6,*)
 
   do nt = 1,ntype
-    write(6,'(" Width from ",a2," atomic autocorrelation: ",        &
-        g14.6)') nameat(indx(nt)),ipeak(indx(nt))*height/nn
+    write(6,'(" Width from ",a2," atomic autocorrelation: ",g14.6)')     &
+         nameat(indx(nt)),ipeak(indx(nt))*height/nn
     write(6,*)
   enddo
   
   write(6,*)
-  write(6,'("  The defaults are ",i2," widths with values: ",       &
-      99f12.5)') nwidth,(width(j),j=1,nwidth)
+  write(6,'("  The defaults are ",i2," widths with values: ",99f12.5)')  &
+       nwidth,(width(j),j=1,nwidth)
   write(6,*)
   write(6,*) "  Do you want to accept the defaults? (y/n)"
   write(6,*)

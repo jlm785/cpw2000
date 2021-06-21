@@ -138,7 +138,7 @@ subroutine g_space(ipr, emax,                                            &
 
         write(6,*)
         write(6,'("    STOPPED in g_space with gmod = ",e10.3,           &
-                  "  and  mxdgve = ",i9)') gmod, mxdgve
+                & "  and  mxdgve = ",i9)') gmod, mxdgve
         write(6,'("    try  mxdgve of the order of ",i9)')               &
                     int(0.017*vcell*gmax*gmax*gmax)
 
@@ -160,7 +160,7 @@ subroutine g_space(ipr, emax,                                            &
 
     write(6,*)
     write(6,'("  STOPPED in g_space  gmax = ",e10.3,                      &
-              "  no. of g-vec.= ",i6)') gmax,ng
+            & "  no. of g-vec.= ",i6)') gmax,ng
 
     stop
 
@@ -308,7 +308,7 @@ subroutine g_space(ipr, emax,                                            &
 
         write(6,*)
         write(6,'("   STOPPED in g_space.  gmax**2 = ",e10.3,            &
-         "   mxdnst = ",i8)') gm(iprot),mxdnst
+           & "   mxdnst = ",i8)') gm(iprot),mxdnst
         write(6,'("   try mxdnst of order ",i8)') ng/ntrans
 
         stop
@@ -564,7 +564,7 @@ subroutine g_space(ipr, emax,                                            &
 
     write(6,*)
     write(6,'("   STOPPED in gspace  change mxdcub",                     &
-         " to at least  ",i9)') ktot
+         & " to at least  ",i9)') ktot
 
     stop
 
@@ -604,7 +604,7 @@ subroutine g_space(ipr, emax,                                            &
 
     write(6,*)
     write(6,'("  STOPPED in g_space. Number of G-vectors in stars ",i9,  &
-              "  inconsistent with total number ",i9)') ncount,ng
+            & "  inconsistent with total number ",i9)') ncount,ng
 
         stop
   endif
@@ -613,7 +613,7 @@ subroutine g_space(ipr, emax,                                            &
 
     write(6,*)
     write(6,'(1x,i8," G-vectors are set up in ",i7," stars,",            &
-              "  kmax = ",3i4)') ng,ns,(kmax(i),i=1,3)
+              & "  kmax = ",3i4)') ng,ns,(kmax(i),i=1,3)
 
     if (ipr > 1) then
 
@@ -626,7 +626,7 @@ subroutine g_space(ipr, emax,                                            &
       do i=1,ns
         write(6,*)
         write(6,'("  Star no",i8,"  with",i3," members.  Kinetic",       &
-          " energy = ",f12.4,4x,i3)') i,mstar(i),ek(i),izstar(i)
+            & " energy = ",f12.4,4x,i3)') i,mstar(i),ek(i),izstar(i)
         write(6,*)
         write(6,*)
         write(6,'("       i      inds     kx   ky   kz        phase")')

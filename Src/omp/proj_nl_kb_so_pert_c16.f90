@@ -159,7 +159,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   nanl = ind
   if(nanl > mxdanl) then
     write(6,'("  proj_nl_kb_so(1):    increase mxdanl from ",i8,         &
-             " to ",2i8)')  mxdanl, nanl, ng
+           &  " to ",2i8)')  mxdanl, nanl, ng
 
     stop
 
@@ -167,7 +167,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
   if(lmax > 3) then
     write(6,'("  proj_nl_kb_so:    lmax = ",i8,                          &
-             " > 3 (max allowed in code)")')  lmax
+           &  " > 3 (max allowed in code)")')  lmax
 
     stop
 
@@ -192,7 +192,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   nanlso = ind
   if(nanlso > mxdaso) then
     write(6,'("  proj_nl_kb_so:    increase mxdaso from ",i8,            &
-             " to ",i8)')  mxdaso,nanlso
+           &  " to ",i8)')  mxdaso,nanlso
 
     stop
 

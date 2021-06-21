@@ -160,7 +160,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
   do n2=1,ntrans
     if(ires(n1,n2) == 0) then
       write(6,'("    WARNING in sym_test, the product of ",              &
-         "operations ",2i5," is not in the list")') n1,n2
+        & "operations ",2i5," is not in the list")') n1,n2
       istatus = 1
 
       return
@@ -177,7 +177,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
     do n3=n2+1,ntrans
       if(ires(n1,n2) == ires(n1,n3)) then
         write(6,'("    WARNING in sym_test,  the product of ",           &
-           "operations ",2i5,"and ",2i5," is the same")') n1,n2,n1,n3
+          & "operations ",2i5,"and ",2i5," is the same")') n1,n2,n1,n3
         istatus = 2
 
         return
@@ -185,7 +185,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
       endif
       if(ires(n2,n1) == ires(n3,n1)) then
         write(6,'("    WARNING in sym_test,  the product of ",           &
-           "operations ",2i5,"and ",2i5," is the same")') n2,n1,n3,n1
+          & "operations ",2i5,"and ",2i5," is the same")') n2,n1,n3,n1
         istatus = 2
 
         return
@@ -230,7 +230,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
 
       if(jsucc == 0) then
         write(6,'("    WARNING in sym_test for operation ",i5,           &
-           "the",i4,"th atom of type",i5," has no match")') n1,j,i
+          & "the",i4,"th atom of type",i5," has no match")') n1,j,i
         istatus = 3
 
         return

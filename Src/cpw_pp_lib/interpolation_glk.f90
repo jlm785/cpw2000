@@ -199,7 +199,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
 
     if(neig_tot > mxdbnd*nrk_int) then
       write(6,'("   Stopped in interpolation_glk,  ",                    &
-              "neig_tot > mxdbnd*nrk_int: ",2i5)')                       &
+              & "neig_tot > mxdbnd*nrk_int: ",2i5)')                     &
               neig_tot, mxdbnd*nrk_int
 
       stop
@@ -234,7 +234,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
 
   if(info /= 0) then
     write(6,'("   Stopped in interpolation_glk:  ",                      &
-               "svd_c16 info = ",i5)') info
+              & "svd_c16 info = ",i5)') info
 
     stop
 
@@ -278,7 +278,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
 
   if(info /= 0) then
     write(6,'("   Stopped in interpolation_glk:  ",                      &
-               "diag_c16 info = ",i5)') info
+             &  "diag_c16 info = ",i5)') info
 
     stop
 

@@ -136,7 +136,7 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
     write(6,*)
     write(6,*)
     write(6,'("    i   k-prot",9x,"Ek",7x,"den",5x,"V(out)",             &
-            4x,"V(in)",5x,"delta V",3x,"Vionic")')
+            & 4x,"V(in)",5x,"delta V",3x,"Vionic")')
     write(6,*)
     write(6,'(1x,i4,1x,3i3,2x,3f10.5)') 1,(kgv(j,1),j=1,3),              &
                     ek(1),real(den(1)),real(vhxc(1))
@@ -283,13 +283,13 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
   if (abs(real(den(1),REAL64) - ztot) > eps) then
     write(6,*)
     write(6,'("     WARNING  total_ks_energy: non-neutral system",  &
-         " charge inbalance ",e12.4)') real(den(1)) - ztot
+         & " charge inbalance ",e12.4)') real(den(1)) - ztot
     write(6,*)
   endif
   if (abs(aimag(den(1))) > eps) then
     write(6,*)
     write(6,'("     WARNING  total_ks_energy: strange system ",     &
-         "complex charge ",e12.4)') abs(aimag(den(1)))
+         & "complex charge ",e12.4)') abs(aimag(den(1)))
     write(6,*)
   endif
 

@@ -233,7 +233,7 @@ subroutine read_esdf_crystal(ipr,                                        &
 
     if(vcell < EPSMALL) then
       write(6,'("    STOPPED in read_esdf_crystal.    Cell volume ",     &
-         "squared= ",e12.4)') vcell
+        & "squared= ",e12.4)') vcell
 
       stop
 
@@ -298,7 +298,7 @@ subroutine read_esdf_crystal(ipr,                                        &
       write(6,*)
       write(6,'("   Stopped in read_esdf_crystal:")')
       write(6,'("   The number of species ",i5," is larger than",        &
-         "  the allocated dimension",i5)') ntype,mxdtyp
+        & "  the allocated dimension",i5)') ntype,mxdtyp
 
       stop
 
@@ -394,7 +394,7 @@ subroutine read_esdf_crystal(ipr,                                        &
         write(6,*) '   WARNING   '
         write(6,*)
         write(6,'("   For atom type ",i4," element ",a2," using ",       &
-          "atomic number ",i3," instead of input value ",i3)')           &
+          & "atomic number ",i3," instead of input value ",i3)')         &
           indx(i),nameat(indx(i)),izz,iz(indx(i))
       endif
     enddo
@@ -439,7 +439,7 @@ subroutine read_esdf_crystal(ipr,                                        &
         write(6,*)
         write(6,*)   '   STOPPED in read_esdf_crystal'
         write(6,'("  There is an atom of type ",i5," but maximum",       &
-           " allowed value is ",i5)') nt,mxdtyp
+           & " allowed value is ",i5)') nt,mxdtyp
 
         stop
 
@@ -449,7 +449,7 @@ subroutine read_esdf_crystal(ipr,                                        &
         write(6,*)
         write(6,*)   '   STOPPED in read_esdf_crystal'
         write(6,'("  There are at least ",i5," atoms of ",a2,            &
-          " but mxdatm is ",i5)') natom(nt),nameat(nt),mxdatm
+          & " but mxdatm is ",i5)') natom(nt),nameat(nt),mxdatm
 
         stop
 

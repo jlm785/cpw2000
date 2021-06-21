@@ -93,7 +93,7 @@
   if(mxdwrk > mxdscr) then
     write(6,*)
     write(6,'("   STOPPED in hk_psi_loc_c16.  mxdwrk = ",i8,             &
-           " is greater than mxdscr = ",2i8)') mxdwrk, mxdscr, ng
+           &  " is greater than mxdscr = ",2i8)') mxdwrk, mxdscr, ng
 
     stop
 

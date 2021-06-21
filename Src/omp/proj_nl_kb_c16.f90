@@ -136,15 +136,15 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 
   if(ind /= nanl) then
     write(6,'("  proj_nl_kb:    inconsistent value of nanl ",i8,         &
-             " should be ",2i8)')  nanl, ind, ng
+           &  " should be ",2i8)')  nanl, ind, ng
 
     stop
 
   endif
 
   if(nanl > mxdanl) then
-    write(6,'("  proj_nl_kb:    increase mxdanl from ",i8,               &
-             " to ",i8)')  mxdanl,nanl
+    write(6,'("  proj_nl_kb:    increase mxdanl from ",i8," to ",i8)')   &
+               mxdanl,nanl
 
     stop
 
@@ -152,7 +152,7 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 
   if(lmax > 3) then
     write(6,'("  proj_nl_kb:    lmax = ",i8,                              &
-             " > 3 (max allowed in code)")')  lmax
+           &  " > 3 (max allowed in code)")')  lmax
 
     stop
 

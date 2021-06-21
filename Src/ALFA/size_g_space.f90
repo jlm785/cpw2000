@@ -124,7 +124,7 @@ subroutine size_g_space(emax, adot, ntrans, mtrx,                        &
   if(ng <= 1) then
     write(6,*)
     write(6,'("  stopped in size_g_space  gmax = ",e10.3,           &
-              "  no. of g-vec.= ",i6)') gmax,ng
+             & "  no. of g-vec.= ",i6)') gmax,ng
 
     stop
 

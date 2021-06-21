@@ -151,7 +151,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
   if (kd1 > nn1 .or. kd2 > nn2 .or. kd3 > nn3) then
     write(6,*)
     write(6,'("     STOPPED in psi_plot_plotit      ",                   &
-     "size of matrix ",i7," fft mesh ",3i5)') mtxd,n1,n2,n3
+       &  "size of matrix ",i7," fft mesh ",3i5)') mtxd,n1,n2,n3
 
     stop
 

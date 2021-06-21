@@ -167,9 +167,9 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   if(lkshift) then
     write(6,*)
     write(6,'("   WARNING    in h_kb_dia_all.  k-point ", 3f10.3,        &
-       "   was shifted")') (rkpt(i),i=1,3)
+       &  "   was shifted")') (rkpt(i),i=1,3)
     write(6,'("   Energies will be accurate, quality of wave-functions", &
-       "   is (0--1): ",f10.3)') qualpsi
+       &  "   is (0--1): ",f10.3)') qualpsi
     write(6,*)
     do i = 1,3
       kgshift(i) = nint(rkpt(i))

@@ -120,7 +120,7 @@ subroutine voronoi_sub(ioreplay)
       write(6,*)
       write(6,'("  STOPPED in voronoi_sub")')
       write(6,'("  for atom type ",i4," natom = ",i8," is ",             &
-        "greater than mxdatm =",i8)') i,natom(i),mxdatm
+        & "greater than mxdatm =",i8)') i,natom(i),mxdatm
 
       stop
 

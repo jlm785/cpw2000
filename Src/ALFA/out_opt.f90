@@ -472,7 +472,7 @@
       deallocate(d2hso0drk2)
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
-               ,i5, "   of ", i5)') iworker, irk,nrk
+              & ,i5, "   of ", i5)') iworker, irk,nrk
       write(6,*)
 
       dhdrk_32(:,:,:) = dh0drk(:,:,:)
