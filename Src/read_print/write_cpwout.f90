@@ -62,6 +62,8 @@ subroutine write_cpwout(meta_pwdat,                                      &
 ! local:
 
   real(REAL64)      ::  avec(3,3),bvec(3,3)
+  real(REAL64)      ::  bdot(3,3),vcell
+  real(REAL64)      ::  volideal
 
   integer            ::  nlatpl                                          ! number of lattice planes
   character(len=3)   ::  vers                                            ! program version
@@ -71,6 +73,7 @@ subroutine write_cpwout(meta_pwdat,                                      &
   integer  ::  isl1(3),isl2(3),isl3(3)
   integer  ::  nat
   integer  ::  istart, iend, ioerr
+  integer  ::  idet
 
   integer  ::   io                         !  tape number
 
@@ -156,6 +159,20 @@ subroutine write_cpwout(meta_pwdat,                                      &
 
     write(io,'("SystemLabel",19x,140a1)') (metadata(i:i),i=istart,iend)
     write(io,*)
+
+!   writes to default output the "ideal" volume
+
+    idet = isl1(1)*isl2(2)*isl3(3) + isl1(2)*isl2(3)*isl3(1) +           &
+           isl1(3)*isl2(1)*isl3(2) - isl1(3)*isl2(2)*isl3(1) -           &
+           isl1(1)*isl2(3)*isl3(2) - isl1(2)*isl2(1)*isl3(3)
+
+    call adot_to_bdot(adot,vcell,bdot)
+    volideal = idet*(alatt*alatt*alatt/4)
+
+    write(6,*)
+    write(6,'(3x,f15.3,3x,f10.4,5x,"idealredevolume,ratio")')            &
+            volideal, vcell/volideal
+    write(6,*)
 
   else
 
