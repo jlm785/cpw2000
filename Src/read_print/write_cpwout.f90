@@ -27,6 +27,7 @@ subroutine write_cpwout(meta_pwdat,                                      &
 
 ! Adapted June 2017. JLM
 ! Bug squashed (metadata not from rede) September 2017.
+! Write ideal volume if superlattice information is available. 21 June 2021. JLM
 !
 ! Copyright  J.L.Martins, INESC-MN.
 
