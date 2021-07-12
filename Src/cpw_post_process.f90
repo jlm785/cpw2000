@@ -84,9 +84,6 @@
          write(6,*)
          write(6,*) '  8) Plot wave-functions'
          write(6,*)
-         write(6,*) '  9) Check crystal structure: lattice,'
-         write(6,*) '     symmetry, atom neighbors, write CIF file'
-         write(6,*)
          write(6,*) '  Enter your choice (0,1,2,...,7)'
          write(6,*)
 
@@ -128,10 +125,6 @@
          elseif(ichoice == 8) then
 
            call plot_psi_sub(ioreplay)
-
-         elseif(ichoice == 9) then
-
-           call voronoi_sub(ioreplay)
 
         endif
 
