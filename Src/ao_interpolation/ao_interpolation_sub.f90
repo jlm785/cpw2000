@@ -339,7 +339,8 @@
               call ao_interpolation_out_band_fold_full(ioreplay,         &
      &        meta_cpw2000, title, subtitle, noiData,                    &
      &        pwexp_%emax, pseudo_%ztot,                                 &
-     &        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,           &
+     &        crys_%adot, crys_%ntype, crys_%natom, crys_%nameat,        &
+     &        crys_%rat,                                                 &
      &        recip_%ng, recip_%kgv,                                     &
      &        strfac_%icmplx,                                            &
      &        atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                 &
