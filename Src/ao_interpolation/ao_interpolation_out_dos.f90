@@ -85,7 +85,7 @@
   character(len=140)                 ::  subtitle                        !<  subtitle for plots
 
     
-  !      calculates local potential in fft mesh
+  io = 12
   
   ipr = 2
   
