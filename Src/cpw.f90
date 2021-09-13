@@ -13,401 +13,402 @@
 
 
 !>     Total Energy Plane Wave Calculation
+!>
+!>  \author       Jose Luis Martins and many others
+!>  \version      5.02
+!>  \date         13 September 2021
+!>  \copyright    GNU Public License v2
 
-       program cpw2000
+program cpw2000
 
 
-!      copyright Jose Luis Martins/inesc-mn
+  use cpw_variables
 
+  implicit none
 
-!      version 5.00   March 2021
 
-       use cpw_variables
+  type(dims_t)                       ::  dims_                           !<  array dimensions
 
-       implicit none
+  type(flags_t)                      ::  flags_                          !<  computational flags
 
+! SHOULD BE CHECKED INSIDE CHOICE_OF_PARAMS
 
-       type(dims_t)                       ::  dims_                      !<  array dimensions
+  type(acc_t)                        ::  acc_                            !<  accuracy parameters
 
-       type(flags_t)                      ::  flags_                     !<  computational flags
+  type(crys_t)                       ::  crys_                           !<  crystal structure
 
-!      SHOULD BE CHECKED INSIDE CHOICE_OF_PARAMS
+  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
 
-       type(acc_t)                        ::  acc_                       !<  accuracy parameters
+  type(moldyn_t)                     ::  moldyn_                         !<  molecular dynamics variables
 
-       type(crys_t)                       ::  crys_                      !<  crystal structure
+  type(vcsdyn_t)                     ::  vcsdyn_                         !<  variational cell shape molecular dynamics variables
 
-       type(pwexp_t)                      ::  pwexp_                     !<  plane-wave expansion choices
+  type(spaceg_t)                     ::  spaceg_                         !<  space group information
 
-       type(moldyn_t)                     ::  moldyn_                    !<  molecular dynamics variables
+  type(recip_t)                      ::  recip_                          !<  reciprocal space information
 
-       type(vcsdyn_t)                     ::  vcsdyn_                    !<  variational cell shape molecular dynamics variables
+  type(strfac_t)                     ::  strfac_                         !<  structure factors
 
-       type(spaceg_t)                     ::  spaceg_                    !<  space group information
+  type(chdens_t)                     ::  chdens_                         !<  charge densities
 
-       type(recip_t)                      ::  recip_                     !<  reciprocal space information
+  type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
 
-       type(strfac_t)                     ::  strfac_                    !<  structure factors
+  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
 
-       type(chdens_t)                     ::  chdens_                    !<  charge densities
+  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
 
-       type(vcomp_t)                      ::  vcomp_                     !<  Componemts of local potential
+  type(enfrst_t)                     ::  total_                          !<  Total energy force stress
 
-       type(pseudo_t)                     ::  pseudo_                    !<  pseudo-potential (Kleinman-Bylander)
+  type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
 
-       type(atorb_t)                      ::  atorb_                     !<  atomic orbitals in G-space
+  type(kpoint_t)                     ::  kpoint_                         !<  k-point data
 
-       type(enfrst_t)                     ::  total_                     !<  Total energy force stress
+  type(xc_t)                         ::  xc_                             !<  exchange and correlation choice
 
-       type(enfrst_t)                     ::  ewald_                     !<  Ewald energy force stress
+  type(hamallk_t)                    ::  hamallk_                        !<  hamiltonian size and indexation for all k-points
 
-       type(kpoint_t)                     ::  kpoint_                    !<  k-point data
+  type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
 
-       type(xc_t)                         ::  xc_                        !<  exchange and correlation choice
+  character(len=4)                   ::  vdriv                           !<  version of this program
+  character(len=250)                 ::  meta_cpw2000                    !<  metadata from cpw.in
+  character(len=250)                 ::  meta_pwdat                      !<  metadata from PW.DAT
+  integer                            ::  iprglob                         !<  level of detail of printout
 
-       type(hamallk_t)                    ::  hamallk_                   !<  hamiltonian size and indexation for all k-points
+  real(REAL64)                       ::  ealpha                          !<  G=0 contribution to the total energy (Hartree)
 
-       type(psiallk_t)                    ::  psiallk_                   !<  psi for all k-points
+  integer                            ::  icmax                           !<  maximum value of outer iteration
+  logical                            ::  lsafescf                        !<  is true if self-consistency was reached.
 
-       character(len=4)                   ::  vdriv                      !<  version of this program
-       character(len=250)                 ::  meta_cpw2000               !<  metadata from cpw.in
-       character(len=250)                 ::  meta_pwdat                 !<  metadata from PW.DAT
-       integer                            ::  iprglob                    !<  level of detail of printout
+  real(REAL64)                       ::  exc                             !<  Exchange and correlation energy (Hartree)
+  real(REAL64)                       ::  rhovxc                          !<  Integral of rho times vxc (Hartree)
+  real(REAL64)                       ::  strxc(3,3)                      !<  d exc / d adot,  exchange and correlatio contribution to stress tensor (contravariant components)
 
-       real(REAL64)                       ::  ealpha                     !<  G=0 contribution to the total energy (Hartree)
+! potential in the FFT mesh
 
-       integer                            ::  icmax                      !<  maximum value of outer iteration
-       logical                            ::  lsafescf                   !<  is true if self-consistency was reached.
+  integer                            ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
 
-       real(REAL64)                       ::  exc                        !<  Exchange and correlation energy (Hartree)
-       real(REAL64)                       ::  rhovxc                     !<  Integral of rho times vxc (Hartree)
-       real(REAL64)                       ::  strxc(3,3)                 !<  d exc / d adot,  exchange and correlatio contribution to stress tensor (contravariant components)
+! dimensions, eigenvalues, eigenvectors, occupations for all k-points
 
-!      potential in the FFT mesh
+  real(REAL64)                       ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  real(REAL64)                       ::  elects                          !<  TS, electronic temperature*entropy (Hartree)
 
-       integer                            ::  kmscr(7)                   !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
 
-!      dimensions, eigenvalues, eigenvectors, occupations for all k-points
+! saving density
 
-       real(REAL64)                       ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-       real(REAL64)                       ::  elects                     !<  TS, electronic temperature*entropy (Hartree)
+  complex(REAL64), allocatable        ::  chdsave(:,:,:)                 !<   saved density for charge extrapolation
+  integer                             ::  nsave(3)                       !<   array dimensionsfor charge extrapolation
 
 
-!      saving density
+  integer, parameter                  ::  mxdlbf = 30                    !<  array dimension for l-bfgs optimization
 
-       complex(REAL64), allocatable        ::  chdsave(:,:,:)            !<   saved density for charge extrapolation
-       integer                             ::  nsave(3)                  !<   array dimensionsfor charge extrapolation
+  character(len=2)                    ::  icorr                          !<  eXchange-Correlation choice
 
+  integer              ::  iguess
+  real(REAL64)         ::  t0,tin,tout,tinit,tfinal
+  real(REAL64)         ::  telin,telout,tel0,telfin
+  real(REAL64)         ::  symtol
+  logical              ::  symkip
+  logical                             ::  newcalc                        !  indicates that it is a new calculation (equivalent iter = ist0+1)
+  logical                             ::  newcel                         !  indicates that adot has changed on output
+  integer              ::  ist0,istep,iconv
 
-       integer, parameter                  ::  mxdlbf = 30                !<  array dimension for l-bfgs optimization
+  logical              ::  lkpg                                          !  If true use the previous G-vectors (same mtxd and isort)
 
-       character(len=2)                    ::  icorr                     !<  eXchange-Correlation choice
+  logical              ::  lnewnrk
 
-       integer              ::  iguess
-       real(REAL64)         ::  t0,tin,tout,tinit,tfinal
-       real(REAL64)         ::  telin,telout,tel0,telfin
-       real(REAL64)         ::  symtol
-       logical              ::  symkip
-       logical                             ::  newcalc                    !  indicates that it is a new calculation (equivalent iter = ist0+1)
-       logical                             ::  newcel                     !  indicates that adot has changed on output
-       integer              ::  ist0,istep,iconv
+  real(REAL64)          ::  deltentpy                                    !<  enthalpy difference from last iteration
+  real(REAL64)          ::  errfrc                                       !<  maximum error in force (cartesian coordiantes) Hartree/Bohr
+  real(REAL64)          ::  errstr                                       !<  maximum error in stress
 
-       logical              ::  lkpg                  !<  If true use the previous G-vectors (same mtxd and isort)
 
-       logical              ::  lnewnrk
 
-       real(REAL64)          ::  deltentpy                               !<  enthalpy difference from last iteration
-       real(REAL64)          ::  errfrc                                  !<  maximum error in force (cartesian coordiantes) Hartree/Bohr
-       real(REAL64)          ::  errstr                                  !<  maximum error in stress
+! Driver program version
 
+  vdriv = '5.02'
 
+! timing
 
-!      Driver program version
+  call zesec(tinit)
+  call zeelap(telin)
 
-       vdriv = '5.01'
+! prints top of output file
 
-!      timing
+  call tpage(vdriv)
 
-       call zesec(tinit)
-       call zeelap(telin)
 
-!      prints top of output file
 
-       call tpage(vdriv)
+! reads the input file and does the respective allocations
 
+  call cpw_read_data('cpw.in', 'PW.DAT', 5, vdriv,                       &
+     iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
+     flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
+     dims_, total_, ewald_)
 
 
-!      reads the input file and does the respective allocations
 
-       call cpw_read_data('cpw.in','PW.DAT',5,vdriv,                     &
-     &    iprglob,meta_cpw2000,meta_pwdat,symkip,symtol,                 &
-     &    flags_,crys_,pwexp_,kpoint_,xc_,acc_,moldyn_,vcsdyn_,dims_,    &
-     &    total_,ewald_)
 
+! reads the pseudopotential data
 
+  icorr = xc_%author
 
+  call cpw_read_pseudo(iprglob, icorr,                                   &
+       crys_, pseudo_, atorb_, dims_)
 
-!      reads the pseudopotential data
 
-       icorr = xc_%author
 
-       call cpw_read_pseudo(iprglob,icorr,                               &
-     &      crys_,pseudo_,atorb_,dims_)
 
 
+! starts or restarts the molecular dynamics, prints crystal structure
+! and molecular dynamics parameters and finds symmetry operations
 
+  ist0 = 0
 
+  call cpw_init_mov_print_sym(ist0, iprglob, symkip, symtol,             &
+       crys_, flags_, dims_, spaceg_, pwexp_, acc_, xc_,                 &
+       moldyn_, vcsdyn_)
 
-!      starts or restarts the molecular dynamics, prints crystal structure
-!      and molecular dynamics parameters and finds symmetry operations
 
-       ist0 = 0
 
-       call cpw_init_mov_print_sym(ist0,iprglob,symkip,symtol,           &
-     &      crys_,flags_,dims_,spaceg_,pwexp_,acc_,xc_,moldyn_,vcsdyn_)
+! constructs reciprocal space and allocates recip_,strfac_,pseudo_,chdens_,vcomp_
 
 
+  call cpw_gspace(iprglob, kmscr,                                        &
+     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
+     vcomp_, flags_)
 
-!      constructs reciprocal space and allocates recip_,strfac_,pseudo_,chdens_,vcomp_
 
+! allow some extra space for degeneracy
 
-       call cpw_gspace(iprglob,kmscr,                                    &
-     &    dims_,crys_,spaceg_,pwexp_,recip_,strfac_,pseudo_,chdens_,     &
-     &    vcomp_,flags_)
+  dims_%mxdbnd = pwexp_%nbandin + 5
 
+! calculates integration k-points
 
-!      allow some extra space for degeneracy
-
-       dims_%mxdbnd = pwexp_%nbandin + 5
-
-!      calculates integration k-points
-
-       call cpw_bzint(iprglob,lnewnrk,                                   &
-     &    dims_,kpoint_,crys_,spaceg_,pwexp_)
+  call cpw_bzint(iprglob, lnewnrk,                                       &
+     dims_, kpoint_, crys_, spaceg_, pwexp_)
 
 !
-!      hamiltonian matrix dimensions
+! hamiltonian matrix dimensions
 
-       call cpw_size_alloc_hampsi(lnewnrk,                               &
-     &    dims_,crys_,kpoint_,pwexp_,recip_,atorb_,hamallk_,psiallk_)
+  call cpw_size_alloc_hampsi(lnewnrk,                                    &
+     dims_, crys_, kpoint_, pwexp_, recip_, atorb_, hamallk_, psiallk_)
 
 
-!      array for saving charge density (unsymmetrized)
+! array for saving charge density (unsymmetrized)
 
-       nsave(1) = recip_%kmax(1)
-       nsave(2) = recip_%kmax(2)
-       nsave(3) = recip_%kmax(3)
-       allocate(chdsave(-nsave(1):nsave(1),-nsave(2):nsave(2),           &
-     &                        -nsave(3):nsave(3)))
+  nsave(1) = recip_%kmax(1)
+  nsave(2) = recip_%kmax(2)
+  nsave(3) = recip_%kmax(3)
+  allocate(chdsave(-nsave(1):nsave(1),-nsave(2):nsave(2),           &
+                         -nsave(3):nsave(3)))
 
 
 
-!      Molecular Dynamics / Minimization loop
+! Molecular Dynamics / Minimization loop
 
-       newcel = .FALSE.
-       newcalc = .TRUE.
+  newcel = .FALSE.
+  newcalc = .TRUE.
 
-       lkpg = .FALSE.
+  lkpg = .FALSE.
 
-       do istep =  ist0+1,moldyn_%nstep
+  do istep =  ist0+1,moldyn_%nstep
 
-         call zesec(t0)
-         call zeelap(tel0)
+    call zesec(t0)
+    call zeelap(tel0)
 
 
-!----------------------------clr----------------------------------------
+!-----------------------clr----------------------------------------
 
-         if(xc_%author == "TBL") then
-           if((flags_%flgcal ==  'ONE   ') .or. (flags_%flgcal == 'ONEVRD')) then
-             write(6,*)
-             write(6,*) 'Using TBL exchange and correlation'
-             write(6,*)
-           else
-             write(6,*)
-             write(6,'("do not use TBL to move atoms")')
+    if(xc_%author == "TBL") then
+      if((flags_%flgcal ==  'ONE   ') .or. (flags_%flgcal == 'ONEVRD')) then
+        write(6,*)
+        write(6,*) 'Using TBL exchange and correlation'
+        write(6,*)
+      else
+        write(6,*)
+        write(6,'("do not use TBL to move atoms")')
 
-             stop
+        stop
 
-           endif
-         endif
+      endif
+    endif
 
-!----------------------------clr----------------------------------------
+!-----------------------clr----------------------------------------
 
 
-!        recalculates, deallocates and reallocates for new cell
+!   recalculates, deallocates and reallocates for new cell
 
-         if(newcel) then
+    if(newcel) then
 
-          call cpw_newcell(lkpg,symkip,iprglob,symtol,kmscr,lnewnrk,     &
-     &    dims_,recip_,crys_,spaceg_,pwexp_,strfac_,pseudo_,             &
-     &    chdens_,vcomp_,flags_,kpoint_,atorb_,hamallk_,psiallk_)
+     call cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,     &
+     dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,            &
+     chdens_, vcomp_, flags_, kpoint_, atorb_, hamallk_, psiallk_)
 
 
-         endif
+    endif
 
-!        End of newcel
+!   End of newcel
 
-         call cpw_scf_prepare(ealpha,iprglob,newcalc,                    &
-     &      nsave, chdsave,                                              &
-     &      exc,strxc,rhovxc,                                            &
-     &      dims_,crys_,recip_,strfac_,pseudo_,chdens_,vcomp_,flags_,    &
-     &      ewald_,xc_)
+    call cpw_scf_prepare(ealpha, iprglob, newcalc,                       &
+       nsave, chdsave,                                                   &
+       exc, strxc, rhovxc,                                               &
+       dims_, crys_, recip_, strfac_, pseudo_, chdens_, vcomp_, flags_,  &
+       ewald_, xc_)
 
-         deallocate(chdsave)
+    deallocate(chdsave)
 
-         call zesec(tin)
-         write(6,*)
-         write(6,'("  Computing time for starting (s):  ",3x,f10.2)')    &
-     &              tin - t0
+    call zesec(tin)
+    write(6,*)
+    write(6,'("  Computing time for starting (s):  ",3x,f10.2)')         &
+               tin - t0
 
 
-!        Self-Consistency
+!   Self-Consistency
 
 
-         if(newcalc .or. newcel) then
-           iguess = 0
-         else
-           iguess = 1
-         endif
+    if(newcalc .or. newcel) then
+      iguess = 0
+    else
+      iguess = 1
+    endif
 
-         icmax = 40
+    icmax = 40
 
 
-         if((flags_%flgscf == 'AO    ' .or.                                     &
-     &       flags_%flgscf == 'AOJC  ' .or.                                     &
-     &       flags_%flgscf == 'AOJCPW') .and. atorb_%latorb) then
+    if((flags_%flgscf == 'AO    ' .or.                                   &
+        flags_%flgscf == 'AOJC  ' .or.                                   &
+        flags_%flgscf == 'AOJCPW') .and. atorb_%latorb) then
 
 
-           call cpw_scf('AO', iprglob, icmax, iguess, kmscr,             &
-     &     efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,           &
-     &     dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,     &
-     &     vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,         &
-     &     total_, ewald_, chdens_)
+      call cpw_scf('AO', iprglob, icmax, iguess, kmscr,                  &
+      efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
+      dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
+      vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
+      total_, ewald_, chdens_)
 
 
-           iguess = 1
+      iguess = 1
 
-         endif
+    endif
 
-         if(flags_%flgscf == '    PW' .or. flags_%flgscf == 'AOJCPW') then
+    if(flags_%flgscf == '    PW' .or. flags_%flgscf == 'AOJCPW') then
 
-           call cpw_scf('PW', iprglob, icmax, iguess, kmscr,             &
-     &     efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,           &
-     &     dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,     &
-     &     vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,         &
-     &     total_, ewald_, chdens_)
+      call cpw_scf('PW', iprglob, icmax, iguess, kmscr,                  &
+      efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
+      dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
+      vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
+      total_, ewald_, chdens_)
 
 
-         endif
+    endif
 
 
 
-!        Forces and Stresses
+!   Forces and Stresses
 
 
-         call cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,        &
-     &   errstr,                                                         &
-     &   dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_, &
-     &   vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_)
+    call cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,             &
+    errstr,                                                              &
+    dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
+    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_)
 
 
-         if(flags_%flgcal /= 'ONE   ') then
+    if(flags_%flgcal /= 'ONE   ') then
 
-           nsave(1) = recip_%kmax(1)
-           nsave(2) = recip_%kmax(2)
-           nsave(3) = recip_%kmax(3)
-           allocate(chdsave(-nsave(1):nsave(1),-nsave(2):nsave(2),       &
-     &                        -nsave(3):nsave(3)))
+      nsave(1) = recip_%kmax(1)
+      nsave(2) = recip_%kmax(2)
+      nsave(3) = recip_%kmax(3)
+      allocate(chdsave(-nsave(1):nsave(1),-nsave(2):nsave(2),            &
+                         -nsave(3):nsave(3)))
 
-         endif
+    endif
 
-         if(flags_%flgcal == 'ONE   ') then
-           iconv = 1
-         else
+    if(flags_%flgcal == 'ONE   ') then
+      iconv = 1
+    else
 
-           call cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,          &
-     &     nsave, chdsave,                                               &
-     &     dims_, crys_, flags_, vcsdyn_, total_, moldyn_, spaceg_,      &
-     &     chdens_, recip_)
+      call cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,               &
+      nsave, chdsave,                                                    &
+      dims_, crys_, flags_, vcsdyn_, total_, moldyn_, spaceg_,           &
+      chdens_, recip_)
 
-           newcalc = .FALSE.
+      newcalc = .FALSE.
 
-         endif
+    endif
 
-         if(flags_%flgcal /= 'ONE   ') then
+    if(flags_%flgcal /= 'ONE   ') then
 
-           if(flags_%flgcal == 'EPILBF' .or. flags_%flgcal == 'VCSLBF') then
-             write(6,*)
-             write(6,'(5x,2f14.6,5x,"errfrc,errstr")') errfrc,errstr
-             write(6,*)
-           endif
+      if(flags_%flgcal == 'EPILBF' .or. flags_%flgcal == 'VCSLBF') then
+        write(6,*)
+        write(6,'(5x,2f14.6,5x,"errfrc,errstr")') errfrc,errstr
+        write(6,*)
+      endif
 
-           if(flags_%flgcal == 'LBFSYM') then
-             write(6,*)
-             write(6,'(5x,f14.6,5x,"errfrc")') errfrc
-             write(6,*)
-           endif
+      if(flags_%flgcal == 'LBFSYM') then
+        write(6,*)
+        write(6,'(5x,f14.6,5x,"errfrc")') errfrc
+        write(6,*)
+      endif
 
-           if((flags_%flgcal == 'EPILBF' .or. flags_%flgcal == 'VCSLBF') &
-     &           .and. .not. lkpg) then
-             if(pwexp_%lkplusg .and. errfrc < pwexp_%epskplusg .and.     &
-     &         errstr < pwexp_%epskplusg) then
-               lkpg = .TRUE.
-               write(6,*)
-               write(6,*)   '  Switched on the fixed k+G mode'
-               write(6,*)
-             endif
-           endif
+      if((flags_%flgcal == 'EPILBF' .or. flags_%flgcal == 'VCSLBF')      &
+            .and. .not. lkpg) then
+        if(pwexp_%lkplusg .and. errfrc < pwexp_%epskplusg .and.          &
+          errstr < pwexp_%epskplusg) then
+          lkpg = .TRUE.
+          write(6,*)
+          write(6,*)   '  Switched on the fixed k+G mode'
+          write(6,*)
+        endif
+      endif
 
 
 
-         endif
+    endif
 
-         call cpw_print_crystal_energy(iprglob, iconv, istep,            &
-     &    elects,                                                        &
-     &    dims_, crys_, flags_, total_, moldyn_, vcsdyn_)
+    call cpw_print_crystal_energy(iprglob, iconv, istep,                 &
+     elects,                                                             &
+     dims_, crys_, flags_, total_, moldyn_, vcsdyn_)
 
 
 
-         if(flags_%flgcal /= 'ONE   ') then
+    if(flags_%flgcal /= 'ONE   ') then
 
-           call zesec(tfinal)
-           call zeelap(telfin)
+      call zesec(tfinal)
+      call zeelap(telfin)
 
 
-           write(6,*)
-           write(6,'("  Computing time for md step (s):",f10.2,          &
-     &     "    elapsed time (s):",3x,f10.2)') tfinal-t0,telfin-tel0
-           write(6,*)
+      write(6,*)
+      write(6,'("  Computing time for md step (s):",f10.2,               &
+      "    elapsed time (s):",3x,f10.2)') tfinal-t0,telfin-tel0
+      write(6,*)
 
-         endif
+    endif
 
-         if(iconv == 1) exit
+    if(iconv == 1) exit
 
-       enddo
+  enddo
 
 
-!      End of molecular dynamics loop
+! End of molecular dynamics loop
 
-       if(lsafescf) then
+  if(lsafescf) then
 
-         call cpw_finish('PW_RHO_V.DAT', 21, meta_pwdat, meta_cpw2000,   &
-     &     dims_, crys_, xc_, flags_, pwexp_, kpoint_, recip_,           &
-     &     vcomp_, chdens_)
+    call cpw_finish('PW_RHO_V.DAT', 21, meta_pwdat, meta_cpw2000,        &
+      dims_, crys_, spaceg_, xc_, flags_, pwexp_, kpoint_, recip_,       &
+      vcomp_, chdens_)
 
-       endif
+  endif
 
 
 
-       call zesec(tout)
-       call zeelap(telout)
+  call zesec(tout)
+  call zeelap(telout)
 
-       write(6,*)
-       write(6,'("  Total computing time (s):   ",f10.2,                 &
-     &    "    Elapsed time (s):",3x,f10.2)') tout-tinit,telout-telin
-       write(6,*)
+  write(6,*)
+  write(6,'("  Total computing time (s):   ",f10.2,                      &
+     "    Elapsed time (s):",3x,f10.2)') tout-tinit,telout-telin
+  write(6,*)
 
 
-       stop
+  stop
 
-       end program cpw2000
+end program cpw2000

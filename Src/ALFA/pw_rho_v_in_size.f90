@@ -11,70 +11,74 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutines reads the file "filename" (default PW_RHO_V.DAT) and returns the
-!>     array dimensions for future allocations.
+!>  Reads the file "filename" (default PW_RHO_V.DAT) and returns the
+!>  array dimensions for future allocations.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.02
+!>  \date         January 12, 2014, 13 September 2021.
+!>  \copyright    GNU Public License v2
 
-       subroutine pw_rho_v_in_size(filename,io,                          &
-     & mxdtyp,mxdatm,mxdgve,mxdnst,mxdlqp,mxdlao)
+subroutine pw_rho_v_in_size(filename, io,                                &
+     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao)
 
-!      written January 12, 2014. jlm
-!      modified documentation February 4, 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+! written January 12, 2014. jlm
+! modified documentation February 4, 2020. JLM
+! ntrans, mxdlao bug. 13 September 2021.
 
-!      version 4.95
+  implicit none
 
-       implicit none
+!  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!       integer, parameter          :: REAL64 = selected_real_kind(12)
+! input
 
-!      input
+  character(len=*), intent(in)       ::  filename                        !<  name of file
+  integer, intent(in)                ::  io                              !<  number of tape associated with filename.
 
-       character(len=*), intent(in)       ::  filename                   !<  name of file
-       integer, intent(in)                ::  io                         !<  number of tape associated with filename.
+! output
+  integer, intent(out)               ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(out)               ::  mxdatm                          !<  array dimension of types of atoms
+  integer, intent(out)               ::  mxdgve                          !<  array dimension for g-space vectors
+  integer, intent(out)               ::  mxdnst                          !<  array dimension for g-space stars
+  integer, intent(out)               ::  mxdlqp                          !<  array dimension for local potential
+  integer, intent(out)               ::  mxdlao                          !<  array dimension of orbital per atom type
 
-!      output
-       integer, intent(out)               ::  mxdtyp                     !<  array dimension of types of atoms
-       integer, intent(out)               ::  mxdatm                     !<  array dimension of types of atoms
-       integer, intent(out)               ::  mxdgve                     !<  array dimension for g-space vectors
-       integer, intent(out)               ::  mxdnst                     !<  array dimension for g-space stars
-       integer, intent(out)               ::  mxdlqp                     !<  array dimension for local potential
-       integer, intent(out)               ::  mxdlao                     !<  array dimension of orbital per atom type
+! local allocatable array
 
-!      local allocatable array
+  integer,allocatable                ::  natom(:)                        !  number of atoms of type i
 
-       integer,allocatable                ::  natom(:)                   !  number of atoms of type i
+! local variables
 
-!      local variables
+  integer      ::  ioerr
+  integer      ::  ntrans
 
-       integer      ::  ioerr 
+! counters
 
-!      counters
-
-       integer    ::  i
+  integer    ::  i
 
 
-       open(unit=io,file=trim(filename),status='old',form='UNFORMATTED')
+  open(unit=io,file=trim(filename),status='old',form='UNFORMATTED')
 
-       read(io,IOSTAT=ioerr) mxdtyp,mxdgve,mxdnst,mxdlqp,mxdlao
-      
-       if(ioerr /= 0) then
-         backspace(io)
-         read(io,IOSTAT=ioerr) mxdtyp,mxdgve,mxdnst,mxdlqp
-         mxdlao = 4
-       endif
+  read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp, ntrans, mxdlao
 
-       allocate(natom(mxdtyp))
+  if(ioerr /= 0) then
+    backspace(io)
+    read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp
+    mxdlao = 4
+  endif
 
-       read(io) (natom(i),i=1,mxdtyp)
+  allocate(natom(mxdtyp))
 
-       mxdatm = natom(1)
-       do i = 1,mxdtyp
-         if(mxdatm < natom(i)) mxdatm = natom(i)
-       enddo
-       
-       deallocate(natom)
+  read(io) (natom(i),i=1,mxdtyp)
 
-       close(unit=io)
+  mxdatm = natom(1)
+  do i = 1,mxdtyp
+    if(mxdatm < natom(i)) mxdatm = natom(i)
+  enddo
 
-       return
-       end subroutine pw_rho_v_in_size
+  deallocate(natom)
+
+  close(unit=io)
+
+  return
+end subroutine pw_rho_v_in_size
