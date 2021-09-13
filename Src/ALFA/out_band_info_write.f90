@@ -16,13 +16,14 @@
 
        subroutine out_band_info_write(filename,io,                       &
      &      title,subtitle,nstyle,                                       &
-     &      neig,nrk,xk,e_of_k,eref,nocc,                                &
+     &      neig,nrk,rk,rk_fld,xk,e_of_k,eref,nocc,                      &
      &      nbaslcao,infolcao,basxpsi,pkn,                               &
      &      nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
 
 !      Adapted by Carlos Loia Reis from out_band_xmgrace.
 !      Date unknown.
 !      Modified, documentation 29 May 2020. JLM
+!      Modiified to write information to QtBandViewer June 2021. CLR
 !      copyright  Carlos Loia Reis/Jose Luis Martins/INESC-MN
 
        implicit none
@@ -60,11 +61,146 @@
 
        integer, intent(in)                ::  ntype                      !<  number of types of atoms
        character(len=2)                   ::  nameat(ntype)              !<  chemical symbol for the type i
+       
+       real(REAL64), intent(in)           :: rk(3,nrk)
+       real(REAL64), intent(in)           :: rk_fld(3,nrk)
 
 !      counters
 
        integer      ::   n, n10, k, j, jj
 
+!      extra stuff
+
+!      constants
+  
+       real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+       real(REAL64), parameter  ::  EV = 27.21138505_REAL64
+
+       integer      :: i, irk, iband, iorb
+
+       integer, parameter                     :: REAL32 = selected_real_kind(6)
+
+       real(REAL32), allocatable              ::  pkn_out(:,:)
+       real(REAL32), allocatable              ::  basxpsi_out(:,:,:)         
+       real(REAL32), allocatable              ::  e_of_k_out(:,:)            
+       real(REAL32), allocatable              ::  xk_out(:)  
+       
+       real(REAL64) ymin, ymax, ymtmp                
+
+       real(REAL64), allocatable :: xk_start(:), xk_end(:)
+       
+       real(REAL32) :: scl
+       
+!      begin
+
+       allocate(xk_out(nrk))
+       allocate(e_of_k_out(neig, nrk))
+       allocate(pkn_out(nrk,neig))      
+       allocate (basxpsi_out(nbaslcao,neig,nrk))
+
+       allocate (xk_start(nlines))
+       allocate (xk_end(nlines))
+             
+!      finds the energy range for the bands
+
+       ymin = e_of_k(1,1) - eref
+       do irk=1,nrk
+         ymtmp = e_of_k(neig,irk) - eref
+         do n=1,neig
+           if(ymin > e_of_k(n,irk)-eref) ymin = e_of_k(n,irk)-eref
+           if(ymtmp < e_of_k(n,irk)-eref) ymtmp = e_of_k(n,irk)-eref
+         enddo
+         if(irk == 1) then
+           ymax = ymtmp
+         else
+           if(ymax > ymtmp) ymax = ymtmp
+         endif
+       enddo
+       ymin = real(nint(ymin*27.212)) - UM
+       ymax = real(nint(ymax*27.212)) + UM
+
+!      find xk_start and xk_end
+       j=1
+       do i=1, nlines
+         if (ljump(i)) then
+           xk_start(i) = xklab(j)
+           xk_end(i)   = xklab(j+1)
+           j=j+2
+         else
+           xk_start(i) = xklab(j-1)
+           xk_end(i)   = xklab(j)
+           j=j+1
+         endif      
+       enddo
+       
+!      transfer large arrays to REAL32
+
+       do irk=1, nrk       
+         do iband = 1, neig         
+           xk_out(irk) = xk(irk)           
+           e_of_k_out(iband, irk) = (e_of_k(iband, irk) -eref)*EV
+           pkn_out(irk, iband) = pkn(irk,iband)
+           
+           if ( pkn_out(irk, iband) > 1.0_REAL32) then
+            pkn_out(irk, iband) = 1.0_REAL32
+           endif
+           
+           if ( pkn_out(irk, iband) < 1.0e-8) then
+            pkn_out(irk, iband) = 0.0_REAL32
+           endif
+           do iorb=1, nbaslcao
+             basxpsi_out(iorb,iband,irk) = 0.9999*basxpsi(iorb,iband,irk)  ! dont like this a bit , but python does not know how to sum !!!
+             if (basxpsi_out(iorb,iband,irk) > 1.0_REAL32 ) then 
+              basxpsi_out(iorb,iband,irk) = 1.0_REAL32
+              write(*,*) 'out of domain in basxpsi', basxpsi_out(iorb,iband,irk)
+             endif
+             if (basxpsi_out(iorb,iband,irk) < 1.0e-8 ) then 
+              basxpsi_out(iorb,iband,irk) = 0.0
+             endif
+             
+           enddo             ! loop over orbitals
+         enddo               ! loop over eigenvalues 
+                  
+!         stop
+         
+       enddo                 ! loop over k-points
+       
+!       basxpsi_out(:,:,:) = 0.0
+       
+                     
+
+!      begin binary write
+
+       open(unit=504, file=trim(filename)//".bv", form='unformatted')
+                     
+       write(504) title                     
+       write(504) subtitle                  
+       write(504) eref                      
+       write(504) xcvert(1),xcvert(nvert)                      
+       write(504) ymin, ymax                
+       write(504) nvert + nlines                   
+       write(504) xklab(:)                  
+       write(504) label(:)                  
+       write(504) nlines  
+       write(504) xk_start
+       write(504) xk_end                      
+       write(504) nrk, neig        
+       write(504) xk_out(:)                        
+       write(504) e_of_k_out         
+       write(504) pkn_out(:,:)        
+  
+       write(504) nbaslcao
+       write(504) infolcao
+       write(504) basxpsi_out
+       write(504) ntype
+       write(504) nameat
+       
+       write(504) rk
+       write(504) rk_fld
+       
+       close(504)
+       
+!      end binary write
 
 
        open(unit=io,file=filename,form='formatted')
