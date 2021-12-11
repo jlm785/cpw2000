@@ -14,9 +14,13 @@
 !>  Sets up the special representation of the
 !>  non local part of the hamiltonian for a given k-point
 !>  Kleinman and Bylander pseudo-potential
-!>  and its derivatives
-
-!>  spin-orbit perturbation only
+!>  and its derivatives with respect to k-point coordinate
+!>  including the spin perturbation
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.0.3
+!>  \date         28 January 2020, 7 December 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
     nanl, nanlso, nder,                                                  &
@@ -31,15 +35,14 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
 ! written 28 January 2020 from the non-perturbation version. JLM
 ! openmp version 19 January 2020. JLM
-
+! LMAX,lmx, 7 December 2021. JLM
 ! copyright INESC-MN/Jose Luis Martins
-
-! version 4.95
 
 
   implicit none
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: LMAX = 3                                !   hard coded max ang. mom.
 
 ! input
 
@@ -65,8 +68,8 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for pseudo interpolation for atom k
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the pseudo interpolation for atom k
-  real(REAL64), intent(in)           ::  vkb(-2:mxdlqp,0:3,-1:1,mxdtyp)  !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. NOT normalized to vcell, hartree
-  integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<  KB pseudo.  normalization for atom k, ang. mom. l
+  real(REAL64), intent(in)        ::  vkb(-2:mxdlqp,0:LMAX,-1:1,mxdtyp)  !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. NOT normalized to vcell, hartree
+  integer, intent(in)                ::  nkb(0:LMAX,-1:1,mxdtyp)         !<  KB pseudo.  normalization for atom k, ang. mom. l
 
 ! output
 
@@ -112,13 +115,13 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
   real(REAL64)    ::  vcell, bdot(3,3),fac
   real(REAL64)    ::  qi,qk(3), qcar(3), fi, xni, xi
 
-  real(REAL64)    ::  rylm(0:3,-3:3)                                     !   r**l sqrt(4 pi / 2l+1) "Y_lm(l,m)+-Y_lm(l,-m)"
-  real(REAL64)    ::  drylmdqc(3,0:3,-3:3)                               !   d rylm / d r
-  real(REAL64)    ::  d2rylmdqc2(3,3,0:3,-3:3)                           !   d^2 rylm / d rc^2
+  real(REAL64)    ::  rylm(0:LMAX,-LMAX:LMAX)                            !   r**l sqrt(4 pi / 2l+1) "Y_lm(l,m)+-Y_lm(l,-m)"
+  real(REAL64)    ::  drylmdqc(3,0:LMAX,-LMAX:LMAX)                      !   d rylm / d r
+  real(REAL64)    ::  d2rylmdqc2(3,3,0:LMAX,-LMAX:LMAX)                  !   d^2 rylm / d rc^2
 
-  complex(REAL64) ::  zylm(0:3,-3:3)                                     !  r**l sqrt(4 pi / 2l+1) Y_lm(theta,phi)
-  complex(REAL64) ::  dzylmdqc(3,0:3,-3:3)                               !  d zylm / d rc
-  complex(REAL64) ::  d2zylmdqc2(3,3,0:3,-3:3)                           !  d^2 zylm / d rc^2
+  complex(REAL64) ::  zylm(0:LMAX,-LMAX:LMAX)                            !  r**l sqrt(4 pi / 2l+1) Y_lm(theta,phi)
+  complex(REAL64) ::  dzylmdqc(3,0:LMAX,-LMAX:LMAX)                      !  d zylm / d rc
+  complex(REAL64) ::  d2zylmdqc2(3,3,0:LMAX,-LMAX:LMAX)                  !  d^2 zylm / d rc^2
 
   real(REAL64)    ::  dqidrk(3)
   real(REAL64)    ::  d2qidrk2(3,3)
@@ -126,14 +129,14 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
   real(REAL64)    ::  vq(-1:1)
   real(REAL64)    ::  dvqdqi(-1:1), d2vqdqi2(-1:1)
 
-!  real(REAL64)    ::  drylmdrk(3,0:3,-3:3)
-!  real(REAL64)    ::  d2rylmdrk2(3,3,0:3,-3:3)
-  complex(REAL64) ::  dzylmdrk(3,0:3,-3:3)
-  complex(REAL64) ::  d2zylmdrk2(3,3,0:3,-3:3)
+!  real(REAL64)    ::  drylmdrk(3,0:LMAX,-LMAX:LMAX)
+!  real(REAL64)    ::  d2rylmdrk2(3,3,0:LMAX,-LMAX:LMAX)
+  complex(REAL64) ::  dzylmdrk(3,0:LMAX,-LMAX:LMAX)
+  complex(REAL64) ::  d2zylmdrk2(3,3,0:LMAX,-LMAX:LMAX)
 
-  real(REAL64)    ::  cg(0:3,-7:7)                                       !  Clebsch-Gordan coefficient (0:lmax,-2*lmax-1:2*lmax+1)
+  real(REAL64)    ::  cg(0:LMAX,-(2*LMAX+1):2*LMAX+1)                    !  Clebsch-Gordan coefficient (0:lmax,-2*lmax-1:2*lmax+1)
 
-  integer         ::  lmax, ifail
+  integer         ::  lmx, ifail
   logical         ::  lqi
 
 ! constants
@@ -165,9 +168,9 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
 
   allocate(st(mxdatm,mxdtyp))
-  allocate(vqil(0:3,-3:3,mxdtyp))
-  allocate(dvqildq(0:3,-3:3,mxdtyp))
-  allocate(d2vqildq2(0:3,-3:3,mxdtyp))
+  allocate(vqil(0:LMAX,-LMAX:LMAX,mxdtyp))
+  allocate(dvqildq(0:LMAX,-LMAX:LMAX,mxdtyp))
+  allocate(d2vqildq2(0:LMAX,-LMAX:LMAX,mxdtyp))
 
   allocate(k_ind(nanl), kk_ind(nanl), l_ind(nanl), m_ind(nanl))
   allocate(k_ind_so(nanlso), kk_ind_so(nanlso), l_ind_so(nanlso))
@@ -182,12 +185,12 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 ! checks dimensions and maximum angular momentum
 
   ind = 0
-  lmax = 0
+  lmx = 0
   do k = 1,ntype
-    do l = 0,3
+    do l = 0,LMAX
       if(nkb(l,0,k) /= 0) then
         ind = ind + (2*l+1)*natom(k)
-        lmax = max(lmax,l)
+        lmx = max(lmx,l)
       endif
     enddo
   enddo
@@ -200,9 +203,9 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
   endif
 
-  if(lmax > 3) then
-    write(6,'("  proj_nl_kb_so_der:    lmax = ",i8,                      &
-           &  " > 3 (max allowed in code)")')  lmax
+  if(lmx > LMAX) then
+    write(6,'("  proj_nl_kb_so_der:    lmx = ",i8,                       &
+           &  " > ",i3," (max allowed in code)")')  lmx, LMAX
 
     stop
 
@@ -210,16 +213,16 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
   ind = 0
   do k=1,ntype
-    do l = 1,3
+    do l = 1,LMAX
       if(nkb(l,-1,k) /= 0) then
         ind = ind + (2*l)*natom(k)
-        lmax = max(lmax,l)
+        lmx = max(lmx,l)
       endif
     enddo
-    do l = 0,3
+    do l = 0,LMAX
       if(nkb(l,1,k) /= 0) then
         ind = ind + (2*l+2)*natom(k)
-        lmax = max(lmax,l)
+        lmx = max(lmx,l)
       endif
     enddo
   enddo
@@ -237,7 +240,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
   ind = 0
   do k = 1,ntype
-    do l = 0,3
+    do l = 0,lmx
       if(nkb(l,0,k) /= 0) then
 
         do m = -l,l
@@ -251,12 +254,12 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
         enddo
 
       endif
-    enddo    !  l=0,3
+    enddo    !  l=0,lmx
   enddo      !  k=1,ntype
 
   ind = 0
   do k = 1,ntype
-    do l = 0,3
+    do l = 0,lmx
       if(nkb(l,1,k) /= 0) then
         do mj = -2*l-1,2*l+1,2
           do kk = 1,natom(k)
@@ -288,13 +291,13 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
 ! Clebsch-Gordan coefficients
 
-  do l = 0,lmax
-  do j = -2*lmax-1,2*lmax+1
+  do l = 0,lmx
+  do j = -2*lmx-1,2*lmx+1
     cg(l,j) = ZERO
   enddo
   enddo
 
-  do l = 0,lmax
+  do l = 0,lmx
   do j = -2*l-1,2*l+1
     cg(l,j) = sqrt( ((2*l+1 + j)*UM) / ((4*l+2)*UM) )
   enddo
@@ -304,7 +307,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
 !$omp  parallel do default(private)                                      &
 !$omp& shared(kgv, bvec, bdot, ntype, natom, mtxd, rkpt, isort, rat)     &
-!$omp& shared(nder, lmax, delqnl, nqnl, vkb, fac)                        &
+!$omp& shared(nder, lmx, delqnl, nqnl, vkb, fac)                         &
 !$omp& shared(nanl, anlspin, danlspindrk, d2anlspindrk2)                 &
 !$omp& shared(nanlso, anlsop, danlsopdrk, d2anlsopdrk2)                  &
 !$omp& shared(anlsom, danlsomdrk, d2anlsomdrk2)                          &
@@ -359,12 +362,12 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 !   angular functions
 
     call ylm_rc(qcar, rylm, drylmdqc, d2rylmdqc2, .TRUE.,                &
-        zylm, dzylmdqc, d2zylmdqc2, lmax, nder, ifail)
+        zylm, dzylmdqc, d2zylmdqc2, lmx, nder, ifail)
 
 !   convert to lattice coordinates
 
     if(nder > 0) then
-      do l = 0,lmax
+      do l = 0,lmx
       do m =-l,l
         do n = 1,3
           dzylmdrk(n,l,m) = C_ZERO
@@ -377,7 +380,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
     endif
 
     if(nder > 1) then
-      do l = 0,lmax
+      do l = 0,lmx
       do m =-l,l
         do n = 1,3
         do j = 1,3
@@ -411,7 +414,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
     do k = 1,ntype
 
-      do l = 0,3
+      do l = 0,lmx
 
         xni = qi/delqnl(k)
         ni  = nint(xni)

@@ -14,6 +14,11 @@
 !>  Sets up the special representation of the
 !>  non local part of the hamiltonian for a given k-point
 !>  Kleinman and Bylander pseudo-potential
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.0.3
+!>  \date         May 12 1990, 7 December 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
     ng, kgv,                                                             &
@@ -28,14 +33,14 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 ! Adapted Summer 2015. vkb normalization. JLM
 ! Modified documentation, January 2020. JLM
 ! openmp version 19 January 2020. JLM
+! LMAX,lmx, 7 December 2021. JLM
 ! copyright INESC-MN/Jose Luis Martins
-
-! version 4.99
 
 
   implicit none
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: LMAX = 3                                !  hard coded max ang. mom.
 
 ! input
 
@@ -59,10 +64,11 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for pseudo interpolation for atom k
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the pseudo interpolation for atom k
-  real(REAL64), intent(in)           ::  vkb(-2:mxdlqp,0:3,-1:1,mxdtyp)  !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. NOT normalized to vcell, hartree
-  integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<  KB pseudo.  normalization for atom k, ang. mom. l
+  real(REAL64), intent(in)        ::  vkb(-2:mxdlqp,0:LMAX,-1:1,mxdtyp)  !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. NOT normalized to vcell, hartree
+  integer, intent(in)                ::  nkb(0:LMAX,-1:1,mxdtyp)         !<  KB pseudo.  normalization for atom k, ang. mom. l
 
 ! output
+
   complex(REAL64), intent(out)       ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
   real(REAL64), intent(out)          ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
 
@@ -83,15 +89,15 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
   real(REAL64)    ::  vcell, bdot(3,3),fac
   real(REAL64)    ::  qi,qk(3),qcar(3),fi,xni,xi,vq0
 
-  real(REAL64)    ::  rylm(0:3,-3:3)                 !   r**l sqrt(4 pi / 2l+1) "Y_lm(l,m)+-Y_lm(l,-m)"
-  real(REAL64)    ::  drylmdqc(3,0:3,-3:3)           !   unused
-  real(REAL64)    ::  d2rylmdqc2(3,3,0:3,-3:3)       !   unused
+  real(REAL64)    ::  rylm(0:LMAX,-LMAX:LMAX)                 !   r**l sqrt(4 pi / 2l+1) "Y_lm(l,m)+-Y_lm(l,-m)"
+  real(REAL64)    ::  drylmdqc(3,0:LMAX,-LMAX:LMAX)           !   unused
+  real(REAL64)    ::  d2rylmdqc2(3,3,0:LMAX,-LMAX:LMAX)       !   unused
 
-  complex(REAL64) ::  zylm(0:3,-3:3)                 !   unused
-  complex(REAL64) ::  dzylmdqc(3,0:3,-3:3)           !   unused
-  complex(REAL64) ::  d2zylmdqc2(3,3,0:3,-3:3)       !   unused
+  complex(REAL64) ::  zylm(0:LMAX,-LMAX:LMAX)                 !   unused
+  complex(REAL64) ::  dzylmdqc(3,0:LMAX,-LMAX:LMAX)           !   unused
+  complex(REAL64) ::  d2zylmdqc2(3,3,0:LMAX,-LMAX:LMAX)       !   unused
 
-  integer         ::  lmax, ifail
+  integer         ::  lmx, ifail
 
 ! constants
 
@@ -111,7 +117,7 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
   if(ng > mxdgve) stop
 
   allocate(st(mxdatm,mxdtyp))
-  allocate(vqil(0:3,mxdtyp))
+  allocate(vqil(0:LMAX,mxdtyp))
 
   allocate(k_ind(nanl), kk_ind(nanl), l_ind(nanl), m_ind(nanl))
 
@@ -124,12 +130,12 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 ! checks dimensions and maximum angular momentum
 
   ind = 0
-  lmax = 0
+  lmx = 0
   do k=1,ntype
-    do l = 0,3
+    do l = 0,LMAX
       if(nkb(l,0,k) /= 0) then
         ind = ind + (2*l+1)*natom(k)
-        lmax = max(lmax,l)
+        lmx = max(lmx,l)
       endif
     enddo
   enddo
@@ -150,9 +156,9 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 
   endif
 
-  if(lmax > 3) then
-    write(6,'("  proj_nl_kb:    lmax = ",i8,                              &
-           &  " > 3 (max allowed in code)")')  lmax
+  if(lmx > LMAX) then
+    write(6,'("  proj_nl_kb:    lmx = ",i8,                               &
+           &  " > ",i3," (max allowed in code)")')  lmx, LMAX
 
     stop
 
@@ -162,7 +168,7 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 
   ind = 0
   do k = 1,ntype
-    do l = 0,3
+    do l = 0,lmx
       if(nkb(l,0,k) /= 0) then
 
         do m = -l,l
@@ -176,14 +182,14 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
         enddo
 
       endif
-    enddo    !  l=0,3
+    enddo    !  l=0,lmx
   enddo      !  k=1,ntype
 
 ! starts loop over g-vectors
 
 !$omp  parallel do default(private)                                      &
 !$omp& shared(kgv, bvec, ntype, natom, mtxd, rkpt, isort, rat)           &
-!$omp& shared(lmax, delqnl, nqnl, vkb, fac)                              &
+!$omp& shared(lmx, delqnl, nqnl, vkb, fac)                               &
 !$omp& shared(nanl, anlga, k_ind, kk_ind, l_ind, m_ind)
   do i = 1,mtxd
 
@@ -199,7 +205,7 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 !   angular functions
 
     call ylm_rc(qcar, rylm, drylmdqc, d2rylmdqc2, .FALSE.,               &
-        zylm, dzylmdqc, d2zylmdqc2, lmax, 0, ifail)
+        zylm, dzylmdqc, d2zylmdqc2, lmx, 0, ifail)
 
 !   structure phase factor
 
@@ -216,7 +222,7 @@ subroutine proj_nl_kb_c16(rkpt, mtxd, isort, nanl,                       &
 !   i**l * v(q)
 
     do k = 1,ntype
-      do l = 0,3
+      do l = 0,lmx
 
         xni = qi/delqnl(k)
         ni  = nint(xni)

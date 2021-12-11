@@ -167,13 +167,17 @@ subroutine write_cpwout(meta_pwdat,                                      &
            isl1(3)*isl2(1)*isl3(2) - isl1(3)*isl2(2)*isl3(1) -           &
            isl1(1)*isl2(3)*isl3(2) - isl1(2)*isl2(1)*isl3(3)
 
-    call adot_to_bdot(adot,vcell,bdot)
-    volideal = idet*(alatt*alatt*alatt/4)
+    if(idet /= 0) then
 
-    write(6,*)
-    write(6,'(3x,f15.3,3x,f10.4,5x,"idealredevolume,ratio")')            &
+      call adot_to_bdot(adot,vcell,bdot)
+      volideal = idet*(alatt*alatt*alatt/4)
+
+      write(6,*)
+      write(6,'(3x,f15.3,3x,f10.4,5x,"idealredevolume,ratio")')          &
             volideal, vcell/volideal
-    write(6,*)
+      write(6,*)
+
+    endif
 
   else
 

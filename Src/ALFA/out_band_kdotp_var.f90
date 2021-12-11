@@ -16,16 +16,21 @@
 !>     Files band_lk.agr, band_so_lk.agr, band_lk.gp and band_so_lk.gp,
 !>     for later ploting with gnuplot and xmgrace are written
 !>     Circuit for band structure is defined in BAND_LINES.DAT
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         8 may 2004, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
       subroutine out_band_kdotp_var(title, subtitle,                     &
-     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                &
+     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,        &
      & adot, ntype, natom, rat,                                          &
      & ng, kgv, phase, conj,                                             &
      & ns, inds, kmax, indv, ek,                                         &
      & sfact, icmplx,                                                    &
      & veff,                                                             &
      & nqnl, delqnl, vkb, nkb,                                           &
-     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &     
+     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &
      & mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 !      version 4.42. 8 may 2004. jlm
@@ -38,10 +43,9 @@
 !      modified, idshift, 22 October 2018. JLM
 !      Modified h_kb_dia_all, 8 June 2020, icmax 14 June 2020. JLM
 !      Modified, vmax, vmin, 27 November 2020. JLM
+!      Modified, efermi, 29 November 2021. JLM
 
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.99
 
        implicit none
 
@@ -67,6 +71,7 @@
        real(REAL64), intent(in)           ::  epspsi                     !<  requested precision of the eigenvectors
        integer, intent(in)                ::  icmax                      !<  maximum number of iterations for diagonalization
        real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
+       real(REAL64), intent(in)           ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
        real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
        integer, intent(in)                ::  ntype                      !<  number of types of atoms
@@ -98,13 +103,13 @@
        integer, intent(in)                ::  norbat(mxdtyp)             !<  number of atomic orbitals for atom k
        integer, intent(in)                ::  nqwf(mxdtyp)               !<  number of points for wavefunction interpolation for atom k
        real(REAL64), intent(in)           ::  delqwf(mxdtyp)             !<  step used in the wavefunction interpolation for atom k
-       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l 
+       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l
        integer, intent(in)                ::  lorb(mxdlao,mxdtyp)        !<  angular momentum of orbital n of atom k
 
 !      input and output
 
        integer, intent(inout)             ::  iguess                     !<  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
-       
+
 !      allocatable arrays for Brillouin zone path
 
        integer                            ::  nlines                     !  number of lines in reciprocal space
@@ -176,8 +181,8 @@
 
 !      constants
 
-       real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size 
-!       real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory 
+       real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size
+!       real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory
 
 !      counters
 
@@ -200,14 +205,14 @@
        call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
        allocate(vscr(mxdscr))
-   
+
        ipr = 1
        idshift = 0
        call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,       &
      & ng, kgv, phase, conj, ns, inds,                                   &
      & mxdscr, mxdgve, mxdnst)
 
-     
+
        iotape = 13
        call out_band_circuit_size('BAND_LINES.DAT',iotape,1,adot,        &
      &                  neig,nrk2,nlines,nvert)
@@ -240,12 +245,12 @@
 
          do j=1,3
            rkpt(j) = rk(j,irk)
-         enddo         
-         
+         enddo
+
          call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
-         
+
          if(nd > mxddim) mxddim = nd
-         
+
        enddo
 
 !      allocates arrays
@@ -278,14 +283,14 @@
        allocate(psi0(mxddim,mxdbnd))
        allocate(hpsi0(mxddim,mxdbnd))
        allocate(ekpsi0(mxdbnd))
-       
+
 !      Calculates reference k-point
 
        iguess = 0
        ipr = 0
 
        nocc = neig
- 
+
        write(6,*)
        write(6,'("  Reference k-point for LK method")')
        write(6,*)
@@ -299,11 +304,11 @@
      & mtxd0, hdiag0, isort0, qmod0, ekpg0, .FALSE.,                     &
      & psi0, hpsi0, ei0,                                                 &
      & vscr, kmscr,                                                      &
-     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &     
+     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &
      & mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,           &
      & mxdbnd, mxdscr, mxdlao)
 
-     
+
         ipr = 1
         nrka = -1
         call print_eig(ipr,0,labelk,nrka,rk0,                            &
@@ -318,7 +323,7 @@
          do j=1,3
            rkpt(j) = rk(j,irk)
          enddo
-  
+
          write(6,*)
          write(6,'("  Working on k-point ",i7,"  out of ", i7)')         &
      &               irk,nrk2
@@ -372,12 +377,12 @@
        enddo
 
 !      writes the output files for xmgrace and gnuplot
-       
+
        iotape = 15
        nstyle = 2
-       
 
-       call out_band_eref(neig,nrk2,ztot,2,1,e_of_k,eref,nocc)
+
+       call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
 
        call out_band_gnuplot('band_lk.gp',iotape,                        &
      &        neig,nrk2,xk,e_of_k,eref,                                  &
@@ -388,8 +393,8 @@
      &        neig,nrk2,xk,e_of_k,eref,nocc,                             &
      &        nvert,xcvert,nlines,ljump,nkstep,label,xklab)
 
-       
-       call out_band_eref(neig,nrk2,ztot,1,1,e_of_k_so,eref,nocc)
+
+       call out_band_eref(neig,nrk2,ztot,efermi,1,1,e_of_k_so,eref,nocc)
 
        call out_band_gnuplot('band_so_lk.gp',iotape,                     &
      &    2*neig,nrk2,xk, e_of_k_so,eref,                                &

@@ -14,6 +14,11 @@
 !>     This subroutines reads a file with the atomic structure and
 !>     the effective potential and charge density and writes files
 !>     for the band structure, DOS, charge, potentaial plots.
+!>
+!>  \author       Carlos Lóia Reis, Jose Luis Martins
+!>  \version      5.03
+!>  \date         December 18, 2013, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine ao_interpolation_sub(ioreplay)
 
@@ -24,9 +29,8 @@
 !      Modified, ioreplay, 8 January 2017. JLM
 !      Modified, cpw_variables. 7 January 2020. JLM
 !      Modified, epspsi, icmax, 14 June 2020. JLM
+!      Modified, efermi, 29 November 2021. JLM
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.98
 
        use cpw_variables
        use NonOrthoInterp
@@ -183,6 +187,7 @@
 !       complex(REAL64), allocatable       ::  veff(:)                  !  Effective potential for the prototype G-vector in star j
 
        real(REAL64)                       ::  emaxin                     !  kinetic energy cutoff of plane wave expansion (hartree).
+       real(REAL64)                       ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
 
        type(strfac_t)                     ::  strfac_                    !<  structure factors
@@ -239,7 +244,7 @@
        call cpw_pp_band_dos_init(filename, iotape,                       &
      &    dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,    &
      &    pwexp_, chdensin_, vcompin_, atorb_,                           &
-     &    emaxin, flgdalin, author,                                      &
+     &    emaxin, efermi, flgdalin, author,                              &
      &    pwline, title, subtitle ,meta_cpw2000,                         &
      &    mxdgvein, mxdnstin)
 

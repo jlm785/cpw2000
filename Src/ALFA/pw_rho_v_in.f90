@@ -15,16 +15,16 @@
 !>  data from a self-consistent calculation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.02
-!>  \date         May 16, 2014, 31 December 2020. JLM
+!>  \version      5.03
+!>  \date         May 16, 2014, 29 November 2021. JLM
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
          pwline, title, subtitle, meta_cpw2000,                          &
-         author, flgscf, flgdal, emax, teleck,                           &
-         nx,ny,nz, sx,sy,sz, nband,                                      &
+         author, flgscf, flgdal,                                         &
+         emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi,         &
+         adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
-         alatt, adot, ntype, natom, nameat, rat,                         &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
          veff, den, denbond,                                             &
          irel, icore, icorr, iray, ititle,                               &
@@ -39,10 +39,9 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Modified, mxdlao, December 1, 2015.  JLM
 ! Modified, meta_cpw2000, author,nx,etc, January 10, 2017. JLM
 ! Modified October 15 2018 to pass generation information for pwSCF.
-
-! API CHANGED FROM EARLIER VERSIONS!!!!!!!!!!!!!!!!!!
-
 ! Modified, documentation, February 4 2020. JLM
+! Modified, efermi order of ntrans, mtrx, tnp, 29 November 2021. JLM
+
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -78,16 +77,17 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   integer, intent(out)               ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(out)          ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
-
-  integer, intent(out)               ::  ntrans                          !<  number of symmetry operations in the factor group
-  integer, intent(out)               ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
-  real(REAL64), intent(out)          ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
+  real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   real(REAL64), intent(out)          ::  adot(3,3)                       !<  metric in direct space
   integer, intent(out)               ::  ntype                           !<  number of types of atoms
   integer, intent(out)               ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(out)      ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   real(REAL64), intent(out)          ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
+
+  integer, intent(out)               ::  ntrans                          !<  number of symmetry operations in the factor group
+  integer, intent(out)               ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
+  real(REAL64), intent(out)          ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
   integer, intent(out)               ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(out)               ::  kmax(3)                         !<  max value of kgv(i,n)
@@ -138,10 +138,10 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   call pw_rho_v_in_crystal_calc(io,                                      &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
-         nx,ny,nz, sx,sy,sz, nband,                                      &
+         nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
          ng ,ns,                                                         &
          ntrans, mtrx, tnp,                                              &
-         alatt, adot, ntype, natom, nameat, rat,                         &
+         adot, ntype, natom, nameat, rat,                                &
          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp)
 
 ! reads the self-consistent charge and potential

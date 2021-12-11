@@ -15,13 +15,17 @@
 !>  post processing
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.02
-!>  \date         201x, 13 September 2021.
+!>  \version      5.03
+!>  \date         201x, 29 November 2021.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
+      efermi,                                                            &
       dims_, crys_, spaceg_, xc_, flags_, pwexp_, kpoint_,               &
       recip_, vcomp_, chdens_)
+
+! added efermi 29 November 2021. JLM
+
 
   use cpw_variables
 
@@ -44,13 +48,15 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
   character(len=250), intent(in)     ::  meta_pwdat                      !<  metadata from PW.DAT
   character(len=250), intent(in)     ::  meta_cpw2000                    !<  metadata from cpw2000
 
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+
   call pw_rho_v_out(fname, iotape, xc_%author, xc_%tblaha,               &
      flags_%flgscf, flags_%flgdal,                                       &
      meta_pwdat, meta_cpw2000,                                           &
      pwexp_%emax, pwexp_%teleck, kpoint_%nx, kpoint_%ny,                 &
      kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
-     pwexp_%nbandin, crys_%alatt, crys_%adot,                            &
-     crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,                  &
+     pwexp_%nbandin, crys_%alatt, efermi,                                &
+     crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,      &
      spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                          &
      recip_%ng, recip_%kmax, recip_%kgv, recip_%phase,                   &
      recip_%conj, recip_%ns, recip_%mstar,                               &

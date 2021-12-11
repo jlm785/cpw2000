@@ -17,16 +17,21 @@
 !>     for later ploting with gnuplot and xmgrace are written
 !>     Circuit for band structure is defined in BAND_LINES.DAT
 !>     It also writes kdotp_matrix.dat and kdotp_matrix_so.dat for further processing
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         8 may 2004, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine out_band_kdotp_2nd(title, subtitle,                    &
-     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                &
+     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,        &
      & adot, ntype, natom, rat,                                          &
      & ng, kgv, phase, conj,                                             &
      & ns, inds, kmax, indv, ek,                                         &
      & sfact, icmplx,                                                    &
      & veff,                                                             &
      & nqnl, delqnl, vkb, nkb,                                           &
-     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &     
+     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &
      & mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 !      version 4.42. 8 may 2004. jlm
@@ -40,10 +45,9 @@
 !      Modified February 2020. Documentation, ifail, icmax,
 !      Modified h_kb_dia_all, 8 June 2020, icmax 14 June 2020. JLM
 !      Modified, vmax, vmin, 27 November 2020. JLM
+!      Modified, efermi, 29 November 2021. JLM
 
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.99
 
        implicit none
 
@@ -69,6 +73,7 @@
        real(REAL64), intent(in)           ::  epspsi                     !<  requested precision of the eigenvectors
        integer, intent(in)                ::  icmax                      !<  maximum number of iterations for diagonalization
        real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
+       real(REAL64), intent(in)           ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
        real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
        integer, intent(in)                ::  ntype                      !<  number of types of atoms
@@ -100,13 +105,13 @@
        integer, intent(in)                ::  norbat(mxdtyp)             !<  number of atomic orbitals for atom k
        integer, intent(in)                ::  nqwf(mxdtyp)               !<  number of points for wavefunction interpolation for atom k
        real(REAL64), intent(in)           ::  delqwf(mxdtyp)             !<  step used in the wavefunction interpolation for atom k
-       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l 
+       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l
        integer, intent(in)                ::  lorb(mxdlao,mxdtyp)        !<  angular momentum of orbital n of atom k
 
 !      input and output
 
        integer, intent(inout)             ::  iguess                     !<  LOCAL USE, keep for compatibility  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
-       
+
 !      allocatable arrays for Brillouin zone path
 
        integer                            ::  nlines                     !  number of lines in reciprocal space
@@ -164,7 +169,7 @@
        complex(REAL64), allocatable       ::  h0(:,:)                    ! <Psi|H|Psi> without spin-orbit
        complex(REAL64), allocatable       ::  dh0drk(:,:,:)              ! d <Psi|H|Psi> d k
        complex(REAL64), allocatable       ::  d2h0drk2(:,:,:,:)          ! d^2 <Psi|H|Psi> d k^2
-       
+
        complex(REAL64), allocatable       ::  hso0(:,:)                  ! <Psi|H_so|Psi> with spin-orbit
        complex(REAL64), allocatable       ::  dhso0drk(:,:,:)            ! d <Psi|H_so|Psi> d k
        complex(REAL64), allocatable       ::  d2hso0drk2(:,:,:,:)        ! d^2 <Psi|H_so|Psi> d k^2
@@ -199,7 +204,7 @@
        integer           ::  nsfft(3)
 
        real(REAL64)      ::  rk0(3)
-       
+
        integer           ::  natot          !  total number of atoms
        integer           ::  neltot         !  total number of electrons
        real(REAL64)      ::  emidgap        !  rough estimate of the mid-gap
@@ -224,7 +229,7 @@
 
 !      calculates local potential in fft mesh
 
- 
+
        if(flgdal == 'DUAL') then
          kmscr(1) = kmax(1)/2 + 2
          kmscr(2) = kmax(2)/2 + 2
@@ -238,14 +243,14 @@
        call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
        allocate(vscr(mxdscr))
-   
+
        ipr = 1
 
        idshift = 0
        call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,       &
      & ng, kgv, phase, conj, ns, inds,                                   &
      & mxdscr, mxdgve, mxdnst)
-     
+
        iotape = 13
        call out_band_circuit_size('BAND_LINES.DAT',iotape,1,adot,        &
      &                  neig,nrk2,nlines,nvert)
@@ -266,7 +271,7 @@
        allocate(e_of_k(neig,nrk2))
        allocate(e_of_k_so(2*neig,nrk2))
 
-      
+
 !      finds mxddim, mxdbnd
 
        mxdbnd = neig
@@ -286,12 +291,12 @@
 
          do j=1,3
            rkpt(j) = rk(j,irk)
-         enddo         
-         
+         enddo
+
          call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
-         
+
          if(nd > mxddim) mxddim = nd
-         
+
        enddo
 
 !      allocates arrays
@@ -313,7 +318,7 @@
        allocate(imatch(mxdbnd))
        allocate(isold(mxddim))
        allocate(iperm(mxdbnd),ipermold(mxdbnd))
-       
+
        allocate(imatch_so(2*mxdbnd))
        allocate(iperm_so(2*mxdbnd),ipermold_so(2*mxdbnd))
 
@@ -346,7 +351,7 @@
      & mtxd0, hdiag0, isort0, qmod0, ekpg0, .FALSE.,                     &
      & psi0, hpsi0, ei0,                                                 &
      & vscr, kmscr,                                                      &
-     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &     
+     & latorb, norbat, nqwf, delqwf, wvfao, lorb,                        &
      & mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,           &
      & mxdbnd, mxdscr, mxdlao)
 
@@ -406,14 +411,14 @@
 
        j = neltot
        emidgap = (hso0(j,j) + hso0(j+1,j+1)) / 2
-       
+
        call kdotp_silvaco_out('matrix_kdotp_so.dat',23,2*neig,adot,rk0,  &
      &     hso0,dhso0drk,d2hso0drk2,natot,neltot,emidgap,.TRUE.,         &
      &     2*mxdbnd)
-     
-         
+
+
        allocate(psi_so0(2*mxddim,2*mxdbnd))
-         
+
        do n = 1,neig
        do m = 1,mxddim
          psi_so0(2*m-1,2*n-1) = psi0(m,n)
@@ -422,10 +427,10 @@
          psi_so0(2*m  ,2*n  ) = psi0(m,n)
        enddo
        enddo
- 
+
 !      allocate psiold here.  Defines mtxdold such that it
 !      has most of the spectral weight for highest eigenvalue
-     
+
        xsum = ZERO
        do j = 1,mtxd0
          xsum = xsum + real(psi(j,neig)*conjg(psi(j,neig)),REAL64)
@@ -443,7 +448,7 @@
          do j=1,3
            rkpt(j) = rk(j,irk)
          enddo
- 
+
          write(6,*)
          write(6,'("  Working on k-point ",i7,"  out of ", i7)')         &
      &               irk,nrk2
@@ -492,17 +497,17 @@
      &        mtxd,psi,isort,psi_so,ei,ei_so,                            &
      &        e_of_k,e_of_k_so,nrk2,                                     &
      &        mxddim,mxdbnd)
-     
+
 
        enddo
 
 !      writes the output files for xmgrace and gnuplot
-       
+
        iotape = 15
        nstyle = 2
 
-       call out_band_eref(neig,nrk2,ztot,2,1,e_of_k,eref,nocc)
-       
+       call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
+
        call out_band_gnuplot('band_kp.gp',iotape,                        &
      &        neig,nrk2,xk,e_of_k,eref,                                  &
      &        nvert,xcvert,nlines,ljump,nkstep,label,xklab)
@@ -512,7 +517,7 @@
      &        neig,nrk2,xk,e_of_k,eref,nocc,                             &
      &        nvert,xcvert,nlines,ljump,nkstep,label,xklab)
 
-       call out_band_eref(neig,nrk2,ztot,1,1,e_of_k_so,eref,nocc)
+       call out_band_eref(neig,nrk2,ztot,efermi,1,1,e_of_k_so,eref,nocc)
 
        call out_band_gnuplot('band_so_kp.gp',iotape,                     &
      &     2*neig,nrk2,xk,e_of_k_so,eref,                                &
@@ -540,7 +545,7 @@
        deallocate(nkstep)
        deallocate(label)
        deallocate(xklab)
-      
+
        deallocate(e_of_k)
 
        deallocate(vscr)

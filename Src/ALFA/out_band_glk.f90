@@ -16,10 +16,15 @@
 !>     Files band.agr, band_so.agr, band.gp and band_so.gp,
 !>     for later ploting with gnuplot and xmgrace are written
 !>     Circuit for band structure is defined in BAND_LINES.DAT
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         8 may 2004, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine out_band_glk(title, subtitle,                         &
      & ninterp, nignore, xsvd, csvd,                                    &
-     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,               &
+     & emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,       &
      & adot, ntype, natom, rat,                                         &
      & ng, kgv, phase, conj,                                            &
      & ns, inds, kmax, indv, ek,                                        &
@@ -39,15 +44,14 @@
 !      modified, July 9, 2014.  JLM
 !      modified (title,subtitle) xmgrace plot. 4 August 2012. JLM
 !      Modified 8 November 2015. Compatibility new libpw. JLM
-!      Modified, 9 June 2020, from 4.93CJA h_kb_dia_all, 
+!      Modified, 9 June 2020, from 4.93CJA h_kb_dia_all,
 !      spin-orbit, match-state. JLM
 !      Modified, 14 June 2020, icmax. JLM
 !      Modified, csvd, xsvd, interpolation_glk, 19-24 August 2020. JLM
 !      Modified, vmax, vmin, 27 November 2020. JLM
+!      Modified, efermi, 29 November 2021. JLM
 
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.99
 
        implicit none
 
@@ -79,6 +83,7 @@
        real(REAL64), intent(in)           ::  epspsi                     !<  requested precision of the eigenvectors
        integer, intent(in)                ::  icmax                      !<  maximum number of iterations for diagonalization
        real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
+       real(REAL64), intent(in)           ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
        real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
        integer, intent(in)                ::  ntype                      !<  number of types of atoms
@@ -110,9 +115,9 @@
        integer, intent(in)                ::  norbat(mxdtyp)             !<  number of atomic orbitals for atom k
        integer, intent(in)                ::  nqwf(mxdtyp)               !<  number of points for wavefunction interpolation for atom k
        real(REAL64), intent(in)           ::  delqwf(mxdtyp)             !<  step used in the wavefunction interpolation for atom k
-       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l 
+       real(REAL64), intent(in)   ::   wvfao(-2:mxdlqp,mxdlao,mxdtyp)    !<  wavefunction for atom k, ang. mom. l
        integer, intent(in)                ::  lorb(mxdlao,mxdtyp)        !<  angular momentum of orbital n of atom k
-       
+
 !      allocatable arrays for Brillouin zone path
 
        integer                            ::  nlines                     !  number of lines in reciprocal space
@@ -222,8 +227,8 @@
 !      constants
 
        real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-       real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size 
-!       real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory 
+       real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size
+!       real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory
 
 !      counters
 
@@ -231,7 +236,7 @@
 
 
 !      calculates local potential in fft mesh
- 
+
 
        if(flgdal == 'DUAL') then
          kmscr(1) = kmax(1)/2 + 2
@@ -246,7 +251,7 @@
        call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
        allocate(vscr(mxdscr))
-   
+
        ipr = 1
 
        idshift = 0
@@ -280,7 +285,7 @@
 
          do j=1,3
            rkpt(j) = rk(j,irk)
-         enddo         
+         enddo
 
          call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
 
@@ -374,7 +379,7 @@
        allocate(imatch(mxdbnd))
        allocate(isold(mxddim))
        allocate(iperm(mxdbnd),ipermold(mxdbnd))
-       
+
        allocate(psiold_so(2*mxddim,2*mxdbnd))
        allocate(imatch_so(2*mxdbnd))
        allocate(iperm_so(2*mxdbnd),ipermold_so(2*mxdbnd))
@@ -386,7 +391,7 @@
        allocate(qmod0(mxddim))
        allocate(ekpg0(mxddim))
        allocate(ekpsi0(mxdbnd))
-       
+
        allocate(psi0(mxddim,mxdbnd))
        allocate(hpsi0(mxddim,2*mxdbnd))
 
@@ -396,21 +401,21 @@
        allocate(qmod1(mxddim))
        allocate(ekpg1(mxddim))
        allocate(ekpsi1(mxdbnd))
-       
+
        allocate(psi1(mxddim,mxdbnd))
 
        allocate(e_of_k(neig,nrk2))
        allocate(e_of_k_so(2*neig,nrk2))
-       
+
        allocate(e_of_k_int(neig-nignore,nrk3))
        allocate(e_of_k_so_int(2*(neig-nignore),nrk3))
        allocate(xk_int(nrk3))
        allocate(nkstep_int(nlines))
-       
+
        do n = 1,nlines
          nkstep_int(n) = nkstep(n)*ninterp
        enddo
-         
+
 
 !       allocate(psi_ref(mxddim,2*mxdbnd))
        allocate(psi_all(mxddim,mxdbnd,2))
@@ -424,7 +429,7 @@
        do n = 1,nlines
 
 !        loop over lines
-      
+
          if(ljump(n)) then
 
            irk = irk + 1
@@ -446,10 +451,10 @@
      &     mtxd0, hdiag0, isort0, qmod0, ekpg0, .FALSE.,                 &
      &     psi0, hpsi0, ei0,                                             &
      &     vscr, kmscr,                                                  &
-     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &     
+     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &
      &     mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,       &
      &     mxdbnd, mxdscr, mxdlao)
-           
+
            do j = 1,neig
              e_of_k(j,irk) = ei0(j)
            enddo
@@ -457,10 +462,10 @@
              e_of_k_int(j,irkint) = ei0(j+nignore)
            enddo
            xk_int(irkint) = xk(irk)
-          
+
            call kinetic_energy(neig,mtxd0,ekpg0,psi0,ekpsi0,             &
      &     mxddim,mxdbnd)
-     
+
            ipr = 1
            nrka = -1
            call print_eig(ipr,irk,labelk,nrka,rk0,                       &
@@ -488,7 +493,7 @@
      &        ei0(nignore+1), ei_so(2*nignore+1),                        &
      &        e_of_k_int, e_of_k_so_int, nrk3,                           &
      &        mxddim, mxdbnd-nignore)
-           
+
          endif
 
 !        end case of jump in band lines
@@ -512,18 +517,18 @@
      &     mtxd1, hdiag1, isort1, qmod1, ekpg1, .FALSE.,                 &
      &     psi1, hpsi0, ei1,                                             &
      &     vscr, kmscr,                                                  &
-     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &     
+     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &
      &     mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,       &
      &     mxdbnd, mxdscr, mxdlao)
 
-           
+
            do j=1,neig
              e_of_k(j,irk) = ei1(j)
            enddo
-          
+
            call kinetic_energy(neig,mtxd1,ekpg1,psi1,ekpsi1,             &
      &     mxddim,mxdbnd)
-     
+
            ipr = 1
            nrka = -1
            call print_eig(ipr,irk,labelk,nrka,rk1,                       &
@@ -581,7 +586,7 @@
      &         nqnl, delqnl, vkb, nkb,                                   &
      &         vscr, kmscr,                                              &
      &         mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
-       
+
 
              do j=1,neig-nignore
                e_of_k_int(j,irkint) = ei(j)
@@ -654,7 +659,7 @@
                psi0(j,i) = psi1(j,i)
              enddo
            enddo
-           
+
          enddo
 
        enddo
@@ -664,7 +669,7 @@
        iotape = 15
        nstyle = 2
 
-       call out_band_eref(neig,nrk2,ztot,2,1,e_of_k,eref,nocc)
+       call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
 
        if(nignore /= 0) eref = ZERO
 
@@ -685,7 +690,7 @@
 !        use the same reference as e_of_k
 !
 !        call out_band_eref(neig-nignore,irkint,ztot,2,1,e_of_k_int,eref,nocc)
-! 
+!
 !        if(nignore /= 0) eref = ZERO
 
        call out_band_xmgrace('band_lk_int.agr', iotape,                  &
@@ -695,7 +700,7 @@
 
 !      uses the reference of e_of_k_so
 
-       call out_band_eref(neig,nrk2,ztot,1,1,e_of_k_so,eref,nocc)
+       call out_band_eref(neig,nrk2,ztot,efermi,1,1,e_of_k_so,eref,nocc)
 
 !        call out_band_eref(neig-nignore,irkint,ztot,1,1,e_of_k_so_int,eref,nocc)
 

@@ -14,6 +14,11 @@
 !>  Calculates the total Kohn-Sham energy,
 !>  prints out potentials and charge densities,
 !>  and checks for convergence.
+!>
+!>  \author       Sverre Froyen,  Jose Luis Martins
+!>  \version      5.0.3
+!>  \date         1980s, 1987, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
   iconv, errvhxc, epscv,                                                 &
@@ -32,9 +37,8 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
 ! modified, f90, complex*16, 24 September 2015. JLM
 ! Modified documentation, August 2019. JLM
 ! Modified, itmix,errvhxc,eharrfou,printing, 2 December 2020. JLM
+! Modified, stops if error in charge is large, 29 November 2021. JLM
 ! copyright INESC-MN/Jose Luis Martins
-
-! Version 4.99
 
   implicit none
 
@@ -280,17 +284,25 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
 
 ! final checks
 
-  if (abs(real(den(1),REAL64) - ztot) > eps) then
+  if (abs(real(den(1),REAL64) - ztot) > EPS) then
     write(6,*)
-    write(6,'("     WARNING  total_ks_energy: non-neutral system",  &
+    write(6,'("     WARNING  total_ks_energy: non-neutral system",       &
          & " charge inbalance ",e12.4)') real(den(1)) - ztot
     write(6,*)
   endif
-  if (abs(aimag(den(1))) > eps) then
+  if (abs(aimag(den(1))) > EPS) then
     write(6,*)
-    write(6,'("     WARNING  total_ks_energy: strange system ",     &
+    write(6,'("     WARNING  total_ks_energy: strange system ",          &
          & "complex charge ",e12.4)') abs(aimag(den(1)))
     write(6,*)
+  endif
+  if (abs(real(den(1),REAL64) - ztot) > sqrt(EPS) .or.                   &
+          abs(aimag(den(1))) > sqrt(EPS)) then
+    write(6,*)
+    write(6,'("     STOPPED in total_ks_energy:  error is too large")')
+
+    stop
+
   endif
 
   return

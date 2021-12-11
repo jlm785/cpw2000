@@ -11,20 +11,24 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutines reads a file with the atomic structure and 
+!>     This subroutines reads a file with the atomic structure and
 !>     the effective potential and charge density.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         February 2020, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine cpw_pp_band_dos_init( filename, iotape,                &
      &   dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,     &
      &   pwexp_, chdensin_, vcompin_, atorb_,                            &
-     &   emaxin, flgdalin, author,                                       &
+     &   emaxin, efermi, flgdalin, author,                               &
      &   pwline, title, subtitle ,meta_cpw2000,                          &
      &   mxdgvein, mxdnstin)
 
 !      written February 1, 2020 from previous code. JLM
+!      Modified, efermi, 29 November 2021. JLM
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.95
 
        use cpw_variables
 
@@ -50,7 +54,7 @@
        type(pwexp_t)                      ::  pwexp_                     !<  plane-wave expansion choices
        type(chdens_t)                     ::  chdensin_                  !<  input charge densities
        type(vcomp_t)                      ::  vcompin_                   !<  local potential contributions
- 
+
        character(len=3), intent(out)      ::  author                     !<  type of xc wanted (CA=PZ , PW92 , PBE)
 
        character(len=60), intent(out)     ::  pwline                     !<  identifier of the calculation.  May contain miscellaneous information!
@@ -60,6 +64,7 @@
 
        real(REAL64), intent(out)          ::  emaxin                     !<  kinetic energy cutoff of plane wave expansion (hartree).
        character(len=4), intent(out)      ::  flgdalin                   !<  whether the dual approximation is used
+       real(REAL64), intent(out)          ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
        integer, intent(out)               ::  mxdgvein                   !<  array dimension for input g-space vectors
        integer, intent(out)               ::  mxdnstin                   !<  array dimension for input g-space stars
@@ -70,7 +75,7 @@
 
        character(len=3), allocatable      ::  irel(:)                        !  type of calculation relativistic/spin
        character(len=4), allocatable      ::  icore(:)                       !  type of partial core correction
-       character(len=2), allocatable      ::  icorr(:)       
+       character(len=2), allocatable      ::  icorr(:)
        character(len=60), allocatable     ::  iray(:)                        !  information about pseudopotential
        character(len=70), allocatable     ::  ititle(:)                      !  further information about pseudopotential
 
@@ -131,9 +136,10 @@
      &        author, flags_%flgscf, flgdalin, emaxin, pwexp_%teleck,    &
      &        kpoint_%nx, kpoint_%ny, kpoint_%nz,                        &
      &        kpoint_%sx, kpoint_%sy, kpoint_%sz, pwexp_%nbandin,        &
-     &        spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                 &
-     &        crys_%alatt, crys_%adot, crys_%ntype, crys_%natom,         &
+     &        crys_%alatt, efermi,                                       &
+     &        crys_%adot, crys_%ntype, crys_%natom,                      &
      &        crys_%nameat, crys_%rat,                                   &
+     &        spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                 &
      &        recip_in_%ng, recip_in_%kmax, recip_in_%kgv,               &
      &        recip_in_%phase, recip_in_%conj, recip_in_%ns,             &
      &        recip_in_%mstar,                                           &
@@ -153,7 +159,7 @@
        call print_crystal(ipr, crys_%adot, crys_%ntype, crys_%natom,     &
      &         crys_%nameat, crys_%rat,                                  &
      &         dims_%mxdtyp, dims_%mxdatm)
-       
+
 
        return
        end subroutine cpw_pp_band_dos_init

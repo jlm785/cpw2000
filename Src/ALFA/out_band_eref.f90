@@ -12,16 +12,20 @@
 !------------------------------------------------------------!
 
 !>     This subroutine suggests a reference energy for a band structure plot
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         September 4, 201, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
-       subroutine out_band_eref(neig,nrk,ztot,ispin,ivc,e_of_k,          &
+       subroutine out_band_eref(neig,nrk,ztot,efermi,ispin,ivc,e_of_k,   &
      &                          eref,nocc)
 
 !      Written September 4, 2014. JLM
 !      Modified, writes information, 7 November 2018. JLM
 !      Modified, documentation, August 1, 2019. JLM
 !      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.93
+!      Modified, efermi, 29 November 2021. JLM
 
        implicit none
 
@@ -33,16 +37,17 @@
        integer, intent(in)                ::  neig                       !<  number of eigenvectors (without spin)
        integer, intent(in)                ::  nrk                        !<  number of k-points in path
        real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
+       real(REAL64), intent(in)           ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
        integer, intent(in)                ::  ispin                      !<  spin degeneracy (must be 1 or 2)
        integer, intent(in)                ::  ivc                        !<  1=CBM, 2=VBM, 3=midgap=(CBM+VBM)/2
-       
+
        real(REAL64), intent(in)           ::  e_of_k(2*neig/ispin,nrk)   !<  band energies of k-point in plot
 
 !      output
 
        real(REAL64), intent(out)          ::  eref                       !<  reference energy for plot
        integer, intent(out)               ::  nocc                       !<  number of occupied bands (in semiconductors)
-       
+
 !      allocatable arrays
 
        integer, allocatable               ::  indx(:)                    !  sorting index
@@ -80,19 +85,19 @@
 
          lmetal = .FALSE.
          if(ispin == 2 .and. mod(nint(ztot),2) == 1) lmetal = .TRUE.
-         
+
          if(.not. lmetal) then
 
            n = min(nint(ztot/ispin + 0.01),2*neig/ispin-1)
-           
+
            if(n == 0) then
-           
+
              evbm = e_of_k(1,1)
 
              if(nrk > 1) then
 
                do irk = 2,nrk
-           
+
                  evbm = max(e_of_k(1,irk),evbm)
 
                enddo
@@ -100,13 +105,13 @@
              endif
 
              ecbm = evbm
-             
+
            else
 
              allocate(indx(2*neig/ispin))
 
              call sort(2*neig/ispin,e_of_k(1,1),indx)
-           
+
              evbm = e_of_k(indx(n),1)
              ecbm = e_of_k(indx(n+1),1)
 
@@ -115,7 +120,7 @@
                do irk = 2,nrk
 
                  call sort(2*neig/ispin,e_of_k(1,irk),indx)
-           
+
                  evbm = max(e_of_k(indx(n),irk),evbm)
                  ecbm = min(e_of_k(indx(n+1),irk),ecbm)
 
@@ -148,12 +153,12 @@
              write(6,*)
 
            else
-           
+
              lmetal = .TRUE.
 
            endif
          endif
-         
+
          if(lmetal) then
 
            n = min(nint((nrk*ztot)/ispin + 0.01),2*neig*nrk/ispin)
@@ -167,12 +172,24 @@
            eref = e_of_k(j,k)
            nocc = 0
 
-           write(6,*)
-           write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ",     &
+!          uses efermi if not too different from the current estimate
+
+           if(abs(eref - efermi) < 2/EV) then
+             eref = efermi
+             write(6,*)
+             write(6,'(f12.6,"   E_F, from self-consistent calculation", &
      &         a16)') eref*EV,cso
-           write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')      &
+             write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
      &             -eref*EV,cso
-           write(6,*)
+             write(6,*)
+           else
+             write(6,*)
+             write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ",   &
+     &         a16)') eref*EV,cso
+             write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
+     &             -eref*EV,cso
+             write(6,*)
+           endif
 
            deallocate(indx)
 

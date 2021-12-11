@@ -12,23 +12,26 @@
 !------------------------------------------------------------!
 
 !>     Prints the information about the Fermi level, occupations
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.0.3
+!>  \date         September 15, 2015, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine print_fermi_occup(ipr,el,teleck,                       &
      & nrk,wgk,nband,                                                    &
      & frac,efermi,eband,elects,bandwid,penngap,                         &
-     & mxdnrk,mxdbnd) 
+     & mxdnrk,mxdbnd)
 
 !      written September 15, 2015. JLM
 !      Fractional level, October 15, 2017. JLM
 !      based on older fermi_level subroutine
 !      Modified, documentation, August 2019. JLM
+!      Modified, increase threshold for printing details. 29 November 2021. JLM
 !      copyright inesc-mn/Jose Luis Martins
 
-
-!      version 4.60
-
        implicit none
-       
+
        integer, parameter  :: REAL64 = selected_real_kind(12)
 
 !      input:
@@ -87,16 +90,16 @@
        call sort(iel,el,ind)
 
        tempau = teleck / TAUTOK
-       
+
        if(ipr > 0) write(6,'(/,"  the fermi level is at ",f10.4,         &
      &       " [eV] ",/)') efermi*EV
 
-       if(ipr > 1) then
+       if(ipr > 2) then
 
          write(6,*)
 
          if( tempau < EPS*abs(el(ind(iel))-el(ind(1))) ) then
-       
+
 !          zero temperature
 
            do i = 1,iel
@@ -106,7 +109,7 @@
      &              jrk(ind(i)),frac(ind(i)),el(ind(i))*EV
              endif
            enddo
-         
+
          else
 
            iel = 0
@@ -133,7 +136,7 @@
          write(6,*)
 
        endif
-       
+
        if(ipr > 2) then
          write(6,*)
          write(6,'(5x,f14.6,"  band energy (Ha)")') eband
@@ -144,6 +147,6 @@
      &             penngap*EV
          write(6,*)
        endif
-       
+
        return
        end subroutine print_fermi_occup

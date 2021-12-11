@@ -22,10 +22,10 @@
 subroutine pw_rho_v_in_crystal_calc(io,                                  &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
-         nx,ny,nz, sx,sy,sz, nband,                                      &
+         nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
          ng, ns,                                                         &
          ntrans, mtrx, tnp,                                              &
-         alatt, adot, ntype, natom, nameat, rat,                         &
+         adot, ntype, natom, nameat, rat,                                &
          mxdtyp,mxdatm,mxdgve,mxdnst,mxdlqp)
 
 ! This subroutines reads the first part of file io,
@@ -84,6 +84,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   integer, intent(out)               ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(out)          ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
+  real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
 ! other local variables
 
@@ -204,13 +205,20 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     endif
   endif
 
-  read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
+! backcompatibilty blues
+
+  read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
 
   if(ioerr /= 0) then
-    nband = 0
-    alatt = -1.0
+    efermi = -1000.0
     backspace(io)
-    read(io) emax, teleck, nx,ny,nz, sx,sy,sz
+    read(io,iostat = ioerr2) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
+    if(ioerr2 /= 0) then
+      nband = 0
+      alatt = -1.0
+      backspace(io)
+      read(io) emax, teleck, nx,ny,nz, sx,sy,sz
+    endif
   endif
 
 

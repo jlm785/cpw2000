@@ -13,8 +13,13 @@
 
 !>  Calculates the energies on an uniform grid
 !>  for later processing by the density of states or optical program
+!>
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.03
+!>  \date         8 may 2004, 7 December 2021.
+!>  \copyright    GNU Public License v2
 
-  subroutine out_dos(diag_type, lworkers,                                &
+  subroutine out_dos(diag_type, lworkers, lproj, lso,                    &
   title, subtitle,                                                       &
   emax, flgdal, flgpsd,                                                  &
   epspsi, icmax, ztot,                                                   &
@@ -39,10 +44,9 @@
 ! Modified, mxddim, title, cleaning, 21-23 September 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, project wf on atomic orbitals, July 2021. CLR
+! Modified, lproj, lso in input. JLM
 
 ! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
-
-! version 4.99
 
   implicit none
 
@@ -60,6 +64,8 @@
 
   character(len=4), intent(in)       ::  diag_type                       !<  selects diagonalization, 'pw  ','ao  ','aojc'
   logical, intent(in)                ::  lworkers                        !<  use lworkers
+  logical, intent(in)                ::  lproj                           !<  projection in atomic orbitals
+  logical, intent(in)                ::  lso                             !<  include spin-orbit in projection
 
   character(len=50), intent(in)      ::  title                           !<  title for plots
   character(len=140), intent(in)     ::  subtitle                        !<  subtitle for plots
@@ -122,7 +128,7 @@
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
-  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
@@ -137,13 +143,13 @@
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
-  
+
   integer                            ::  ifail                           !  if ifail=0 h_kb_dia_all was successfull. Otherwise ifail indicates the number of correct digits.
   integer                            ::  iguess                          !  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
 
   logical                            ::  lkpg                            !  If true use the previous G-vectors (same mtxd and isort)
-  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions 
-  
+  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions
+
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
   integer                            ::  mxdwrk                          !  array dimension for fft transform workspace
@@ -165,14 +171,14 @@
   real(REAL64)                       ::  sx,sy,sz
   integer                            ::  nsfft(3)
 
-  integer                            ::  io, io11, io67                  !  tape numbers               
+  integer                            ::  io, io11, io67                  !  tape numbers
   integer                            ::  ioerr
 
   character(len=12)                  ::  filemesh
-  character(len=11)                  ::  filename 
-  character(len=12)                  ::  filedos 
+  character(len=11)                  ::  filename
+  character(len=12)                  ::  filedos
 
-! workers and restart  
+! workers and restart
 
   integer                            ::  irec_err
   integer                            ::  irk_rd
@@ -192,22 +198,22 @@
 ! variables for local orbitals
 
   integer                            ::  mxdorb                          !  array dimension of number of local orbitals
-  integer                            ::  nbaslcao                        !  number of atomic orbitals 
+  integer                            ::  nbaslcao                        !  number of atomic orbitals
   complex(REAL64), allocatable       ::  baslcao(:,:)                    !  atomic orbitals in plane-wave basis
   complex(REAL64), allocatable       ::  baslcao_aux(:,:)                !  atomic orbitals in plane-wave basis
   integer, allocatable               ::  infolcao(:,:)                   !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
   integer, allocatable               ::  infolcao_aux(:,:)               !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
-  real(REAL64), allocatable          ::  basxpsi(:,:,:)                  !  |<bas|psi>|^2 for each k 
-  complex(REAL64), allocatable       ::  prod(:,:)                       !  <bas|psi> 
-            
+  real(REAL64), allocatable          ::  basxpsi(:,:,:)                  !  |<bas|psi>|^2 for each k
+  complex(REAL64), allocatable       ::  prod(:,:)                       !  <bas|psi>
+
   integer, allocatable               ::  infolcao_so(:,:)                !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
-  complex(REAL64), allocatable       ::  prod_so(:,:)                    !  <bas|psi> 
-  real(REAL64), allocatable          ::  basxpsi_so(:,:,:)               !  |<bas|psi>|^2 for each k 
+  complex(REAL64), allocatable       ::  prod_so(:,:)                    !  <bas|psi>
+  real(REAL64), allocatable          ::  basxpsi_so(:,:,:)               !  |<bas|psi>|^2 for each k
   complex(REAL64), allocatable       ::  psi_in(:,:)                     !  component j of eigenvector i (guess on input)
 
 
 ! orbital information with Lowdin orthogonalization
-       
+
   complex(REAL64), allocatable       ::  S(:,:)
   complex(REAL64), allocatable       ::  S12(:,:)
   complex(REAL64), allocatable       ::  S12_inv(:,:)
@@ -224,17 +230,10 @@
 
   integer      :: n, i, j
   real(REAL64) :: sq
-  
-! options
 
-  logical :: lproj
-  logical :: lso
 
 !------------------------------------------------------------------
 
-
-  lproj  = .false.
-  lso    = .false.
 
   io11 = 11
   io67 = 67
@@ -258,16 +257,16 @@
   endif
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
-  
+
   allocate(vscr(mxdscr))
-  
+
   ipr = 1
   idshift = 0
-  
+
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
-  
+
   ipr = 2
 
   lfile = .false.
@@ -276,9 +275,9 @@
 
   if(lfile) then
     read(io11,*) nbandi, nx,ny,nz, sx,sy,sz
-    close(unit=io11)       
+    close(unit=io11)
     mxdbnd = nbandi
-  else       
+  else
     mxdbnd = nint(ztot) + 4
     nbandi = mxdbnd
     nx = 8
@@ -291,14 +290,14 @@
 
   call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
   mxdnrk)
-  
+
 
   allocate(kmap(3,nx,ny,nz))
   allocate(nband(mxdnrk))
   allocate(indk(6,mxdnrk))
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
-  
+
   call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
   adot,                                                                  &
   ntrans, mtrx,                                                          &
@@ -306,27 +305,15 @@
   mxdnrk, mxdbnd)
 
   neig = nbandi
-  
+
 ! finds mxddim
 
-  write(6,*) "Do you want the DOS projected on atomic orbitals (.true,.false.)?"
-  read(5,*) lproj
-  if (lproj) then
-    write(6,*) "Do you want the projections with Spin-Orbit (.true,.false.)?"
-    read(5,*) lso
-  endif
-
-  write(6,*) 'You chose:'
-  write(6,*) lproj, lso
-  
-!  stop
-
   if(lworkers) then
-    write(6,*) "Using Workers and Restart Capablities"       
+    write(6,*) "Using Workers and Restart Capablities"
 
     write(6,*) 'how many workers ?'
     read(5,*) nworker
-  
+
     write(6,*) 'current worker ?'
     read(5,*) iworker
   else
@@ -341,25 +328,25 @@
       rkpt(1) = rk(1,irk)
       rkpt(2) = rk(2,irk)
       rkpt(3) = rk(3,irk)
-      call size_mtxd(emax,rkpt,adot,ng,kgv,nd)         
+      call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
       if(nd > mxddim) mxddim = nd
     endif
   enddo
-  
+
 ! allocates arrays related to atomic orbitals
 
   if (lproj) then
 
     call size_nbaslcao(ntype,natom,norbat,lorb,nbaslcao,                   &
     mxdtyp,mxdlao)
-    
+
     mxdorb = nbaslcao
-    
+
     allocate(baslcao(mxddim,mxdorb))
     allocate(baslcao_aux(mxddim,mxdorb))
     allocate(infolcao(5,mxdorb))
     allocate(infolcao_aux(5,mxdorb))
-    
+
     allocate(basxpsi(mxdorb,mxdorb,nrk))  !! check dimensions not consistent with out_band_info_fold :(
 !           allocate(basxpsi(mxdorb,mxdbnd,nrk2))
 
@@ -368,20 +355,20 @@
     allocate(S12_inv(mxdorb,mxdorb))
     allocate(Swrk(mxdorb,mxdorb))
     allocate(ev_wrk(mxdorb))
-          
+
     allocate(prod(mxdorb,mxdbnd))
-    
+
     if (lso) then
       allocate(infolcao_so(5,2*mxdorb))
       allocate(prod_so(2*mxdorb,2*mxdbnd))
-      allocate(psi_in(2*mxddim,2*mxdorb))       
+      allocate(psi_in(2*mxddim,2*mxdorb))
       allocate(basxpsi_so(2*mxdorb,2*mxdorb,nrk))  !! check dimensions
       lpsiso = .TRUE.
       allocate(psi_so(2*mxddim,2*mxdbnd))
     else
       lpsiso = .FALSE.
       allocate(psi_so(1,1))
-    endif      
+    endif
   endif
 
 
@@ -396,7 +383,7 @@
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
   allocate(ekpsi_so(2*mxdbnd))
-  
+
   allocate(ei_so(2*mxdbnd))
 
 ! loop over k-points
@@ -404,14 +391,14 @@
   irk=1
   if (lproj) then
     if (lso) then
-      inquire(iolength = ir_size) irk_rd, ei(:), ei_so(:), basxpsi_so(:,:,irk)      
+      inquire(iolength = ir_size) irk_rd, ei(:), ei_so(:), basxpsi_so(:,:,irk)
     else
-      inquire(iolength = ir_size) irk_rd, ei(:), ei_so(:), basxpsi(:,:,irk)  
-    endif     
+      inquire(iolength = ir_size) irk_rd, ei(:), ei_so(:), basxpsi(:,:,irk)
+    endif
   else
     inquire(iolength = ir_size) irk_rd, ei(:), ei_so(:)
   endif
-  
+
 ! if run by a human do not restart
 
   if(.not. lworkers) then
@@ -431,16 +418,16 @@
     cworker = mod(irk-1,nworker) + 1
     lmyjob = .TRUE.
     if(cworker == iworker) then
-      irk_rd = -10        
+      irk_rd = -10
       read(io67,rec=irk, iostat=irec_err) irk_rd
       if(irk_rd == irk) then
         write(6,'("not computing k-point #",i5)') irk
-        lmyjob = .FALSE.                                
-      endif            
+        lmyjob = .FALSE.
+      endif
     else
       write(6,'("not computing k-point #",i5)') irk
-      lmyjob = .FALSE.                   
-    endif 
+      lmyjob = .FALSE.
+    endif
 
     if(lmyjob) then
 
@@ -463,32 +450,32 @@
       mtxd, hdiag, isort, qmod, ekpg, lkpg,                              &
       psi, hpsi, ei,                                                     &
       vscr, kmscr,                                                       &
-      latorb, norbat, nqwf, delqwf, wvfao,lorb,                          &     
+      latorb, norbat, nqwf, delqwf, wvfao,lorb,                          &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
 
 !     atomic orbital stuff
-      
+
       if (lproj) then
-      
+
         call atomic_orbital_c16(rkpt,mtxd,isort,1,                       &
         nbaslcao,baslcao_aux,infolcao,                                   &
         ng,kgv,                                                          &
         norbat,nqwf,delqwf,wvfao,lorb,                                   &
         ntype,natom,rat,adot,                                            &
         mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
-        
+
         call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao_aux,      &
         mxddim,baslcao_aux,mxddim,C_ZERO,S,mxdorb)
-        
+
         call  GetS12(S,S12,S12_inv,Swrk,ev_wrk,nbaslcao)
-    
+
         call zgemm('n','n',mtxd,nbaslcao,nbaslcao,C_UM,baslcao_aux,      &
         mxddim, S12,mxdorb,C_ZERO,baslcao,mxddim)
-    
+
         call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao,          &
         mxddim, baslcao,mxddim,C_ZERO,S,mxdorb)
-        
+
         do n = 1,nbaslcao
           sq = ZERO
           do j = 1,mtxd
@@ -499,18 +486,18 @@
             baslcao(j,n) = sq * baslcao(j,n)
           enddo
         enddo
-        
+
         call zgemm('C','N',nbaslcao,neig,mtxd,C_UM,baslcao,mxddim,       &
         psi,mxddim,C_ZERO,prod,mxdorb)
-        
+
 !!!       needs to be done with worker data when tested
-        
+
         do n = 1,neig
         do j = 1,nbaslcao
           basxpsi(j,n,irk) = real(prod(j,n)*conjg(prod(j,n)),REAL64)
         enddo
         enddo
-!!!        
+!!!
       endif
 
       call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                      &
@@ -538,22 +525,22 @@
         infolcao_so(:,2*i)   = infolcao(:,i)
         infolcao_so(:,2*i-1) = infolcao(:,i)
         enddo
-  
-  
+
+
         do i=1,nbaslcao
-        do j=1,mtxd                  
+        do j=1,mtxd
           psi_in(2*j-1,2*i         ) = baslcao(j,i)
           psi_in(2*j  ,2*i         ) = C_ZERO
           psi_in(2*j-1,2*i-1       ) = C_ZERO
           psi_in(2*j  ,2*i-1       ) = baslcao(j,i)
         enddo
         enddo
-        
+
         call zgemm('c','n',2*nbaslcao,2*neig,2*mtxd,                       &
         C_UM,psi_in,2*mxddim,psi_so,2*mxddim,C_ZERO,prod_so,2*mxdorb)
-        
+
 !!!       needs to be done with worker data when tested
-  
+
         do n = 1,2*neig
         do j = 1,2*nbaslcao
           basxpsi_so(j,n,irk) = real(prod_so(j,n)*conjg(prod_so(j,n)),     &
@@ -584,9 +571,9 @@
           write(io67, rec = irk) irk, ei(:), ei_so(:), basxpsi_so(:,:,irk)
         else
           write(io67, rec = irk) irk, ei(:), ei_so(:), basxpsi(:,:,irk)
-        endif                          
+        endif
       else
-        write(io67, rec = irk) irk, ei(:), ei_so(:)                   
+        write(io67, rec = irk) irk, ei(:), ei_so(:)
       endif
 
     endif
@@ -596,17 +583,17 @@
 ! end loop over k-points
 
   do irk = 1, nrk
-    read(io67,rec=irk, iostat=irec_err) irk_rd                  
-    if(irk_rd /= irk) then 
+    read(io67,rec=irk, iostat=irec_err) irk_rd
+    if(irk_rd /= irk) then
        pp_flag = 0
        exit
-    endif            
-    pp_flag = 1            
+    endif
+    pp_flag = 1
   enddo
 
   call zeelap(t2)
 
-  write(6,*) 
+  write(6,*)
   write(6,'(" elapsed time (s):", 2f14.3)') (t2-t1)
 
   deallocate(vscr)
@@ -621,7 +608,7 @@
   deallocate(ekpsi_so)
 
   deallocate(psi_so)
-  
+
   allocate(e_of_k(neig,nrk))
   allocate(e_of_k_so(2*neig,nrk))
 
@@ -630,12 +617,12 @@
 
       if (lproj) then
         if (lso) then
-          read(io67,rec=irk, iostat=irec_err) irk_rd, ei(:), ei_so(:), basxpsi_so(:,:,irk)                    
+          read(io67,rec=irk, iostat=irec_err) irk_rd, ei(:), ei_so(:), basxpsi_so(:,:,irk)
         else
           read(io67,rec=irk, iostat=irec_err) irk_rd, ei(:), ei_so(:), basxpsi(:,:,irk)
         endif
-      else      
-        read(io67,rec=irk, iostat=irec_err) irk_rd, ei(:), ei_so(:)      
+      else
+        read(io67,rec=irk, iostat=irec_err) irk_rd, ei(:), ei_so(:)
       endif
 
       e_of_k(1:neig,irk) = ei(1:neig)
@@ -647,7 +634,7 @@
   deallocate(ei)
   deallocate(ei_so)
 
-  if(pp_flag == 1) then        
+  if(pp_flag == 1) then
 
     write(6,*)
     write(6,*) '  Generating DOS files!'
@@ -661,37 +648,37 @@
       nband, rk, wgk, indk, kmap, e_of_k, e_of_k_so,                     &
       mxdnrk, mxdbnd)
 
-!  this needs to be done differently . 
-    
+!  this needs to be done differently .
+
     if (lproj) then
       open(unit=190,file="dos_file_proj.dat", form="unformatted")
       if (lso) then
         write(190) nrk
         write(190) 2*neig
-        write(190) 2*nbaslcao                
+        write(190) 2*nbaslcao
         do irk=1,nrk
 !          write(*,*) basxpsi_so(:,:,irk)
 !          stop
           write(190) basxpsi_so(:,:,irk)
-        enddo      
-      else       
+        enddo
+      else
         write(190) nrk
         write(190) neig
-        write(190) nbaslcao                
+        write(190) nbaslcao
         do irk=1,nrk
 !          write(*,*) basxpsi(:,:,irk)
 !          stop
           write(190) basxpsi(:,:,irk)
-        enddo        
-      endif      
+        enddo
+      endif
       close(unit=190)
     endif
-      
+
   else
     close(io67)
-    write(6,*) "this worker is done. run again when all workers are done to see results."          
+    write(6,*) "this worker is done. run again when all workers are done to see results."
   endif
- 
+
 ! if run by a human clean up temporary files
 
   if(.not. lworkers) then

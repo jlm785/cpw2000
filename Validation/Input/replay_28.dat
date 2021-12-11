@@ -6,6 +6,8 @@
            1    method
  y   Blade Runner test
            1    diagonal. method in DOS
+           y    DOS projected in atomic orbitals
+           y    DOS projected includes spin-orbit
            0    cpw_analysis task
            4    main task
            1    dos plot control

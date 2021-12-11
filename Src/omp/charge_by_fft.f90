@@ -14,6 +14,11 @@
 !>     computes, symmetrizes, and adds the charge density
 !>     from the eigenvectors.
 !>     Should be compiled with openmp
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.0.3
+!>  \date         August 14 1987,  29 November 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine charge_by_fft(mtxd,neig,occp,isort,psi,denk,           &
      & ng,kgv,phase,conj,ns,inds,kmax,mstar,                             &
@@ -27,9 +32,8 @@
 !      modified den_sym, mesh_fold, 30 September 2015. JLM
 !      Modified 13, December 2019.  denu allocation.  JLM
 !      Modified, documentation, January 2020. JLM
+!      Modified, initialization of denk, 29 November 2021. JLM
 !      copyright INESC-MN/Jose Luis Martins
-
-!      version 4.94
 
 
        implicit none
@@ -47,10 +51,10 @@
        real(REAL64), intent(in)           ::  occp(mxdbnd)               !<  fractional ocupation of level j
        integer, intent(in)                ::  isort(mxddim)              !<  g-vector associated with row/column i of hamiltonian
 
-       complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)         !<  |psi> 
+       complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)         !<  |psi>
 
        integer, intent(in)                ::  ng                         !<  size of g-space
-       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates 
+       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates
        complex(REAL64), intent(in)        ::  phase(mxdgve)              !<  phase factor of G-vector n
        real(REAL64), intent(in)           ::  conj(mxdgve)               !<  is -1 if one must take the complex conjugate of x*phase
        integer, intent(in)                ::  ns                         !<  number os stars with length less than gmax
@@ -84,13 +88,17 @@
 !      counters
 
        integer         ::  i, j
- 
+
 !      parameters
 
        real(REAL64), parameter :: SMALL = 0.000000000001_REAL64
        real(REAL64), parameter :: ZERO = 0.0_REAL64
        complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
+
+       do i = 1,ns
+         denk(i) = C_ZERO
+       enddo
 
        if (neig > 0) then
 
@@ -153,7 +161,7 @@
              stop
 
            endif
-       
+
 !          initialize rhomsh
 
            allocate(rhomsh(mxdfft))
@@ -199,7 +207,7 @@
            do i=1,ntot
              chd(i) = cmplx(rhomsh(i),ZERO,REAL64)
            enddo
-           
+
            deallocate(rhomsh)
            deallocate(ipoint)
 
@@ -226,7 +234,7 @@
            deallocate(denu)
 
          endif
-       
+
        endif
 
        return

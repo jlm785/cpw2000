@@ -16,18 +16,18 @@
 !>  by cpw_post_process
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.01
-!>  \date         22 April 2021, 13 September 2021.
+!>  \version      5.03
+!>  \date         22 April 2021, 21November 2021.
 !>  \copyright    GNU Public License v2
 
-subroutine pw_rho_v_out(filename,io,author,tblaha,flgscf,flgdal,         &
-         meta_pwdat,meta_cpw2000,                                        &
-         emax,teleck,nx,ny,nz,sx,sy,sz,nband,alatt,                      &
-         adot,ntype,natom,nameat,rat,                                    &
+subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
+         meta_pwdat, meta_cpw2000,                                       &
+         emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi,         &
+         adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
-         ng,kmax,kgv,phase,conj,ns,mstar,                                &
-         veff,den,dens,                                                  &
-         mxdtyp,mxdatm,mxdgve,mxdnst)
+         ng, kmax, kgv, phase, conj, ns, mstar,                          &
+         veff, den, dens,                                                &
+         mxdtyp, mxdatm, mxdgve, mxdnst)
 
 ! Written December 18-22, 2013. jlm
 ! Modified January 9, 2014. jlm
@@ -39,6 +39,7 @@ subroutine pw_rho_v_out(filename,io,author,tblaha,flgscf,flgdal,         &
 ! pwline replaced by meta_pwdat, meta_cpw2000 in input, January 5, 2017. JLM
 ! Modified, documentation, August 2019. JLM
 ! Modified, mxdlao, ntrans, 13 September 2021. JLM
+! Modified, efermi, 29 November 2021. JLM
 ! copyright  Jose Luis Martins/INESC-MN
 
   implicit none
@@ -78,6 +79,7 @@ subroutine pw_rho_v_out(filename,io,author,tblaha,flgscf,flgdal,         &
   integer, intent(in)                ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(in)           ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kmax(3)                         !<  max value of kgv(i,n)
@@ -119,7 +121,7 @@ subroutine pw_rho_v_out(filename,io,author,tblaha,flgscf,flgdal,         &
   write(io) bdate,btime
 
   write(io) author, flgscf, flgdal
-  write(io) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
+  write(io) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
 
   write(io) meta_pwdat, meta_cpw2000
 

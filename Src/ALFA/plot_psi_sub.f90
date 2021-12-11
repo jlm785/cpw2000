@@ -11,9 +11,14 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  This subroutines reads a file with the atomic structure and 
+!>  This subroutines reads a file with the atomic structure and
 !>  the effective potential, calculates the wave-functions for a
 !>  k-point and makes 1D, 2D, and 3D plots.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         16 February 2018, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
 
 subroutine plot_psi_sub(ioreplay)
@@ -21,9 +26,8 @@ subroutine plot_psi_sub(ioreplay)
 ! written 16 February 2018 based on cpw_analysis_sub, out_band_onek,
 ! and rho_v_plot_sub.
 ! Modernized, documentation, APIs, 2 February 2021. JLM
+! Modified, efermi, 29 November 2021. JLM
 ! copyright  Jose Luis Martins/INESC-MN
-
-! version 4.92
 
 
   use cpw_variables
@@ -103,7 +107,7 @@ subroutine plot_psi_sub(ioreplay)
 
   type(spaceg_t)                     ::  spaceg_                    !<  space group information
 
-!  integer                            ::  ntrans                     !  number of symmetry operations in the factor group  
+!  integer                            ::  ntrans                     !  number of symmetry operations in the factor group
 !  integer                            ::  mtrx(3,3,48)               !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
 !  real(REAL64)                       ::  tnp(3,48)                  !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
@@ -182,7 +186,7 @@ subroutine plot_psi_sub(ioreplay)
 
 !  integer                            ::  icmplx                     !  indicates if the structure factor is complex
 !  complex(REAL64), allocatable       ::  strfac_%sfact(:,:)                 !  structure factor for atom k and star i
- 
+
 ! information about the calculation
 
   character(len=3)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
@@ -202,12 +206,12 @@ subroutine plot_psi_sub(ioreplay)
 
   real(REAL64), allocatable          ::  ekpg(:)                    !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                   !  component j of eigenvector i! other variables
-  complex(REAL64), allocatable       ::  hpsi(:,:)                  !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                  !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                   !  kinetic energy of eigenvector i. (hartree)  integer           ::  iotape
 
-  complex(REAL64), allocatable       ::  psi_so(:,:)                !  component j of eigenvector i!      allocatable local arrays       
-  real(REAL64), allocatable          ::  ei_so(:)                   !  spin-orbit eigenvalue (hartree)       
-  real(REAL64), allocatable          ::  ekpsi_so(:)                !  kinetic energy of eigenvector i. (hartree)       
+  complex(REAL64), allocatable       ::  psi_so(:,:)                !  component j of eigenvector i!      allocatable local arrays
+  real(REAL64), allocatable          ::  ei_so(:)                   !  spin-orbit eigenvalue (hartree)
+  real(REAL64), allocatable          ::  ekpsi_so(:)                !  kinetic energy of eigenvector i. (hartree)
 
 ! other variables
 
@@ -227,7 +231,7 @@ subroutine plot_psi_sub(ioreplay)
   integer           ::  mtxd
 
   real(REAL64)           ::  vmax, vmin                             !  maximum and minimum values of vscr
-  
+
   character(len=4)       ::  diag_type                              !  selects diagonalization, 'pw  ','ao  ','aojc'
   integer                ::  nocc
   integer                ::  ifail
@@ -237,7 +241,8 @@ subroutine plot_psi_sub(ioreplay)
 
   integer                ::  iguess
   real(real64)           ::  epspsi
-  character(len=4)       ::  flgdal                                  !  dual approximation if equal to 'DUAL'  
+  character(len=4)       ::  flgdal                                  !  dual approximation if equal to 'DUAL'
+  real(REAL64)           ::  efermi                                  !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   real(REAL64)           ::  rk0(3)
 
@@ -269,12 +274,12 @@ subroutine plot_psi_sub(ioreplay)
   call cpw_pp_band_dos_init(filename, iotape,                            &
      dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,         &
      pwexp_, chdensin_, vcompin_, atorb_,                                &
-     emaxin, flgdalin, author,                                           &
+     emaxin, efermi, flgdalin, author,                                   &
      pwline, title, subtitle ,meta_cpw2000,                              &
      mxdgvein, mxdnstin)
 
 ! prepares calculation
-  
+
   call cpw_pp_band_prepare(ioreplay,                                     &
     dims_, crys_, spaceg_, recip_, recip_in_, pwexp_, strfac_,           &
     vcomp_, vcompin_,                                                    &
@@ -291,10 +296,10 @@ subroutine plot_psi_sub(ioreplay)
 
 !   write(6,*)
 !   write(6,*) '  Do you want to use the dual approximation (y/n)?'
-!   write(6,*) '  For wave-function plots the approximation is safe' 
+!   write(6,*) '  For wave-function plots the approximation is safe'
 !   read(5,*) yesno
 !   write(ioreplay,'(2x,a1,"   dual")') yesno
-!   
+!
 !   flgdal = '    '
 !   if(yesno == 'y' .or. yesno == 'Y') then
     flgdal = 'DUAL'
@@ -306,7 +311,7 @@ subroutine plot_psi_sub(ioreplay)
 !     write(6,*) '  Will not use dual approximation'
 !     write(6,*)
 !   endif
-!  
+!
 !   if(flgdal == 'DUAL') then
     kmscr(1) = recip_%kmax(1)/2 + 2
     kmscr(2) = recip_%kmax(2)/2 + 2
@@ -320,7 +325,7 @@ subroutine plot_psi_sub(ioreplay)
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
-  
+
   ipr = 1
   idshift = 0
 
@@ -384,7 +389,7 @@ subroutine plot_psi_sub(ioreplay)
     diag_type = 'pw  '
     nocc = neig
     icmax = 100
- 
+
     call h_kb_dia_all(diag_type, pwexp_%emax, rk0, neig, nocc,           &
         flags_%flgpsd, ipr, ifail, icmax, iguess, epspsi,                &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
@@ -428,7 +433,7 @@ subroutine plot_psi_sub(ioreplay)
           recip_%ng, recip_%kgv,                                         &
           pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
           crys_%ntype, crys_%natom, crys_%rat,crys_% adot,               &
-          dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp,                      & 
+          dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp,                      &
           mxddim, mxdbnd, dims_%mxdgve)
 
       if(ipr > 0) then

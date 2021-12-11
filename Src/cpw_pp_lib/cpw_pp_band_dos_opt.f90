@@ -11,9 +11,14 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutines reads a file with the atomic structure and 
+!>     This subroutines reads a file with the atomic structure and
 !>     the effective potential and charge density and writes files
 !>     for the band structure, DOS, charge, potentaial plots.
+!>
+!>  \author       Carlos, Loia Reis, Jose Luis Martins
+!>  \version      5.03
+!>  \date         December 18, 2013, 7 December 2021.
+!>  \copyright    GNU Public License v2
 
        subroutine cpw_pp_band_dos_opt(ioreplay)
 
@@ -25,9 +30,9 @@
 !      Modified, cpw_variables. 7 January 2020. JLM
 !      Modified for version 4.96, March 2020. CLR
 !      Modified May, June 2020. CLR, JLM
+!      Modified efermi, 29 November 2021.  JLM
+!      Modified, lproj, lso in input of out_dos. JLM
 !      copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
-
-!      version 4.98
 
        use cpw_variables
 
@@ -106,7 +111,7 @@
 
        type(spaceg_t)                     ::  spaceg_                    !<  space group information
 
-!       integer                            ::  ntrans                     !  number of symmetry operations in the factor group  
+!       integer                            ::  ntrans                     !  number of symmetry operations in the factor group
 !       integer                            ::  mtrx(3,3,48)               !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
 !       real(REAL64)                       ::  tnp(3,48)                  !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
@@ -179,13 +184,14 @@
 !       complex(REAL64), allocatable       ::  veff(:)                  !<  Effective potential for the prototype G-vector in star j
 
        real(REAL64)                       ::  emaxin                     !  kinetic energy cutoff of plane wave expansion (hartree).
+       real(REAL64)                       ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
 
        type(strfac_t)                     ::  strfac_                    !<  structure factors
 
 !       integer                            ::  icmplx                     !  indicates if the structure factor is complex
 !       complex(REAL64), allocatable       ::  strfac_%sfact(:,:)                 !  structure factor for atom k and star i
- 
+
 !      information about the calculation
 
        character(len=3)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
@@ -201,7 +207,7 @@
        integer           ::  iotape
        integer           ::  ios
        integer           ::  itask, imeth, idiag
-       
+
 
        integer           :: iguess                                       !  kept for compatibility
        real(real64)      :: epspsi                                       !  accuracy of eigenvalues
@@ -214,9 +220,11 @@
        character(len=4)       ::  diag_type                              !  selects diagonalization, 'pw  ','ao  ','aojc'
        logical                ::  lworkers                               !  use workers in calculation
 
-       integer     ::  ninterp, nignore
+       integer           ::  ninterp, nignore
        real(real64)      ::  xsvd, csvd
        real(real64)      ::  xprec
+
+       logical           :: lproj, lso                                   !  projection in atomic orbitals.  With spin-orbit
 
 !      constants
 
@@ -249,15 +257,15 @@
        call cpw_pp_band_dos_init(filename, iotape,                       &
      &    dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,    &
      &    pwexp_, chdensin_, vcompin_, atorb_,                           &
-     &    emaxin, flgdalin, author,                                      &
+     &    emaxin, efermi, flgdalin, author,                              &
      &    pwline, title, subtitle ,meta_cpw2000,                         &
      &    mxdgvein, mxdnstin)
 
 
 !        write(6,*) 'title', title, "*"
-!        write(6,*) 'subtitle', subtitle, "*"        
+!        write(6,*) 'subtitle', subtitle, "*"
 
-       
+
        call cpw_pp_band_prepare(ioreplay,                                &
      &   dims_, crys_, spaceg_, recip_, recip_in_, pwexp_, strfac_,      &
      &   vcomp_, vcompin_,                                               &
@@ -268,7 +276,7 @@
        write(6,*) '  Do you want to use the dual approximation (y/n)?'
        read(5,*) yesno
        write(ioreplay,*) yesno,'   dual'
-       
+
        flags_%flgdal = '    '
        if(yesno == 'y' .or. yesno == 'Y') then
          flags_%flgdal = 'DUAL'
@@ -286,7 +294,7 @@
        write(6,*) '  Do you want to modify precision of reference eigenvalues (y/n)?'
        read(5,*) yesno
        write(ioreplay,*) yesno,'   modify precision'
-       
+
        epspsi = 0.0005
        if(yesno == 'y' .or. yesno == 'Y') then
          write(6,*)
@@ -330,27 +338,27 @@
 
          read(5,*,iostat=ios) itask
          write(ioreplay,*) itask,'   cpw_analysis task'
-        
+
          if(ios /= 0) then
            itask = 0
            write(6,*)
            write(6,*) '  error processing default input '
            write(6,*)
          endif
-        
+
          if(itask == 0) then
-        
+
            write(6,*) '  exiting program '
            write(6,*)
-          
+
            exit
 
          elseif(itask < 0 .or. itask > 4) then
-        
+
            write(6,*) '  invalid choice '
            write(6,*) '  exiting program '
            write(6,*)
-          
+
            exit
 
          elseif(itask == 1) then
@@ -371,13 +379,13 @@
 
            read(5,*,iostat=ios) imeth
            write(ioreplay,*) imeth,'   method'
-        
+
            if(ios /= 0) then
              imeth = 0
              write(6,*)
              write(6,*) '  error processing default input '
              write(6,*)
-            
+
              exit
 
            endif
@@ -391,7 +399,7 @@
 
              call out_band(title, subtitle,                              &
      &       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-     &       iguess, epspsi, icmax, pseudo_%ztot,                        &
+     &       iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
      &       crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
      &       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
      &       recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -405,7 +413,7 @@
      &       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
- 
+
            elseif(imeth == 2) then
 
              write(6,*)
@@ -416,7 +424,7 @@
 
              call out_band_kdotp_var(title, subtitle,                    &
      &       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-     &       iguess, epspsi, icmax, pseudo_%ztot,                        &
+     &       iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
      &       crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
      &       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
      &       recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -442,7 +450,7 @@
 
              call out_band_kdotp_2nd(title, subtitle,                    &
      &       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-     &       iguess, epspsi, icmax, pseudo_%ztot,                        &
+     &       iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
      &       crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
      &       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
      &       recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -470,7 +478,7 @@
 
              read(5,*,iostat=ios) ninterp
              write(ioreplay,*) ninterp,'   number of LK interp. points'
-            
+
              if(ios /= 0) then
                ninterp = 10
                write(6,*)
@@ -478,21 +486,21 @@
                write(6,*) '  using ninterp = 10 '
                write(6,*)
              endif
-            
+
              if(ninterp < 1) then
-            
+
                write(6,*) '  exiting program '
                write(6,*) '  non positive number of points'
                write(6,*)
-              
+
                stop
 
              elseif(ninterp > 100) then
-            
+
                write(6,*) '  number of points = ', ninterp
                write(6,*) '  seems too large... '
                write(6,*)
-              
+
              endif
 
              write(6,*)
@@ -569,7 +577,7 @@
              call out_band_glk(title, subtitle,                          &
      &       ninterp, nignore, xsvd, csvd,                               &
      &       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-     &       iguess, epspsi, icmax, pseudo_%ztot,                        &
+     &       iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
      &       crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
      &       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
      &       recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -590,9 +598,9 @@
              write(6,*)
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -609,7 +617,7 @@
                write(6,*)  '  1)  full pw diagonalization'
                write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                read(5,*,iostat=ios) idiag
                write(ioreplay,*) idiag,'   diagonal. method in LK DOS'
 
@@ -623,7 +631,7 @@
                  write(6,*) '  using pw diagonalization'
                endif
              endif
-             
+
 
 
              call out_band_fold(diag_type, lworkers,                     &
@@ -650,9 +658,9 @@
              write(6,*)
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -669,7 +677,7 @@
                write(6,*)  '  1)  full pw diagonalization'
                write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                read(5,*,iostat=ios) idiag
                write(ioreplay,*) idiag,'   diagonal. method in LK DOS'
 
@@ -683,13 +691,13 @@
                  write(6,*) '  using pw diagonalization'
                endif
              endif
-             
+
 
 
              call out_band_atom_info_fold(diag_type, lworkers,           &
      &       meta_cpw2000, title, subtitle,                              &
      &       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-     &       iguess, epspsi, icmax, pseudo_%ztot,                        &
+     &       iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
      &       crys_%adot, crys_%ntype, crys_%natom,                       &
      &       crys_%nameat, crys_%rat,                                    &
      &       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
@@ -712,9 +720,9 @@
 
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -741,7 +749,7 @@
                  write(6,*)  '  1)  full pw diagonalization'
                  write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                  write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                  read(5,*,iostat=ios) idiag
                  write(ioreplay,*) idiag,'   diagonal. method in LK DOS'
 
@@ -839,13 +847,13 @@
 
            read(5,*,iostat=ios) imeth
            write(ioreplay,*) imeth,'   method'
-        
+
            if(ios /= 0) then
              imeth = 0
              write(6,*)
              write(6,*) '  error processing default input '
              write(6,*)
-            
+
              exit
 
            endif
@@ -853,9 +861,9 @@
            if(imeth == 1) then
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -866,13 +874,16 @@
 
              diag_type = 'pw   '
 
+             lproj = .FALSE.
+             lso = .FALSE.
+
              if(atorb_%latorb) then
                write(6,*)
                write(6,*)  '  which diagonalization do you want to use'
                write(6,*)  '  1)  full pw diagonalization'
                write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                read(5,*,iostat=ios) idiag
                write(ioreplay,*) idiag,'   diagonal. method in DOS'
 
@@ -885,11 +896,27 @@
                else
                  write(6,*) '  using pw diagonalization'
                endif
+
+               write(6,*) '  Do you want the DOS projected on atomic orbitals? (y/n)'
+               read(5,*) yesno
+               write(ioreplay,*) yesno,'   DOS projected in atomic orbitals'
+               if(yesno == 'Y' .or. yesno == 'y') then
+                 lproj = .TRUE.
+               endif
+               if (lproj) then
+                 write(6,*) '  Do you want the projections with Spin-Orbit (y/n)?'
+                 read(5,*) yesno
+                 write(ioreplay,*) yesno,'   DOS projected includes spin-orbit'
+                 if(yesno == 'Y' .or. yesno == 'y') then
+                   lso = .TRUE.
+                 endif
+               endif
+
+
              endif
-             
 
 
-             call out_dos(diag_type, lworkers,                           &
+             call out_dos(diag_type, lworkers, lproj, lso,               &
      &         title, subtitle,                                          &
      &         pwexp_%emax, flags_%flgdal, flags_%flgpsd,                &
      &         epspsi, icmax, pseudo_%ztot,                              &
@@ -902,7 +929,7 @@
      &         vcomp_%veff,                                              &
      &         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,       &
      &         atorb_%latorb, atorb_%norbat,atorb_%nqwf,atorb_%delqwf,   &
-     &         atorb_%wvfao,atorb_%lorb,                                 &     
+     &         atorb_%wvfao,atorb_%lorb,                                 &
      &         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,   &
      &         dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
@@ -916,9 +943,9 @@
              write(6,*)
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -944,7 +971,7 @@
                  write(6,*)  '  1)  full pw diagonalization'
                  write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                  write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                  read(5,*,iostat=ios) idiag
                  write(ioreplay,*) idiag,'   diagonal. method in LK DOS'
 
@@ -1023,13 +1050,13 @@
      &         vcomp_%veff,                                              &
      &         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,       &
      &         atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf, &
-     &         atorb_%wvfao,atorb_%lorb,                                 &     
+     &         atorb_%wvfao,atorb_%lorb,                                 &
      &         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,   &
      &         dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
            endif
-           
+
 
          elseif(itask == 3) then
 
@@ -1045,7 +1072,7 @@
      &       vcomp_%veff,                                                &
      &       pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
      &       atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-     &       atorb_%wvfao,atorb_%lorb,                                   &     
+     &       atorb_%wvfao,atorb_%lorb,                                   &
      &       dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
      &       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
@@ -1062,13 +1089,13 @@
 
            read(5,*,iostat=ios) imeth
            write(ioreplay,*) imeth,'   method'
-        
+
            if(ios /= 0) then
              imeth = 0
              write(6,*)
              write(6,*) '  error processing default input '
              write(6,*)
-            
+
              exit
 
            endif
@@ -1076,9 +1103,9 @@
            if(imeth == 1) then
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -1095,7 +1122,7 @@
                write(6,*)  '  1)  full pw diagonalization'
                write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                read(5,*,iostat=ios) idiag
                write(ioreplay,*) idiag,'   diagonal. method in DOS'
 
@@ -1109,7 +1136,7 @@
                  write(6,*) '  using pw diagonalization'
                endif
              endif
-             
+
 
              call out_opt(diag_type, lworkers,                           &
      &       title, subtitle,                                            &
@@ -1124,7 +1151,7 @@
      &       vcomp_%veff,                                                &
      &       pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
      &       atorb_%latorb, atorb_%norbat,atorb_%nqwf,atorb_%delqwf,     &
-     &       atorb_%wvfao,atorb_%lorb,                                   &     
+     &       atorb_%wvfao,atorb_%lorb,                                   &
      &       dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
      &       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
@@ -1135,9 +1162,9 @@
              write(6,*)
 
              write(6,*)
-             write(6,*)  '  Are you a human (y/n)? '                           
+             write(6,*)  '  Are you a human (y/n)? '
              write(6,*)  '  You need to be very careful if you answer no!'
-             
+
              read(5,*) yesno
              write(ioreplay,*) yesno,'   Blade Runner test'
              if(yesno == 'N' .or. yesno == 'n') then
@@ -1163,7 +1190,7 @@
                  write(6,*)  '  1)  full pw diagonalization'
                  write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
                  write(6,*)  '  3)  diagonalization in atomic orbitals'
- 
+
                  read(5,*,iostat=ios) idiag
                  write(ioreplay,*) idiag,'   diagonal. method in LK DOS'
 
@@ -1242,23 +1269,23 @@
      &       vcomp_%veff,                                                &
      &       pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
      &       atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-     &       atorb_%wvfao,atorb_%lorb,                                   &     
+     &       atorb_%wvfao,atorb_%lorb,                                   &
      &       dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
      &       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
-          
-          
-          
+
+
+
           endif
 
          elseif(itask == 5) then
-         
+
            if(flags_%flgdal == 'DUAL') then
 
              write(6,*)
              write(6,*) '  Now using dual approximation. Do you want',   &
      &            ' to stop using it?  (y/n)'
              write(6,*)
-             
+
              read(5,*,iostat=ios) yesno
              write(ioreplay,*) yesno,'   dual'
 
@@ -1267,7 +1294,7 @@
                write(6,*) '  error processing default input '
                write(6,*) '  no change to options'
                write(6,*)
-            
+
                exit
 
              endif
@@ -1284,12 +1311,12 @@
              endif
 
            else
- 
+
              write(6,*)
              write(6,*) '  Now not using dual approximation. Do you',    &
      &            ' want to start using it?  (y/n)'
              write(6,*)
-             
+
              read(5,*,iostat=ios) yesno
              write(ioreplay,*) yesno,'   dual'
              if(ios /= 0) then
@@ -1297,7 +1324,7 @@
                write(6,*) '  error processing default input '
                write(6,*) '  no change to options'
                write(6,*)
-            
+
                exit
 
              endif

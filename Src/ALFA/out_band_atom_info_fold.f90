@@ -12,10 +12,15 @@
 !------------------------------------------------------------!
 
 !> Provides orbital information to post-processing companion program
+!>
+!>  \author       Carlos, Loia Reis, Jose Luis Martins
+!>  \version      5.03
+!>  \date         8 may 2004, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
   subroutine out_band_atom_info_fold(diag_type, lworkers,                &
   pwline, title, subtitle,                                               &
-  emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                     &
+  emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,             &
   adot, ntype, natom, nameat, rat,                                       &
   ng, kgv, phase, conj,                                                  &
   ns, inds, kmax, indv, ek,                                              &
@@ -33,9 +38,8 @@
 !  Modified, latorb, 7 June 2020. JLM
 !  Modified, vmax, vmin, 27 November 2020. JLM
 !  Modified for QtBandViewer, July 2021. CLR.
+!  Modified, efermi, 29 November 2021. JLM
 !  copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN.
-
-!  version 5.01
 
   implicit none
 
@@ -50,62 +54,63 @@
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
-    
+
   character(len=4), intent(in)       ::  diag_type                       !<  selects diagonalization, 'pw  ','ao  ','aojc'
   logical, intent(in)                ::  lworkers                        !<  use lworkers
-    
+
   character(len=50), intent(in)      ::  title                           !<  title for plots
   character(len=140), intent(in)     ::  subtitle                        !<  subtitle for plots
   character(len=60), intent(in)      ::  pwline                          !<  identifier of the calculation.  May contain miscellaneous information!
-      
-    
+
+
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4), intent(in)       ::  flgdal                          !<  dual approximation if equal to 'DUAL'
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
   integer, intent(in)                ::  icmax                           !<  maximum number of iterations for diagonalization
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
-    
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2)                   ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
-      
-      
+
+
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-    
+
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
   complex(REAL64), intent(in)        ::  phase(mxdgve)                   !<  phase factor of G-vector n
   real(REAL64), intent(in)           ::  conj(mxdgve)                    !<  is -1 if one must take the complex conjugate of x*phase
-    
+
   integer, intent(in)                ::  ns                              !<  number os stars with length less than gmax
   integer, intent(in)                ::  inds(mxdgve)                    !<  star to which g-vector n belongs
   integer, intent(in)                ::  kmax(3)                         !<  max value of |kgv(i,n)|
   integer, intent(in)                ::  indv(mxdcub)                    !<  kgv(i,indv(jadd)) is the g-vector associated with jadd. jadd is defined by the g-vector components and kmax
   real(REAL64), intent(in)           ::  ek(mxdnst)                      !<  kinetic energy (hartree) of g-vectors in star j
-    
+
   complex(REAL64), intent(in)        ::  sfact(mxdtyp,mxdnst)            !<  structure factor
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
-    
+
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (local+Hartree+XC) for the prototype g-vector in star j
-    
+
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the interpolation
   real(REAL64), intent(in)  ::   vkb(-2:mxdlqp,0:3,-1:1,mxdtyp)          !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. (not normalized to vcell, hartree)
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   KB pseudo.  normalization for atom k, ang. mom. l
-    
+
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
   real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)       !<  wavefunction for atom k, ang. mom. l (normalized to vcell)
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-        
-  ! input and output    
-    
+
+  ! input and output
+
   integer, intent(inout)             ::  iguess                          !<  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
-  
+
   ! allocatable arrays for Brillouin zone path
 
   integer                            ::  nlines                          !  number of lines in reciprocal space
@@ -119,9 +124,9 @@
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !  spin-orbit band energies of k-point in plot
   character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
-    
-  ! allocatable arrays with larger scope     
-    
+
+  ! allocatable arrays with larger scope
+
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
   real(REAL64), allocatable          ::  ev(:)                           !  eigenvalue no. i. (hartree)
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
@@ -131,54 +136,54 @@
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  |psi> component j of eigenvector i (guess on input)
-  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
-    
-  ! variables for local orbitals     
-    
+
+  ! variables for local orbitals
+
   integer                            ::  mxdorb                          !  array dimension of number of local orbitals
-  integer                            ::  nbaslcao                        !  number of atomic orbitals 
+  integer                            ::  nbaslcao                        !  number of atomic orbitals
   complex(REAL64), allocatable       ::  baslcao(:,:)                    !  atomic orbitals in plane-wave basis
   complex(REAL64), allocatable       ::  baslcao_aux(:,:)                !  atomic orbitals in plane-wave basis
   integer, allocatable               ::  infolcao(:,:)                   !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
   integer, allocatable               ::  infolcao_aux(:,:)               !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
-  real(REAL64), allocatable          ::  basxpsi(:,:,:)                  !  |<bas|psi>|^2 for each k 
-  complex(REAL64), allocatable       ::  prod(:,:)                       !  <bas|psi> 
-    
-    
+  real(REAL64), allocatable          ::  basxpsi(:,:,:)                  !  |<bas|psi>|^2 for each k
+  complex(REAL64), allocatable       ::  prod(:,:)                       !  <bas|psi>
+
+
   integer, allocatable               ::  infolcao_so(:,:)                !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
-  complex(REAL64), allocatable       ::  prod_so(:,:)                    !  <bas|psi> 
-  real(REAL64), allocatable          ::  basxpsi_so(:,:,:)               !  |<bas|psi>|^2 for each k 
+  complex(REAL64), allocatable       ::  prod_so(:,:)                    !  <bas|psi>
+  real(REAL64), allocatable          ::  basxpsi_so(:,:,:)               !  |<bas|psi>|^2 for each k
   complex(REAL64), allocatable       ::  psi_in(:,:)                     !  component j of eigenvector i (guess on input)
-      
-  ! local variables    
-    
+
+  ! local variables
+
   integer                            ::  mxdscr                          !  array dimension for screening potential
-    
+
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
   integer                            ::  mxdwrk                          !  array dimension for fft transform workspace
-    
+
   integer                            ::  mtxd                            !  dimension of the hamiltonian
   integer                            ::  neig                            !  number of eigenvectors required (maybe modified on output)
   real(REAL64)                       ::  rkpt(3)                         !  j-th component in lattice coordinates of the k-point
   integer                            ::  kmscr(7)                        !  max value of kgv(i,n) used for the potential fft mesh
   integer                            ::  idshift                         !  shift of the fft mesh, used /= 0 only in highly banked memory.
-    
+
   real(REAL64)                       ::  vmax, vmin                      !  maximum and minimum values of vscr
-    
+
   real(REAL64)                       ::  eref                            !  reference energy for plot
   integer                            ::  nocc                            !  number of occupied states (different color) or recycled
   integer                            ::  nstyle                          !  choice of plot style
-    
-  integer                            ::  irk,nrka    
-  integer                            ::  iotape    
-  character(len=5)                   ::  labelk    
-  integer                            ::  ipr,nrk2,nd     
-  integer                            ::  nsfft(3)    
+
+  integer                            ::  irk,nrka
+  integer                            ::  iotape
+  character(len=5)                   ::  labelk
+  integer                            ::  ipr,nrk2,nd
+  integer                            ::  nsfft(3)
   integer                            ::  nextline                        !  indicates next line on band circuit
   integer                            ::  nl                              !  keeps track of next lines
   real(REAL64)                       ::  sq
@@ -192,7 +197,7 @@
   ! counters
 
   integer    ::  i, j, n
-         
+
   ! unfolding
 
   integer                            ::  iMinv(3,3)
@@ -200,10 +205,10 @@
   real(REAL64)                       ::  avec(3,3)
   real(REAL64)                       ::  bvec(3,3)
   real(REAL64)                       ::  adot_pc(3,3)
-  
+
   real(REAL64),allocatable           ::  pkn(:,:)
   real(REAL64),allocatable           ::  pkn_so(:,:)
-  
+
   integer                            ::  idum(3,3)
   character(len=6)                   ::  fdum
   integer                            ::  ioerr
@@ -213,32 +218,32 @@
   logical                            ::  lex
 
   real(REAL64), allocatable          ::  rk_fld(:,:)                     !  x coordinate of k-point in plot
-  
-  real(REAL64)                       ::  veffr1 
+
+  real(REAL64)                       ::  veffr1
 
   integer, allocatable               ::  irow(:)
   complex(REAL64), allocatable       ::  hxvec(:)
 
   ! orbital information with Lowdin orthogonalization
-  
+
   complex(REAL64), allocatable       ::  S(:,:)
   complex(REAL64), allocatable       ::  S12(:,:)
   complex(REAL64), allocatable       ::  S12_inv(:,:)
   complex(REAL64), allocatable       ::  Swrk(:,:)
   real(REAL64),    allocatable       ::  ev_wrk(:)
 
-  ! workers and restart  
+  ! workers and restart
 
   integer                            :: irec_err
   integer                            :: irk_rd, irk_start
   integer                            :: iworker, nworker, cworker
   integer                            :: ir_size, pp_flag
-  
+
   real(REAL64) :: t1, t2
   logical                            :: lmyjob
-  
+
   logical                            ::  lkpg                            !  If true use the previous G-vectors (same mtxd and isort)
-  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions 
+  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions
   integer                            ::  ifail                           !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
 
 !-----------------------------------------------------------------------
@@ -271,7 +276,7 @@
 
 !-----------------------------------------------------------------------
 !!               Reads unfold information from pwline
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 ! pwline from old PW_RHO_V.DAT does not work due to a bug in out_rho_v
 ! this is a workaround
 
@@ -284,7 +289,7 @@
     write(6,*)
     write(6,*) '  Trying to use PW.DAT for the file identifier'
     write(6,*)
-    open(unit=11,file='PW.DAT',status='OLD',form='FORMATTED',IOSTAT=ioerr)    
+    open(unit=11,file='PW.DAT',status='OLD',form='FORMATTED',IOSTAT=ioerr)
     if(ioerr == 0) then
       read(11,'(a60)',IOSTAT=ioerr) pwlinloc
       close(unit=11)
@@ -299,11 +304,11 @@
     endif
   endif
 
-!!!!        PrepFold needs avec       
+!!!!        PrepFold needs avec
   call adot_to_avec_sym(adot,avec,bvec)
-!!!!        ploting routines need metric of primitive cell !       
+!!!!        ploting routines need metric of primitive cell !
   call Fold_Get_adot_pc(pwlinloc, avec, adot_pc)
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 
   iotape = 13
   call out_band_circuit_size('BAND_LINES.DAT',iotape,1,adot_pc,          &
@@ -324,33 +329,33 @@
 
   allocate(e_of_k(neig,nrk2))
   allocate(e_of_k_so(2*neig,nrk2))
-         
-!-----------------------------------------------------------------------                  
+
+!-----------------------------------------------------------------------
   call Fold_Prep(pwlinloc, avec,rk, iMinv,idet, rk_fld, nrk2)
-!-----------------------------------------------------------------------      
- 
+!-----------------------------------------------------------------------
+
 ! finds mxddim, mxdbnd
 
   mxdbnd = neig
   mxddim = 1
-  
+
   irk = 1
   do j=1,3
      rkpt(j) = rk_fld(j,irk)  ! computed in folded k-point
-  enddo         
-    
-  call size_mtxd(emax,rkpt,adot,ng,kgv,nd)         
+  enddo
+
+  call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
   if(nd > mxddim) mxddim = int(1.05*nd)
-  
-    
+
+
 ! allocates arrays
 
 ! THERE IS A PROBLEM HERE>>>>>>> ei can be larger than mxdbnd in ditsp* subroutines
 
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
   allocate(pkn(nrk2,neig))
   allocate(pkn_so(nrk2,2*neig))
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 
   allocate(ei(mxddim))
   allocate(ei_so(2*mxdbnd))
@@ -381,10 +386,10 @@
 
   allocate(basxpsi(mxdorb,mxdbnd,nrk2))
   allocate(prod(mxdorb,mxdbnd))
-  
+
   allocate(infolcao_so(5,2*mxdorb))
   allocate(prod_so(2*mxdorb,2*mxdbnd))
-  allocate(psi_in(2*mxddim,2*mxdorb))       
+  allocate(psi_in(2*mxddim,2*mxdorb))
   allocate(basxpsi_so(2*mxdorb,2*mxdbnd,nrk2))
 
   allocate(S(mxdorb,mxdorb))
@@ -398,12 +403,12 @@
 
   iguess = 0
   nextline = 1
-  nl = 1       
+  nl = 1
 
   veffr1 = real(veff(1),REAL64)
-     
+
   if(lworkers) then
-    write(6,*) "Using Workers and Restart Capablities"       
+    write(6,*) "Using Workers and Restart Capablities"
 
     write(6,*) 'how many workers ?'
     read(5,*) nworker
@@ -414,8 +419,8 @@
     nworker = 1
     iworker = 1
   endif
-                
-  irk =1        
+
+  irk =1
   inquire(iolength=ir_size) irk_rd,                                      &
   e_of_k(:,irk),                                                         &
   pkn(irk,:),  e_of_k_so(:,irk),                                         &
@@ -423,7 +428,7 @@
   basxpsi(:,:,irk),                                                      &
   basxpsi_so(:,:,irk),                                                   &
   infolcao,                                                              &
-  infolcao_so 
+  infolcao_so
 
   ! if run by a human do not restart
 
@@ -437,9 +442,9 @@
   recl=ir_size)
 
   irk_start=1
-  
+
   pp_flag = 0
-  
+
   call zeelap(t1)
 
   ! loop over k-points
@@ -449,7 +454,7 @@
     cworker = mod(irk-1,nworker) +1
     lmyjob = .TRUE.
     if (cworker== iworker) then
-      irk_rd = -10 
+      irk_rd = -10
       read(io62,rec=irk, iostat=irec_err) irk_rd,                        &
       e_of_k(:,irk),                                                     &
       pkn(irk,:), e_of_k_so(:,irk),                                      &
@@ -457,17 +462,17 @@
       basxpsi(:,:,irk),                                                  &
       basxpsi_so(:,:,irk),                                               &
       infolcao,                                                          &
-      infolcao_so 
-                   
-      if(irk_rd ==irk) then 
+      infolcao_so
+
+      if(irk_rd ==irk) then
         write(*,'("not computing k-point #",i5)') irk
-        lmyjob = .FALSE.                   
-      endif            
+        lmyjob = .FALSE.
+      endif
     else
       write(*,'(" not computing k-point # ",i5)') irk
-      lmyjob = .FALSE.                   
-    endif 
-    
+      lmyjob = .FALSE.
+    endif
+
     if(lmyjob) then
 
       do j=1,3
@@ -488,18 +493,18 @@
       mtxd, hdiag, isort, qmod, ekpg, lkpg,                              &
       psi, hpsi, ei,                                                     &
       vscr, kmscr,                                                       &
-      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &     
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
-    
+
       do j=1, neig
         ev(j) = ei(j)
       enddo
-         
-!-----------------------------------------------------------------------                  
+
+!-----------------------------------------------------------------------
      call Fold_GetPkn(pkn,iMinv,idet,irk,kgv,isort,psi, nrk2, neig,      &
-     mtxd, ng, mxdgve,mxddim,mxdbnd)         
-!-----------------------------------------------------------------------                  
+     mtxd, ng, mxdgve,mxddim,mxdbnd)
+!-----------------------------------------------------------------------
 
       call atomic_orbital_c16(rkpt,mtxd,isort,1,                         &
       nbaslcao,baslcao_aux,infolcao,                                     &
@@ -507,10 +512,10 @@
       norbat,nqwf,delqwf,wvfao,lorb,                                     &
       ntype,natom,rat,adot,                                              &
       mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
-     
+
       call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao_aux,        &
       mxddim,baslcao_aux,mxddim,C_ZERO,S,mxdorb)
-      
+
       call  GetS12(S,S12,S12_inv,Swrk,ev_wrk,nbaslcao)
 
       call zgemm('n','n',mtxd,nbaslcao,nbaslcao,C_UM,baslcao_aux,        &
@@ -529,7 +534,7 @@
           baslcao(j,n) = sq * baslcao(j,n)
         enddo
       enddo
-     
+
       call zgemm('C','N',nbaslcao,neig,mtxd,C_UM,baslcao,mxddim,         &
       psi,mxddim,C_ZERO,prod,mxdorb)
 
@@ -538,7 +543,7 @@
         basxpsi(j,n,irk) = real(prod(j,n)*conjg(prod(j,n)),REAL64)
       enddo
       enddo
-               
+
       lpsiso = .true.
       call spin_orbit_perturb(rkpt,mtxd,isort,                           &
       neig,psi,ei,ei_so,psi_so,lpsiso ,                                  &
@@ -553,28 +558,28 @@
       enddo
 
       do i=1,nbaslcao
-      do j=1,mtxd                  
+      do j=1,mtxd
         psi_in(2*j-1,2*i         ) = baslcao(j,i)
         psi_in(2*j  ,2*i         ) = C_ZERO
         psi_in(2*j-1,2*i-1       ) = C_ZERO
         psi_in(2*j  ,2*i-1       ) = baslcao(j,i)
       enddo
       enddo
-      
+
       call zgemm('c','n',2*nbaslcao,2*neig,2*mtxd,                       &
       C_UM,psi_in,2*mxddim,psi_so,2*mxddim,C_ZERO,prod_so,2*mxdorb)
-      
+
       do n = 1,2*neig
       do j = 1,2*nbaslcao
         basxpsi_so(j,n,irk) = real(prod_so(j,n)*conjg(prod_so(j,n)),     &
         REAL64)
       enddo
       enddo
-      
-!-----------------------------------------------------------------------                  
+
+!-----------------------------------------------------------------------
       call Fold_GetPknSO(pkn_so,iMinv,idet,irk,kgv,isort,psi_so, nrk2,   &
-       2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)         
-!-----------------------------------------------------------------------                  
+       2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)
+!-----------------------------------------------------------------------
 
       call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                      &
       mxddim,mxdbnd)
@@ -590,16 +595,16 @@
         call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,           &
         mxddim,mxdbnd)
       endif
-       
+
       call print_eig_so(ipr,irk,labelk,nrka,rkpt,                        &
       mtxd,neig,psi_so,                                                  &
       adot,ei_so,ekpsi_so,isort,kgv,                                     &
       mxddim,mxdbnd,mxdgve)
 
-               
+
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
                   ,i5, "   of ", i5)') iworker, irk,nrk2
-             
+
       if (cworker== iworker) then
         write(io62,rec=irk) irk, ev(:),                                  &
         pkn(irk,:),ei_so(:),                                             &
@@ -607,7 +612,7 @@
         basxpsi(:,:,irk),                                                &
         basxpsi_so(:,:,irk),                                             &
         infolcao,                                                        &
-        infolcao_so         
+        infolcao_so
       endif
 
     endif
@@ -622,22 +627,22 @@
      basxpsi(:,:,irk),                                                   &
      basxpsi_so(:,:,irk),                                                &
      infolcao,                                                           &
-     infolcao_so 
-     
+     infolcao_so
 
-    if(irk_rd /=irk) then 
+
+    if(irk_rd /=irk) then
       pp_flag = 0
       exit
     endif
-    pp_flag = 1          
+    pp_flag = 1
   enddo
-    
+
   call zeelap(t2)
-  write(*,*) 
+  write(*,*)
   write(*,'(" elapsed time (s):", 2f14.3)') (t2-t1)
-    
-  if (pp_flag ==1) then        
-    write(*,*) 'Generating band structure files!'        
+
+  if (pp_flag ==1) then
+    write(*,*) 'Generating band structure files!'
   else
     close(io62)
     stop "this worker is done. run again when all workers are done  &
@@ -659,23 +664,23 @@
   iotape = 15
   nstyle = 2
 
-  call out_band_eref(neig,nrk2,ztot,2,1,e_of_k,eref,nocc)
-         
-!-----------------------------------------------------------------------                  
+  call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
+
+!-----------------------------------------------------------------------
   call out_band_fold_xmgrace('band_fld_ref.agr',iotape,                  &
   title,subtitle,nstyle,                                                 &
   pkn,neig,nrk2,xk,e_of_k,eref,nocc,                                     &
   nvert,xcvert,nlines,ljump,nkstep,label,xklab)
-!-----------------------------------------------------------------------                  
-  
+!-----------------------------------------------------------------------
+
   call out_band_info_write('BAND.DAT',iotape,                            &
   title,subtitle,nstyle,                                                 &
   neig,nrk2,rk,rk_fld,xk,e_of_k,eref,nocc,                               &
   nbaslcao,infolcao,basxpsi,pkn,                                         &
   nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
 
-  call out_band_eref(neig,nrk2,ztot,1,1,e_of_k_so,eref,nocc)
-  
+  call out_band_eref(neig,nrk2,ztot,efermi,1,1,e_of_k_so,eref,nocc)
+
   n = min(nint(ztot + 0.01),2*neig)
   eref = e_of_k_so(n,1)
   do irk = 1,nrk2
@@ -686,12 +691,12 @@
 
   nocc = n
 
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
   call out_band_fold_xmgrace('band_fld_ref_so.agr',iotape,               &
   title,subtitle,nstyle,                                                 &
   pkn_so,2*neig,nrk2,xk,e_of_k_so,eref,nocc,                             &
   nvert,xcvert,nlines,ljump,nkstep,label,xklab)
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
 
   call out_band_info_write('BAND_SO.DAT',iotape,                         &
   title,subtitle,nstyle,                                                 &
@@ -727,7 +732,7 @@
   deallocate(basxpsi)
   deallocate(prod)
 
-  deallocate(psi_in)       
+  deallocate(psi_in)
   deallocate(infolcao_so)
 
   deallocate(basxpsi_so)

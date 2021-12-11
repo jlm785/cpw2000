@@ -124,7 +124,7 @@ program cpw2000
 
 ! Driver program version
 
-  vdriv = '5.02'
+  vdriv = '5.03'
 
 ! timing
 
@@ -393,6 +393,7 @@ program cpw2000
   if(lsafescf) then
 
     call cpw_finish('PW_RHO_V.DAT', 21, meta_pwdat, meta_cpw2000,        &
+      efermi,                                                            &
       dims_, crys_, spaceg_, xc_, flags_, pwexp_, kpoint_, recip_,       &
       vcomp_, chdens_)
 

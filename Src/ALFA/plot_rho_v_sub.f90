@@ -11,17 +11,21 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-! This subroutine calculates the layer average and double average of
-! the charge density, or any other scalar periodic quantity.
+!>  This subroutine calculates the layer average and double average of
+!>  the charge density, or any other scalar periodic quantity.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.03
+!>  \date         September 5, 2012, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
 ! For the double average see  PRL 61, 734 (1988).
 
 ! writen September 5, 2012.jlm
 ! Modified, mxdlao, December 1, 2015. JLM
 ! Modified, May 2020, cpw_variables. CLR
+! Modified, efermi, 29 November 2021. JLM
 ! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
-
-! version 4.96
 
 subroutine plot_rho_v_sub(ioreplay)
 
@@ -104,7 +108,7 @@ subroutine plot_rho_v_sub(ioreplay)
 
   type(spaceg_t)                     ::  spaceg_                    !<  space group information
 
-!  integer                            ::  ntrans                     !  number of symmetry operations in the factor group  
+!  integer                            ::  ntrans                     !  number of symmetry operations in the factor group
 !  integer                            ::  mtrx(3,3,48)               !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
 !  real(REAL64)                       ::  tnp(3,48)                  !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
@@ -177,13 +181,14 @@ subroutine plot_rho_v_sub(ioreplay)
 !  complex(REAL64), allocatable       ::  veff(:)                  !<  Effective potential for the prototype G-vector in star j
 
   real(REAL64)                       ::  emaxin                     !  kinetic energy cutoff of plane wave expansion (hartree).
+  real(REAL64)                       ::  efermi                     !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
 
   type(strfac_t)                     ::  strfac_                    !<  structure factors
 
 !  integer                            ::  icmplx                     !  indicates if the structure factor is complex
 !  complex(REAL64), allocatable       ::  strfac_%sfact(:,:)                 !  structure factor for atom k and star i
- 
+
 ! information about the calculation
 
   character(len=3)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
@@ -201,11 +206,11 @@ subroutine plot_rho_v_sub(ioreplay)
 
   integer           ::  iotape
   integer           ::  ifunc
-  integer           ::  istar,istop  
-  
+  integer           ::  istar,istop
+
   integer iplot
-  
-  
+
+
   character(len=60)   ::  filename
 
 
@@ -231,11 +236,11 @@ subroutine plot_rho_v_sub(ioreplay)
   call cpw_pp_band_dos_init(filename, iotape,                            &
      dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,         &
      pwexp_, chdensin_, vcompin_, atorb_,                                &
-     emaxin, flgdalin, author,                                           &
+     emaxin, efermi, flgdalin, author,                                   &
      pwline, title, subtitle ,meta_cpw2000,                              &
      mxdgvein, mxdnstin)
 
-  
+
   call cpw_pp_band_prepare(ioreplay,                                     &
     dims_, crys_, spaceg_, recip_, recip_in_, pwexp_, strfac_,           &
     vcomp_, vcompin_,                                                    &
@@ -247,7 +252,7 @@ subroutine plot_rho_v_sub(ioreplay)
 
 
   do i=1,100
-  
+
     write(6,*)
     write(6,*) '  What kind of plot do you want?'
     write(6,*)
@@ -258,10 +263,10 @@ subroutine plot_rho_v_sub(ioreplay)
     write(6,*) '  3)  Two dimensional (contour) plot'
     write(6,*) '  4)  Three dimensional plot'
     write(6,*)
-    
+
     read(5,*) iplot
     write(ioreplay,'(2x,i8,"   plot dimension")') iplot
-    
+
     if(iplot < 0 .or. iplot > 4) then
 
       iplot = 0
@@ -284,7 +289,7 @@ subroutine plot_rho_v_sub(ioreplay)
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
       recip_%ns, recip_%mstar, chdensin_%den,                            &
       dims_%mxdtyp,dims_%mxdatm,dims_%mxdgve,dims_%mxdnst)
-  
+
     else
 
       write(6,*)
@@ -296,10 +301,10 @@ subroutine plot_rho_v_sub(ioreplay)
       write(6,*) '  4)  Hartree potential V_H'
       write(6,*) '  5)  Exchange correlation potential V_xc'
       write(6,*) '  6)  Ionic potential V_ion'
-    
+
       read(5,*) ifunc
       write(ioreplay,'(2x,i8,"   function to plot")') ifunc
-    
+
       if(ifunc < 0 .or. ifunc > 6) then
 
         ifunc = 0
@@ -312,7 +317,7 @@ subroutine plot_rho_v_sub(ioreplay)
       if(ifunc == 0) then
 
         exit
-  
+
       elseif(ifunc == 1) then
         do j = 1,recip_%ns
           qplot(j) = chdensin_%den(j)
@@ -349,7 +354,7 @@ subroutine plot_rho_v_sub(ioreplay)
           if(recip_%conj(j) < ZERO) qunsym(j) = conjg(qunsym(j))
         enddo
       enddo
-      
+
 
       if(iplot == 2) then
 
@@ -380,7 +385,7 @@ subroutine plot_rho_v_sub(ioreplay)
 
 ! deallocates the stuff
 
-  
+
   deallocate(qplot)
   deallocate(qunsym)
 
