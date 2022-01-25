@@ -15,11 +15,13 @@
 !>  from the cpw.in file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.01
-!>  \date         22 April 2021
+!>  \version      5.04
+!>  \date         22 April 2021. 23 January 2022.
 !>  \copyright    GNU Public License v2
 
 subroutine voronoi_sub(ioreplay)
+
+! Added call to sym_space_group_name. 23 January 2022. JLM
 
   use esdf
 
@@ -74,6 +76,8 @@ subroutine voronoi_sub(ioreplay)
   integer                 ::  io
 
   character(len=1)        ::  yesno
+
+  logical                 ::  lmetric, lspace
 
 ! unused variables
 
@@ -156,6 +160,10 @@ subroutine voronoi_sub(ioreplay)
     call metric_ident(adot, adotnig, adotsym, ibravais, mtotal,          &
                   avec, aconv, avecnig, TOL, iprmet)
 
+    lmetric = .TRUE.
+
+  else
+    lmetric = .FALSE.
   endif
 
 
@@ -171,6 +179,35 @@ subroutine voronoi_sub(ioreplay)
           ntrans, mtrx, tnp,                                             &
           adot, ntype, natom, rat,                                       &
           mxdtyp, mxdatm)
+
+    lspace = .TRUE.
+
+  else
+    lspace = .FALSE.
+  endif
+
+
+  write(6,*)
+  write(6,*) '  Do you want a list of possible space group names'
+  read(5,*) yesno
+  write(ioreplay,*) yesno,'   space group names'
+
+  if(yesno == 'y' .or. yesno == 'Y') then
+
+    if(.not. lmetric) then
+      iprmet = 0
+      call metric_ident(adot, adotnig, adotsym, ibravais, mtotal,        &
+                  avec, aconv, avecnig, TOL, iprmet)
+    endif
+    if(.not. lspace) then
+      ipr = 0
+      call sym_identify(1, ipr, TOL,                                     &
+          ntrans, mtrx, tnp,                                             &
+          adot, ntype, natom, rat,                                       &
+          mxdtyp, mxdatm)
+    endif
+
+    call sym_space_group_name(ibravais, ntrans, mtrx, tnp)
 
   endif
 

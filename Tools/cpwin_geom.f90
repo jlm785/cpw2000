@@ -15,11 +15,13 @@
 !>  from the cpw.in file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.01
-!>  \date         22 April 2021
+!>  \version      5.04
+!>  \date         22 April 2021, 23 January 2022.
 !>  \copyright    GNU Public License v2
 
 program cpwin_geom
+
+! Added call to sym_space_group_name. 23 January 2022. JLM
 
   use esdf
 
@@ -110,6 +112,8 @@ program cpwin_geom
           ntrans, mtrx, tnp,                                             &
           adot, ntype, natom, rat,                                       &
           mxdtyp, mxdatm)
+
+      call sym_space_group_name(ibravais, ntrans, mtrx, tnp)
 
       allocate(nneighb(mxdatm,mxdtyp))
       allocate(neighbtype(MXDNB,mxdatm,mxdtyp))
