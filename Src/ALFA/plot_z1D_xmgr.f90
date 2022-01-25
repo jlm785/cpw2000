@@ -14,18 +14,21 @@
 !>  Plots the quantities ave (and dave if nwidth /= 0)
 !>  There are a few assumptions about what is being plotted....
 !>  Writes a file to be plotted by xmgrace
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.04
+!>  \date         21 June 1014, 4 February 2021.
+!>  \copyright    GNU Public License v2
 
   subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                 &
                          filename, title, ylabel)
 
 
-! Writen June 21, 2014. JLM
 ! Modified, Documentation, name, API, 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, first line for KDE recognition. 20 January 2022. JLM
 
   implicit none
 
-! version 4.99
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -40,7 +43,7 @@
   integer, intent(in)                ::  nw                         !  if =0 only ave is plotted
   real(REAL64), intent(in)           ::  height                     !  range on horizontal axis
 
-  character(len=*), intent(in)       ::  filename                   !  filename for plot 
+  character(len=*), intent(in)       ::  filename                   !  filename for plot
   character(len=*), intent(in)       ::  title                      !  title of plot
   character(len=*), intent(in)       ::  ylabel                     !  label of y-axis
 
@@ -70,16 +73,19 @@
       if(ymax < ave(k)) ymax = ave(k)
     enddo
   endif
-  
+
   call plot_step(height*BOHR/5,xstep)
   call plot_step((ymax-ymin)/5,ystep)
-  
+
   ymax = ystep*(int(ymax/ystep)+1)
   ymin = ystep*(int(ymin/ystep)-1)
 
 ! writes the file
 
   open(unit=io, file=trim(filename), status='UNKNOWN', form='FORMATTED')
+
+  write(io,'("# Grace project file ")')
+  write(io,*)
 
   write(io,'("@    autoscale onread none ")')
   write(io,'("@    world  ",f12.6,",",f12.6,",",f12.6,",",f12.6)')  &

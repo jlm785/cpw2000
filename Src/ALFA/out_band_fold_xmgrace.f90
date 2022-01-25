@@ -11,50 +11,55 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
+!>  Writes the unfolded band structure plot file for later use with xmgrace
+!>  Usage:  xmgrace "filename", or just click on the agr file
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.04
+!>  \date         19 October 2013, 6 August 2020.
+!>  \copyright    GNU Public License v2
+
        subroutine out_band_fold_xmgrace(filename,io,                     &
      &        title,subtitle,nstyle,                                     &
      &        pkn,neig,nrk,xk,e_of_k,eref,nocc,                          &
      &        nvert,xcvert,nlines,ljump,nkstep,label,xklab)
 
-!      writes the file for later use with xmgrace
-!      xmgrace "filename"
-
 !      version 4.53. 19 October 2013. jlm
 !      modified (eref) 5 February 2014. jlm
 !      modified (unfold) July 2014. CLR
 !      modified title, style, 6 August 2014. JLM
-!      copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
+!      Modified, documentation, first line for KDE recognition. 20 January 2022. JLM
 
        implicit none
        integer, parameter          :: REAL64 = selected_real_kind(12)
 
 !      input
 
-       character(len=*), intent(in)       ::  filename                   !  file to be written
-       integer, intent(in)                ::  io                         !  tape number 
+       character(len=*), intent(in)       ::  filename                   !<  file to be written
+       integer, intent(in)                ::  io                         !<  tape number
 
-       integer, intent(in)                ::  neig                       !  number of bands
-       integer, intent(in)                ::  nrk                        !  number of k-vectors
+       integer, intent(in)                ::  neig                       !<  number of bands
+       integer, intent(in)                ::  nrk                        !<  number of k-vectors
 
-       character(len=50), intent(in)      ::  title                      !  title for plots
-       character(len=140), intent(in)     ::  subtitle                   !  subtitle for plots
-       integer, intent(in)                ::  nstyle                     !  choice of plot style
+       character(len=50), intent(in)      ::  title                      !<  title for plots
+       character(len=140), intent(in)     ::  subtitle                   !<  subtitle for plots
+       integer, intent(in)                ::  nstyle                     !<  choice of plot style
 
-       real(REAL64), intent(in)           ::  pkn(nrk,neig) 
+       real(REAL64), intent(in)           ::  pkn(nrk,neig)
 
-       real(REAL64), intent(in)           ::  xk(nrk)                    !  x coordinate of k-point in plot
-       real(REAL64), intent(in)           ::  e_of_k(neig,nrk)           !  band energies of k-point in plot
+       real(REAL64), intent(in)           ::  xk(nrk)                    !<  x coordinate of k-point in plot
+       real(REAL64), intent(in)           ::  e_of_k(neig,nrk)           !<  band energies of k-point in plot
 
-       real(REAL64), intent(in)           ::  eref                       !  reference energy for plot
-       integer, intent(in)                ::  nocc                       !  number of lines in reciprocal space
+       real(REAL64), intent(in)           ::  eref                       !<  reference energy for plot
+       integer, intent(in)                ::  nocc                       !<  number of lines in reciprocal space
 
-       integer, intent(in)                ::  nvert                      !  number of vertical lines in plot
-       real(REAL64), intent(in)           ::  xcvert(nvert)              !  x coordinate of vertical line
-       integer, intent(in)                ::  nlines                     !  number of lines in reciprocal space
-       logical, intent(in)                ::  ljump(nlines)              !  indicates if the new line contains a jump from the preceeding
-       integer, intent(in)                ::  nkstep(nlines)             !  number of steps in line
-       character(len=6), intent(in)       ::  label(nvert+nlines)        !  label of symmetry k-points
-       real(REAL64), intent(in)           ::  xklab(nvert+nlines)        !  x coordinate of label
+       integer, intent(in)                ::  nvert                      !<  number of vertical lines in plot
+       real(REAL64), intent(in)           ::  xcvert(nvert)              !<  x coordinate of vertical line
+       integer, intent(in)                ::  nlines                     !<  number of lines in reciprocal space
+       logical, intent(in)                ::  ljump(nlines)              !<  indicates if the new line contains a jump from the preceeding
+       integer, intent(in)                ::  nkstep(nlines)             !<  number of steps in line
+       character(len=6), intent(in)       ::  label(nvert+nlines)        !<  label of symmetry k-points
+       real(REAL64), intent(in)           ::  xklab(nvert+nlines)        !<  x coordinate of label
 
 !      local
 
@@ -89,13 +94,20 @@
 
        open(unit=io,file=filename,form='formatted')
 
+       write(io,'("# Grace project file ")')
+       write(io,*)
+
+       write(io,'("#    zero energy for bands is ",f12.4," eV above ",  &
+     &            "the average potential")') eref*EV
+       write(io,*)
+
        write(io,'("@    autoscale onread none ")')
        write(io,'("@    znorm 3 ")')
 
        write(io,'("@    world  ",f18.8,",",f18.8,",",f18.8,",",f18.8)') &
      &  xcvert(1),ymin,xcvert(nvert),ymax
        write(io,*)
-       
+
        if(nstyle == 1) then
 
          write(io,'("@    frame linewidth 3.0 ")')
@@ -129,7 +141,7 @@
      &            adjustl(trim(subtitle))
          write(io,*)
        endif
-      
+
        write(io,'("@    xaxis  tick off ")')
        write(io,'("@    xaxis  tick spec type both ")')
        write(io,'("@    xaxis  tick spec ",i6)') nvert+nlines
@@ -200,7 +212,7 @@
          write(io,'("@    yaxis  tick minor ticks 0 ")')
 
        endif
-       
+
 
 !      // put colors and stuff here
       do j=0,neig-1
@@ -210,8 +222,8 @@
          write(io,'("@    s",i3.3," symbol fill pattern 1")') j
          write(io,'("@    s",i3.3," line type 0")') j
       enddo
-            
-      do j=0,nocc-1      
+
+      do j=0,nocc-1
          write(io,'("@    s",i3.3," symbol color 4")') j
          write(io,'("@    s",i3.3," symbol fill color 4")') j
       enddo
@@ -220,7 +232,7 @@
          write(io,'("@    s",i3.3," symbol color 2")') j
          write(io,'("@    s",i3.3," symbol fill color 2")') j
       enddo
-      
+
        do jrk = 1,nvert
          write(io,'("@    s",i3.3," line color 1" )') neig-1+jrk
          write(io,'("@    s",i3.3," line type 1" )') neig-1+jrk
@@ -238,7 +250,7 @@
          write(io,'("@    s",i3.3," line linestyle 1" )') neig+nvert
          write(io,'("@    s",i3.3," line linewidth 2.0" )') neig+nvert
 
-       
+
        do j=1,neig
          write(io,*)
          irk = 0

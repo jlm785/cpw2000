@@ -11,19 +11,24 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
+
+!>  Writes the band structure plot file for later use with xmgrace
+!>  Dot size convey phyisical information
+!>  Usage:  xmgrace "filename", or just click on the agr file
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.04
+!>  \date         19 October 2013, 4 February 2020.
+!>  \copyright    GNU Public License v2
+
        subroutine out_band_dots_xmgrace(filename,io,                     &
      &         nocc,neig,nrk,xk,e_of_k,                                  &
      &         eref,nvert,xcvert,nlines,ljump,nkstep,label,xklab)
 
-!      writes the file for later use with xmgrace
-!      xmgrace "filename"
-
 !      version 4.53. 19 October 2013. jlm
 !      modified (eref) 5 February 2014. jlm
 !      modified 4.7X November 2015. JLM
-!      copyright  Jose Luis Martins/Carlos Loia Reis, INESC-MN
-
-!      version 4.73
+!      Documentation, first line for KDE recognition. 20 January 2022. JLM
 
        implicit none
 
@@ -31,22 +36,22 @@
 
 !      input
 
-       character(len=*), intent(in)       ::  filename                   !  file to be written
-       integer, intent(in)                ::  io                         !  tape number 
-       integer, intent(in)                ::  neig                       !  number of bands
-       integer, intent(in)                ::  nrk                        !  number of k-vectors
-       real(REAL64), intent(in)           ::  xk(nrk)                    !  x coordinate of k-point in plot
-       real(REAL64), intent(in)           ::  e_of_k(neig,nrk)           !  band energies of k-point in plot
-       real(REAL64), intent(in)           ::  eref                       !  reference energy for plot
-       integer, intent(in)                ::  nvert                      !  number of vertical lines in plot
-       real(REAL64), intent(in)           ::  xcvert(nvert)              !  x coordinate of vertical line
-       integer, intent(in)                ::  nlines                     !  number of lines in reciprocal space
-       logical, intent(in)                ::  ljump(nlines)              !  indicates if the new line contains a jump from the preceeding
-       integer, intent(in)                ::  nkstep(nlines)             !  number of steps in line
-       character(len=6), intent(in)       ::  label(nvert+nlines)        !  label of symmetry k-points
-       real(REAL64), intent(in)           ::  xklab(nvert+nlines)        !  x coordinate of label
+       character(len=*), intent(in)       ::  filename                   !<  file to be written
+       integer, intent(in)                ::  io                         !<  tape number
+       integer, intent(in)                ::  neig                       !<  number of bands
+       integer, intent(in)                ::  nrk                        !<  number of k-vectors
+       real(REAL64), intent(in)           ::  xk(nrk)                    !<  x coordinate of k-point in plot
+       real(REAL64), intent(in)           ::  e_of_k(neig,nrk)           !<  band energies of k-point in plot
+       real(REAL64), intent(in)           ::  eref                       !<  reference energy for plot
+       integer, intent(in)                ::  nvert                      !<  number of vertical lines in plot
+       real(REAL64), intent(in)           ::  xcvert(nvert)              !<  x coordinate of vertical line
+       integer, intent(in)                ::  nlines                     !<  number of lines in reciprocal space
+       logical, intent(in)                ::  ljump(nlines)              !<  indicates if the new line contains a jump from the preceeding
+       integer, intent(in)                ::  nkstep(nlines)             !<  number of steps in line
+       character(len=6), intent(in)       ::  label(nvert+nlines)        !<  label of symmetry k-points
+       real(REAL64), intent(in)           ::  xklab(nvert+nlines)        !<  x coordinate of label
 
-       integer, intent(in)                ::  nocc                       !  number of lines in reciprocal space
+       integer, intent(in)                ::  nocc                       !<  number of lines in reciprocal space
 
 !      local
 
@@ -80,6 +85,13 @@
        ymax = real(nint(ymax*27.212)) + UM
 
        open(unit=io,file=filename,form='formatted')
+
+       write(io,'("# Grace project file ")')
+       write(io,*)
+
+       write(io,'("#    zero energy for bands is ",f12.4," eV above ",  &
+     &            "the average potential")') eref*EV
+       write(io,*)
 
        write(io,'("@    autoscale onread none ")')
 !       write(io,'("@    znorm 3 ")')
@@ -143,8 +155,8 @@
        write(io,'("@    yaxis  tick minor ticks 0 ")')
        write(io,'("@    yaxis  tick major linewidth 2.0 ")')
        write(io,'("@    yaxis  ticklabel font 6 ")')
-       
-         write(io,'("@default linewidth 1.5   " )') 
+
+         write(io,'("@default linewidth 1.5   " )')
 
 !      // put colors and stuff here
       do j=0,neig-1
@@ -154,8 +166,8 @@
          write(io,'("@    s",i3.3," symbol fill pattern 1")') j
          write(io,'("@    s",i3.3," line type 0")') j
       enddo
-            
-      do j=0,nocc-1      
+
+      do j=0,nocc-1
          write(io,'("@    s",i3.3," symbol color 4")') j
          write(io,'("@    s",i3.3," symbol fill color 4")') j
       enddo
@@ -164,7 +176,7 @@
          write(io,'("@    s",i3.3," symbol color 2")') j
          write(io,'("@    s",i3.3," symbol fill color 2")') j
       enddo
-      
+
        do jrk = 1,nvert
          write(io,'("@    s",i3.3," line color 1" )') neig-1+jrk
          write(io,'("@    s",i3.3," line type 1" )') neig-1+jrk
@@ -176,7 +188,7 @@
          write(io,'("@    s",i3.3," line type 1" )') neig+nvert
          write(io,'("@    s",i3.3," line linestyle 1" )') neig+nvert
          write(io,'("@    s",i3.3," line linewidth 1.0" )') neig+nvert
-       
+
        do j=1,neig
          write(io,*)
          irk = 0

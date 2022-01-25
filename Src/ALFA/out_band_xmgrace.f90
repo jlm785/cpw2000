@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     writes the file for later use with xmgrace
-!>     Usage:  xmgrace "filename", or just click on the agr file
+!>  Writes the band structure plot file for later use with xmgrace
+!>  Usage:  xmgrace "filename", or just click on the agr file
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.04
+!>  \date         19 October 2013, 4 February 2020.
+!>  \copyright    GNU Public License v2
 
        subroutine out_band_xmgrace(filename,io,                          &
      &      title,subtitle,nstyle,                                       &
@@ -23,7 +28,7 @@
 !      modified (eref) 5 February 2014. jlm
 !      modified (nstyle,nocc) for different styles. 4 August 2014. JLM
 !      Modified, documentation, 4 February 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+!      Modified, first line for KDE recognition. 20 January 2022. JLM
 
        implicit none
        integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -31,7 +36,7 @@
 !      input
 
        character(len=*), intent(in)       ::  filename                   !<  file to be written
-       integer, intent(in)                ::  io                         !<  tape number 
+       integer, intent(in)                ::  io                         !<  tape number
 
        character(len=50), intent(in)      ::  title                      !<  title for plots
        character(len=140), intent(in)     ::  subtitle                   !<  subtitle for plots
@@ -95,6 +100,9 @@
 
        open(unit=io,file=filename,form='formatted')
 
+       write(io,'("# Grace project file ")')
+       write(io,*)
+
        write(io,'("#    zero energy for bands is ",f12.4," eV above ",  &
      &            "the average potential")') eref*EV
        write(io,*)
@@ -103,7 +111,7 @@
        write(io,'("@    world  ",f18.8,",",f18.8,",",f18.8,",",f18.8)') &
      &  xcvert(1),ymin,xcvert(nvert),ymax
        write(io,*)
-       
+
        if(nstyle == 1) then
 
          write(io,'("@    frame linewidth 3.0 ")')
@@ -136,7 +144,7 @@
          write(io,"('@    subtitle ""',a,'""')") adjustl(trim(subtitle))
          write(io,*)
        endif
-      
+
        write(io,'("@    xaxis  tick off ")')
        write(io,'("@    xaxis  tick spec type both ")')
        write(io,'("@    xaxis  tick spec ",i6)') nvert+nlines
@@ -214,7 +222,7 @@
        write(io,'("@    s",i3.3," line type 1" )') j
        write(io,'("@    s",i3.3," line linestyle 1" )') j
        write(io,'("@    s",i3.3," line linewidth 2.0" )') j
-       
+
        if(nocc > 0) then
          do j = 1,nocc*npannel
            write(io,'("@    s",i3.3," line color 4" )') j
@@ -246,7 +254,7 @@
            endif
          enddo
        endif
-       
+
 
 !      write lines
 
