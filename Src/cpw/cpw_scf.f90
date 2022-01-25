@@ -12,14 +12,14 @@
 !------------------------------------------------------------!
 
 !>     Calculates the self consistent potential and charge
-!>     for kb pseudopotential with either an atomic orbital 
+!>     for kb pseudopotential with either an atomic orbital
 !>     or plane wave basis set.
 
        subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,        &
      &     efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,           &
      &     dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,     &
      &     vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,         &
-     &     total_, ewald_, chdens_) 
+     &     total_, ewald_, chdens_)
 
 !        subroutine scf_kb_c16(flgaopw,pwexp_,acc_,flags_,                 &
 !      & xc_,iprglob,iguess,                                               &
@@ -35,7 +35,7 @@
 !      & chdens_,                                                          &
 !      & dims_)
 
-       
+
 !      version 4.0. 19 october 1993. jlm
 !      version 4.2  25 february 1999. jlm
 !      modified 17 april 1999
@@ -52,11 +52,12 @@
 !      Modified, dimension of ei, 18 February 2020. JLM
 !      Modified h_kb_diag_all, 7 June 2020. JLM
 !      Modified, new test of mixer failure. 28 November 2020. JLM
+!      Modified, Warning for exceeded iterations. 14 December 2021. JLM
 
 !      copyright inesc-mn/Jose Luis Martins
 
 !      version 4.99
-     
+
        use cpw_variables
 
        implicit none
@@ -162,21 +163,21 @@
        type(enfrst_t)                     ::  ewald_                     !<  Ewald energy force stress
 
 !       real(REAL64), intent(in)           ::  enerew                     !<  Ewald energy
-       
+
        type(vcomp_t)                      ::  vcomp_                     !<  Componemts of local potential
 
 !       complex(REAL64), intent(in)        :: vion(dims_%mxdnst)                !<  ionic potential for the prototype G-vector in star j
 
 !       complex(REAL64), intent(inout)     ::  vhar(dims_%mxdnst)               !<  Hartree potential for the prototype G-vector
 !       complex(REAL64), intent(inout)     ::  vxc(dims_%mxdnst)                !<  exchange+correlation potential for the prototype G-vector
-       
+
 !       complex(REAL64), intent(out)       ::  veff(dims_%mxdnst)               !<  effective potential (local+Hartree+XC) for the prototype g-vector in star j
 
-       type(chdens_t)                     ::  chdens_                    !<  charge densities    
+       type(chdens_t)                     ::  chdens_                    !<  charge densities
 
 !       complex(REAL64), intent(inout)     ::  den(dims_%mxdnst)                !<  total charge density for the prototype G-vector
 !       complex(REAL64), intent(in)        ::  denc(dims_%mxdnst)               !<  core charge density for the prototype G-vector
-       
+
        type(hamallk_t)                    ::  hamallk_                   !<  hamiltonian size and indexation for all k-points
 
 !       integer, intent(inout)             ::  mtxd_allk(dims_%mxdnrk)          !<  dimension of the hamiltonian for k-point n
@@ -188,8 +189,8 @@
 
 !       real(REAL64), intent(out)          ::  eig_allk(dims_%mxdnrk*dims_%mxdbnd)    !<  eigenvalue j, for all the k-points
 !       real(REAL64), intent(out)          ::  occ_allk(dims_%mxdnrk*dims_%mxdbnd)    !<  fractional ocupation of level j, for all the k-points
-      
-       
+
+
        real(REAL64), intent(in)           ::  ealpha                     !<  alpha term. (G=0)
 
 
@@ -226,7 +227,7 @@
        complex(REAL64), allocatable       ::  vhxc(:)                    !  Hartre+xc potential that enters the diagonalization or after mixing
        complex(REAL64), allocatable       ::  vhxcout(:)                 !  Hartre+xc potential that comes out of the diagonalization
        complex(REAL64), allocatable       ::  delvhxc(:)                 !  After mixing vhxc = vhxc + delvhxc for next iteration
- 
+
        complex(REAL64), allocatable       ::  rholap(:)
        complex(REAL64), allocatable       ::  tauk(:)
        complex(REAL64), allocatable       ::  tau(:)
@@ -236,7 +237,7 @@
        real(REAL64), allocatable          ::  ekpg(:)                    !  kinetic energy (Hartree) of k+G-vector  i
 
        real(REAL64), allocatable          ::  ekl(:)                     !  kinetic energy of wave-function j, for all the k-points
- 
+
        real(REAL64), allocatable          ::  ei(:)                      !  eigenvalue j
        real(REAL64), allocatable          ::  ekn(:)                     !  kinetic energy of wave-function j
        real(REAL64), allocatable          ::  occp(:)                    !  ocupation*weight*spin deg. of eigenvector j
@@ -258,11 +259,11 @@
 
        integer                ::  ifail                                  !  if ifail=0 the subroutine was successfull. Otherwise ifail indicates the number of correct digits.
        integer                ::  minifail                               !  minimum value of non-zero ifail, or 100 if all ifail is 0
-      
+
        real(REAL64)           ::  vmax, vmin                             !  maximum and minimum values of vscr
        real(REAL64)           ::  vmaxold, vminold                       !  old values of vmax,vmin
        integer                ::  nfailmix                               !  number of mixer failures detected
-       integer                ::  maxnfailmix                            !  maximum number of corrections to mixer failures 
+       integer                ::  maxnfailmix                            !  maximum number of corrections to mixer failures
 
        real(REAL64)           ::  eband                                  !  band energy (Hartree)
        real(REAL64)           ::  ektot                                  !  electron kinetic energy (Hartree)
@@ -280,14 +281,14 @@
        character(len=5)       ::  labelk
 
        real(REAL64)           ::  veffr1
-       
+
        integer                ::  nsfft(3)
        integer                ::  mxdwrk
 
        real(REAL64)           ::  oldenergy                              !  energy of the previous iteration
        real(REAL64)           ::  enerlow                                !  lowest energy in previous scf iterations
        real(REAL64)           ::  eharrfou                               !  total energy of the Harris-Weinert-Foulkes functional
-       
+
        integer                ::  itmix                                  !  iteration number for mixer, itmix = 1 resets.
 
        real(REAL64)           ::  tin, tout
@@ -479,7 +480,7 @@
      &         mxdscr, dims_%mxdlao)
 
              if(ifail /= 0) minifail = min(ifail,minifail)
-      
+
              if(ifail < -3) then
                write(6,*)
                write(6,'("   Stopped in cpw_scf:  cycle is diverging",    &
@@ -490,7 +491,7 @@
              endif
 
            elseif(flgaopw == 'AO') then
- 
+
              veffr1 = real(vcomp_%veff(1),REAL64)
              nocc = neig
 
@@ -544,7 +545,7 @@
            ipr = 0
            if(iprglob == 3) ipr = 1
            if(iprglob == 4) ipr = 2
-           
+
            nrka = -1
 
            ickin = 1
@@ -569,16 +570,16 @@
 !        finds the fermi level
 
          ipr = iprglob
-         
+
          call fermi_level(psiallk_%eig_allk,pseudo_%ztot,pwexp_%teleck,        &
      &   kpoint_%nrk,kpoint_%wgk,kpoint_%nband,                                &
      &   psiallk_%occ_allk,efermi,eband,elects,bandwid,penngap,                &
-     &   dims_%mxdnrk,dims_%mxdbnd) 
+     &   dims_%mxdnrk,dims_%mxdbnd)
 
          call print_fermi_occup(ipr,psiallk_%eig_allk,pwexp_%teleck,           &
      &   kpoint_%nrk,kpoint_%wgk,kpoint_%nband,                                &
      &   psiallk_%occ_allk,efermi,eband,elects,bandwid,penngap,                &
-     &   dims_%mxdnrk,dims_%mxdbnd) 
+     &   dims_%mxdnrk,dims_%mxdbnd)
 
 !       calculates the Harris-Foulkes functional energy
 
@@ -602,7 +603,7 @@
           do i = 1,recip_%ns
             tau(i) = C_ZERO
           enddo
-        endif         
+        endif
 
 !       second loop over k-points
 
@@ -614,7 +615,7 @@
            rkpt(1) = kpoint_%rk(1,irk)
            rkpt(2) = kpoint_%rk(2,irk)
            rkpt(3) = kpoint_%rk(3,irk)
-         
+
            neig = kpoint_%nband(irk)
            mtxd = hamallk_%mtxd_allk(irk)
 
@@ -649,9 +650,9 @@
              do i = 1,recip_%ns
                tau(i) = tau(i) + tauk(i)
              enddo
-     
+
              deallocate(tauk)
-     
+
            endif
 
            do i=1,recip_%ns
@@ -665,13 +666,13 @@
          allocate(rholap(dims_%mxdnst))
 
          if(xc_%author == "TBL") then
-         
+
            call lap_rho(chdens_%den, rholap, crys_%adot,                 &
      &     recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,  &
      &     recip_%inds, recip_%mstar,                                    &
      &     dims_%mxdgve, dims_%mxdnst)
-     
-          
+
+
          endif
 
 !        calculates the screening potential
@@ -679,17 +680,17 @@
          ipr = 0
          if(iprglob > 1) ipr = 1
          if(iprglob == 4) ipr = 2
-         
+
          call v_hartree_xc(ipr, xc_%author, xc_%tblaha,                  &
      &   crys_%adot, exc, strxc, rhovxc,                                 &
      &   vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc, rholap, tau,   &
      &   recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,    &
      &   recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,              &
      &   dims_%mxdgve, dims_%mxdnst)
-     
+
          deallocate(tau)
          deallocate(rholap)
-        
+
          do i=1,recip_%ns
            vhxcout(i) = vcomp_%vxc(i) + vcomp_%vhar(i)
          enddo
@@ -766,7 +767,7 @@
      &   recip_%mstar, recip_%ek,                                        &
      &   vhxc, vhxcout, delvhxc,                                         &
      &   dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
-     
+
          do i = 2,recip_%ns
            vhxc(i) = vhxc(i) + delvhxc(i)
          enddo
@@ -791,17 +792,17 @@
          itmix = itmix + 1
 
        enddo
-       
+
        deallocate(ekl)
 
        deallocate(hpsi)
-       
+
        deallocate(denk)
-       
+
        deallocate(vhxc)
        deallocate(vhxcout)
        deallocate(delvhxc)
-       
+
        deallocate(vhxclow)
        deallocate(vhxcoutlow)
 
@@ -820,8 +821,8 @@
 
        if(iconv == 0) then
          write(6,*)
-         write(6,'("     scf_kb_c16   maximum number of iterations ",    &
-     &        "exceeded: ",i6)') acc_%itmax
+         write(6,'("   WARNING:  scf_kb_c16   maximum number of ",       &
+     &        "iterations exceeded: ",i6)') acc_%itmax
          write(6,*)
        else
          if(minifail == 100) then
@@ -830,11 +831,11 @@
            lsafescf = .TRUE.
            write(6,*)
            write(6,'("   WARNING:  diagonalization had only ",i3,        &
-     &         " accurate digits")') minifail 
+     &         " accurate digits")') minifail
            write(6,*)
          endif
        endif
-       
+
        return
        end subroutine cpw_scf
 

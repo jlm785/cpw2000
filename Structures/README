@@ -2,3 +2,6 @@ Contains collected examples of cpw.in files and a few band_lines.
 
 OLD_format contains old formatted files that can be converted with pwdat2cpwin in Tools
 
+In Elements you find the cpw.in for elements up to Uranium, the corresponding band_lines,
+and elk.in files to test the pseudopotentials against an LAPW calculation.
+

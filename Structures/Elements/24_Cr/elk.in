@@ -1,0 +1,46 @@
+
+tasks
+   0
+   21
+
+xctype
+   2
+
+maxscl
+ 30
+
+mixtype
+  3
+
+scale
+  5.471
+
+avec
+        -0.50000000         0.50000000         0.50000000
+         0.50000000        -0.50000000         0.50000000
+         0.50000000         0.50000000        -0.50000000
+
+
+sppath
+  '~/other_codes/elk-7.2.42/species/'
+
+atoms
+   1                                 : nspecies
+'Cr.in'                              : spfname
+   1                                 : natoms
+   0.0 0.0 0.0      0.0 0.0 0.0      : atposl, bfcmt
+
+ngridk
+  8  8  8
+
+vkloff
+  0.5  0.5  0.5
+
+plot1d
+   6   100      : nvp1d, npp1d
+   0.0     0.0     0.0
+  -0.5     0.5     0.5
+   0.0     0.0     0.5
+   0.0     0.0     0.0
+   0.25    0.25    0.25
+  -0.5     0.5     0.5
