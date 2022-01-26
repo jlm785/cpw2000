@@ -38,6 +38,7 @@ program pwrhov2other
   integer                            ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64)                       ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64)                       ::  alatt                           !<  lattice constant
+  real(REAL64)                       ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
 ! Pseudopotential variables
 
@@ -100,7 +101,7 @@ program pwrhov2other
   real(REAL64)      ::  ealraw
   integer           ::  iotape
   real(REAL64)      ::  emax
-  
+
   character(len=60)   ::  filename
 
 ! counters
@@ -142,7 +143,7 @@ program pwrhov2other
   allocate(lorb(mxdlao,mxdtyp))
   allocate(wvfao(-2:mxdlqp,mxdlao,mxdtyp))
   allocate(zv(mxdtyp))
-  
+
   allocate(iray(mxdtyp))
   allocate(ititle(mxdtyp))
   allocate(irel(mxdtyp))
@@ -155,10 +156,10 @@ program pwrhov2other
 
   call pw_rho_v_in(filename, iotape, ipr,                                &
          pwline, title, subtitle, meta_cpw2000,                          &
-         author, flgscf, flgdalin, emaxin, teleck,                       &
-         nx,ny,nz, sx,sy,sz, nbandin,                                    &
+         author, flgscf, flgdalin,                                       &
+         emaxin, teleck, nx,ny,nz, sx,sy,sz, nbandin, alatt, efermi,     &
+         adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
-         alatt, adot, ntype, natom, nameat, rat,                         &
          ngin, kmaxin, kgvin, phasein, conjin, nsin, mstarin,            &
          veffin, denin, denbondin,                                       &
          irel, icore, icorr, iray, ititle,                               &
@@ -167,10 +168,7 @@ program pwrhov2other
          norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
          mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao)
 
-  write(6,*)
-  write(6,*) 'enter energy cutoff for wavefunctions (Hartree)'
-  write(6,*)
-  read(5,*) emax
+  emax = emaxin
 
   call write_pwscf_in(meta_cpw2000,                                      &
       adot, ntype, natom, nameat, rat, alatt,                            &
