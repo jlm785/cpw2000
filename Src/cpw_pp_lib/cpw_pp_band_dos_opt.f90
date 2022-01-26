@@ -363,7 +363,8 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
       call cpw_pp_band(ioreplay,                                         &
           dims_, flags_, crys_, recip_, pseudo_, atorb_, pwexp_,         &
           strfac_,  vcomp_,                                              &
-          title, subtitle, epspsi, icmax)
+          efermi, meta_cpw2000, title, subtitle,                         &
+          epspsi, icmax)
 
     elseif(itask == 2) then
 
