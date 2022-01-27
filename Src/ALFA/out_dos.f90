@@ -45,7 +45,7 @@
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, project wf on atomic orbitals, July 2021. CLR
 ! Modified, lproj, lso in input. JLM
-! Modified, bug correction, Jan 2021. CLR.
+! Modified, bug correction, Jan 2022. CLR.
 
 ! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
 
