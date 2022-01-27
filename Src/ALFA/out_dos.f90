@@ -45,6 +45,7 @@
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, project wf on atomic orbitals, July 2021. CLR
 ! Modified, lproj, lso in input. JLM
+! Modified, bug correction, Jan 2021. CLR.
 
 ! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
 
@@ -368,7 +369,10 @@
     else
       lpsiso = .FALSE.
       allocate(psi_so(1,1))
-    endif
+    endif    
+    else
+      lpsiso = .FALSE.
+      allocate(psi_so(1,1))
   endif
 
 
@@ -607,8 +611,6 @@
   deallocate(ekpsi)
   deallocate(ekpsi_so)
 
-  deallocate(psi_so)
-
   allocate(e_of_k(neig,nrk))
   allocate(e_of_k_so(2*neig,nrk))
 
@@ -693,6 +695,40 @@
 
   deallocate(e_of_k)
   deallocate(e_of_k_so)
+  
+  if (lproj) then
+
+    deallocate(baslcao)
+    deallocate(baslcao_aux)
+    deallocate(infolcao)
+    deallocate(infolcao_aux)
+
+    deallocate(basxpsi)
+
+    deallocate(S)
+    deallocate(S12)
+    deallocate(S12_inv)
+    deallocate(Swrk)
+    deallocate(ev_wrk)
+
+    deallocate(prod)
+
+    if (lso) then
+      deallocate(infolcao_so)
+      deallocate(prod_so)
+      deallocate(psi_in)
+      deallocate(basxpsi_so)  
+      deallocate(psi_so)
+    else
+      deallocate(psi_so)
+    endif    
+    else
+      deallocate(psi_so)
+  endif
+  
+  
+  
+  
 
   return
   end subroutine out_dos
