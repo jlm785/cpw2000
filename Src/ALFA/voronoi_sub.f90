@@ -263,6 +263,8 @@ subroutine voronoi_sub(ioreplay)
 
   endif
 
+  close(unit=io)
+
   deallocate(natom)
   deallocate(rat)
   deallocate(atmass)

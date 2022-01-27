@@ -369,10 +369,10 @@
     else
       lpsiso = .FALSE.
       allocate(psi_so(1,1))
-    endif    
-    else
-      lpsiso = .FALSE.
-      allocate(psi_so(1,1))
+    endif
+  else
+    lpsiso = .FALSE.
+    allocate(psi_so(1,1))
   endif
 
 
@@ -695,7 +695,7 @@
 
   deallocate(e_of_k)
   deallocate(e_of_k_so)
-  
+
   if (lproj) then
 
     deallocate(baslcao)
@@ -717,18 +717,18 @@
       deallocate(infolcao_so)
       deallocate(prod_so)
       deallocate(psi_in)
-      deallocate(basxpsi_so)  
+      deallocate(basxpsi_so)
       deallocate(psi_so)
     else
       deallocate(psi_so)
-    endif    
+    endif
     else
       deallocate(psi_so)
   endif
-  
-  
-  
-  
+
+
+
+
 
   return
   end subroutine out_dos
