@@ -16,8 +16,8 @@
 !>  non-local Kleinman and Bylander type of pseudopotential
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.0.3
-!>  \date         May 12 1990, 2 December 2021.
+!>  \version      5.0.5
+!>  \date         May 12 1990, 12 April 2022.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
@@ -32,8 +32,9 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
 ! Modified March 7 1999. jlm
 ! Modified January 5, 2017, f90. JLM
 ! Modified, documentation, January 2020. JLM
-! Added the f non-local contributions. 2 December 2021.
-! copyright inesc-mn/Jose Luis Martins
+! Added the f non-local contributions. 2 December 2021. JLM
+! Corrected lmx bug. 12 April 2022. JLM
+
 
   implicit none
 
@@ -148,10 +149,10 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
 
 ! finds real l maximum and allocates arrays
 
+  lmx = 0
   do k = 1,ntype
-    lmx = 0
     do l = 0,LMAX
-      if(nkb(l,0,k) /= 0) lmx = l
+      if(nkb(l,0,k) /= 0 .and. l > lmx) lmx = l
     enddo
   enddo
   lsize = (lmx+1)*(lmx+1)

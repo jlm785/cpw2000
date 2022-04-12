@@ -31,7 +31,7 @@ subroutine version(cpwversion, ldevel)
    character(len=4), intent(out)      ::  cpwversion                 !<  hardcoded library version
    logical, intent(out)               ::  ldevel                     !<  development branch, minor version may be incompatible
 
-   cpwversion = '5.03'
+   cpwversion = '5.05'
    ldevel = .FALSE.
 
    return
