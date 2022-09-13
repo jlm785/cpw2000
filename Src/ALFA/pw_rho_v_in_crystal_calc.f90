@@ -15,8 +15,8 @@
 !>  from the "io" file (default PW_RHO_V.DAT)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.02
-!>  \date         May 16, 2014, 31 December 2020. JLM
+!>  \version      5.04
+!>  \date         May 16, 2014, 15 February 2022.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_crystal_calc(io,                                  &
@@ -38,6 +38,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified pwline,title,subtitle, 1 August 2014. JLM
 ! Modified, meta_cpw2000, author,nx,etc, January 10, 2017. JLM
 ! Modified, documentation, spacegroup, 31 December 2020. JLM
+! Modified, meta_cpw2000 has information if file is old style, 15 February 2022. JLM
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -235,6 +236,10 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     &   "    points")') nx,ny,nz
   write(6,'("  with a shift of",3f10.3)') sx,sy,sz
 
+! In current code line250 == meta_cpw2000.   However that was not true
+! in earlier codes.  Back compatibility makes this awkward.
+! Both are kept for lazyness of cleaning up the code...
+
   read(io,iostat = ioerr) line250, meta_cpw2000
 
   if(ioerr == 0) then
@@ -266,6 +271,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
       pwline = line140(1:60)
       title = line140(61:110)
       subtitle = line140(111:140)
+      meta_cpw2000(1:140) = line140
       write(6,*)
       write(6,'("  The metadata of the crystal structure file was:")')
       write(6,*) pwline, title, subtitle
@@ -273,6 +279,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     else
       backspace(io)
       read(io) pwline
+      meta_cpw2000(1:60) = pwline
       write(6,*)
       write(6,'("  The old identifier of the input file was:")')
       write(6,*) pwline

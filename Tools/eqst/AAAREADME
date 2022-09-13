@@ -1,0 +1,74 @@
+This is a program that fits the Murnaghnan,
+F. D. Murnaghan, Proc. Natl. Acad. Sci. 30, 244 (1944),
+or Birch-Murnaghan, F. Birch J. Geophys. Res. 83, 1257 (1978),
+equations of state to a series E_j(V_i) of calculated
+total energies for structures j and volumes i.
+
+It identifies which structure is stable at a given pressure and generates
+interpolated plots of E_j(V) and V(p), and gives the value of the
+transition pressure.  For each structure it also gives the equilibrium
+volume V_0, energy at that volume E_0, bulk modulus at equilibrium B(V_0)
+and its derivative dB/dp at V_0.
+
+The input file must have the following structure:
+
+1st line:  Indication of the type of fit "MURNA" or "BIRCH" in all uppercase or
+           all lowercase.
+
+2nd line:  Number of structures "nstr" (positive integer currently limited to 10)
+
+Then we will have a BLOCK for each structure
+
+last line: Maximum pressure "pmax" and number of points "npts" for plot
+           (positive real and positive integer)
+
+Each BLOCK has the following structure
+
+1st block line:   Number of calculated volumes "npt" (positive integer currently
+                  limited to 40)
+
+2nd block line:   Volume factor "volfac" and label (real number and string with at most
+                  10 characters; the whole line must have less than 100 characters)
+                  The label is optional.
+
+3rd to npt+2:     lattice constant "alatt" or volume in atomic units (Bohr or Bohr**3) and
+                  energy in atomic units (Hartree).  If "volfac" is negative
+                  it is assumed that the volume is read.  Otherwise the volume
+                  is V = volfac*alatt**3. (positive real and real number).
+
+Running:
+
+The program is self contained so just compile
+
+$ gfortran -o eqst.exe eqst.f90
+
+   OR
+
+$ ifort -o eqst.exe eqst.f90
+
+   OR...
+
+and run
+
+$ eqst.exe < input_file
+
+Besides the default output it will also generate 4 files for plotting with the .gp
+file extension
+
+To see the plots install gnuplot and run
+
+$ gnuplot eqst_com.gp
+$ gnuplot qofv_com.gp
+
+You can edit by hand those *_com.gp files to obtain a pdf file.
+
+The original code is from David Wood in the early 80s.  It has been modified
+a few times.  The most recent modification converted to fortran 90
+(f77 was reaching 50 years) added some documentation and replaced the
+output plotting files.  Even google could not help me finding
+a reference to the original plotting software let alone a working
+version.
+
+There is still room for improvement, in particular documentation and
+new plot software options, but my time is limited...
+

@@ -7,7 +7,7 @@ copyright Carlos Loia Reis, José Luís Martins, INESC-MN
 Instructions
 
 1. You should have python3 and PyQt5 installed
-   
+
    sudo pip install PyQt5
 
    or whatever it takes in your distribution
@@ -24,9 +24,10 @@ Instructions
    CFLAGS=$(CFLAGS0) -I$(TOP) -I. $(CPPFLAGS) -fPIC
 
    then in the grace top level run .configure (you may have to install motif and other stuff)
-   and in the grace_np directory just run make with the altered Makefile.
+   and in the grace_np directory just run make with the altered Makefile.  You do not need (and maybe
+   shouldn't) install it if you already have grace from your distribution.
 
-3. Compile the command line version 
+3. Compile the command line version
 
    ifort BandInfo.f90 out_band_fold_xmgrace.f90 -o BandInfo.exe
 
@@ -35,6 +36,12 @@ Instructions
 4. Compile the dynamic library (adapt paths for your system)
 
    gcc -I /usr/include/ -shared gracedyn.c -o gracedyn.so -L /usr/lib -lgrace_np
+
+   If you get an error related to "-fPIC" (position independent code) go back to point 2. and run
+
+   gcc -I /usr/include/ -shared gracedyn.c -o gracedyn.so path_to_grace/grace_np/libgrace_np.a
+
+   where path_to_grace is where you have installed
 
 5.  Run the user interface
 

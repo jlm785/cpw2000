@@ -237,10 +237,13 @@ ifeq ($(F77),pgfortran)
    FCOMP=
    FCEXTRA=
 
-   # choose one set of libraries.  openblas seems to be the best
+   # choose one set of libraries.  openblas seems to be the best.  Check also if flexiblas is available
 
    # defaults
    LIBS=-lblas -llapack
+
+   # Maybe could be default
+   # LIBS=-lflexiblas
 
    # AMD-blis  adjust LIBDIR,  fftw3 has problems...
    # LIBDIR =/opt/AMD/aocl/aocl-linux-gcc-2.2.0/lib
