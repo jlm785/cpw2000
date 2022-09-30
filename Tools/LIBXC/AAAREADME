@@ -1,0 +1,17 @@
+This subroutines allow the use of libxc (https://tddft.org/programs/libxc/)
+instead of the subroutines included with the cpw2000 code.
+Just compile this subroutines with the main program BEFORE linking to the libpw library.
+
+Here are examples that you can change according to your directory structure
+
+ ifort -qmkl ../../Src/cpw_variables.f90 ../../Src/cpw.f90 libxcf03.f90 LIBXC/*.f90 ../../Src/libpw_ifort.a -L/home/jlm/_pw/libxc/lib -lxcf03 -lxc
+
+ gfortran ../../Src/cpw_variables.f90 ../../Src/cpw.f90 libxcf03.f90 LIBXC/*.f90 ../../Src/libpw_gfortran.a -L/home/jlm/_pw/libxc/lib -lopenblas -lpthread -lgomp -lxcf03 -lxc
+
+you need the modules from libxcf03.f90.
+
+You have to implement yourself other functionals if you want.
+Check the elk code (https://elk.sourceforge.io/) for inspiration, as it looks neat
+and similar to the present case.
+
+

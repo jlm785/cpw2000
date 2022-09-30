@@ -12,10 +12,17 @@
 !------------------------------------------------------------!
 
 !>  Computes v hartree and adds v exchange-correlation.
+!>  Lengths in Bohr, energies in Hartrees.
+!>
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.05
+!>  \date         8 June 1987.  29 September 2022.
+!>  \copyright    GNU Public License v2
 
 subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
-    vhar, vxc, den, denc, rholap, tau,                                      &
-    ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                           &
+    vhar, vxc, den, denc, rholap, twotau,                                &
+    ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
     mxdgve, mxdnst)
 
 ! Adapted from Sverre Froyen plane wave program
@@ -29,9 +36,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
 ! modified, rholap, tau, 7 October 2015. JLM
 ! Modified documentation, January 2020. JLM
 ! Modified ipr, icheck, 13 February 2021. JLM
-! copyright INESC-MN/Jose Luis Martins/Carlos Loia Reis
-
-! Version 4.99
+! Minor stuff, 29 September 2022. JLM
 
 
   implicit none
@@ -50,8 +55,8 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
 
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density for the prototype G-vector
   complex(REAL64), intent(in)        ::  denc(mxdnst)                    !<  core density for the prototype G-vector
-  complex(REAL64), intent(in)        ::  rholap(mxdnst)
-  complex(REAL64), intent(in)        ::  tau(mxdnst)
+  complex(REAL64), intent(in)        ::  rholap(mxdnst)                  !<  Laplacian of charge density
+  complex(REAL64), intent(in)        ::  twotau(mxdnst)                  !<  2*kinetic energy
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -174,7 +179,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
 
   endif
 
-    call mesh_set(ipr, "tau", adot, tau, taumsh, ncheck,                 &
+    call mesh_set(ipr, "tau", adot, twotau, taumsh, ncheck,                 &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
