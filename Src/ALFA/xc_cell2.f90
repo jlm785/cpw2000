@@ -13,9 +13,14 @@
 
 !>     Computes the exchange correlation potential and energy (Hartree)
 !>     for the Tran-Blaha meta-GGA
-!>     from the charge density (in electrons per unit cell), density laplacian 
+!>     from the charge density (in electrons per unit cell), density laplacian
 !>     and "kinetic energy" density.
 !>     Adapted from older LDA code.
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.04
+!>  \date         September 2015, 29 September 2022.
+!>  \copyright    GNU Public License v2
 
        subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,        &
      &       chdr, taumsh, lapmsh, vxc, adot, exc, rhovxc, strxc )
@@ -24,11 +29,11 @@
 !      Modified for MMGA Tran-Blaha. CLR
 !      Modified for f90. 18 December 2016.  JLM
 !      Modified, documentation, December 2019. JLM
-!      copyright INESC-MN/Jose Luis Martins, Carlos Loia Reis
+!      sigma, twotau, 29 September 2022. JLM
 
-!      version 4.94
+!      WARNING choice of correlation for Meta-GGA is hard coded as Perdew-Zunger
 
-       implicit none 
+       implicit none
 
        integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -36,10 +41,10 @@
 
        character(len = *), intent(in)     ::  author                     !<  type of xc wanted (ca=pz , pw92 , vwn, wi, pbe)
        real(REAL64), intent(in)           ::  tblaha                     !<  Tran-Blaha constant, if negative calculates it...
-       integer, intent(in)                ::  id1, id2                   !<  first and second dimension of the fft array 
+       integer, intent(in)                ::  id1, id2                   !<  first and second dimension of the fft array
        integer, intent(in)                ::  n1, n2, n3                 !<  fft dimensions in directions 1,2,3
        real(REAL64), intent(in)           ::  chdr(id1,id2,n3)           !<  charge density (1/bohr^3)
-       real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)         !<  kinetic energy density (Hartree/bohr^3)
+       real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)         !<  2*kinetic energy density (Hartree/bohr^3)
        real(REAL64), intent(in)           ::  lapmsh(id1,id2,n3)         !<  Laplacian of charge density (1/bohr^5)
        real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space (covariant components)
 
@@ -57,13 +62,13 @@
        real(REAL64)        ::  strgga(3,3)                               !  contribution to stress
        real(REAL64)        ::  grho,dexdr,decdr,dexdgr,decdgr
 
-       integer, parameter  ::  mxdnn = 3                                 !  Lagrange interpolation uses 2*mxdnn+1 points                   
+       integer, parameter  ::  mxdnn = 3                                 !  Lagrange interpolation uses 2*mxdnn+1 points
        real(REAL64)        ::  dgdm(-mxdnn:mxdnn),drhodm(3),drhocon(3)
 
-       real(REAL64)        ::  coef      
+       real(REAL64)        ::  coef
 
-       integer, save       ::  xc_call = 0       
-       real(REAL64)        ::  tau, lap, sigma
+       integer, save       ::  xc_call = 0
+       real(REAL64)        ::  twotau, lap
        real(REAL64)        ::  tb09_integral, tb09_const_c
 
 !     learn to count in portuguese
@@ -193,9 +198,9 @@
            dgdm(in) = (if1*UM) / (if2*UM)
          enddo
          dgdm(0) = ZERO
-         
+
 !        calculation of tb09 constant c :(
-              
+
          if(tblaha > ZERO) then
 
            tb09_const_c = tblaha
@@ -251,11 +256,11 @@
              else
                grho = sqrt(grho)
                drhocon(1) = drhocon(1) / grho
-               drhocon(2) = drhocon(2) / grho 
+               drhocon(2) = drhocon(2) / grho
                drhocon(3) = drhocon(3) / grho
              endif
 
-             tb09_integral = tb09_integral + (grho/rho)    
+             tb09_integral = tb09_integral + (grho/rho)
 
            enddo
            enddo
@@ -277,7 +282,7 @@
          do i2=1,n2
          do i1=1,n1
            rho = chdr(i1,i2,i3)
-           tau = taumsh(i1,i2,i3)
+           twotau = taumsh(i1,i2,i3)
            lap = lapmsh(i1,i2,i3)
 
 !          calculates gradient of rho again
@@ -322,15 +327,13 @@
            else
              grho = sqrt(grho)
              drhocon(1) = drhocon(1) / grho
-             drhocon(2) = drhocon(2) / grho 
+             drhocon(2) = drhocon(2) / grho
              drhocon(3) = drhocon(3) / grho
            endif
-                
-           sigma= grho*grho
 
-           call xc_mgga('tbl', rho, sigma, lap, tau,                     &
-     &                          epsx, epsc, vx, vc, tb09_const_c ) 
-           
+           call xc_mgga('pz', rho, grho, lap, twotau,                    &
+     &                          epsx, epsc, vx, vc, tb09_const_c )
+
            exc = exc + rho * (epsx + epsc)
            vxc(i1,i2,i3) = vx + vc
            rhovxc = rhovxc + rho*(vx + vc)
@@ -338,7 +341,7 @@
          enddo
          enddo
          enddo
- 
+
        elseif (author == 'pbe' .or. author == 'PBE') then
 
 !        gga exchange and correlation
@@ -413,12 +416,12 @@
            else
              grho = sqrt(grho)
              drhocon(1) = drhocon(1) / grho
-             drhocon(2) = drhocon(2) / grho 
+             drhocon(2) = drhocon(2) / grho
              drhocon(3) = drhocon(3) / grho
            endif
 
            call xc_gga( author, rho, grho,                               &
-     &                  epsx, epsc, dexdr, decdr, dexdgr, decdgr ) 
+     &                  epsx, epsc, dexdr, decdr, dexdgr, decdgr )
 
            exc = exc + rho * (epsx + epsc)
            vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
@@ -454,7 +457,7 @@
          do i3=1,n3
          do i2=1,n2
          do i1=1,n1
-           rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)           
+           rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
          enddo
          enddo
          enddo

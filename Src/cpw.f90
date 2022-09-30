@@ -149,7 +149,7 @@ program cpw2000
 
 ! reads the pseudopotential data
 
-  icorr = xc_%author
+  icorr = xc_%author(1:2)
 
   call cpw_read_pseudo(iprglob, icorr,                                   &
        crys_, pseudo_, atorb_, dims_)
@@ -378,7 +378,7 @@ program cpw2000
 
       write(6,*)
       write(6,'("  Computing time for md step (s):",f10.2,               &
-      "    elapsed time (s):",3x,f10.2)') tfinal-t0,telfin-tel0
+        &    "    elapsed time (s):",3x,f10.2)') tfinal-t0,telfin-tel0
       write(6,*)
 
     endif
@@ -406,7 +406,7 @@ program cpw2000
 
   write(6,*)
   write(6,'("  Total computing time (s):   ",f10.2,                      &
-     "    Elapsed time (s):",3x,f10.2)') tout-tinit,telout-telin
+     &    "    Elapsed time (s):",3x,f10.2)') tout-tinit,telout-telin
   write(6,*)
 
 

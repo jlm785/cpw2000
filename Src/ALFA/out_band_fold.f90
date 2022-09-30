@@ -36,7 +36,7 @@
 !      modified, unfolding version, July 9, 2014. clr
 !      modified title, 6 August 2014. JLM
 !      parallel execution and restart capabilities, October 2019, clr
-!      adpated for version 4.96, clr  
+!      adpated for version 4.96, clr
 !      Modified, documentation 29 May 2020. JLM
 !      Modified, latorb, 7 June 2020. JLM
 !      Modified, vmax, vmin, 27 November 2020. JLM
@@ -133,10 +133,10 @@
        real(REAL64), allocatable          ::  qmod(:)                    !   length of k+g-vector of row/column i
        real(REAL64), allocatable          ::  ekpg(:)                    !   kinetic energy (hartree) of k+g-vector of row/column i
        complex(REAL64), allocatable       ::  psi(:,:)                   !   component j of eigenvector i (guess on input)
-       complex(REAL64), allocatable       ::  hpsi(:,:)                  !   H | psi> 
+       complex(REAL64), allocatable       ::  hpsi(:,:)                  !   H | psi>
        real(REAL64), allocatable          ::  ekpsi(:)                   !   kinetic energy of eigenvector i. (hartree)
        real(REAL64), allocatable          ::  ekpsi_so(:)                !   kinetic energy of eigenvector i. (hartree)
-       
+
        real(REAL64), allocatable          ::  vscr(:)                    !   screened potential in the fft real space mesh
        complex(REAL64), allocatable       ::  psi_so(:,:)                !   component j of eigenvector i (guess on input)
 
@@ -145,7 +145,7 @@
        integer                            ::  mxdscr                     !  array dimension for screening potential
 
        logical                            ::  lkpg                       !  If true use the previous G-vectors (same mtxd and isort)
-       logical                            ::  lpsiso                     !  If true calculates the spin-orbit perturbed wave-functions 
+       logical                            ::  lpsiso                     !  If true calculates the spin-orbit perturbed wave-functions
 
        integer                            ::  ifail                      !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
 
@@ -171,16 +171,16 @@
        character(len=5)                   ::  labelk
        integer                            ::  ipr,nrk2,nd
        integer                            ::  nsfft(3)
-       
+
        integer                            ::  iMinv(3,3)
        integer                            ::  idet
-       real(REAL64)                       ::  avec(3,3) 
+       real(REAL64)                       ::  avec(3,3)
        real(REAL64)                       ::  bvec(3,3)
        real(REAL64)                       ::  adot_pc(3,3)
-       
+
        real(REAL64),allocatable           :: pkn(:,:)
        real(REAL64),allocatable           :: pkn_so(:,:)
-       
+
        integer                            ::  idum(3,3)
        character(len=6)                   ::  fdum
        integer                            ::  ioerr
@@ -192,21 +192,21 @@
 !      counters
 
        integer    ::  i, j, n
-       
-!      workers and restart  
-     
+
+!      workers and restart
+
        integer    :: irec_err
        integer    :: irk_rd, irk_start
        integer    :: iworker, nworker, cworker
        integer    :: ir_size, pp_flag
-       
+
        real(REAL64) :: t1, t2
        logical                            :: lmyjob
 
 
        io63 = 63
 
-!      calculates local potential in fft mesh 
+!      calculates local potential in fft mesh
 !      be more generous for fold as k-points are far from Gamma point
 
        if(flgdal == 'DUAL') then
@@ -222,7 +222,7 @@
        call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
        allocate(vscr(mxdscr))
-   
+
        ipr = 1
 
        idshift = 0
@@ -230,7 +230,7 @@
      & ng, kgv, phase, conj, ns, inds,                                   &
      & mxdscr, mxdgve, mxdnst)
 
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 !!!!      pwline from old PW_RHO_V.DAT does not work due to a bug in out_rho_v
 !!!!      this is a workaround
 
@@ -238,10 +238,10 @@
 
        read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                     &
      &           ((idum(i,j),i=1,3),j=1,3),fdum
-          
+
        if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
 
-         pwlinloc = pwline
+         pwlinloc = pwline(1:60)
 
        else
 
@@ -250,7 +250,7 @@
          write(6,*)
 
          open(unit=11,file='PW.DAT',status='OLD',form='FORMATTED',IOSTAT=ioerr)
-         
+
          if(ioerr == 0) then
 
            read(11,'(a60)',IOSTAT=ioerr) pwlinloc
@@ -272,13 +272,13 @@
 
 
        endif
-       
+
 !!!!
-!!!!        PrepFold needs avec       
+!!!!        PrepFold needs avec
        call adot_to_avec_sym(adot,avec,bvec)
-!!!!        ploting routines need metric of primitive cell !       
+!!!!        ploting routines need metric of primitive cell !
        call Fold_Get_adot_pc(pwlinloc, avec, adot_pc)
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 
        iotape = 13
        call out_band_circuit_size('BAND_LINES.DAT',iotape,1,adot_pc,     &      ! note call with adot_pc
@@ -301,33 +301,33 @@
        allocate(e_of_k(neig,nrk2))
        allocate(e_of_k_so(2*neig,nrk2))
 
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
        call Fold_Prep(pwlinloc, avec,rk, iMinv,idet, rk_fld, nrk2)
-!-----------------------------------------------------------------------      
-      
+!-----------------------------------------------------------------------
+
 !      finds mxddim, mxdbnd
 
        mxdbnd = neig
        mxddim = 1
-       
+
        irk = 1
        do j=1,3
           rkpt(j) = rk_fld(j,irk)  ! computed in folded k-point
-       enddo         
-         
+       enddo
+
        call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
-         
+
 
        if(nd > mxddim) mxddim = int(1.05*nd)
-         
+
 !      allocates arrays
 
 !      THERE IS A PROBLEM HERE>>>>>>> ei can be larger than mxdbnd in ditsp* subroutines
 
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
        allocate(pkn(nrk2,neig))
        allocate(pkn_so(nrk2,2*neig))
-!-----------------------------------------------------------------------      
+!-----------------------------------------------------------------------
 
        allocate(ei(mxddim))
        allocate(hdiag(mxddim))
@@ -336,7 +336,7 @@
        allocate(ekpg(mxddim))
        allocate(psi(mxddim,mxdbnd))
        allocate(hpsi(mxddim,mxdbnd))
-       
+
        allocate(ekpsi(mxdbnd))
        allocate(ekpsi_so(2*mxdbnd))
 
@@ -345,12 +345,12 @@
        allocate(ev(mxdbnd))
 
        allocate(psi_so(2*mxddim,2*mxdbnd))
-       
+
 
 !---
-         
+
        if(lworkers) then
-         write(6,*) "Using Workers and Restart Capablities"       
+         write(6,*) "Using Workers and Restart Capablities"
 
          write(6,*) 'how many workers ?'
          read(5,*) nworker
@@ -365,7 +365,7 @@
        irk=1
        inquire(iolength = ir_size) irk_rd, e_of_k(:,irk),                &
     &  pkn(irk,:), e_of_k_so(:,irk),                                     &
-    &  pkn_so(irk,:)       
+    &  pkn_so(irk,:)
 
 !      if run by a human do not restart
 
@@ -374,48 +374,48 @@
          if(lex) close(unit = io63)
          call execute_command_line("rm  band_fold_rec.dat 2> /dev/null ")
        endif
-              
+
        open(unit = io63, file ="band_fold_rec.dat", access="direct",       &
     &  recl=ir_size)
 
-       irk_start=1       
+       irk_start=1
        pp_flag = 0
-               
+
        call zeelap(t1)
-       
+
 !      loop over k-points
        do irk=1,nrk2
 
          cworker = mod(irk-1,nworker) +1
          lmyjob = .TRUE.
-         if(cworker== iworker) then 
-           irk_rd = -10 
+         if(cworker== iworker) then
+           irk_rd = -10
            read(io63,rec=irk, iostat=irec_err) irk_rd,                      &
-    &      e_of_k(:,irk), pkn(irk,:),                                     & 
+    &      e_of_k(:,irk), pkn(irk,:),                                     &
     &      e_of_k_so(:,irk),pkn_so(irk,:)
-                            
+
            if(irk_rd ==irk) then
              write(6,'("not computing k-point #",i5)') irk
-             lmyjob = .FALSE.                   
-           endif            
+             lmyjob = .FALSE.
+           endif
          else
            write(6,'("not computing k-point #",i5)') irk
-           lmyjob = .FALSE.                   
-         endif 
-         
+           lmyjob = .FALSE.
+         endif
+
          if(lmyjob) then
-                  
+
            do j=1,3
              rkpt(j) = rk_fld(j,irk)                                       ! computed in folded k-point
            enddo
-                    
+
            call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
-          
-           if(nd > mxddim) then        
+
+           if(nd > mxddim) then
              write(*,'("mtxd has changed from ", i5, " to", i5)')           &
-    &        mxddim, int(nd*1.01) 
-          
-             mxddim = int(nd*1.01)        
+    &        mxddim, int(nd*1.01)
+
+             mxddim = int(nd*1.01)
 
              deallocate(ei)
              deallocate(hdiag)
@@ -438,16 +438,16 @@
              allocate(hpsi(mxddim,mxdbnd))
              allocate(ekpsi(mxdbnd))
              allocate(ekpsi_so(2*mxdbnd))
- 
+
              allocate(psi_so(2*mxddim,2*mxdbnd))
-                     
-           endif 
+
+           endif
 
            lkpg = .FALSE.
            ipr = 0
 
            nocc = neig
-         
+
            call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,          &
      &     flgpsd, ipr, ifail, icmax, iguess, epspsi,                    &
      &     ng, kgv, phase, conj, ns, inds, kmax, indv, ek,               &
@@ -457,7 +457,7 @@
      &     mtxd, hdiag, isort, qmod, ekpg, lkpg,                         &
      &     psi, hpsi, ei,                                                &
      &     vscr, kmscr,                                                  &
-     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &     
+     &     latorb, norbat, nqwf, delqwf, wvfao, lorb,                    &
      &     mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,       &
      &     mxdbnd, mxdscr, mxdlao)
 
@@ -469,7 +469,7 @@
 
            if(ifail /= 0) then
              if(ifail < 3) then
-               write(6,'("   stopped in out_band_dos:  failed diagon."   &
+               write(6,'("   stopped in out_band_dos:  failed diagon.",  &
      &            " number of accurate digits = ",i5)') ifail
                stop
              else
@@ -479,11 +479,11 @@
              endif
            endif
 
-!-------------------------------------------------------------------------                  
-           call Fold_GetPkn(pkn,iMinv,idet,irk,kgv,isort,psi, nrk2, neig,  & 
-    &      mtxd, ng, mxdgve,mxddim,mxdbnd)         
 !-------------------------------------------------------------------------
-                             
+           call Fold_GetPkn(pkn,iMinv,idet,irk,kgv,isort,psi, nrk2, neig,  &
+    &      mtxd, ng, mxdgve,mxddim,mxdbnd)
+!-------------------------------------------------------------------------
+
            lpsiso = .true.
            call spin_orbit_perturb(rkpt,mtxd,isort,                      &
      &     neig,psi,ei,ei_so,psi_so,lpsiso ,                             &
@@ -492,31 +492,31 @@
      &     ntype,natom,rat,adot,                                         &
      &     mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
 
-!-------------------------------------------------------------------------                  
+!-------------------------------------------------------------------------
            call Fold_GetPknSO(pkn_so,iMinv,idet,irk,kgv,isort,psi_so,    &
-    &      nrk2, 2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)         
-!-----------------------------------------------------------------------                  
-                
+    &      nrk2, 2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)
+!-----------------------------------------------------------------------
+
            call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                 &
      &     mxddim,mxdbnd)
-     
+
            ipr = 1
            nrka = -1
            call print_eig(ipr,irk,labelk,nrka,rkpt,                      &
      &     mtxd,icmplx,neig,psi,                                         &
      &     adot,ei,ekpsi,isort,kgv,                                      &
      &     mxddim,mxdbnd,mxdgve)
-     
+
            if(ipr == 2) then
              call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,      &
      &       mxddim,mxdbnd)
            endif
-            
+
            call print_eig_so(ipr,irk,labelk,nrka,rkpt,                   &
      &     mtxd,neig,psi_so,                                             &
      &     adot,ei_so,ekpsi_so,isort,kgv,                                &
      &     mxddim,mxdbnd,mxdgve)
-     
+
 
            write(6,'( "iworker #",i5, "   writing in irk # "             &
      &                 ,i5, "   of ", i5)') iworker, irk,nrk2
@@ -526,43 +526,43 @@
            if (cworker== iworker) then
              write(io63,rec=irk) irk, ev(:),                               &
     &        pkn(irk,:),ei_so(:),                                        &
-    &        pkn_so(irk,:)               
+    &        pkn_so(irk,:)
            endif
 
          endif
 
        enddo
-        
-       do irk = 1, nrk2       
+
+       do irk = 1, nrk2
         read(io63,rec=irk, iostat=irec_err) irk_rd,                        &
     &   e_of_k(:,irk),   pkn(irk,:),                                     &
     &   e_of_k_so(:,irk),pkn_so(irk,:)
-        
-         if(irk_rd /=irk) then 
+
+         if(irk_rd /=irk) then
            pp_flag = 0
            exit
-         endif         
-         pp_flag = 1                     
+         endif
+         pp_flag = 1
        enddo
 
        call zeelap(t2)
-       write(*,*) 
+       write(*,*)
        write(*,'(" elapsed time (s):", 2f14.3)') (t2-t1)
 
-       if (pp_flag ==1) then        
-         write(*,*) 'Generating band structure files!'        
+       if (pp_flag ==1) then
+         write(*,*) 'Generating band structure files!'
        else
          close(io63)
          write(*,*) "this worker is done. run again when all workers     &
     &                are done to see results.", iworker
-         stop          
+         stop
        endif
 
 !      writes the output files for xmgrace
 
        iotape = 15
        nstyle = 2
-       
+
        n = min(nint(0.5*ztot + 0.01),neig)
        eref = e_of_k(n,1)
        do irk = 1,nrk2
@@ -572,13 +572,13 @@
        enddo
 
        nocc = n
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
        call out_band_fold_xmgrace('band.agr',iotape,                     &
     &  title,subtitle,nstyle,                                            &
     &  pkn,neig,nrk2,xk,e_of_k,eref,nocc,                                &
     &  nvert,xcvert,nlines,ljump,nkstep,label,xklab)
-!-----------------------------------------------------------------------                  
-       
+!-----------------------------------------------------------------------
+
        n = min(nint(ztot + 0.01),2*neig)
        eref = e_of_k_so(n,1)
        do irk = 1,nrk2
@@ -586,21 +586,21 @@
          if(e_of_k_so(j,irk) > eref) eref = e_of_k_so(j,irk)
        enddo
        enddo
-   
+
        nocc = n
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
        call out_band_fold_xmgrace('band_so.agr',iotape,                  &
     &  title,subtitle,nstyle,                                            &
     &  pkn_so,2*neig,nrk2,xk,e_of_k_so,eref,nocc,                        &
     &  nvert,xcvert,nlines,ljump,nkstep,label,xklab)
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
 
 
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
        deallocate(rk_fld)
        deallocate(pkn)
        deallocate(pkn_so)
-!-----------------------------------------------------------------------                  
+!-----------------------------------------------------------------------
 
 
        deallocate(nkstep)

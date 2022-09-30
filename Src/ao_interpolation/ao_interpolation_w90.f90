@@ -651,8 +651,6 @@
 
         enddo ! end loop over neighbours
 
-1111 continue
-
        enddo  ! end loop over kpoints
 
 

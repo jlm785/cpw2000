@@ -19,6 +19,11 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   integer, parameter            :: REAL64 = selected_real_kind(12)
 
   type (noiData_t) :: mtb
+
+  integer, intent(in)           :: mxdtyp
+  integer, intent(in)           :: mxdatm
+  integer, intent(in)           :: mxdlao
+
   real(REAL64), intent(in)      :: ztot
 
   real(REAL64), intent(in)      :: adot(3,3)
@@ -28,14 +33,11 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   real(REAL64), intent(in)      :: rat(3,mxdatm,mxdtyp)
   integer, intent(in)           :: norbat(mxdtyp)
   integer, intent(in)           :: lorb(mxdlao, mxdtyp)
-  integer, intent(in)           :: mxdtyp
-  integer, intent(in)           :: mxdatm
-  integer, intent(in)           :: mxdlao
 
   real(REAL64) :: avec(3,3), bvec(3,3)
   integer      :: ntotal_atoms, nproj, numoccupied
   integer      :: itype, iatom, k, iorb, iline
-  
+
   character(len=40) :: hrfile
   logical           :: BulkBand_calc
   integer           :: soc

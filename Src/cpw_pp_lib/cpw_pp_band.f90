@@ -324,7 +324,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
       lworkers = .FALSE.
     endif
 
-    diag_type = 'pw   '
+    diag_type = 'pw  '
 
     if(atorb_%latorb) then
       write(6,*)
@@ -384,7 +384,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
       lworkers = .FALSE.
     endif
 
-    diag_type = 'pw   '
+    diag_type = 'pw  '
 
     if(atorb_%latorb) then
       write(6,*)
@@ -456,7 +456,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
     if(yesno == 'N' .or. yesno == 'n') then
 
-      diag_type = 'pw   '
+      diag_type = 'pw  '
 
       if(atorb_%latorb) then
         write(6,*)
@@ -525,7 +525,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
       csvd = 1.5
       xsvd = 0.00001
 
-      diag_type = 'pw   '
+      diag_type = 'pw  '
 
     endif
 

@@ -101,8 +101,10 @@ ifeq ($(F77),ifort)
    endif
 
    #   Compiling options and libraries.  If compiling for another machine beware of "-xHost"
+   #   For an old fortran compiler use -mkl instead of -qmkl
 
-   LIBS=-mkl
+   # LIBS=-mkl
+   LIBS=-qmkl
 
    ifeq ($(DEBUG),false)
       FCOPTS=-xHost -O3 $(PROF)

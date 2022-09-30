@@ -603,7 +603,7 @@
 
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
-                  ,i5, "   of ", i5)') iworker, irk,nrk2
+          &        ,i5, "   of ", i5)') iworker, irk,nrk2
 
       if (cworker== iworker) then
         write(io62,rec=irk) irk, ev(:),                                  &
@@ -645,8 +645,7 @@
     write(*,*) 'Generating band structure files!'
   else
     close(io62)
-    stop "this worker is done. run again when all workers are done  &
-    to see results."
+    stop "this worker is done. run again when all workers are done to see results."
   endif
 
   n = min(nint(0.5*ztot + 0.01),neig)

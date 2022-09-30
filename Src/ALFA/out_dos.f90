@@ -567,7 +567,7 @@
 
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
-                 ,i5, "   of ", i5)') iworker, irk,nrk
+           &      ,i5, "   of ", i5)') iworker, irk,nrk
       write(6,*)
 
       if (lproj) then

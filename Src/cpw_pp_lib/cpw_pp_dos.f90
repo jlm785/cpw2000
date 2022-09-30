@@ -110,7 +110,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
       lworkers = .FALSE.
     endif
 
-    diag_type = 'pw   '
+    diag_type = 'pw  '
 
     lproj = .FALSE.
     lso = .FALSE.
@@ -198,7 +198,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
 
     if(yesno == 'N' .or. yesno == 'n') then
 
-      diag_type = 'pw   '
+      diag_type = 'pw  '
 
       if(atorb_%latorb) then
         write(6,*)
@@ -267,7 +267,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
       csvd = 1.5
       xsvd = 0.00001
 
-      diag_type = 'pw   '
+      diag_type = 'pw  '
 
     endif
 
