@@ -149,9 +149,9 @@ subroutine psi_rotate(mtrx, tnp, neig,                                   &
     else
       xp = ZERO
       do k = 1,3
-        xp = xp + kgv(k,isort_ref(ib(i)))*tnp(k)
+        xp = xp + kgv(k,isort(i))*tnp(k)
       enddo
-      phase(i) = C_UM*cos(xp) + C_I*sin(xp)
+      phase(i) = C_UM*cos(xp) - C_I*sin(xp)
     endif
 
   enddo
