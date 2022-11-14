@@ -13,14 +13,14 @@
 
 !>  Copies the coeficients of one k-point
 !>  to another k-point obtained by a rotation
-!>  k(j) = sum_i mtrx(j,i)*k_ref(i) in lattice coordinates
+!>  k(j) = sum_i mtrx_n(j,i)*k_ref(i) in lattice coordinates
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
 !>  \date         9 November 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine psi_rotate(mtrx, tnp, neig,                                   &
+subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
     mtxd_ref,isort_ref,psi_ref,                                          &
     mtxd, isort, psi,                                                    &
     ng, kgv,                                                             &
@@ -39,8 +39,8 @@ subroutine psi_rotate(mtrx, tnp, neig,                                   &
   integer, intent(in)                ::  mxddim                          !<  array dimension for the hamiltonian
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for the number of bands
 
-  integer, intent(in)                ::  mtrx(3,3)                       !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
-  real(REAL64), intent(in)           ::  tnp(3)                          !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
+  integer, intent(in)                ::  mtrx_n(3,3)                     !<  rotation matrix (in reciprocal lattice coordinates)
+  real(REAL64), intent(in)           ::  tnp_n(3)                        !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector
 
   integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
   integer, intent(in)                ::  mtxd_ref                        !<  dimension of the hamiltonian (reference)
@@ -103,7 +103,7 @@ subroutine psi_rotate(mtrx, tnp, neig,                                   &
     do j = 1,3
       kgv_rot(j) = 0
       do k = 1,3
-        kgv_rot(j) = kgv_rot(j) + mtrx(j,k)*kgv(k,isort_ref(m))
+        kgv_rot(j) = kgv_rot(j) + mtrx_n(j,k)*kgv(k,isort_ref(m))
       enddo
     enddo
     if(abs(kgv_rot(1)) > n1m) n1m = abs(kgv_rot(1))
@@ -127,7 +127,7 @@ subroutine psi_rotate(mtrx, tnp, neig,                                   &
     do j = 1,3
       kgv_rot(j) = 0
       do k = 1,3
-        kgv_rot(j) = kgv_rot(j) + mtrx(j,k)*kgv(k,isort_ref(m))
+        kgv_rot(j) = kgv_rot(j) + mtrx_n(j,k)*kgv(k,isort_ref(m))
       enddo
     enddo
 
@@ -149,7 +149,7 @@ subroutine psi_rotate(mtrx, tnp, neig,                                   &
     else
       xp = ZERO
       do k = 1,3
-        xp = xp + kgv(k,isort(i))*tnp(k)
+        xp = xp + kgv(k,isort(i))*tnp_n(k)
       enddo
       phase(i) = C_UM*cos(xp) - C_I*sin(xp)
     endif
