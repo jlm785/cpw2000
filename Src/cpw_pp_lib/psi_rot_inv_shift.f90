@@ -11,18 +11,20 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Copies the coeficients of one k-point
-!>  to another k-point obtained by a rotation
-!>  k(j) = sum_i mtrx_n(j,i)*k_ref(i) in lattice coordinates
+!>  Copies the wave-function coeficients from one k-point
+!>  to another k-point obtained by a rotation, followed by
+!>  a faculative inversion and shift by a reciprocal lattice vector.
+!>
+!>  k(j) = sum_i mtrx_n(j,i)*k_ref(i) + kgshift(j) in lattice coordinates
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
-!>  \date         9 November 2022.
+!>  \date         21 November 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
-    mtxd_ref,isort_ref,psi_ref,                                          &
-    mtxd, isort, psi,                                                    &
+subroutine psi_rot_inv_shift(mtrx_n, tnp_n, kmap2, kgshift, neig,        &
+    rkpt_ref, mtxd_ref,isort_ref,psi_ref,                                &
+    rkpt, mtxd, isort, psi,                                              &
     ng, kgv,                                                             &
     mxdgve, mxddim, mxdbnd)
 
@@ -41,8 +43,13 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
 
   integer, intent(in)                ::  mtrx_n(3,3)                     !<  rotation matrix (in reciprocal lattice coordinates)
   real(REAL64), intent(in)           ::  tnp_n(3)                        !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector
+  integer, intent(in)                ::  kmap2                           !<  if kmap2=1 the k-point was inverted (time reversal)
+  integer, intent(in)                ::  kgshift(3)                      !<  reciprocal lattice vector shift between k-vectors
 
   integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
+  real(REAL64), intent(in)           ::  rkpt_ref(3)                     !<  reference k-point (used for check)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point (used for check)
+
   integer, intent(in)                ::  mtxd_ref                        !<  dimension of the hamiltonian (reference)
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
 
@@ -62,6 +69,7 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
   integer    ::  n1m, n2m, n3m
   integer    ::  kgv_rot(3)
   real(REAL64)     ::  xp
+  real(REAL64)     ::  diff
 
 
 ! local allocatable arrays
@@ -76,16 +84,42 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
   complex(REAL64), parameter ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter ::  C_UM = cmplx(UM,ZERO,REAL64)
   complex(REAL64), parameter ::  C_I = cmplx(ZERO,UM,REAL64)
+  real(REAL64), parameter    ::  EPS = 1.0E-8_REAL64
 
 ! counters
 
   integer ::  i, j, k, n, m
 
 
-! The basis vectors should be the same, but their ordering
-! as described of the isort may not be the same, so it is necessary
+! The basis vectors should be the same for kgshift=0, but their ordering
+! as described of the isort may not be the same.   So it is always necessary
 ! to make them compatible.
 
+! paranoid check.  Guards against confusion in the relevant symmetry operation.
+
+  do j = 1,3
+    diff = ZERO
+    do k = 1,3
+      diff = diff + mtrx_n(j,k)*rkpt_ref(k)
+    enddo
+    if(kmap2 == 1) then
+      diff = -diff - rkpt(j)
+    else
+      diff = diff - rkpt(j)
+    endif
+    diff = diff + kgshift(j)
+    if(abs(diff > EPS)) then
+      write(6,*)
+      write(6,*) '   stopped in psi_rot_inv_shift'
+      write(6,*) '   k-points not compatible with symmetry'
+      write(6,*)
+
+      stop
+
+    endif
+  enddo
+
+! initializes output
 
   do n = 1,neig
   do i = 1,mtxd
@@ -116,6 +150,11 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
     if(abs(kgv(3,isort(i))) > n3m) n3m = abs(kgv(3,isort(i)))
   enddo
 
+  n1m = n1m + iabs(kgshift(1))
+  n2m = n2m + iabs(kgshift(2))
+  n3m = n3m + iabs(kgshift(3))
+
+
 ! constructs the inverse mapping
 
   allocate(isofkg(-n1m:n1m,-n2m:n2m,-n3m:n3m))
@@ -131,7 +170,11 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
       enddo
     enddo
 
-    isofkg( kgv_rot(1), kgv_rot(2), kgv_rot(3) ) = m
+    if(kmap2 == 1) then
+      isofkg(-kgv_rot(1)-kgshift(1),-kgv_rot(2)-kgshift(2),-kgv_rot(3)-kgshift(3) ) = m
+    else
+      isofkg( kgv_rot(1)-kgshift(1), kgv_rot(2)-kgshift(2), kgv_rot(3)-kgshift(3) ) = m
+    endif
   enddo
 
 ! mapping and phase
@@ -151,6 +194,7 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
       do k = 1,3
         xp = xp + kgv(k,isort(i))*tnp_n(k)
       enddo
+      if(kmap2 == 1) xp = -xp
       phase(i) = C_UM*cos(xp) - C_I*sin(xp)
     endif
 
@@ -166,6 +210,16 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
     endif
   enddo
 
+! possible inversion
+
+  if(kmap2 == 1) then
+    do n = 1,neig
+    do i = 1,mtxd
+      psi(i,n) = conjg(psi(i,n))
+    enddo
+    enddo
+  endif
+
   deallocate(ib)
   deallocate(phase)
 
@@ -173,4 +227,4 @@ subroutine psi_rotate(mtrx_n, tnp_n, neig,                               &
 
   return
 
-end subroutine psi_rotate
+end subroutine psi_rot_inv_shift
