@@ -57,16 +57,18 @@ subroutine voronoi_sub(ioreplay)
 
 ! space group
 
-  integer                            ::  ntrans                          !<  number of symmetry operations in the factor group
-  integer                            ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
-  real(REAL64)                       ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
+  integer                            ::  ntrans                          !  number of symmetry operations in the factor group
+  integer                            ::  mtrx(3,3,48)                    !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
+  real(REAL64)                       ::  tnp(3,48)                       !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
+
+  integer                            ::  code_group                      !  point group
 
 ! neighbour variables
 
-  integer, allocatable               ::  nneighb(:,:)                    !<  number of neighbors for each atom
-  integer, allocatable               ::  neighbtype(:,:,:)               !<  type of nth neighbors for each atom
-  real(REAL64), allocatable          ::  rneighb(:,:,:,:)                !<  relative position of the n-th neighbor
-  real(REAL64), allocatable          ::  wneighb(:,:,:)                  !<  strength of the n-th neighbor bond
+  integer, allocatable               ::  nneighb(:,:)                    !  number of neighbors for each atom
+  integer, allocatable               ::  neighbtype(:,:,:)               !  type of nth neighbors for each atom
+  real(REAL64), allocatable          ::  rneighb(:,:,:,:)                !  relative position of the n-th neighbor
+  real(REAL64), allocatable          ::  wneighb(:,:,:)                  !  strength of the n-th neighbor bond
 
 ! other variables
 
@@ -150,7 +152,7 @@ subroutine voronoi_sub(ioreplay)
 
 
   write(6,*)
-  write(6,*) '  Do you want information on the crystal lattice?'
+  write(6,*) '  Do you want information on the crystal lattice? (y/n)'
   read(5,*) yesno
   write(ioreplay,*) yesno,'   crystal lattice'
 
@@ -168,7 +170,7 @@ subroutine voronoi_sub(ioreplay)
 
 
   write(6,*)
-  write(6,*) '  Do you want a list of symmetry operations'
+  write(6,*) '  Do you want a list of symmetry operations? (y/n)'
   read(5,*) yesno
   write(ioreplay,*) yesno,'   symmetry operations'
 
@@ -188,7 +190,7 @@ subroutine voronoi_sub(ioreplay)
 
 
   write(6,*)
-  write(6,*) '  Do you want a list of possible space group names'
+  write(6,*) '  Do you want a list of possible space group names? (y/n)'
   read(5,*) yesno
   write(ioreplay,*) yesno,'   space group names'
 
@@ -207,13 +209,15 @@ subroutine voronoi_sub(ioreplay)
           mxdtyp, mxdatm)
     endif
 
-    call sym_space_group_name(ibravais, ntrans, mtrx, tnp)
+    call sym_point_group_name(adot, 1, code_group, ntrans, mtrx)
+
+    call sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
 
   endif
 
 
   write(6,*)
-  write(6,*) '  Do you want a list of atomic neighbors'
+  write(6,*) '  Do you want a list of atomic neighbors? (y/n)'
   read(5,*) yesno
   write(ioreplay,*) yesno,'   atomic neighbors'
 
@@ -241,7 +245,7 @@ subroutine voronoi_sub(ioreplay)
 
 
   write(6,*)
-  write(6,*) '  Do you want a CIF file with crystal structure?'
+  write(6,*) '  Do you want a CIF file with crystal structure? (y/n)'
   read(5,*) yesno
   write(ioreplay,*) yesno,'   atomic neighbors'
 

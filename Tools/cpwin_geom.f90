@@ -61,6 +61,8 @@ program cpwin_geom
   integer                            ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
   real(REAL64)                       ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
+  integer                            ::  code_group                      !  point group
+
 
 ! neighbour variables
 
@@ -113,7 +115,9 @@ program cpwin_geom
           adot, ntype, natom, rat,                                       &
           mxdtyp, mxdatm)
 
-      call sym_space_group_name(ibravais, ntrans, mtrx, tnp)
+      call sym_point_group_name(adot, 1, code_group, ntrans, mtrx)
+
+      call sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
 
       allocate(nneighb(mxdatm,mxdtyp))
       allocate(neighbtype(MXDNB,mxdatm,mxdtyp))

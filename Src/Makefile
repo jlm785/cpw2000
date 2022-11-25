@@ -23,6 +23,7 @@ libpw:     fftlib  timelib  hkpsilib    esdflib  blas
 	(cd mesh              &&  make libadd )
 	(cd numeric           &&  make libadd )
 	(cd read_print        &&  make libadd )
+	(cd QE                &&  make libadd )
 
 
 cpw_variables.mod:  cpw_variables.f90
@@ -89,6 +90,7 @@ clean:
 	(cd mesh              &&  make clean )
 	(cd numeric           &&  make clean )
 	(cd read_print        &&  make clean )
+	(cd QE                &&  make clean )
 	(cd $(ESDFDIR)        &&  make clean )
 	(cd LIBS/blas         &&  make clean )
 	(cd LIBS/lapack       &&  make clean )
