@@ -21,8 +21,9 @@
 !>  \copyright    GNU Public License v2
 
 subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
-       ntype, natom, rat, adot,                                          &
+       adot, ntype, natom, rat,                                          &
        ntrans, mtrx, tnp,                                                &
+       ntrans_q, mtrx_q, tnp_q,                                          &
        mxdtyp, mxdatm, mxdnat)
 
   implicit none
@@ -50,10 +51,14 @@ subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
 
 ! output
 
-  complex(REAL64), intent(out)       ::  vpol(mxdnat,mxdnat)             !<  proper modes in lattice coordinates.
+  complex(REAL64), intent(out)       ::  vpol(3,mxdatm,mxdtyp,mxdnat)    !<  proper modes in lattice coordinates.
 
   integer, intent(out)               ::  nrep                            !<  number of representations present
   integer, intent(out)               ::  irep(mxdnat)                    !<  representation of each mode
+
+  integer, intent(out)               ::  ntrans_q                        !<  number of symmetry operations in the little group of q
+  integer, intent(out)               ::  mtrx_q(3,3,48)                  !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the little group of q
+  real(REAL64), intent(out)          ::  tnp_q(3,48)                     !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the little group of q
 
 ! local allocatable arrays
 
@@ -76,10 +81,6 @@ subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
 ! local variables
 
   integer               ::  nat_qe                                       !  total number of atoms
-
-  integer               ::  ntrans_q                                     !  number of symmetry operations in the little group of q
-  integer               ::  mtrx_q(3,3,48)                               !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the little group of q
-  real(REAL64)          ::  tnp_q(3,48)                                  !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the little group of q
 
   integer               ::  irotm_q                                      !  the rotation sending q -> -q
   logical               ::  lgam_q                                       !  if TRUE  q=0
