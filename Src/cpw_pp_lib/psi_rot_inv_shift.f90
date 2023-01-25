@@ -108,7 +108,7 @@ subroutine psi_rot_inv_shift(mtrx_n, tnp_n, kmap2, kgshift, neig,        &
       diff = diff - rkpt(j)
     endif
     diff = diff + kgshift(j)
-    if(abs(diff > EPS)) then
+    if(abs(diff) > EPS) then
       write(6,*)
       write(6,*) '   stopped in psi_rot_inv_shift'
       write(6,*) '   k-points not compatible with symmetry'

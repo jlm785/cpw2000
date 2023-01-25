@@ -84,6 +84,11 @@ ifeq ($(F77),ifort)
    COMPBLAS=false
    # COMPBLAS=true
 
+   # it is safer to use fortran dcg...
+
+   # MKLEXTRALIB=false
+   MKLEXTRALIB=true
+
    #   Choice of FFT package (ncar/vfft/fftw3/mkldfti).
 
    # FFT=vfft
@@ -139,6 +144,9 @@ ifeq ($(F77),gfortran)
 
    COMPBLAS=false
    # COMPBLAS=true
+
+   # MKLEXTRALIB=false
+   MKLEXTRALIB=true
 
    ifeq ($(DEBUG),true)
       COMPBLAS=true
@@ -221,6 +229,9 @@ ifeq ($(F77),pgfortran)
 
    COMPBLAS=false
    # COMPBLAS=true
+
+   # MKLEXTRALIB=false
+   MKLEXTRALIB=true
 
    #   Choice of FFT package (ncar/vfft/fftw3/mkldfti).
    #   Beware of recent implementations of fftw3.   Seems they changed APIs...

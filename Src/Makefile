@@ -9,7 +9,7 @@ cpw.exe:  libpw  cpw_variables.mod cpw.f90
 cpw_post_process.exe:  libpw  cpw_variables.mod cpw_post_process.f90
 	$(F77) -o cpw_post_process$(SUFFIX).exe $(FCOPTS) cpw_post_process.f90 libpw$(SUFFIX).a $(LIBS)
 
-libpw:     fftlib  timelib  hkpsilib    esdflib  blas
+libpw:     fftlib  timelib  hkpsilib    esdflib  blas   mklextra
 	(cd cpw               &&  make libadd )
 	(cd cpw_lib           &&  make libadd )
 	(cd cpw_pp_lib        &&  make libadd )
@@ -35,6 +35,11 @@ blas:
 	fi
 	if [ $(COMPBLAS) = true ]; then \
 	    (cd LIBS/lapack   &&  make libadd ) ;\
+	fi
+
+mklextra:
+	if [ $(MKLEXTRALIB) = true ]; then \
+	    (cd LIBS/mklextra &&  make libadd ) ;\
 	fi
 
 esdflib:
@@ -96,6 +101,7 @@ clean:
 	(cd LIBS/lapack       &&  make clean )
 	(cd LIBS/ncar         &&  make clean )
 	(cd LIBS/vfft         &&  make clean )
+	(cd LIBS/mklextra     &&  make clean )
 	(cd fft/_ncar         &&  make clean )
 	(cd fft/_fftw3        &&  make clean )
 	(cd fft/_mkl_dfti_2D  &&  make clean )
@@ -107,4 +113,4 @@ clean:
 	(cd hk_psi/reference  &&  make clean )
 	(rm *.mod)
 
-.PHONY:   clean libpw  blas  esdflib  fftlib  timelib  hkpsilib
+.PHONY:   clean libpw  blas  esdflib  fftlib  timelib  hkpsilib  mklextra

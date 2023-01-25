@@ -64,7 +64,7 @@ subroutine print_eig(ipr, irk, labelk, nrka, rkpt,                       &
 ! local varaibles
 
   real(REAL64)        ::  avec(3,3),bvec(3,3),rkcar(3)
-  character(len=58)   ::  prform
+  character(len=41)   ::  prform
 
 ! parameters
 
@@ -97,8 +97,8 @@ subroutine print_eig(ipr, irk, labelk, nrka, rkpt,                       &
   if (irk == 1) then
     write(6,*)
     write(6,*)
-    write(6,'("      k   mtxd      en(k) ",73x,"r(k) cartesian",    &
-       &     18x,"r(k) lattice")')
+    write(6,'("      k   mtxd      en(k) ",73x,"r(k) cartesian",18x,     &
+       &     "r(k) lattice")')
     write(6,*)
   endif
 
@@ -109,13 +109,13 @@ subroutine print_eig(ipr, irk, labelk, nrka, rkpt,                       &
     jmax = i+7
     if (jmax > neig) jmax=neig
     if(nrka > 0) then
-      if (i == 1)  write(6,'(4x,a5,21x,i7,3x,8f9.5)')               &
+      if (i == 1)  write(6,'(4x,a5,21x,i7,3x,8f9.5)')                    &
                         labelk,mtxd,(EV*ei(j),j=1,jmax)
     else
       if (i == 1) then
-      write(prform,"( '(1x,i7,1x,i7,2x,',i1,'f9.5,5x,3f7.2,3x,      &
-         &      3f11.4)' )")  jmax
-      write(6,prform) irk,mtxd,(EV*ei(j),j=1,jmax),                 &
+      write(prform,"( '(1x,i7,1x,i7,2x,',i1,                             &
+           &      'f9.5,5x,3f7.2,3x,3f11.4)' )")  jmax
+      write(6,prform) irk,mtxd,(EV*ei(j),j=1,jmax),                      &
                          (rkcar(j),j=1,3),(rkpt(j),j=1,3)
       if(ipr == 3) write(6,*)
       endif
@@ -128,17 +128,17 @@ subroutine print_eig(ipr, irk, labelk, nrka, rkpt,                       &
 
 !   kinetic energies
 
-    if (ipr == 2)  write(6,'(13x,"ekin ",8f9.5)')                   &
+    if (ipr == 2)  write(6,'(13x,"ekin ",8f9.5)')                        &
                           (EV*ekpsi(j),j=i,jmax)
 
 !   eigenvectors
 
     if (ipr == 3) then
       do nc=1,20
-        write(6,'(1x,i5,2x,3i3,1x,8f9.5)')                          &
-               nc,(kgv(j,isort(nc)),j=1,3),                         &
+        write(6,'(1x,i5,2x,3i3,1x,8f9.5)')                               &
+               nc,(kgv(j,isort(nc)),j=1,3),                              &
                   (real(psi(nc,j)),j=i,jmax)
-        if (icmplx /= 0) write(6,'(18x,8f9.5)')                     &
+        if (icmplx /= 0) write(6,'(18x,8f9.5)')                          &
                (aimag(psi(nc,j)),j=i,jmax)
       enddo
     endif

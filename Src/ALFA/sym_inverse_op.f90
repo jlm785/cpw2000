@@ -98,7 +98,7 @@ subroutine sym_inverse_op(invop,                                         &
             endif
           enddo
 
-          if(lnull == .FALSE.) exit
+          if(.not. lnull) exit
 
         enddo
 

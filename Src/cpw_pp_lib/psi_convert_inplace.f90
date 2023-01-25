@@ -25,10 +25,11 @@
 !>  \date         13 December 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine psi_convert_inplace(neig,mtxd_in,isort_in,mtxd_out,isort_out,psi,         &
+subroutine psi_convert_inplace(neig,mtxd_in,isort_in,mtxd_out,isort_out,psi,   &
      mxddim,mxdbnd)
 
-! Adapted for psi_convert. 13 December 2022.
+! Adapted for psi_convert. 13 December 2022. JLM
+! Bug in/out squashed, 14 December 2022. JLM
 
   implicit none
 
@@ -96,7 +97,7 @@ subroutine psi_convert_inplace(neig,mtxd_in,isort_in,mtxd_out,isort_out,psi,    
 
 ! fills the rank index
 
-  allocate(irank(mtxd_out))
+  allocate(irank(mtxd_in))
   do j = 1,mtxd_in
     if(iback(isort_in(j)) /= 0) then
       irank(j) = iback(isort_in(j))
@@ -126,7 +127,7 @@ subroutine psi_convert_inplace(neig,mtxd_in,isort_in,mtxd_out,isort_out,psi,    
 ! first card should be valid.  This should almost never occur.
 
   if(irank(1) > nmax) then
-    do j = 2,mtxd_out
+    do j = 2,mtxd_in
       if(irank(j) > nmax) then
         psi(1,:) = psi(j,:)
         irank(1) = irank(j)
@@ -143,7 +144,7 @@ subroutine psi_convert_inplace(neig,mtxd_in,isort_in,mtxd_out,isort_out,psi,    
   allocate(ctmp(neig))
 
   jj = 1
-  do j = 2,mtxd_out
+  do j = 2,mtxd_in
     if(irank(j) /= 0) then
 
       jj = jj + 1

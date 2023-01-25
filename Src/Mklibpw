@@ -21,6 +21,12 @@ then
 fi
 
 
+if [ $MKLEXTRALIB = "true" ]
+then
+    $F77 -c $FCOPTS $FCEXTRA LIBS/mklextra/*.f90
+fi
+
+
 #  choice of FFT, default vfft
 
 if [ $FFT = "ncar" ]
