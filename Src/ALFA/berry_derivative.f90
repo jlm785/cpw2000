@@ -23,7 +23,7 @@
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
-    psi, ei, dhdkpsi, dpsidk, deidk, bcurv,                              &
+    psi, ei, dhdkpsi, dpsidk, deidk, bcurv, bmag,                        &
     ng, kgv,                                                             &
     vscr, kmscr,                                                         &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -80,6 +80,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   real(REAL64), intent(out)          ::  deidk(mxdbnd, 3)                !<  d  E / d k  (lattice coordinates)
 
   real(REAL64), intent(out)          ::  bcurv(3,mxdbnd)                 !<  Berry curvature  (lattice coordinates)
+  real(REAL64), intent(out)          ::  bmag(3,mxdbnd)                  !<  Orbital magnetization  (lattice coordinates)
 
 ! local allocatable variables
 
@@ -88,6 +89,8 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   complex(REAL64), allocatable       ::  danlgadrk(:,:,:)                !  d anlga / d rkpt
   complex(REAL64), allocatable       ::  d2anlgadrk2(:,:,:,:)            !  d 2 anlga / d 2 rkp (unused)
+
+  complex(REAL64), allocatable       ::  hdpsidk(:,:,:)                  !  (H - E_n) ( d | psi_n > / d k )
 
 ! local variables
 
@@ -98,6 +101,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 ! parameters
 
+  real(REAL64), parameter       ::  ZERO = 0.0_REAL64
   real(REAL64), parameter       ::  TOL = 1.0E-7_REAL64
   real(REAL64), parameter       ::  PI = 3.14159265358979323846_REAL64
 
@@ -159,6 +163,34 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
       bcurv(3,n) = -2*dimag(zdotc(mtxd, dpsidk(:,n,1), 1, dpsidk(:,n,2), 1))
 
     enddo
+
+    allocate(hdpsidk(mxddim,mxdbnd,3))
+
+    do j = 1,3
+
+      call hk_psi_c16(mtxd, neig, dpsidk(:,:,j), hdpsidk(:,:,j), .TRUE., &
+             ng, kgv,                                                    &
+             ekpg, isort, vscr, kmscr,                                   &
+             anlga, xnlkb, nanl,                                         &
+             mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
+
+      do n = 1,neig
+
+        call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), dpsidk(:,n,j), 1, hdpsidk(:,n,j), 1)
+
+      enddo
+
+    enddo
+
+    do n = 1,neig
+
+      bmag(1,n) = dimag(zdotc(mtxd, dpsidk(:,n,2), 1, hdpsidk(:,n,3), 1)) / 2
+      bmag(2,n) = dimag(zdotc(mtxd, dpsidk(:,n,3), 1, hdpsidk(:,n,1), 1)) / 2
+      bmag(3,n) = dimag(zdotc(mtxd, dpsidk(:,n,1), 1, hdpsidk(:,n,2), 1)) / 2
+
+    enddo
+
+    deallocate(hdpsidk)
 
   endif
 

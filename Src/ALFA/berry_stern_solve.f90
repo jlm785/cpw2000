@@ -199,7 +199,9 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
 !         check convergence
 
-          xx = dnrm2(2*mtxd, tmp(:, 3 ), 1)
+!          xx = dnrm2(2*mtxd, tmp(:, 3 ), 1)
+
+          xx = sqrt(dpar(5))
 
           if ( xxb == ZERO ) then
             if ( xx <= tol ) then
@@ -264,6 +266,12 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
     enddo
 
   enddo
+
+  deallocate(b, x)
+  deallocate(tmp)
+  deallocate(ac, bc)
+
+  deallocate(ipar,dpar)
 
   return
 

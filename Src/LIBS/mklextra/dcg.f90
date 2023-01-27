@@ -133,6 +133,10 @@ subroutine dcg ( n, x, b, job, ipar, dpar, tmp )
 !    * JOB = 3: solve M*Z=R, where M is the preconditioning matrix;
 
 
+
+! dpar(5) can be used to check for convergence. 26 January 2023. JLM
+
+
   implicit none
 
 
@@ -151,8 +155,8 @@ subroutine dcg ( n, x, b, job, ipar, dpar, tmp )
 
   real(REAL64), intent(inout)        ::  tmp(n,4)                        !<  tmp(:,1)=p, input for A p;  tmp(:,2)=q=A p;   tmp(:,3)=z=Pr;   tmp(:,4)=r, error estimate.
 
-  integer, intent(inout)             ::  ipar(128)                       !<  integer parameters.   ipar(12:128) can be used internally
-  real(REAL64), intent(inout)        ::  dpar(128)                       !<  real parameters.  dpar(9:128) can be used internally
+  integer, intent(inout)             ::  ipar(128)                       !<  integer parameters.   ipar(12:128) can be used internally.  ipar(4) is the iteration number.
+  real(REAL64), intent(inout)        ::  dpar(128)                       !<  real parameters.  dpar(9:128) can be used internally.  dpar(5) is the square norm of the error and can be used to check for convergence.
 
 ! "saved" variables,
 
@@ -222,6 +226,8 @@ subroutine dcg ( n, x, b, job, ipar, dpar, tmp )
     alpha = rho / pdotq
     x(1:n) = x(1:n) + alpha * tmp(1:n, 1 )
     tmp(1:n, 3 ) = tmp(1:n, 3 ) - alpha * tmp(1:n, 2 )
+
+    dpar(5) = dot_product ( tmp(1:n, 3 ), tmp(1:n, 3 ) )
 
     job = 2
     ilbl = 5

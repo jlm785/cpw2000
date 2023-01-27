@@ -11,14 +11,14 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Converts Berry curvature from lattice to cartesian
+!>  Converts a pseudo-vector (anti-symmetric tensor) from lattice to cartesian
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
 !>  \date         24 January 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine berry_curve_2_cart(adot, bcurv, bcurv_car)
+subroutine berry_pseudovec_lat2car(adot, pvec, pvec_car)
 
   implicit none
 
@@ -28,11 +28,11 @@ subroutine berry_curve_2_cart(adot, bcurv, bcurv_car)
 ! input
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
-  real(REAL64), intent(in)           ::  bcurv(3)                        !<  Berry curvature  (lattice coordinates)
+  real(REAL64), intent(in)           ::  pvec(3)                        !<  Berry curvature  (lattice coordinates)
 
 ! output
 
-  real(REAL64), intent(out)          ::  bcurv_car(3)                    !<  Berry curvature  (cartesian coordinates)
+  real(REAL64), intent(out)          ::  pvec_car(3)                    !<  Berry curvature  (cartesian coordinates)
 
 ! local variables
 
@@ -57,9 +57,9 @@ subroutine berry_curve_2_cart(adot, bcurv, bcurv_car)
   tenlat(2,2) = ZERO
   tenlat(3,3) = ZERO
 
-  tenlat(2,3) = bcurv(1)
-  tenlat(3,1) = bcurv(2)
-  tenlat(1,2) = bcurv(3)
+  tenlat(2,3) = pvec(1)
+  tenlat(3,1) = pvec(2)
+  tenlat(1,2) = pvec(3)
 
   tenlat(3,2) = -tenlat(2,3)
   tenlat(1,3) = -tenlat(3,1)
@@ -76,10 +76,10 @@ subroutine berry_curve_2_cart(adot, bcurv, bcurv_car)
   enddo
   enddo
 
-  bcurv_car(1) = tencar(2,3)
-  bcurv_car(2) = tencar(3,1)
-  bcurv_car(3) = tencar(1,2)
+  pvec_car(1) = tencar(2,3)
+  pvec_car(2) = tencar(3,1)
+  pvec_car(3) = tencar(1,2)
 
   return
 
-end subroutine berry_curve_2_cart
+end subroutine berry_pseudovec_lat2car
