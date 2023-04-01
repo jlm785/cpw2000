@@ -27,7 +27,8 @@ subroutine psi_vnl_sp_psi(mtxd, neig, nanlso, psi, vnl,                  &
 
 ! written June 2020 from ps_vnl_psi. jlm
 ! Modified, nanlso > 0,  28 October 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
+! Modified, bug vnlhalf,mxdbnd. 1 April 2023. JLM
+
 
   implicit none
 
@@ -104,7 +105,7 @@ subroutine psi_vnl_sp_psi(mtxd, neig, nanlso, psi, vnl,                  &
 !   <Psi|V_NL|Psi> = < psi | anl > Diag(xnl)  < anl | psi >
 
     call zgemm('c', 'n', neig, neig, nanlso, C_UM, dhdp, nanlso, xdhdp,  &
-                   nanlso, C_ZERO, vnlhalf, mxdbnd)
+                   nanlso, C_ZERO, vnlhalf, neig)
 
     do i = 1,neig
     do n = 1,neig
@@ -113,7 +114,7 @@ subroutine psi_vnl_sp_psi(mtxd, neig, nanlso, psi, vnl,                  &
     enddo
 
     call zgemm('c', 'n', neig, neig, nanlso, C_UM, dhdm, nanlso, xdhdm,  &
-                   nanlso, C_ZERO, vnlhalf, mxdbnd)
+                   nanlso, C_ZERO, vnlhalf, neig)
 
     do i = 1,neig
     do n = 1,neig
@@ -122,7 +123,7 @@ subroutine psi_vnl_sp_psi(mtxd, neig, nanlso, psi, vnl,                  &
     enddo
 
     call zgemm('c', 'n', neig, neig, nanlso, C_UM, dhdp, nanlso, xdhdm,  &
-                   nanlso, C_ZERO, vnlhalf, mxdbnd)
+                   nanlso, C_ZERO, vnlhalf, neig)
 
     do i = 1,neig
     do n = 1,neig
