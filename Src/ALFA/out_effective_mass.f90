@@ -15,8 +15,8 @@
 !>  and direction (effective mass tensor for non-degenerate levels)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         18 january 2022.
+!>  \version      5.06
+!>  \date         18 january 2022. 1 April 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine out_effective_mass(ioreplay,                                  &
@@ -30,7 +30,10 @@ subroutine out_effective_mass(ioreplay,                                  &
     latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
+
+
 ! Adapted from out_band_onek plus old "Silvaco" subroutines. 18 january 2022. JLM
+! Better user interface, 1 April 2023. JLM
 
   implicit none
 
@@ -169,6 +172,14 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   integer           ::  jmax
 
+  integer           ::  kdotpsize(10)                   !  suggested sizes for kdotp problem
+  integer           ::  nk                              !  number of suggested values.
+
+  integer           ::  nmodel                          !  size of the kdotp matrix
+
+  logical           ::  lcorrect                        !  correct value
+
+
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
@@ -176,6 +187,7 @@ subroutine out_effective_mass(ioreplay,                                  &
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
   real(REAL64), parameter     ::  PI = 3.14159265358979323846_REAL64
   real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
 
 ! counters
 
@@ -206,15 +218,10 @@ subroutine out_effective_mass(ioreplay,                                  &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
 
-
-! finds mxddim, mxdbnd
-
   write(6,*)
   write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
   read(5,*) neig
   write(ioreplay,*) neig,'   number of bands'
-
-  mxdbnd = neig
 
 ! gets the k-point, but first generates coordinate system
 
@@ -283,7 +290,7 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   endif
 
-  write(6,*)
+  write(6,*)nmodel
   write(6,*) ' enter k-point '
   write(6,*)
 
@@ -298,6 +305,13 @@ subroutine out_effective_mass(ioreplay,                                  &
       rk0(j) = rkin(j)
     enddo
 
+    do j = 1,3
+      rkcar(j) = ZERO
+      do k = 1,3
+        rkcar(j) = rkcar(j) + bvec(j,k)*rkin(k)
+      enddo
+    enddo
+
   elseif(icoor == 2) then
 
     do j = 1,3
@@ -306,6 +320,10 @@ subroutine out_effective_mass(ioreplay,                                  &
         rk0(j) = rk0(j) + rkin(k)*avec(k,j)
       enddo
       rk0(j) = rk0(j) / (2*PI)
+    enddo
+
+    do j = 1,3
+      rkcar(j) = rkin(j)
     enddo
 
   elseif(icoor == 3) then
@@ -338,7 +356,53 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   endif
 
+  write(6,*)
+  write(6,*) '  coordinates of the chosen k-point:'
+  write(6,*) '      lattice coord.                  cartesian coord.'
+  write(6,*)
+  write(6,'(4x,3f9.4,5x,3f9.4)') (rk0(j),j=1,3), (rkcar(j),j=1,3)
+  write(6,*)
+
+! Tries to get good suggestions for the k.p model
+
+  call kdotp_suggest_size(ztot, adot, ng, kgv, rk0, kdotpsize, nk,       &
+       mxdgve)
+
+  write(6,*)
+  write(6,*) '  The suggested sizes for the kdopt matrix are:'
+  write(6,'(10i6)') (kdotpsize(j),j=1,nk)
+  write(6,*)
+  write(6,*) '  Enter one of those values (first suggestions should be better)'
+
+  read(5,*) nmodel
+  write(ioreplay,'(3x,i5,5x,"k.p matrix size")') nmodel
+
+  lcorrect = .FALSE.
+  do j = 1,nk
+    if(nmodel == kdotpsize(j)) then
+      lcorrect = .TRUE.
+      exit
+    endif
+  enddo
+
+  if(.NOT. lcorrect) then
+    write(6,*)
+    write(6,*) '  Value is not on the list. Enter it again.'
+    write(6,*) '  It will not be checked.'
+    write(6,*)
+
+    read(5,*) nmodel
+    write(ioreplay,'(3x,i5,5x,"k.p matrix size again")') nmodel
+  endif
+
+  write(6,*)
+  write(6,*) '  The k.p model will include ',nmodel,' bands'
+  write(6,*)
+
+! finds mxddim, mxdbnd
+
   call size_mtxd(emax, rk0, adot, ng, kgv, mxddim)
+  mxdbnd = nmodel+1
 
 ! allocates arrays
 
@@ -352,9 +416,9 @@ subroutine out_effective_mass(ioreplay,                                  &
   allocate(ekpsi(mxdbnd))
 
 
-  nocc = neig
+  nocc = nmodel
 
-  call h_kb_dia_all('pw  ', emax, rk0, neig, nocc,                       &
+  call h_kb_dia_all('pw  ', emax, rk0, nmodel+1, nocc,                   &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
       ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
       sfact, veff, icmplx,                                               &
@@ -367,6 +431,15 @@ subroutine out_effective_mass(ioreplay,                                  &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
 
+  if(abs(ei(nmodel+1)-ei(nmodel)) < 0.1) then
+    write(6,*)
+    write(6,*) '  The gap beteen the last level included in the model'
+    write(6,'("  and the first discarded level is: ",f10.3," eV")')      &
+         (ei(nmodel+1)-ei(nmodel))*HARTREE
+    write(6,*)
+    write(6,*) '  You should consider another model size'
+    write(6,*)
+  endif
 
   write(6,*)
   write(6,*) '  Do you want to analyze the results WITH'
@@ -395,7 +468,7 @@ subroutine out_effective_mass(ioreplay,                                  &
 
     nder = 2
 
-    call kdotp_matrix(mtxd, neig, psi, ei, rk0, isort, nder,             &
+    call kdotp_matrix(mtxd, nmodel, psi, ei, rk0, isort, nder,           &
         h0, dh0drk, d2h0drk2,                                            &
         ng, kgv,                                                         &
         ntype, natom, rat, adot,                                         &
@@ -413,7 +486,7 @@ subroutine out_effective_mass(ioreplay,                                  &
     allocate(ekpsi_so(2*mxdbnd))
 
     call spin_orbit_perturb(rk0, mtxd, isort,                            &
-        neig, psi, ei, ei_so, psi_so, .TRUE.,                            &
+        nmodel, psi, ei, ei_so, psi_so, .TRUE.,                          &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
         ntype, natom, rat, adot,                                         &
@@ -437,14 +510,14 @@ subroutine out_effective_mass(ioreplay,                                  &
 
     nder = 2
 
-    call kdotp_matrix_so_pert(mtxd, neig, psi, ei, rk0, isort, nder,     &
+    call kdotp_matrix_so_pert(mtxd, nmodel, psi, ei, rk0, isort, nder,   &
         hso0, dhso0drk, d2hso0drk2,                                      &
         ng, kgv,                                                         &
         ntype, natom, rat, adot,                                         &
         nqnl, delqnl, vkb, nkb,                                          &
         mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
-    call kdotp_matrix_so_convert(neig, hso0, dhso0drk, d2hso0drk2,       &
+    call kdotp_matrix_so_convert(nmodel, hso0, dhso0drk, d2hso0drk2,     &
          nder,                                                           &
          mxdbnd)
 
@@ -460,6 +533,10 @@ subroutine out_effective_mass(ioreplay,                                  &
 
     read(5,*) rkin(1),rkin(2),rkin(3)
     write(ioreplay,'(5x,3f20.10,5x,"k-direction")') rkin(1),rkin(2),rkin(3)
+
+    write(6,*)
+    write(6,'("  The chosen direction is: ",3f12.4)') rkin(1),rkin(2),rkin(3)
+    write(6,*)
 
 !   transforms to primitive coordinates
 
@@ -530,11 +607,11 @@ subroutine out_effective_mass(ioreplay,                                  &
 
       if(yesno /= 'y' .and. yesno /= 'Y') then
 
-        call kdotp_diag_nopsi(rk_p, mxdbnd, ei_p,                        &
+        call kdotp_diag_nopsi(rk_p, nmodel, ei_p,                        &
         rk0, h0, dh0drk, d2h0drk2,                                       &
         mxdbnd)
 
-        call kdotp_diag_nopsi(rk_m, mxdbnd, ei_m,                        &
+        call kdotp_diag_nopsi(rk_m, nmodel, ei_m,                        &
         rk0, h0, dh0drk, d2h0drk2,                                       &
         mxdbnd)
 
@@ -546,11 +623,11 @@ subroutine out_effective_mass(ioreplay,                                  &
 
       else
 
-        call kdotp_diag_nopsi(rk_p, 2*mxdbnd, ei_so_p,                   &
+        call kdotp_diag_nopsi(rk_p, 2*nmodel, ei_so_p,                   &
         rk0, hso0, dhso0drk, d2hso0drk2,                                 &
         2*mxdbnd)
 
-        call kdotp_diag_nopsi(rk_m, 2*mxdbnd, ei_so_m,                   &
+        call kdotp_diag_nopsi(rk_m, 2*nmodel, ei_so_m,                   &
         rk0, hso0, dhso0drk, d2hso0drk2,                                 &
         2*mxdbnd)
 
@@ -572,14 +649,16 @@ subroutine out_effective_mass(ioreplay,                                  &
     write(6,*) '                     100*delta  10*delta   delta'
     write(6,*)
     if(yesno /= 'y' .and. yesno /= 'Y') then
-      jmax = neig
-    else
-      jmax = 2*neig
-    endif
-    do j = 1,jmax
-      write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei(j),                &
-                xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+      do j = 1,neig
+        write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei(j)*HARTREE,      &
+                  xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
     enddo
+    else
+      do j = 1,2*neig
+        write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei_so(j)*HARTREE,   &
+                  xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+      enddo
+    endif
     write(6,*)
 
     write(6,*)
