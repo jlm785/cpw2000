@@ -14,7 +14,10 @@
 !>  Calculates derivatives with respect to wave-vector k.
 !>  Hamiltonian acting on wave-function, d H / d k, energy levels d E_i / d k,
 !>  wave-functions d | psi_i > / d k.
-!>  The last two may not be accurate if degeneracies are present,
+!>  It also calculates the orbital magnetization, the
+!>  inverse effective mass tensor, and the quantum metric.
+!>
+!>  The results may not be accurate if degeneracies are present,
 !>  or input wave-function is not accurate.
 !>
 !>  \author       Jose Luis Martins
@@ -23,7 +26,7 @@
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
-    psi, ei, dhdkpsi, dpsidk, deidk, bcurv, bmag,                        &
+    psi, ei, dhdkpsi, dpsidk, deidk, bcurv, bmag, d2eidk2, qmetric,     &
     ng, kgv,                                                             &
     vscr, kmscr,                                                         &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -77,10 +80,13 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   complex(REAL64), intent(out)       ::  dhdkpsi(mxddim, mxdbnd, 3)      !<  d H d k | psi>  (lattice coordinates)
   complex(REAL64), intent(out)       ::  dpsidk(mxddim, mxdbnd, 3)       !<  d |psi> / d k  (lattice coordinates)
-  real(REAL64), intent(out)          ::  deidk(mxdbnd, 3)                !<  d  E / d k  (lattice coordinates)
+  real(REAL64), intent(out)          ::  deidk(mxdbnd, 3)                !<  d  E_i / d k  (lattice coordinates)
 
   real(REAL64), intent(out)          ::  bcurv(3,mxdbnd)                 !<  Berry curvature  (lattice coordinates)
   real(REAL64), intent(out)          ::  bmag(3,mxdbnd)                  !<  Orbital magnetization  (lattice coordinates)
+
+  real(REAL64), intent(out)          ::  d2eidk2(3,3,mxdbnd)             !<  d^2 E_i /d k_1 d k_2 (lattice coordinates)
+  real(REAL64), intent(out)          ::  qmetric(3,3,mxdbnd)             !<  Tensor of the quantum metic (lattice coordinates)
 
 ! local allocatable variables
 
@@ -92,26 +98,34 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   complex(REAL64), allocatable       ::  hdpsidk(:,:,:)                  !  (H - E_n) ( d | psi_n > / d k )
 
+  complex(REAL64), allocatable       ::  vnl0(:,:)                       !  <Psi|V_NL|Psi>
+  complex(REAL64), allocatable       ::  dvnl0drk(:,:,:)                 !  d <Psi|V_NL|Psi> d k
+  complex(REAL64), allocatable       ::  d2vnl0drk2(:,:,:,:)             !  d^2 <Psi|V_NL|Psi> d k^2
+
+
 ! local variables
 
   integer           ::  nder                                             !  order of derivative
 
   integer           ::  nanl, nanlso
   integer           ::  mxdanl
+  real(REAL64)      ::  vcell, bdot(3,3)
 
 ! parameters
 
-  real(REAL64), parameter       ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter       ::  TOL = 1.0E-7_REAL64
+  real(REAL64), parameter       ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter       ::  TOL = 1.0E-9_REAL64
   real(REAL64), parameter       ::  PI = 3.14159265358979323846_REAL64
 
 ! counters
 
-  integer    ::  j, n
+  integer    ::  i, j, n
 
 ! external
 
   complex(REAL64) ,external   :: zdotc
+
+  complex(REAL64)     ::  CMAT(3,3)
 
 
 
@@ -125,9 +139,9 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   allocate(xnlkb(mxdanl))
 
   allocate(danlgadrk(mxddim,mxdanl,3))
-  allocate(d2anlgadrk2(1,1,3,3))
+  allocate(d2anlgadrk2(mxddim,mxdanl,3,3))
 
-  nder = 1
+  nder = 2
 
   call proj_nl_kb_der_c16(rkpt, mtxd, isort, nanl, nder,                 &
       ng, kgv,                                                           &
@@ -149,7 +163,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   if(lpsi) then
 
-    call berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsidk, TOL,    &
+    call berry_stern_solve_one(mtxd, neig, psi, ei, dhdkpsi, dpsidk, TOL,    &
        isort, ekpg,                                                      &
        vscr, kmscr,                                                      &
        ng, kgv,                                                          &
@@ -158,9 +172,27 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
     do n = 1,neig
 
-      bcurv(1,n) = -2*dimag(zdotc(mtxd, dpsidk(:,n,2), 1, dpsidk(:,n,3), 1))
-      bcurv(2,n) = -2*dimag(zdotc(mtxd, dpsidk(:,n,3), 1, dpsidk(:,n,1), 1))
-      bcurv(3,n) = -2*dimag(zdotc(mtxd, dpsidk(:,n,1), 1, dpsidk(:,n,2), 1))
+      do i = 1,3
+      do j = i,3
+        cmat(i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, dpsidk(:,n,j), 1)
+      enddo
+      enddo
+
+      do j = 1,2
+      do i = j+1,3
+        cmat(i,j) = conjg(cmat(j,i))
+      enddo
+      enddo
+
+      bcurv(1,n) = -2*dimag(cmat(2,3))
+      bcurv(2,n) = -2*dimag(cmat(3,1))
+      bcurv(3,n) = -2*dimag(cmat(1,2))
+
+      do i = 1,3
+      do j = 1,3
+        qmetric(i,j,n) = real(cmat(i,j),REAL64)
+      enddo
+      enddo
 
     enddo
 
@@ -182,13 +214,49 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
     enddo
 
+    allocate(vnl0(mxdbnd,mxdbnd))
+    allocate(dvnl0drk(mxdbnd,mxdbnd,3))
+    allocate(d2vnl0drk2(mxdbnd,mxdbnd,3,3))
+
+!   extra calculations may be needed later
+
+    call psi_vnl_psi_der(mtxd, neig, nanl, psi, nder,                    &
+        vnl0, dvnl0drk, d2vnl0drk2,                                      &
+        anlga, xnlkb, danlgadrk, d2anlgadrk2,                            &
+        mxddim, mxdbnd, mxdanl)
+
+    call adot_to_bdot(adot, vcell, bdot)
+
     do n = 1,neig
 
-      bmag(1,n) = dimag(zdotc(mtxd, dpsidk(:,n,2), 1, hdpsidk(:,n,3), 1)) / 2
-      bmag(2,n) = dimag(zdotc(mtxd, dpsidk(:,n,3), 1, hdpsidk(:,n,1), 1)) / 2
-      bmag(3,n) = dimag(zdotc(mtxd, dpsidk(:,n,1), 1, hdpsidk(:,n,2), 1)) / 2
+      do i = 1,3
+      do j = i,3
+        cmat(i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, hdpsidk(:,n,j), 1)
+      enddo
+      enddo
+
+      do j = 1,2
+      do i = j+1,3
+        cmat(i,j) = conjg(cmat(j,i))
+      enddo
+      enddo
+
+      bmag(1,n) = dimag(cmat(2,3)) / 2
+      bmag(2,n) = dimag(cmat(3,1)) / 2
+      bmag(3,n) = dimag(cmat(1,2)) / 2
+
+      do i = 1,3
+        do j = 1,3
+          d2eidk2(i,j,n) = -2*real(cmat(i,j),REAL64) + bdot(i,j) +       &
+                real(d2vnl0drk2(n,n,i,j),REAL64)
+        enddo
+      enddo
 
     enddo
+
+    deallocate(vnl0)
+    deallocate(dvnl0drk)
+    deallocate(d2vnl0drk2)
 
     deallocate(hdpsidk)
 
