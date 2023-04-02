@@ -16,16 +16,17 @@
 !>  Writes a file to be plotted by xmgrace
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.04
-!>  \date         21 June 1014, 4 February 2021.
+!>  \version      5.06
+!>  \date         21 June 1014, 2 March 2023.
 !>  \copyright    GNU Public License v2
 
-  subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                 &
+subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                  &
                          filename, title, ylabel)
 
 
 ! Modified, Documentation, name, API, 4 February 2021. JLM
 ! Modified, first line for KDE recognition. 20 January 2022. JLM
+! Modified, several double averages, 2 March 2023. JLM
 
   implicit none
 
@@ -34,18 +35,18 @@
 
 ! input
 
-  integer, intent(in)                ::  io                         !  "tape" number
+  integer, intent(in)                ::  io                              !< "tape" number
 
-  integer, intent(in)                ::  n3                         !  number of points
+  integer, intent(in)                ::  n3                              !< number of points
+  integer, intent(in)                ::  nw                              !< if = 0 only ave is plotted
 
-  real(REAL64), intent(in)           ::  ave(n3)                    !  quantity to be plotted
-  real(REAL64), intent(in)           ::  dave(n3)                   !  dave is also plotted if nw =/= 0
-  integer, intent(in)                ::  nw                         !  if =0 only ave is plotted
-  real(REAL64), intent(in)           ::  height                     !  range on horizontal axis
+  real(REAL64), intent(in)           ::  ave(n3)                         !< quantity to be plotted
+  real(REAL64), intent(in)           ::  dave(n3,max(1,nw))              !< dave is also plotted if nw > 0
+  real(REAL64), intent(in)           ::  height                          !< range on horizontal axis
 
-  character(len=*), intent(in)       ::  filename                   !  filename for plot
-  character(len=*), intent(in)       ::  title                      !  title of plot
-  character(len=*), intent(in)       ::  ylabel                     !  label of y-axis
+  character(len=*), intent(in)       ::  filename                        !< filename for plot
+  character(len=*), intent(in)       ::  title                           !< title of plot
+  character(len=*), intent(in)       ::  ylabel                          !< label of y-axis
 
 ! other variables
 
@@ -54,7 +55,7 @@
 
 ! counters
 
-  integer      ::  k
+  integer      ::  k, n
 
 ! constants
 
@@ -123,11 +124,13 @@
     write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), ave(k)
   enddo
 
-  if(nw /= 0) then
-    write(io,*)
-  do k=1,n3
-    write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), dave(k)
-  enddo
+  if(nw > 0) then
+    do n = 1,nw
+      write(io,*)
+      do k = 1,n3
+        write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), dave(k,n)
+      enddo
+    enddo
   endif
 
   close(unit=io)
@@ -143,4 +146,4 @@
 
   return
 
-  end subroutine plot_z1D_xmgr
+end subroutine plot_z1D_xmgr

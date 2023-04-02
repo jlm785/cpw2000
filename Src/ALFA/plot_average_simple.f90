@@ -13,6 +13,11 @@
 
 !>  Calculates the layer average of a scalar periodic quantity.
 !>  parallel to the z-direction.  Includes the atom positions...
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.06
+!>  \date         2 March 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_average_simple(ioreplay, func,                           &
          adot, ntype, natom, nameat, rat, zv,                            &
@@ -22,11 +27,10 @@ subroutine plot_average_simple(ioreplay, func,                           &
 ! writen September 5, 2012.jlm
 ! Modified, split code, complex variables, 26 May 2014. JLM
 ! Documentation, merged psi with rho_v. 5 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, double average. 2 March 2023. JLM
 
   implicit none
 
-! version 4.99
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -52,25 +56,25 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 ! allocatable arrays
 
-  complex(REAL64), allocatable       ::  rhogau(:)                  !  atom centered gaussian charge density for G-vector j
-  integer, allocatable               ::  izval(:)                   !  valence of atom of type i
+  complex(REAL64), allocatable       ::  rhogau(:)                       !  atom centered gaussian charge density for G-vector j
+  integer, allocatable               ::  izval(:)                        !  valence of atom of type i
 
-  real(REAL64), allocatable          ::  ave(:)                     !  layer average of function in the 3d direction of fft grid
-  real(REAL64), allocatable          ::  dave(:)                    !  double average of function in the 3d direction of fft grid
-  real(REAL64), allocatable          ::  gave(:)                    !  average of the nuclear "gaussian" charge density in the 3d direction of fft grid
+  real(REAL64), allocatable          ::  ave(:)                          !  layer average of function in the 3d direction of fft grid
+  real(REAL64), allocatable          ::  dave(:,:)                       !  double average of function in the 3d direction of fft grid
+  real(REAL64), allocatable          ::  gave(:)                         !  average of the nuclear "gaussian" charge density in the 3d direction of fft grid
 
 ! main variables
 
-  integer                       ::  nplane                       !  number of lattice planes
+  integer                       ::  nplane                               !  number of lattice planes
 
-  logical                       ::  linter                       !  if .TRUE. asks if the figure should be shown 
+  logical                       ::  linter                               !  if .TRUE. asks if the figure should be shown
   character(len=1)              ::  yesno
-  real(REAL64)                  ::  sigma                        !  width of gaussian (in real space)
+  real(REAL64)                  ::  sigma                                !  width of gaussian (in real space)
 
-! parameters that control the quality of the plots 
+! parameters that control the quality of the plots
 
-  integer                       ::  nmult                        !  increases point density in z direction 
-  real(REAL64)                  ::  sigref                       !  controls the width of the core gaussian
+  integer                       ::  nmult                                !  increases point density in z direction
+  real(REAL64)                  ::  sigref                               !  controls the width of the core gaussian
 
 ! other variables
 
@@ -82,7 +86,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
   character(len=40)   ::  filename
   integer             ::  mfft, mwrk
   integer             ::  ktmp(3)
-  
+
 ! constants
 
   real(REAL64), parameter  :: BOHR = 0.5291772109
@@ -96,10 +100,10 @@ subroutine plot_average_simple(ioreplay, func,                           &
   nmult = 3
   sigref = 0.5
 
-! finds basic fft grid 
+! finds basic fft grid
 
-  write(6,*) 
-  write(6,'("  Do you want to see the plots interactively?   (y/n)")') 
+  write(6,*)
+  write(6,'("  Do you want to see the plots interactively?   (y/n)")')
   write(6,*)
 
   read(5,*) yesno
@@ -109,22 +113,22 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
     linter = .TRUE.
 
-    write(6,*) 
+    write(6,*)
     write(6,'("  Program will generate files for later plotting with gnuplot")')
-    write(6,'("  BEWARE: plots may hide below each other")') 
+    write(6,'("  BEWARE: plots may hide below each other")')
     write(6,*)
 
   else
 
     linter = .FALSE.
 
-    write(6,*) 
+    write(6,*)
     write(6,'("  Program will generate files for later plotting with xmgrace")')
     write(6,*)
 
   endif
 
- 
+
   do j=1,3
     kmscr(j) = 0
   enddo
@@ -167,17 +171,17 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
   do i = 1,5
     call size_fft(ktmp, nsfft, mfft, mwrk)
-    
+
     if(mod(nsfft(3),nplane) == 0) exit
 
     ktmp(3) = nsfft(3) / 2
   enddo
 
 !  kave = nsfft(3) / nplane
- 
-  write(6,*) 
+
+  write(6,*)
   write(6,'("  the new fft grid is: ",3i8)') (nsfft(j),j=1,3)
-  write(6,*) 
+  write(6,*)
 
   allocate(rhogau(ng))
   allocate(izval(mxdtyp))
@@ -187,7 +191,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 ! sigma = 0.02*height/nplane
   sigma = sigref
-  
+
   n1 = nsfft(1)
   n2 = nsfft(2)
   n3 = nsfft(3)
@@ -200,19 +204,19 @@ subroutine plot_average_simple(ioreplay, func,                           &
 ! initialize function arrays
 
   allocate(ave(nn))
-  allocate(dave(nn))
+  allocate(dave(nn,1))
   allocate(gave(nn))
-  
+
   iotape = 11
   if(iotape == ioreplay) iotape = iotape + 1
 
 
   do nt = 1,ntype
-  
+
     do j=1,ntype
       izval(j) = 0
     enddo
-    
+
     izval(nt) = nint(zv(nt))
 
     call plot_gauss(sigma, rhogau,                                       &
@@ -262,7 +266,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
   deallocate(rhogau)
 
   deallocate(izval)
-  
+
   return
 
   end subroutine plot_average_simple

@@ -11,23 +11,26 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Plots the quantities ave (and dave if nwidth /= 0)
+!>  Plots the quantities ave (and dave if nwidth > 0)
 !>  There are a few assumptions about what is being plotted....
 !>  Calls the gnuplot package  www.gnuplot.info
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.06
+!>  \date         2 March 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
                          filename, title, ylabel, linter)
-
 
 ! Writen June 4, 2014. JLM
 ! Modified 28 June 2017.  Backslash hack.  JLM
 ! Modified, documentation, June 11, 2020. JLM
 ! Modified, name, API, 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, several double averages, 2 March 2023. JLM
+
 
   implicit none
-
-! version 4.99
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -37,16 +40,16 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
   integer, intent(in)                ::  io                              !<  "tape" number
 
   integer, intent(in)                ::  n3                              !<  number of points
+  integer, intent(in)                ::  nw                              !<  if = 0 only ave is plotted
 
   real(REAL64), intent(in)           ::  ave(n3)                         !<  quantity to be plotted
-  real(REAL64), intent(in)           ::  dave(n3)                        !<  dave is also plotted if nw =/= 0
-  integer, intent(in)                ::  nw                              !<  if =0 only ave is plotted
+  real(REAL64), intent(in)           ::  dave(n3,max(1,nw))              !<  dave is also plotted if nw > 0
   real(REAL64), intent(in)           ::  height                          !<  range on horizontal axis
 
-  character(len=*), intent(in)       ::  filename                        !<  filename for plot 
+  character(len=*), intent(in)       ::  filename                        !<  filename for plot
   character(len=*), intent(in)       ::  title                           !<  title of plot
   character(len=*), intent(in)       ::  ylabel                          !<  label of y-axis
-  logical, intent(in)                ::  linter                          !<  if .TRUE. asks if the figure should be shown 
+  logical, intent(in)                ::  linter                          !<  if .TRUE. asks if the figure should be shown
 
 ! other variables
 
@@ -55,7 +58,7 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
 
 ! counters
 
-  integer      ::  k
+  integer      ::  k, n
 
 ! constants
 
@@ -67,7 +70,7 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
   open(unit=io, file=trim(filename), status='UNKNOWN', form='FORMATTED')
 
   write(io,*) "set terminal wxt enhanced"
-  write(io,*) "set encoding iso_8859_1" 
+  write(io,*) "set encoding iso_8859_1"
   write(io,*)
   if(nw == 0) then
     write(io,*) "set title  '",title," ' font 'Helvetica-Bold' "
@@ -77,22 +80,24 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
   endif
   write(io,*) "set ylabel ' ",ylabel," ' font  'Helvetica-Bold' "
   write(io,*) "set xlabel 'z ({/E \305})' font 'Helvetica-Bold' "
-  write(io,*) "set xrange [ ",0," : ",height*BOHR," ] " 
+  write(io,*) "set xrange [ ",0," : ",height*BOHR," ] "
   write(io,*) "set border lw 3"
   write(io,*) "set xtics font 'Helvetica-Bold' "
   write(io,*) "set ytics font 'Helvetica-Bold' "
   write(io,*) "plot '-' w lines notitle ; pause -1 "
   write(io,*)
-  
-  do k=1,n3
+
+  do k = 1,n3
     write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), ave(k)
   enddo
-  
+
   if(nw /= 0) then
-    write(io,*)
-  do k=1,n3
-    write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), dave(k)
-  enddo
+    do n = 1,nw
+      write(io,*)
+      do k = 1,n3
+        write(io,'(2g14.6)') (k-1)*height*BOHR/real(n3), dave(k,n)
+      enddo
+    enddo
   endif
 
   close(unit=io)
@@ -113,14 +118,15 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
     write(6,*)
     write(6,*) '  Do you want to see the plot now? (y/n)'
     write(6,*)
-  
+
     read(5,*) yesno
     write(ioreplay,'(2x,a1,"   see interactive plot")') yesno
 
     if(yesno == 'y' .or. yesno == 'Y') then
 
       write(6,*)
-      write(6,*) '  Hit return to continue '
+      write(6,*) '  Hit return to continue'
+      write(6,*) '  (you may need to first change focus of mouse or type "q")'
       write(6,*)
 
 !      call system("gnuplot " // filename // "  2> /dev/null ")
