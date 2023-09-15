@@ -12,16 +12,19 @@
 !------------------------------------------------------------!
 
 !>  performs a convolution with a square function
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.07
+!>  \date         June 2014.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_convol(n, x, a, c)
 
 ! Written possibly in June 2014. JLM
 ! Documentation, 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation details, 3 August 2023.
 
   implicit none
-
-! version 4.99
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
   integer, parameter          :: INT64 = selected_int_kind(18)
@@ -31,22 +34,22 @@ subroutine plot_convol(n, x, a, c)
   integer, intent(in)         :: n                                       !<  number of points
   real(REAL64), intent(in)    :: x                                       !<  width of square function
   real(REAL64), intent(in)    :: a(n)                                    !<  original function
-  
+
 ! output
 
-  real(REAL64), intent(out)   :: c(n)                                    !<  function convoluted with square function 
+  real(REAL64), intent(out)   :: c(n)                                    !<  function convoluted with square function
 
 ! local variables
 
-!  complex(REAL64), allocatable  :: b(:,:)        ! 
-!  complex(REAL64), allocatable  :: wrk(:)        ! 
-!  complex(REAL64), allocatable  :: trigs(:)      ! 
+!  complex(REAL64), allocatable  :: b(:,:)        !
+!  complex(REAL64), allocatable  :: wrk(:)        !
+!  complex(REAL64), allocatable  :: trigs(:)      !
 
   real(REAL64), allocatable  ::  b(:,:)
   real(REAL64), allocatable  ::  wrk(:,:)
   real(REAL64), allocatable  ::  trigs(:)
 
-  integer  :: ifax(19)                           ! 
+  integer  :: ifax(19)                           !
   integer  :: plan2
   integer(INT64) :: plan3
 
@@ -60,7 +63,7 @@ subroutine plot_convol(n, x, a, c)
   integer ::   i,j
 
 
-  allocate(b(2,0:n-1))       
+  allocate(b(2,0:n-1))
   allocate(wrk(2,n))
   allocate(trigs(4*n))
 
@@ -94,9 +97,9 @@ subroutine plot_convol(n, x, a, c)
 
   call cfft_finish(plan2,plan3)
 
-  deallocate(b)       
-  deallocate(wrk)       
-  deallocate(trigs)       
+  deallocate(b)
+  deallocate(wrk)
+  deallocate(trigs)
 
   return
 

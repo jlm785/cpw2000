@@ -15,8 +15,8 @@
 !>     Total Energy Plane Wave Calculation
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.02
-!>  \date         13 September 2021
+!>  \version      5.07
+!>  \date         20 April 2023
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -124,7 +124,7 @@ program cpw2000
 
 ! Driver program version
 
-  vdriv = '5.05'
+  vdriv = '5.07'
 
 ! timing
 
@@ -384,6 +384,20 @@ program cpw2000
     endif
 
     if(iconv == 1) exit
+
+    call move_restart_out(7, 'tmp_rst.dat', flags_%flgcal,               &
+    crys_%ntype, crys_%natom, crys_%nameat, crys_%atmass,                &
+    crys_%rat, moldyn_%vat, crys_%adot, vcsdyn_%vadot,                   &
+    istep, moldyn_%tstep, moldyn_%beta, moldyn_%tempk,                   &
+    moldyn_%iseed, vcsdyn_%strext, vcsdyn_%press, vcsdyn_%celmas,        &
+    moldyn_%rat1, moldyn_%frc1, vcsdyn_%adot1, vcsdyn_%frcel1,           &
+    dims_%mxdatm, dims_%mxdtyp)
+
+    if(istep == 1) then
+      call execute_command_line('cp tmp_rst.dat tmp_restart.dat')
+    else
+      call execute_command_line('cat tmp_rst.dat >> tmp_restart.dat')
+    endif
 
   enddo
 

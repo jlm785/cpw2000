@@ -90,7 +90,7 @@ subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                  &
 
   write(io,'("@    autoscale onread none ")')
   write(io,'("@    world  ",f12.6,",",f12.6,",",f12.6,",",f12.6)')  &
-   0,ymin,height*BOHR,ymax
+   0.0, ymin, height*BOHR, ymax
   write(io,*)
   write(io,'("@    frame linewidth 3.0 ")')
   write(io,*)

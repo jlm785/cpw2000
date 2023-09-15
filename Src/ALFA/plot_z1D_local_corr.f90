@@ -19,9 +19,10 @@
 !>  \date         8 March 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine plot_z1D_local_corr(nn, ave, nmat, height, rleft, nrepeat, width)
+subroutine plot_z1D_local_corr(nn, ave, nmat, height, rbottom, nrepeat, width)
 
-! written 8 March 2023. JLM
+!  written 8 March 2023. JLM
+!  changed left/right to bottom/top. 5 September 2023
 
   implicit none
 
@@ -35,7 +36,7 @@ subroutine plot_z1D_local_corr(nn, ave, nmat, height, rleft, nrepeat, width)
   real(REAL64), intent(in)           ::  ave(nn)                         !<  layer average of function in the 3d direction of fft grid
 
   real(REAL64), intent(in)           ::  height                          !<  height of the cell
-  real(REAL64), intent(in)           ::  rleft(nmat)                     !<  left boundary of material
+  real(REAL64), intent(in)           ::  rbottom(nmat)                   !<  bottom boundary of material
   integer, intent(in)                ::  nrepeat(nmat)                   !<  number of repeating units for each material
 
 ! output
@@ -53,14 +54,15 @@ subroutine plot_z1D_local_corr(nn, ave, nmat, height, rleft, nrepeat, width)
   real(REAL64)      ::  xpeak                                            !  position of nearest maximum
   logical           ::  lfound                                           !  true if a peak was found away from extrema
 
-  real(REAL64)      ::  rright
-  integer           ::  nleft, nright, nnmat
+  real(REAL64)      ::  rtop                                             !  top boundary of material
+  integer           ::  nbottom, ntop, nnmat                             !  index of bottom of material, top of material and number of points
 
 
 
 ! constants
 
-  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter  ::  EPS = 1.0E-6_REAL64
 
 ! counters
 
@@ -72,25 +74,25 @@ subroutine plot_z1D_local_corr(nn, ave, nmat, height, rleft, nrepeat, width)
 
   do n = 1,nmat
 
-    rright = rleft(mod(n,nmat) + 1)
-    nleft = nint(rleft(n)*nn)
-    nright = nint(rright*nn)
+    rtop = rbottom(mod(n,nmat) + 1)
+    nbottom = nint(rbottom(n)*nn)
+    ntop = nint(rtop*nn)
 
     prave = ZERO
 
-    if(rright - rleft(n) > ZERO) then
-      nnmat = nright-nleft
+!   for nmat = 1 rtop=rbottom
+
+    if(rtop - rbottom(n) > EPS) then
+      nnmat = ntop-nbottom
       kstart = nnmat / nrepeat(n)
       do j = 1,nnmat
-        prave(j) = ave(j+nleft)
-        WRITE(6,*) J,j+nleft
+        prave(j) = ave(j+nbottom)
       enddo
     else
-      nnmat = nright+nn-nleft
+      nnmat = ntop+nn-nbottom
       kstart = nnmat / nrepeat(n)
       do j = 1,nnmat
-        prave(j) = ave(mod(j+nleft-1,nn)+1)
-        WRITE(6,*) J,mod(j+nleft-1,nn)+1
+        prave(j) = ave(mod(j+nbottom-1,nn)+1)
       enddo
     endif
 

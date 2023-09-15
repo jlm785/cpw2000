@@ -51,18 +51,21 @@ subroutine plot_z1D_material_width(ioreplay,                             &
 
 
   real(REAL64), intent(out)          ::  height                          !<  height of the cell
-  integer, intent(out)               ::  nptot                           !<  total number of repeat units
+  integer, intent(out)               ::  nptot                           !<  total number of repeat units (sum of nrepeat)
 
   integer, intent(out)               ::  nrepeat(nmat)                   !<  number of repeat units
-  real(REAL64), intent(out)          ::  rbottom(nmat)                   !<  bottom atom (lowest z) of material
+  real(REAL64), intent(out)          ::  rbottom(nmat)                   !<  bottom atom (lowest z) of material (zero if nmat = 1)
 
-  real(REAL64),intent(out)           ::  widthgeom(nmat)                 !<  width for the double average from material info
+  real(REAL64), intent(out)          ::  widthgeom(nmat)                 !<  width for the double average from material info
 
 ! other variables
 
   real(REAL64)        ::  rtop
+  logical             ::  lrepeat
 
+! allocatable array
 
+  integer, allocatable               ::  kchoice(:)
 
 ! constants
 
@@ -71,44 +74,52 @@ subroutine plot_z1D_material_width(ioreplay,                             &
 
 ! counters
 
-  integer      ::  j, k, k2
+  integer      ::  i, j, k, k2
 
 
-  if(nmat > 1) then
+  allocate(kchoice(nmat))
 
-    do j = 1,nmat
+  do j = 1,nmat
+
+    write(6,*)
+    write(6,'("  Enter the number of repeat units for material ",i3)') j
+    write(6,*) '  (atomic or lattice planes, depends on material)'
+    write(6,*)
+
+    read(5,*) nrepeat(j)
+    write(ioreplay,'(2x,i8,"   number of repeating units for material",i3)') nrepeat(j),j
+
+    if(nrepeat(j) < 1 .or. nrepeat(j) > ntot) then
+
       write(6,*)
-      write(6,'("  Enter the number of repeat units for material ",i3)') j
-      write(6,*) '  (atomic or lattice planes, depends on material)'
+      write(6,*) '  Answer must be between 1 and ',ntot
+      write(6,*) '  Enter the index again'
       write(6,*)
 
       read(5,*) nrepeat(j)
-      write(ioreplay,'(2x,i8,"   number of repeating units for material",i3)') nrepeat(j),j
+      write(ioreplay,'(2x,i8,"    repeating unit again")') nrepeat(j)
 
-      if(nrepeat(j) < 1 .or. nrepeat(j) > ntot) then
-
+      if(nrepeat(j) < 1) then
         write(6,*)
-        write(6,*) '  Answer must be between 1 and ',ntot
-        write(6,*) '  Enter the index again'
+        write(6,*) '  Wrong value exiting program'
         write(6,*)
 
-        read(5,*) nrepeat(j)
-        write(ioreplay,'(2x,i8,"    rpeating unit again")') nrepeat(j)
-
-        if(nrepeat(j) < 1) then
-          write(6,*)
-          write(6,*) '  Wrong value exiting program'
-          write(6,*)
-
-          stop
-
-        endif
+        stop
 
       endif
 
+    endif
+
+!   for nmat = 1
+
+    rbottom(j) = ZERO
+
+    if(nmat > 1) then
+
       write(6,*)
       write(6,*) '  Use the above table to enter the index of the bottom'
-      write(6,*) '  atom (lowest value of z) in that material'
+      write(6,*) '  atom (lowest value of z, last column) in that material.'
+      write(6,*) '  Take into account the periodicity!'
       write(6,*)
 
       read(5,*) k
@@ -137,6 +148,56 @@ subroutine plot_z1D_material_width(ioreplay,                             &
 
       endif
 
+      if(j > 1) then
+        lrepeat = .FALSE.
+        do i = 1,j-1
+          if (k == kchoice(i)) lrepeat = .TRUE.
+        enddo
+
+        if(lrepeat) then
+
+          write(6,*)
+          write(6,*) '  Bottom atoms cannot be repeated'
+          write(6,*) '  Enter the index again'
+          write(6,*)
+
+          read(5,*) k
+          write(ioreplay,'(2x,i8,"    bottom atom repeated")') k
+
+          if(k < 1 .or. k > ntot) then
+
+            write(6,*)
+            write(6,*) '  Answer must be between 1 and ',ntot
+            write(6,*)
+            write(6,*) '  Wrong value exiting program'
+            write(6,*)
+
+            stop
+
+          endif
+
+          do i = 1,j-1
+            if (k == kchoice(i)) then
+
+              write(6,*)
+              write(6,*) '  Bottom atoms cannot be repeated'
+              write(6,*)
+              write(6,*) '  Wrong value exiting program'
+              write(6,*)
+
+              stop
+
+            endif
+          enddo
+
+        endif
+
+      endif
+
+      kchoice(j) = k
+
+!     rbottom should always be positive
+
       if(k > 1) then
         rbottom(j) = rat(3,ipnatom(k),iptype(k))                         &
                      - floor(rat(3,ipnatom(k),iptype(k))+0.000001)       &
@@ -154,9 +215,10 @@ subroutine plot_z1D_material_width(ioreplay,                             &
 
       write(6,*)
       write(6,'("  Bottom boundary of material ",i3," is at  ",f8.3)') j,rbottom(j)
-    enddo
 
-  endif
+    endif
+
+  enddo
 
   nptot = 0
   do j = 1,nmat
@@ -191,6 +253,8 @@ subroutine plot_z1D_material_width(ioreplay,                             &
   else
     widthgeom(1) = height / nptot
   endif
+
+  deallocate(kchoice)
 
   return
 

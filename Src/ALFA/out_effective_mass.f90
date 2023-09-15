@@ -219,9 +219,17 @@ subroutine out_effective_mass(ioreplay,                                  &
       mxdscr, mxdgve, mxdnst)
 
   write(6,*)
-  write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
+  write(6,'("  Enter initial number of bands (greater than ",i4,")")')  &
+                nint(ztot/2)
+  write(6,'("  for reference calculation and exploratory suggestion")')
+  write(6,'("  of k.p matrix size")')
+  write(6,'("  Suggested initial value ~ ",i4)') 3*nint(ztot)
   read(5,*) neig
-  write(ioreplay,*) neig,'   number of bands'
+  write(ioreplay,*) neig,'   number of initial bands'
+
+  write(6,*)
+  write(6,*) '  The reference calculation will include ',neig,' bands'
+  write(6,*)
 
 ! gets the k-point, but first generates coordinate system
 
@@ -290,7 +298,7 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   endif
 
-  write(6,*)nmodel
+  write(6,*)
   write(6,*) ' enter k-point '
   write(6,*)
 
@@ -369,7 +377,8 @@ subroutine out_effective_mass(ioreplay,                                  &
        mxdgve)
 
   write(6,*)
-  write(6,*) '  The suggested sizes for the kdopt matrix are:'
+  write(6,*) '  From a free-electron model, the suggested'
+  write(6,*) '  sizes for the kdopt matrix are:'
   write(6,'(10i6)') (kdotpsize(j),j=1,nk)
   write(6,*)
   write(6,*) '  Enter one of those values (first suggestions should be better)'
@@ -615,7 +624,7 @@ subroutine out_effective_mass(ioreplay,                                  &
         rk0, h0, dh0drk, d2h0drk2,                                       &
         mxdbnd)
 
-        do j = 1,neig
+        do j = 1,nmodel
           xmass(j,m) = (ei_p(j)+ei_m(j)-2*ei(j)) / (delta*delta)
           xmass(j,m) = UM / xmass(j,m)
           xgrad(j) = (ei_p(j)-ei_m(j)) / (2*delta)
@@ -631,7 +640,7 @@ subroutine out_effective_mass(ioreplay,                                  &
         rk0, hso0, dhso0drk, d2hso0drk2,                                 &
         2*mxdbnd)
 
-        do j=1,2*neig
+        do j=1,2*nmodel
           xmass(j,m) = (ei_so_p(j)+ei_so_m(j)-2*ei_so(j)) / (delta*delta)
           xmass(j,m) = UM / xmass(j,m)
           xgrad(j) = (ei_so_p(j)-ei_so_m(j)) / (2*delta)
@@ -649,14 +658,22 @@ subroutine out_effective_mass(ioreplay,                                  &
     write(6,*) '                     100*delta  10*delta   delta'
     write(6,*)
     if(yesno /= 'y' .and. yesno /= 'Y') then
-      do j = 1,neig
+      do j = 1,nmodel
         write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei(j)*HARTREE,      &
                   xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+      if(j == nint(ztot/2)) then
+        write(6,*)
+        write(6,*)
+      endif
     enddo
     else
-      do j = 1,2*neig
+      do j = 1,2*nmodel
         write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei_so(j)*HARTREE,   &
                   xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+      if(j == nint(ztot)) then
+        write(6,*)
+        write(6,*)
+      endif
       enddo
     endif
     write(6,*)

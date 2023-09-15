@@ -72,7 +72,6 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   real(REAL64), allocatable          ::  width(:)                        !  width for the double average
   real(REAL64), allocatable          ::  widthgeom(:)                    !  width for the double average from material info
   real(REAL64), allocatable          ::  widthrho(:)                     !  width for the double average from charge density
-  real(REAL64), allocatable          ::  widthold(:)                     !  width for the double average in earlier code
   integer, allocatable               ::  izval(:)                        !  valence of atom of type i
   real(REAL64), allocatable          ::  xpeak(:)                        !  position of first peak of auto-correlation for atom of type i
 
@@ -81,15 +80,14 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   real(REAL64), allocatable   ::  gave(:)                                !  average of the nuclear "gaussian" charge density in the 3d direction of fft grid
   real(REAL64), allocatable   ::  conv(:)                                !  repeated average of charge density by convolution in the 3d direction of fft grid
 
-  integer, allocatable        ::  indx(:)                                !  index of species with most atoms
+  real(REAL64), allocatable   ::  autocorr(:)                            !  autocorrelation functiom
 
-  real(REAL64), allocatable   ::  autocorr(:)                            ! autocorrelation functiom
-  real(REAL64), allocatable   ::  convtmp(:)                             !  repeated average of charge
+  integer, allocatable        ::  iptype(:)                              !  type of atom with n-th lower z coordinate
+  integer, allocatable        ::  ipnatom(:)                             !  atom of iptupe with n-th lower z coordinate
 
-  integer, allocatable        ::  iptype(:)
-  integer, allocatable        ::  ipnatom(:)
-  integer, allocatable        ::  nrepeat(:)
-  real(REAL64), allocatable   ::  rleft(:)
+  integer, allocatable        ::  nrepeat(:)                             !  number of repeat units for each material
+  real(REAL64), allocatable   ::  rbottom(:)                             !  bottom lattice coordinate of the material
+  real(REAL64), allocatable   ::  yave(:)                                !  average of the function in the center of the material.
 
 ! main variables
 
@@ -100,9 +98,8 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
   logical                     ::  linter                                 !  if .TRUE. asks if the figure should be shown
   character(len=1)            ::  yesno
-  integer                     ::  nab, ntotal, nwd
 
-  integer                     ::  ntot
+  integer                     ::  ntot                                   !  total number of atoms
 
 ! parameters that control the quality of the plots
 
@@ -111,26 +108,25 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 ! other variables
 
-  integer             ::  kmscr(3), nsfft(3)
+  integer             ::  kmscr(3), nsfft(3), ktmp(3)                    !  fft sizes
+  integer             ::  mfft, mwrk                                     !  fft stuff
+
   integer             ::  istar, istop
-  real(REAL64)        ::  xfirst
+  real(REAL64)        ::  xfirst                                         !  autocorrelation peak
 
   real(REAL64)        ::  gsquare, vcell, bdot(3,3), fac
   integer             ::  id, n1,n2,n3, nn
-  integer             ::  ku, kd
   integer             ::  nwidth
-  integer             ::  nwidthold
-  real(REAL64)        ::  sigma                      !  width of gaussian (in real space)
+  integer             ::  mxdwid
+
+  real(REAL64)        ::  sigma                                          !  width of gaussian (in real space)
 
   integer             ::  iotape
   character(len=40)   ::  filename
-  integer             ::  mfft, mwrk
-  integer             ::  ktmp(3)
 
-  real(REAL64)        ::  rright, height
+  real(REAL64)        ::  height                                         !  height of the cell
 
-  logical             ::  lfound
-  integer             ::  ichoice
+  logical             ::  lfound, lopt, lfoundall
 
 ! constants
 
@@ -203,14 +199,40 @@ subroutine plot_rho_v_average(ioreplay,                                  &
          mxdtyp, mxdatm)
 
   write(6,*)
-  write(6,'("  Enter number of different materials  ")')
+  write(6,'("  Enter number of different materials")')
+  write(6,'("  Must be between 1 and ",i5)') ntot
   write(6,*)
 
   read(5,*) nmat
   write(ioreplay,'(2x,i8,"   number of materials")') nmat
 
+  if(nmat <1 .or. nmat > ntot) then
+    write(6,*)
+    write(6,'("  Wrong value enter it again")')
+    write(6,*)
+
+    read(5,*) nmat
+    write(ioreplay,'(2x,i8,"   number of materials again")') nmat
+
+    if(nmat <1 .or. nmat > ntot) then
+      write(6,*)
+      write(6,'("  STOPPING  unreasonable value")')
+      write(6,*)
+
+      stop
+
+    endif
+  endif
+
+  if(nmat == 1) then
+    write(6,*)
+    write(6,'("  Only one type of material...")')
+    write(6,*)
+  endif
+
   allocate(nrepeat(nmat))
-  allocate(rleft(nmat))
+  allocate(rbottom(nmat))
+  allocate(yave(nmat))
 
   allocate(widthgeom(nmat))
 
@@ -218,9 +240,8 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
   call plot_z1D_material_width(ioreplay,                                 &
        ntot, iptype, ipnatom, rat, adot,                                 &
-       height, nptot, nrepeat, rleft, widthgeom,                         &
+       height, nptot, nrepeat, rbottom, widthgeom,                       &
        nmat, mxdtyp, mxdatm)
-
 
 ! make it more dense on the averaging direction
 
@@ -252,6 +273,10 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   allocate(izval(mxdtyp))
   allocate(xpeak(mxdtyp))
 
+! if inds was available should call charge_unfold...
+
+  rho = ZERO
+
   istop = 0
   do i=1,ns
     istar = istop+1
@@ -274,7 +299,6 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   nn = nsfft(3)
 
   id = n1 + 1
-!  ntot = id * n2 * n3
 
 ! initialize charge density array and enter symmetrized
 ! charge.
@@ -330,33 +354,32 @@ subroutine plot_rho_v_average(ioreplay,                                  &
     endif
 
     if(linter) then
-      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //        &
+      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
                      '_auto_corr.gp'
-      call plot_z1D_gnuplot(ioreplay, iotape, autocorr,dave,        &
-            0, n3/2, height/2,  adjustl(trim(filename)),            &
-            nameat(nt)//' Nuclear Density Auto-correlation',        &
+      call plot_z1D_gnuplot(ioreplay, iotape, autocorr,dave,             &
+            0, n3/2, height/2,  adjustl(trim(filename)),                 &
+            nameat(nt)//' Nuclear Density Auto-correlation',             &
             '  ',linter)
     else
-      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //        &
+      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
                      '_auto_corr.agr'
-      call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2, &
-            adjustl(trim(filename)),                                &
+      call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2,      &
+            adjustl(trim(filename)),                                     &
             nameat(nt)//' Nuclear Density Auto-correlation', '  ')
     endif
 
   enddo
 
 
-
   call plot_zave1D(ave, rho, nptot, id, n1,n2,n3, ng, kgv)
 
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3,       &
-          height, 'rho_ave.gp','Electron Density Average',          &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3,            &
+          height, 'rho_ave.gp','Electron Density Average',               &
           '{/Symbol r} (e/cell)', linter)
   else
-    call plot_z1D_xmgr(iotape, ave, dave ,0, n3, height,            &
-          'rho_ave.agr',                                            &
+    call plot_z1D_xmgr(iotape, ave, dave ,0, n3, height,                 &
+          'rho_ave.agr',                                                 &
           'Electron Density Average', '\f{Symbol} r\f{} (e/cell)')
   endif
 
@@ -365,187 +388,59 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
   call plot_z1D_auto_corr(nn, ave, nn/nptot, autocorr, xfirst, lfound)
 
+  if(linter) then
+    call plot_z1D_gnuplot(ioreplay, iotape, autocorr, dave,              &
+          0, n3/2, height/2, 'rho_auto_corr.gp',                         &
+          'Electron Density Auto-correlation', '  ',linter)
+  else
+    call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2,        &
+         'rho_auto_corr.agr', 'Electron Density Auto-correlation',       &
+            '  ')
+  endif
+
 ! find widths from auto-correlation of localy projected electron density
 
   allocate(widthrho(nmat))
 
-  call plot_z1D_local_corr(nn, ave, nmat, height, rleft, nrepeat, widthrho)
-
-  if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, autocorr, dave,         &
-          0, n3/2, height/2, 'rho_auto_corr.gp',                    &
-          'Electron Density Auto-correlation', '  ',linter)
-  else
-    call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2,   &
-         'rho_auto_corr.agr', 'Electron Density Auto-correlation',  &
-            '  ')
-  endif
-
-! identifies most abundant species and finds default widths
-
-  allocate(indx(mxdtyp))
-  allocate(widthold(mxdtyp))
-
-  call isort(ntype, natom, indx)
-
-  nab = 0
-  ntotal = 0
-  do nt = 1,ntype
-    ntotal = ntotal + natom(nt)
-  enddo
-  do nt = 1,ntype
-    if(4*natom(nt) > ntotal) nab = nab + 1
-  enddo
-
-  if(nab == 0) then
-    nwidthold = 1
-    widthold(1) = height/nptot
-  else
-    nwidthold = nab
-    do j=1,nab
-      widthold(j) = xpeak(indx(ntype-j+1))*height/nn
-    enddo
-  endif
-
-  write(6,*)
-  write(6,*)
-  write(6,*)
-  write(6,*) ' You have to choose both the number and'
-  write(6,*) ' width of the square well averages'
-  write(6,*)
-  write(6,'("  Width from total number of planes: ",g14.6)') height/nptot
-
-  write(6,*)
-  write(6,'("  Width from electron density autocorrelation: ",g14.6)')   &
-         xfirst*height/nn
-  write(6,*)
-
-  do nt = 1,ntype
-    write(6,'("  Width from ",a2," atomic autocorrelation: ",g14.6)')    &
-         nameat(indx(nt)),xpeak(indx(nt))*height/nn
-    write(6,*)
-  enddo
-
-  write(6,*)
-  write(6,*)
-  write(6,*)
-  write(6,'("  Old algorithm suggest ",i2," widths with values: ",       &
-        &     99f12.5)') nwidthold,(widthold(j),j=1,nwidthold)
-  write(6,*)
-
-  write(6,*)
-  write(6,'("  Materials description (layer size) suggest ",i2,          &
-        &     " widths with values: ",99f12.5)')                         &
-               nwidth,(widthgeom(j),j=1,nwidth)
-  write(6,*)
-
-  write(6,*)
-  write(6,'("  Density auto-correlation for each material suggest ",i2,  &
-        &     " widths with values: ",99f12.5)')                         &
-               nwidth,(widthrho(j),j=1,nwidth)
-  write(6,*)
+  call plot_z1D_local_corr(nn, ave, nmat, height, rbottom, nrepeat, widthrho)
 
 
-  write(6,*)
-  write(6,*) "  Choose which values you want"
-  write(6,*) "  1) Materials description"
-  write(6,*) "  2) Density autocorrelation"
-  write(6,*) "  3) Old algorithm"
-  write(6,*) "  4) Enter other values of your choice"
-  write(6,*)
-  write(6,*) "  Enter your choice (1--4)"
+! chooses convolution widths from several options
 
+  mxdwid = max(nmat,4)
+  allocate(width(mxdwid))
 
-  read(5,*) ichoice
-  write(ioreplay,'(2x,i5,"   choice of widths")') ichoice
+  call plot_z1d_choice_width(ioreplay, nwidth, width, lopt,              &
+         ntype, natom, nameat,                                           &
+         height, nmat, nrepeat, widthgeom, widthrho,                     &
+         nn, xfirst, xpeak,                                              &
+         mxdtyp, mxdwid)
 
-  if(ichoice < 1 .or. ichoice > 4) then
-    write(6,*)
-    write(6,*) "  Wrong value, enter again"
-    read(5,*) ichoice
-    write(ioreplay,'(2x,i5,"   choice of widths")') ichoice
-    if(ichoice < 1 .or. ichoice > 4) then
-      write(6,*)
-      write(6,*) "  Wrong value, using materials description"
-      write(6,*)
-      ichoice = 1
-    endif
-  endif
-
-  allocate(width(nmat))
-
-  if(ichoice == 1) then
-    do i = 1,nwidth
-      width(i) = widthgeom(i)
-    enddo
-  elseif(ichoice == 2) then
-    do i = 1,nwidth
-      width(i) = widthrho(i)
-    enddo
-  elseif(ichoice == 3) then
-    do i = 1,nwidth
-      width(i) = widthold(i)
-    enddo
-  else
-
-
-    write(6,'(" Enter number of averages ")')
-    write(6,*)
-
-    read(5,*)  nwd
-    write(ioreplay,'(2x,i8,"   number of average widths")') nwd
-
-    if(nwidth < 0 .or. nwidth > mxdtyp) then
-
-      write(6,*) "  Invalid answer using defaults "
-
-    else
-
-      nwidth = nwd
-      write(6,'(" Enter the ",i5," widths ")') nwidth
-      read(5,*) (width(i),i=1,nwidth)
-      write(ioreplay,'(2x,20f15.5)') (width(i),i=1,nwidth)
-
-    endif
-
-  endif
-
-! After this point widths are set.
-
-  do k=1,nwidth
-
-    if(width(k) <= 0 .or. width(k) > height) then
-
-      write(6,*) "  Invalid widths  "
-
-      stop
-
-    endif
-
-  enddo
-
-! uses convolution for the double average
+! uses convolution for the double average for electron density,
+! electron plus gaussian broadened ion density and electrostatic potential
 
   deallocate(dave)
   allocate(dave(nn,nwidth))
 
   allocate(conv(nn))
-  allocate(convtmp(nn))
+
+! Electron density
 
   do k = 1,nwidth
 
     xave = width(k)/height
-    call plot_convol(n3, xave, ave, dave(:,k))
+    call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
+         nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
 
   enddo
 
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth,      &
-          n3,height, 'rho_dave.gp',                                 &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth,           &
+          n3,height, 'rho_dave.gp',                                      &
           'Electon Density','{/Symbol r} (e/cell)', linter)
   else
-    call plot_z1D_xmgr(iotape, ave, dave, nwidth, n3, height,       &
-          'rho_dave.agr',                                           &
+    call plot_z1D_xmgr(iotape, ave, dave, nwidth, n3, height,            &
+          'rho_dave.agr',                                                &
           'Electon Density','\f{Symbol} r\f{} (e/cell)')
   endif
 
@@ -560,9 +455,9 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
   enddo
 
-    call plot_gauss(sigma, rhogau,                                  &
-         adot, ntype, natom, rat, izval,                            &
-         ng, kgv,                                                   &
+    call plot_gauss(sigma, rhogau,                                       &
+         adot, ntype, natom, rat, izval,                                 &
+         ng, kgv,                                                        &
          mxdtyp, mxdatm, mxdgve)
 
 
@@ -574,40 +469,39 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3, height,  &
-         'rho_total_ave.gp', 'Total Charge Density Average',        &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3, height,    &
+         'rho_total_ave.gp', 'Total Charge Density Average',             &
          '{/Symbol r} (e/cell)', linter)
   else
-    call plot_z1D_xmgr(iotape, ave, dave, 0, n3, height,            &
-          'rho_total_ave.agr', 'Total Charge Density Average',      &
+    call plot_z1D_xmgr(iotape, ave, dave, 0, n3, height,                 &
+          'rho_total_ave.agr', 'Total Charge Density Average',           &
             '\f{Symbol} r \f{} (e/cell)')
   endif
 
-
+! each width convoluted separately
 ! uses convolution for the double average
 
   do k=1,nwidth
 
     xave = width(k)/height
-    call plot_convol(n3, xave, ave, dave(:,k))
+    call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
+         nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
 
   enddo
 
 
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth, n3,  &
-          height, 'rho_total_dave.gp', 'Total Charge Density',      &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth, n3,       &
+          height, 'rho_total_dave.gp', 'Total Charge Density',           &
           '{/Symbol r} (e/cell)', linter)
   else
-    call plot_z1D_xmgr(iotape, ave, dave, nwidth, n3, height,       &
-          'rho_total_dave.agr','Total Charge Density',              &
+    call plot_z1D_xmgr(iotape, ave, dave, nwidth, n3, height,            &
+          'rho_total_dave.agr','Total Charge Density',                   &
           '\f{Symbol} r\f{} (e/cell)')
   endif
 
 
-
 ! repeats for the Hartree potential
-
 
   call adot_to_bdot(adot, vcell, bdot)
 
@@ -633,11 +527,11 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3,       &
-          height, 'pot_ave.gp', 'Electrostatic Potential Average',  &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, 0, n3,            &
+          height, 'pot_ave.gp', 'Electrostatic Potential Average',       &
          'V (eV)', linter)
   else
-    call plot_z1D_xmgr(iotape, ave, dave, 0, n3, height,            &
+    call plot_z1D_xmgr(iotape, ave, dave, 0, n3, height,                 &
           'pot_ave.agr', 'Electrostatic Potential Average', 'V (eV)')
   endif
 
@@ -645,12 +539,17 @@ subroutine plot_rho_v_average(ioreplay,                                  &
     ave(i) = ave(i) / HARTREE
   enddo
 
+! each width convoluted separately
 ! uses convolution for the double average
 
+  lfoundall = .TRUE.
   do k=1,nwidth
 
     xave = width(k)/height
-    call plot_convol(n3, xave, ave, dave(:,k))
+    call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
+         nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
+
+    if(.not. lfound) lfoundall = .FALSE.
 
   enddo
 
@@ -661,24 +560,42 @@ subroutine plot_rho_v_average(ioreplay,                                  &
     enddo
   enddo
 
-
   if(linter) then
-    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth, n3,    &
-          height, 'pot_dave.gp', 'Electrostatic Potential',           &
+    call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth, n3,       &
+          height, 'pot_dave.gp', 'Electrostatic Potential',              &
           'V (eV)', linter)
   else
     call plot_z1D_xmgr(iotape, ave, dave, nwidth, n3, height,            &
           'pot_dave.agr', 'Electrostatic Potential', 'V (eV)')
   endif
 
+! prints the information for use in band alignments
+
+  if(nmat > 1) then
+
+    write(6,*)
+    write(6,*) '   Electrostatic potential steps in eV'
+    write(6,*) '   Check the figures to see it they are accurate!'
+    write(6,*)
+    if(.not. lfoundall .and. lopt) write(6,*) '   WARNING    optimization did not work!!!'
+    write(6,*)
+
+    do j = 1,nmat-1
+    do k = j+1,nmat
+      write(6,'("    Step between material ",i3," and ",i3," is ",       &
+          &  f12.3)')   k,j,(yave(k)-yave(j))*HARTREE
+    enddo
+    enddo
+
+  endif
+
 
 ! deallocates the stuff
 
-
   deallocate(iptype,ipnatom)
   deallocate(nrepeat)
-  deallocate(rleft)
-
+  deallocate(rbottom)
+  deallocate(yave)
 
   deallocate(ave)
   deallocate(dave)
@@ -690,16 +607,11 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   deallocate(gtmp)
   deallocate(izval)
   deallocate(width)
-  deallocate(widthold)
   deallocate(widthgeom)
   deallocate(xpeak)
 
-  deallocate(indx)
-
   deallocate(autocorr)
   deallocate(conv)
-  deallocate(convtmp)
-
 
   return
 
