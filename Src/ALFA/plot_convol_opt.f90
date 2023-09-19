@@ -114,6 +114,7 @@ subroutine plot_convol_opt(n3, xave, ave, dave, yave, lfound, lopt,      &
 !   when compared to initial calculation of ave(j)
 
     kk = 1
+    sigma = sigma + UM
     do k = 1,kmax
       xtry = (UM-xrange/2)*xave + (k-1)*(xrange*xave/(kmax-1))
 
