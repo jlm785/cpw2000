@@ -14,16 +14,18 @@
 !>  Driver for the calculation of the dielectric matrix
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.04
+!>  \version      5.08
 !>  \date         20 January 2022.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_opt(ioreplay,                                          &
            dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,       &
            pwexp_, strfac_,  vcomp_,                                     &
-           title, subtitle, epspsi, icmax)
+           efermi, meta_cpw2000, title, subtitle,                        &
+           epspsi, icmax)
 
 ! Breakup of cpw_pp_band_dos_opt. 20 Janeiro 2022. JLM
+! But tracked from Pedro Borlido report.  23 October 2023. JLM
 
   use cpw_variables
 
@@ -44,10 +46,17 @@ subroutine cpw_pp_opt(ioreplay,                                          &
   type(strfac_t)                          ::  strfac_                    !<  structure factors
   type(vcomp_t)                           ::  vcomp_                     !<  local potential contributions
 
- ! information about the calculation
+ ! other input
 
+
+  real(REAL64), intent(in)                ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+
+  character(len=250), intent(in)          ::  meta_cpw2000               !<  metadata from cpw2000
   character(len=50), intent(in)           ::  title                      !<  title for plots
   character(len=140), intent(in)          ::  subtitle                   !<  subtitle for plots
+
+  real(real64), intent(in)                :: epspsi                      !<  accuracy of eigenvalues
+  integer, intent(in)                     :: icmax                       !<  maximum number of iterations for diagonalization
 
 ! other variables
 
@@ -56,8 +65,6 @@ subroutine cpw_pp_opt(ioreplay,                                          &
 
 
   integer                 :: iguess                                      !  kept for compatibility
-  real(real64)            :: epspsi                                      !  accuracy of eigenvalues
-  integer                 :: icmax                                       !  maximum number of iterations for diagonalization
 
   character(len=1)        ::  yesno
 
@@ -131,7 +138,6 @@ subroutine cpw_pp_opt(ioreplay,                                          &
          write(6,*) '  using pw diagonalization'
        endif
      endif
-
 
      call out_opt(diag_type, lworkers,                                   &
      title, subtitle,                                                    &
