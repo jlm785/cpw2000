@@ -50,6 +50,12 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
 
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
+  integer                ::  io
+  character(len=20)      ::  filename
+  character(len=6)       ::  flgcal
+  character(len=13)      ::  callcode
+
+
   call pw_rho_v_out(fname, iotape, xc_%author, xc_%tblaha,               &
      flags_%flgscf, flags_%flgdal,                                       &
      meta_pwdat, meta_cpw2000,                                           &
@@ -63,7 +69,12 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      vcomp_%veff, chdens_%den, chdens_%dens,                             &
      dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst)
 
-  call write_cpwout(meta_pwdat,                                          &
+  io = 10
+  filename = 'cpw.out'
+  flgcal = 'ONE'
+  callcode = 'cpw2000'
+
+  call write_cpwout(io, filename, meta_pwdat, flgcal, callcode,          &
      crys_%adot, crys_%ntype, crys_%natom, crys_%nameat,                 &
      crys_%rat, crys_%atmass, crys_%alatt,                               &
      pwexp_%emax, pwexp_%nbandin, kpoint_%nx, kpoint_%ny,                &

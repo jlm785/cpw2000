@@ -20,7 +20,7 @@
        integer, allocatable               ::  natom(:)                   !< number of atoms of type i
        character(len=2), allocatable      ::  nameat(:)                  !< chemical symbol for the type i
        real(REAL64), allocatable          ::  rat(:,:,:)                 !< k-th component (in lattice coordinates) of the position of the n-th atom of type i
-       real(REAL64), allocatable          ::  atmass(:)                  !< atomic mass (in a.u.) of atom of type i 
+       real(REAL64), allocatable          ::  atmass(:)                  !< atomic mass (in a.u.) of atom of type i
 
        real(REAL64)                       ::  alatt                      !< lattice constant
 
@@ -42,10 +42,11 @@
 
 !       real(REAL64)                       ::  acc
        integer                            ::  ipr
-       character(len=50)                  ::  title
-       integer                            ::  io
+!       character(len=50)                  ::  title
+!       integer                            ::  io
        character(len=20)                  ::  filename
 !       character(len=20)                  ::  filepw
+      character(len=13)                   ::  callcode                   !<  identification of the calling code
 
        logical                            ::  lgeom
 
@@ -56,10 +57,10 @@
        integer                            ::  nstep                      !<  number of MD or minimization steps
        real(REAL64)                       ::  tstep                      !<  time step for MD (in atomic units)
        real(REAL64)                       ::  beta                       !<  friction coefficient/mass (in a.u.)
-       integer                            ::  iseed                      !<  initial seed for random number generator        
+       integer                            ::  iseed                      !<  initial seed for random number generator
        real(REAL64)                       ::  pgtol                      !<  criteria for force and stress convergence
        real(REAL64)                       ::  dxmax                      !<  maximum step size in forces and stresses
-       
+
        real(REAL64)                       ::  press                      !<  external pressure
        real(REAL64)                       ::  strext(3,3)                !<  external applied stress
        real(real64)                       ::  celmas                     !<  fictitious cell mass
@@ -73,7 +74,7 @@
 !      pass through variables (not used by md)
 
        real(REAL64)                       ::  emax                       !<  kinetic energy cutoff of plane wave expansion (Hartree).
-       integer                            ::  nbandin                    !<  target for number of bands      
+       integer                            ::  nbandin                    !<  target for number of bands
        integer                            ::  nx, ny, nz                 !<  size of the integration mesh in k-space (nx*ny*nz)
        real(REAL64)                       ::  sx, sy, sz                 !<  offset of the integration mesh (usually 0.5)
        character(len=250)                 ::  meta_pwdat                 !<  metadata from cpw_in or PW.DAT
@@ -90,9 +91,9 @@
 
 !      counters
 
-       integer         ::  nt1, nt2, istep
+       integer         ::  istep
 
-!       lcluster = .FALSE. 
+!       lcluster = .FALSE.
 !       acc = 8.0
        iconv = 0
 
@@ -131,20 +132,20 @@
          pgtol = 0.001*pgtol
 
 !        else
-! 
+!
 !        read data from old file
-! 
+!
 !          write(6,*)
 !          write(6,*) ' WARNING '
 !          write(6,*) ' Using file ',filepw
 !          write(6,*)
-! 
+!
 !          open(unit=5,file=filepw,form='formatted',status='old')
 !          read(5,'(a50)') title
-! 
+!
 !          call read_data(adot,ntype,natom,nameat,rat,atmass,alatt,        &
 !      &   mxdtyp,mxdatm)
-! 
+!
 !        endif
 
 
@@ -168,15 +169,15 @@
      &   mxdtyp,mxdatm)
 
 !          if(flgmod == 'LENJON' .or. flgmod == 'LJCLST') then
-! 
+!
 !            lcluster = .FALSE.
 !            if(flgmod == 'LJCLST') lcluster = .TRUE.
-! 
+!
 !            call lennard_jones(lcluster,acc,                              &
 !      &     ntype,natom,nameat,rat,adot,                                  &
 !      &     force,energy,stress,                                          &
 !      &     mxdtyp,mxdatm)
-! 
+!
 !          else
 
            call vff_keating(ipr, 6,                                      &
@@ -218,8 +219,9 @@
        endif
 
        filename = 'cpw.out'
+       callcode = 'pre_relax_vff'
 
-       call write_md_cpwout(filename, meta_pwdat, flgcal,                &
+       call write_cpwout(10, filename, meta_pwdat, flgcal, callcode,     &
      & adot, ntype, natom, nameat, rat, atmass, alatt,                   &
      & emax, nbandin, nx, ny, nz, sx, sy, sz,                            &
      & .TRUE., .FALSE.,                                                  &
@@ -228,7 +230,7 @@
        iotape = 26
        open(unit = iotape, file = 'vesta_pre-relaxed.xsf',               &
      &                  status='UNKNOWN', form='FORMATTED')
-       
+
        call plot_xsf_crys(iotape, .TRUE.,                                &
      &     adot, ntype, natom, nameat, rat,                              &
      &     mxdtyp, mxdatm)
@@ -246,7 +248,7 @@
        end program pre_relax_vff
 
 
-!!>     Dummy subroutine, just calls adot_to_avec 
+!!>     Dummy subroutine, just calls adot_to_avec
 !!>     to avoid linking to symmetry package
 !
 !       subroutine adot_to_avec_sym(adot,avec,bvec)
@@ -319,7 +321,7 @@
 
        real(REAL64), intent(in)           ::  strext(3,3)                !<  external applied stress
        real(REAL64), intent(in)           ::  press                      !<  external pressure
-       real(real64), intent(in)           ::  celmas                     !<  fictitious cell mass       
+       real(real64), intent(in)           ::  celmas                     !<  fictitious cell mass
 
        integer, intent(in)                ::  ntype                      !<  number of types of atoms
        integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
@@ -327,7 +329,7 @@
        real(REAL64), intent(in)           ::  atmass(mxdtyp)             !<  atomic mass of atoms of type i
 
 !      input and output
-       
+
        real(REAL64), intent(inout)        ::  rat(3,mxdatm,mxdtyp)       !<  lattice coordinates of atom j of type i
        real(REAL64), intent(inout)        ::  vat(3,mxdatm,mxdtyp)       !<  d rat / d t  velocity in lattice coordinates of atom j of type i
 
@@ -353,7 +355,7 @@
 
        integer               ::  minrat                     !  if =1 minimize with respect to atomic positions
        integer               ::  minstr                     !  if =1 minimize with respect to all adot variables, if =2 minimize with respect to adot(3,3)
-       integer, save         ::  ilbfgs = 0                 !  minimization step in lbfgs           
+       integer, save         ::  ilbfgs = 0                 !  minimization step in lbfgs
 
 
 
@@ -367,7 +369,7 @@
          ekcell = 0.0
 
          if(flgcal == 'MICRO ') then
-       
+
            call move_md_micro(rat,vat,force,istmd,tstep,ekin,            &
      &     rat1,frc1,                                                    &
      &     ntype,natom,atmass,adot,                                      &
@@ -399,15 +401,15 @@
              minstr = 2
              newcel = .TRUE.
            endif
-           
-!           if(istmd == ist0 + 1) ilbfgs = 0 
+
+!           if(istmd == ist0 + 1) ilbfgs = 0
 
            call move_lbfgs_call(energy,rat,force,adot,stress,               &
      &     strext,press,ilbfgs,iconv,minrat,minstr,                         &
      &     ntype,natom,                                                     &
      &     mkeep,pgtol,dxmax,                                               &
      &     mxdtyp,mxdatm)
-     
+
            if(iconv < 0) then
              ilbfgs = 0
            else
@@ -469,20 +471,20 @@
 !      version 4.68
 
        implicit none
-       
+
        integer, parameter          :: real64 = selected_real_kind(12)
 
 !      intput
 
        character(len=6), intent(in)       ::  flgcal                     !<  type of calculation
-       
+
        real(REAL64), intent(in)           ::  tempk                      !<  ionic temperature (in Kelvin)
        real(REAL64), intent(in)           ::  tempinik                   !<  initial ionic temperature (in Kelvin)
        integer, intent(in)                ::  nstep                      !<  number of MD or minimization steps
        real(REAL64), intent(in)           ::  tstep                      !<  time step for MD (in atomic units)
        real(REAL64), intent(in)           ::  beta                       !<  friction coefficient/mass (in a.u.)
-       integer, intent(in)                ::  iseed                      !<  initial seed for random number generator        
-       
+       integer, intent(in)                ::  iseed                      !<  initial seed for random number generator
+
        real(REAL64), intent(in)           ::  press                      !<  external pressure
        real(REAL64), intent(in)           ::  strext(3,3)                !<  external applied stress
        real(real64), intent(in)           ::  celmas                     !<  fictitious cell mass
@@ -498,7 +500,7 @@
 
        write(6,*)
        write(6,*)
-       
+
 
        if(flgcal == 'MICRO ' .or. flgcal == 'LANG  ' .or.                &
      &    flgcal == 'VCSLNG' .or. flgcal == 'VCSMIC') then
@@ -508,7 +510,7 @@
      & "      ( * 2.4 10**-17 s)")') tstep
          write(6,'("    The number of MD steps is : ",i10)') nstep
        endif
-       
+
        if(flgcal == 'LANG  ' .or. flgcal == 'VCSLNG') then
          write(6,'("    The thermal bath temperature is ",f12.3,         &
      &     " Kelvin")') tempk
@@ -524,15 +526,15 @@
      &        press*AUTOGPA, ((strext(i,j)*AUTOGPA,i=1,3),j=1,3)
        endif
        if(flgcal == 'VCSLNG' .or. flgcal == 'VCSMIC') then
-         write(6,'("    The fictitious cell mass is",f12.3)') celmas 
+         write(6,'("    The fictitious cell mass is",f12.3)') celmas
        endif
-       
+
        if(flgcal == 'VCSLBF' .or. flgcal == 'LBFSYM'                     &
      &    .or. flgcal == 'EPILBF') then
          write(6,'("    Maximum number of steps is : ",i10)') nstep
        endif
        write(6,*)
-       
+
        return
        end subroutine print_md_parameters
 
@@ -580,7 +582,7 @@
        integer, intent(out)               ::  natom(mxdtyp)              !<  number of atoms of type i
        character(len=2), intent(out)      ::  nameat(mxdtyp)             !<  chemical symbol for the type i
        real(REAL64), intent(out)          ::  rat(3,mxdatm,mxdtyp)       !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-       real(REAL64), intent(out)          ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i 
+       real(REAL64), intent(out)          ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i
 
        real(REAL64), intent(out)          ::  alatt                      !<  lattice constant
        logical, intent(out)               ::  lgeom                      !<  indicates if geometry was successfully read.
@@ -590,25 +592,25 @@
        real(REAL64), intent(out)          ::  emax                       !<  kinetic energy cutoff of plane wave expansion (Hartree).
        integer, intent(out)               ::  nx, ny, nz                 !<  size of the integration mesh in k-space (nx*ny*nz)
        real(REAL64), intent(out)          ::  sx, sy, sz                 !<  offset of the integration mesh (usually 0.5)
-       integer, intent(out)               ::  nbandin                    !<  target for number of bands      
+       integer, intent(out)               ::  nbandin                    !<  target for number of bands
        character(len=250), intent(out)    ::  meta_cpw2000               !<  metadata coded in cpw2000
-       
+
        real(REAL64), intent(out)          ::  tempk                      !<  ionic temperature (in Kelvin)
        real(REAL64), intent(out)          ::  tempinik                   !<  initial ionic temperature (in Kelvin)
        integer, intent(out)               ::  nstep                      !<  number of MD or minimization steps
        real(REAL64), intent(out)          ::  tstep                      !<  time step for MD (in atomic units)
        real(REAL64), intent(out)          ::  beta                       !<  friction coefficient/mass (in a.u.)
-       integer, intent(out)               ::  iseed                      !<  initial seed for random number generator        
+       integer, intent(out)               ::  iseed                      !<  initial seed for random number generator
        real(REAL64), intent(out)          ::  pgtol                      !<  criteria for force and stress convergence
        real(REAL64), intent(out)          ::  dxmax                      !<  maximum step size in forces and stresses
-       
+
        real(REAL64), intent(out)          ::  press                      !<  external pressure
        real(REAL64), intent(out)          ::  strext(3,3)                !<  external applied stress
        real(real64), intent(out)          ::  celmas                     !<  fictitious cell mass
 
 !      local variables
 
-       logical                    ::  lrede
+!       logical                    ::  lrede
        logical                    ::  lbz
        character(len=6)           ::  flgkeat
        logical                    ::  flgkplusg                  !  unused
@@ -624,7 +626,7 @@
        write(6,*)
        write(6,*) '  input read from ',fname
        write(6,*)
-       
+
        call esdf_init(fname)
 
 !      type of calculation
@@ -666,7 +668,7 @@
          write(6,*)
          write(6,*) '   WARNING'
          write(6,*)
-         write(6,*) '   Assuming Lennard Jones Potential'    
+         write(6,*) '   Assuming Lennard Jones Potential'
        endif
 
        call read_esdf_crystal(ipr,                                       &
@@ -766,7 +768,7 @@
 
        real(REAL64), parameter  :: UM = 1.0_REAL64
 
-       
+
 !      same species alpha,dist,beta (group IV)
 
        do n=1,ntype
@@ -797,11 +799,11 @@
            beta(n,nn2) = alfa(nn2)
          endif
        enddo
-       
+
        if(ntype > 1) then
-       
+
 !        pairs of species alpha,dist,beta
-         
+
          do n=1,ntype-1
          do m=n+1,ntype
            nm2 = (m*(m-1))/2+n
@@ -954,7 +956,7 @@
              alfa(nm2) = 31.35_REAL64
              dist(nm2) = 2.637_REAL64
              beta(n,mm2) = 0.142_REAL64*alfa(nm2)
-             
+
            elseif((nameat(n) == 'Cd' .and. nameat(m) == 'Te') .or.        &
      &          (nameat(n) == 'Te' .and. nameat(m) == 'Cd')) then
              alfa(nm2) = 29.02_REAL64
@@ -977,7 +979,7 @@
              alfa(nm2) = 27.97_REAL64
              dist(nm2) = 2.798_REAL64
              beta(n,mm2) = 0.092_REAL64*alfa(nm2)
-             
+
 !          Group I-VII
 
            elseif((nameat(n) == 'Cu' .and. nameat(m) == 'Cl') .or.        &
@@ -1050,7 +1052,7 @@
          do n=1,ntype
            write(iowrite,'(2x,a2,4x,10f12.3)') nameat(n),                &
      &                     (dist((n*(n-1))/2+k),k=1,n)
-         enddo     
+         enddo
 
          write(iowrite,*)
          write(iowrite,*) '    beta constants (N/m)'
@@ -1081,351 +1083,4 @@
        return
        end subroutine vff_constants
 
-
-
-
-!>     writes the next cpw.in file
-
-       subroutine write_md_cpwout(filename, meta_pwdat, flgcal,          &
-     & adot, ntype, natom, nameat, rat, atmass, alatt,                   &
-     & emax, nbandin, nx, ny, nz, sx, sy, sz,                            &
-     & lkeat, ltbl,                                                      &
-     & mxdtyp, mxdatm)
-
-!      Adapted June 2017. JLM
-!      Bug squashed (metadata not from rede) September 2017.
-!      Adapted for md
-!      copyright  J.L.Martins, INESC-MN.
-
-!      version 1.5 of md
-
-       implicit none
-
-       integer, parameter  :: REAL64 = selected_real_kind(12)
-
-!      input:
-
-       integer, intent(in)                ::  mxdtyp                     !<  array dimension of types of atoms
-       integer, intent(in)                ::  mxdatm                     !<  array dimension of types of atoms
-
-       character(len=20), intent(in)      ::  filename                   !<  name of output file
-       character(len=250), intent(in)     ::  meta_pwdat                 !<  metadata from cpw_in or PW.DAT
-
-       character(len=6), intent(in)       ::  flgcal                     !<  type of md calculation
-
-       real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
-       integer, intent(in)                ::  ntype                      !<  number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
-       character(len=2), intent(in)       ::  nameat(mxdtyp)             !<  chemical symbol for the type i
-       real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)       !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-       real(REAL64), intent(in)           ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i 
-
-       real(REAL64), intent(in)           ::  alatt                      !<  lattice constant
-
-       real(REAL64), intent(in)           ::  emax                       !<  kinetic energy cutoff of plane wave expansion (Hartree).
-       integer, intent(in)                ::  nbandin                    !<  target for number of bands      
-
-       integer, intent(in)                ::  nx, ny, nz                 !<  size of the integration mesh in k-space (nx*ny*nz)
-       real(REAL64), intent(in)           ::  sx, sy, sz                 !<  offset of the integration mesh (usually 0.5)
-
-       logical, intent(in)                ::  lkeat                      !<  sets the keating option
-       logical, intent(in)                ::  ltbl                       !<  toggles XC between TBL and CA
-
-!      local:
-       
-       real(REAL64)      ::  avec(3,3),bvec(3,3)
-
-       integer            ::  nlatpl                                     ! number of lattice planes
-       character(len=3)   ::  vers                                       ! program version
-       character(len=50)  ::  title                                      ! title of the calculation
-       character(len=140) ::  metadata                                   ! metadata of the calculation
-
-       integer  ::  isl1(3),isl2(3),isl3(3)
-       integer  ::  nat
-       integer  ::  istart, iend, ioerr
-
-       integer  ::   io                         !  tape number
-
-!      counters
-
-       integer       ::  nt, n, i, j, nc
-
-
-!      open file
-
-       io = 10
-       open(unit = io, file = filename, status='UNKNOWN',                &
-     &                  form='FORMATTED')
-     
-       write(io,'(72a1)') ("#",j=1,72)
-       write(io,'("#",70x,"#")')
-       write(io,'("#",6x,"cpw.in input file generated by a previous",    &
-     &       " mdtest run ",10x,"#")')
-       write(io,'("#",70x,"#")')
-       write(io,'(72a1)') ("#",j=1,72)
-
-       read(meta_pwdat,'(3(3i4,2x),8x,i3,3x,a3,1x,a50,a140)',            &
-     &      iostat=ioerr)                                                &
-     &            (isl1(i),i=1,3),(isl2(i),i=1,3),(isl3(i),i=1,3),       &
-     &            nlatpl,vers,title,metadata
-
-       if(ioerr == 0) then
-
-         write(io,*)
-         write(io,'("#------------------------------------------------")')
-         write(io,'("# Rede metadata")')
-         write(io,'("#------------------------------------------------")')
-         write(io,*)
-
-         write(io,'("%block Rede.Superlattice")')
-         write(io,'(12x,3i6)') (isl1(i),i=1,3)
-         write(io,'(12x,3i6)') (isl2(i),i=1,3)
-         write(io,'(12x,3i6)') (isl3(i),i=1,3)
-         write(io,'("%endblock Rede.Superlattice")')
-         write(io,*)
-
-         write(io,'("Rede.NumberOfLatticePlanes",3x,i6)') nlatpl
-         write(io,*)
-
-         write(io,'("Rede.Version",18x,a3)') vers
-         write(io,*)
-
-         write(io,'("Rede.Title",10x,a50)') title
-         write(io,*)
-
-         istart = 1
-         do i=1,135
-           if(metadata(i:i+4) == '#NAME') then
-             istart = i+6
-
-             exit
-
-           endif
-         enddo
-
-         iend = 140
-         do i=1,125
-           if(metadata(i:i+4) == '#DATE') then
-             iend = i-1
-             write(io,'("Rede.Date",21x,a9)') metadata(i+6:i+15)
-             write(io,*)
-
-             exit
-
-           endif
-         enddo
-    
-         do i=1,126
-           if(metadata(i:i+4) == '#TIME') then
-             write(io,'("Rede.Time",21x,a8)') metadata(i+6:i+14)
-             write(io,*)
-
-             exit
-
-           endif
-         enddo
-
-         write(io,'("Rede.Name",21x,140a1)')                             &
-     &                   (metadata(i:i),i=istart,iend)
-         write(io,*)
-
-         write(io,'("SystemLabel",19x,140a1)')                           &
-     &                   (metadata(i:i),i=istart,iend)
-         write(io,*)
-
-       else
-
-         write(io,*)
-         write(io,'("SystemLabel",19x,20a1)')                            &
-     &                   (meta_pwdat(i:i),i=1,20)
-         write(io,*)
-       endif
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Crystal structure")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-       write(io,'("LatticeConstant",10x,f16.8,5x,"bohr")') alatt
-       write(io,*)
-       
-       call adot_to_avec_sym(adot,avec,bvec)
-
-       write(io,'("%block LatticeVectors")')
-       write(io,'(3(3x,f16.8))') avec(1,1)/alatt,avec(2,1)/alatt,        &
-     &                           avec(3,1)/alatt
-       write(io,'(3(3x,f16.8))') avec(1,2)/alatt,avec(2,2)/alatt,        &
-     &                           avec(3,2)/alatt
-       write(io,'(3(3x,f16.8))') avec(1,3)/alatt,avec(2,3)/alatt,         &
-     &                           avec(3,3)/alatt
-       write(io,'("%endblock LatticeVectors")')
-       write(io,*)
-
-!      Finds total number of atoms
-
-       nat = 0
-       do i=1,ntype
-         nat = nat + natom(i)
-       enddo
-
-       write(io,'("NumberOfSpecies",9x,i8)') ntype
-       write(io,*)
-       
-       write(io,'("NumberOfAtoms",9x,i8)') nat
-       write(io,*)
-       
-       write(io,'("%block Chemical_Species_Label")')
-       do i = 1,ntype
-         call p_tbl_charge(nameat(i),n)
-         write(io,'(i6,3x,i5,3x,a2)') i,n,nameat(i)
-       enddo
-       write(io,'("%endblock Chemical_Species_Label")')
-       write(io,*)
-       
-       write(io,'("AtomicCoordinatesFormat",5x,"Fractional")')
-       write(io,*)
-       
-       
-       write(io,'("%block AtomicCoordinatesAndAtomicSpecies")')
-       
-       do nt = 1,ntype
-       do i = 1,natom(nt)
-          write(io,'(3x,3f16.8,4x,i5,5x,"#  ",a2,3x,i5)')                 &
-     &          (rat(j,i,nt),j=1,3),nt,nameat(nt),i
-       enddo
-       enddo
-       write(io,'("%endblock AtomicCoordinatesAndAtomicSpecies")')
-       write(io,*)
-
-       write(io,'("StructureSource",15x,"mdtest")')
-       write(io,*)
-
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Energy cutoff, bands,  and Brillouin mesh")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("PWEnergyCutoff",13x,f12.4,6x,"hartree")')  emax
-       write(io,*)
-
-       write(io,'("NumberOfEigenStates",12x,i8)') nbandin
-       write(io,*)
-
-       write(io,'("%block kgrid_Monkhorst_Pack")')
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  nx,0,0,sx
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  0,ny,0,sy
-       write(io,'(8x,3(2x,i6),3x,f12.6)')  0,0,nz,sz
-       write(io,'("%endblock kgrid_Monkhorst_Pack")')
-       write(io,*)
-      
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Active options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("MD.TypeOfRun",18x,a6,8x,"# ONE,EPILBF,MICRO,",        &
-     &      "LANG,LBFSYM,VCSLNG,VCSLBF,RSTRT,EPILNG")') flgcal
-       write(io,*)
-
-       write(io,'("MD.PotentialModel             KEATNG        ",        &
-     &      "# KEATNG (do not use LENJON,LJCLST) ")')
-       write(io,*)
-
-       write(io,'("UseSymmetry                   .true.        ",        &
-     &      "# .true. , .false. ")')
-       write(io,*)
-
-       if(lkeat) then
-         write(io,'("MD.UseKeatingCorrections      .true.        ",      &
-     &      "# .true. , .false. ")')
-       else
-         write(io,'("MD.UseKeatingCorrections      .false.       ",      &
-     &      "# .true. , .false. ")')
-       endif
-
-       write(io,*)
-
-       write(io,'("MD.CG.UseFixedkplusG          .true.        ",        &
-     &      "# .true. , .false. ")')
-       write(io,*)
-
-       write(io,'("TypeOfScfDiag                 PW            ",        &
-     &      "# PW,AO,AOJC,AOJCPW")')
-       write(io,*)
-
-       write(io,'("DualApproximation             .true.        ",        &
-     &      "#  .true. , .false.")')
-       write(io,*)
-
-       if(ltbl) then
-         write(io,'("XC.Authors                    TBL           ",      &
-     &      "# CA, PBE, TBL")')
-       else
-         write(io,'("XC.Authors                    CA            ",      &
-     &      "# CA, PBE, TBL")')
-       endif
-       write(io,*)
-
-       write(io,'("Xc.TBL.C                      1.04          ",        &
-     &      "# sets Tran-Blaha constant (if negative use calculated)")')
-       write(io,*)
-
-       write(io,'("PrintingLevel                 1             ",        &
-     &      "# 1, 2, 3")')
-       write(io,*)
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# MD Inactive options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("#MD.InitialTemperature        300 K           #")')
-       write(io,'("#MD.TargetTemperature         300 K           #")')
-       write(io,'("#MD.TargetPressure            0 GPa           #")')
-       write(io,*)
-       write(io,'("#MD.NumberOfSteps             10              #")')
-       write(io,'("#MD.LengthTimeStep            2.4 fs          #")')
-       write(io,'("#MD.FrictionFracInvTimeStep   20.0            #")')
-       write(io,*)
-       write(io,'("#MD.CG.Tolerance         0.0001 ''har/bohr''    #")')
-       write(io,'("#MD.CG.StepMax                0.01 bohr       #")')
-       write(io,'("#MD.CG.FixedkplusGTol    0.01 ''har/bohr''      #")')
-       write(io,*)
-       write(io,'("#%block MD.TargetStress                       #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("   0.0 0.0 0.0                                #")')
-       write(io,'("#%endblock   MD.TargetStress                  #")')
-       write(io,*)
-       write(io,'("#MD.CellMass                  10.0            #")')
-       write(io,'("#MD.Seed                      76978           #")')
-
-       write(io,*)
-       write(io,'("#------------------------------------------------")')
-       write(io,'("# Electronic Structure Inactive options")')
-       write(io,'("#------------------------------------------------")')
-       write(io,*)
-
-       write(io,'("#MaxSCFIterations             20              #")')
-       write(io,*)
-       write(io,'("#MaxSCFIterations             20              #")')
-       write(io,'("#TypeOfPseudoMixing           BROYD1          #",     &
-     &      " BROYD1, BFGS#")')
-       write(io,*)
-       write(io,'("#ElectronicTemperature        1000 K          #")')
-       write(io,'("#TypeOfPseudopotential        PSEUKB          #",     &
-     &      " PSEUKB")')
-       write(io,*)
-       write(io,'("#ScfTolerance                 0.00005         #")')
-       write(io,'("#DiagTolerance                0.0001          #")')
-       write(io,'("#SymmTolerance                1.0E-5          #")')
-
-       close(unit = io)
-
-       return
-
-       end subroutine write_md_cpwout
 
