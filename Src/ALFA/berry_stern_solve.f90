@@ -20,11 +20,12 @@
 
 
 subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
+    nlevel, levdeg, leveigs,                                             &
     isort, ekpg,                                                         &
     vscr, kmscr,                                                         &
     ng, kgv,                                                             &
     nanl, anlga, xnlkb,                                                  &
-    mxddim, mxdbnd, mxdgve, mxdscr, mxdanl)
+    mxddim, mxdbnd, mxdgve, mxdscr, mxdanl, mxdlev, mxddeg)
 
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
 
@@ -41,6 +42,8 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdscr                          !<  array dimension for screening potential
   integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdlev                          !<  array dimension for number of levels
+  integer, intent(in)                ::  mxddeg                          !<  array dimension for number of levels
 
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
   integer, intent(in)                ::  neig                            !<  wavefunction dimension
@@ -60,6 +63,10 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
   real(REAL64), intent(in)           ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
 
+  integer, intent(in)                ::  nlevel                          !<  number of energy levels
+  integer, intent(in)                ::  levdeg(mxdlev)                  !<  degeneragy of level
+  integer, intent(in)                ::  leveigs(mxdlev,mxddeg)          !<  points to degenerate level
+
   complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
   real(REAL64), intent(in)           ::  ei(mxddim)                      !<  eigenvalue no. i. (hartree)
 
@@ -74,7 +81,7 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
   REAL(REAL64), allocatable          ::  x(:), b(:)
   REAL(REAL64), allocatable          ::  tmp(:,:)
-  complex(REAL64), allocatable       ::  ac(:,:), bc(:,:)
+  complex(REAL64), allocatable       ::  ac(:,:), bc(:,:),acguess(:,:)
 
   integer, allocatable               ::  ipar(:)                         !  should not be changed during iterations
   REAL(REAL64), allocatable          ::  dpar(:)                         !  should not be changed during iterations
@@ -100,11 +107,12 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 ! counters
 
   integer    ::  j, k, n, m
+  integer    ::  nl, nk, ml, mk
 
 ! external
 
   complex(REAL64) ,external   :: zdotc
-  real(REAL64) ,external   :: dnrm2
+  real(REAL64) ,external   :: dnrm2, dznrm2
 
 
 ! solves the equation
@@ -113,13 +121,15 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
   allocate(b(2*mtxd), x(2*mtxd))
   allocate(tmp(2*mtxd,4))
-  allocate(ac(mtxd,1), bc(mtxd,1))
+  allocate(ac(mtxd,1), bc(mtxd,1),acguess(mtxd,1))
 
 ! for compatibility with intel MKL
 
   allocate(ipar(128),dpar(128))
 
-  do n = 1,neig
+  do nl = 1,nlevel
+  do nk = 1,levdeg(nl)
+    n = leveigs(nl,nk)
 
     do j = 1,3
 
@@ -128,30 +138,30 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
       ac(:,1) = C_ZERO
 
-      do m = 1,neig
-        if(n /= m) then
-          if(abs(ei(n)-ei(m)) < 0.0001) then
-            write(6,*) '   stopped in berry_stern_solve.'
-            write(6,*) '   not safe for degenerate states'
-
-            stop
-
-          endif
-          zz = zdotc(mtxd, psi(:,m), 1, dhdkpsi(:,n,j), 1)
-          zz = zz / (ei(n) - ei(m))
-          call zaxpy(mtxd, zz, psi(:,m), 1, ac(:,1), 1)
+      do ml = 1,nlevel
+        if(ml /= nl) then
+          do mk = 1,levdeg(ml)
+            m = leveigs(ml,mk)
+            zz = zdotc(mtxd, psi(:,m), 1, dhdkpsi(:,n,j), 1)
+            zz = zz / (ei(n) - ei(m))
+            call zaxpy(mtxd, zz, psi(:,m), 1, ac(:,1), 1)
+          enddo
         endif
       enddo
 
+      acguess(:,1) = ac(:,1)
+
+      ac(:,1) = C_ZERO
+
       do k = 1,mtxd
         x(2*k-1) = real(ac(k,1),REAL64)
-        x(2*k  )   = dimag(ac(k,1))
+        x(2*k  ) = dimag(ac(k,1))
       enddo
 
       bc(:,1) = dhdkpsi(1:mtxd,n,j)
 
-      zz = zdotc(mtxd, psi(:,n), 1, bc(:,1), 1)
-      call zaxpy(mtxd, -zz, psi(:,n), 1, bc(:,1), 1)
+      call berry_project_one('O', psi, bc(:,1), mtxd, neig,              &
+            mxddim, mxdbnd)
 
       do k = 1,mtxd
         b(2*k-1) = real(bc(k,1),REAL64)
@@ -175,8 +185,8 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
             ac(k,1) = cmplx(tmp(2*k-1, 1 ),tmp(2*k, 1 ),REAL64)
           enddo
 
-          zz = zdotc(mtxd, psi(:,n), 1, ac(:,1), 1)
-          call zaxpy(mtxd, -zz, psi(:,n), 1, ac(:,1), 1)
+          call berry_project_one('O', psi, ac(:,1), mtxd, neig,          &
+            mxddim, mxdbnd)
 
           call hk_psi_c16(mtxd, 1, ac, bc, .TRUE.,                       &
              ng, kgv,                                                    &
@@ -187,8 +197,10 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
           call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), ac(:,1), 1, bc(:,1), 1)
           call zscal(mtxd, -C_UM, bc(:,1), 1)
 
-          zz = zdotc(mtxd, psi(:,n), 1, bc(:,1), 1)
-          call zaxpy(mtxd, -zz, psi(:,n), 1, bc(:,1), 1)
+!         |bc> = (E_n - H) |ac>. now orthogonalize within same energy
+
+          call berry_project_one('O', psi, bc(:,1), mtxd, neig,          &
+            mxddim, mxdbnd)
 
           do k = 1,mtxd
             tmp(2*k-1, 2 ) = real(bc(k,1),REAL64)
@@ -236,11 +248,12 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
             endif
 
             ac(k,1) = 1.3*cmplx(-xpre*tmp(2*k-1, 3 ),-xpre*tmp(2*k, 3 ),REAL64)
+!            ac(k,1) = -cmplx(tmp(2*k-1, 3 ),tmp(2*k, 3 ),REAL64)
 
           enddo
 
-          zz = zdotc(mtxd, psi(:,n), 1, ac(:,1), 1)
-          call zaxpy(mtxd, -zz, psi(:,n), 1, ac(:,1), 1)
+          call berry_project_one('O', psi, ac(:,1), mtxd, neig,          &
+            mxddim, mxdbnd)
 
 
           do k = 1,mtxd
@@ -255,6 +268,9 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
       if(.not. lfound) then
         write(6,*) '   maximum number of iterations exceeded'
 
+        write(6,*) ' n = ',n,' j = ',j
+        write(6,'("  xx = ",e14.3)') xx
+
         stop
 
       endif
@@ -263,13 +279,19 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
         dpsi(k,n,j) =  cmplx(x(2*k-1), x(2*k),REAL64)
       enddo
 
+      call berry_project_one('O', psi, dpsi(:,n,j), mtxd, neig,          &
+            mxddim, mxdbnd)
+
+      dpsi(1:mtxd,n,j) = dpsi(1:mtxd,n,j) + acguess(1:mtxd,1)
+
     enddo
 
+  enddo
   enddo
 
   deallocate(b, x)
   deallocate(tmp)
-  deallocate(ac, bc)
+  deallocate(ac, bc, acguess)
 
   deallocate(ipar,dpar)
 
