@@ -336,72 +336,14 @@ subroutine out_mass_fd(ioreplay,                                         &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao,              &
     mxddim, mxdbnd)
 
-  write(6,*)
-  write(6,*)
-  write(6,*) '  first derivatives of energies'
-  write(6,*)
 
-  do nl = 1,nlevel
+    write(6,*)
+    write(6,*) '   Results from finite differences'
+    write(6,*)
 
-    if(levdeg(nl) == 1) then
-      n = leveigs(nl,1)
-      write(6,'(i5,f14.6)') n, deidk_fd(n)
-    else
-
-      do nk = 1,levdeg(nl)
-        n = leveigs(nl,nk)
-        write(6,'(i5,f14.6)') n, deidk_fd(n)
-      enddo
-
-    endif
-  enddo
-  write(6,*)
-
-
-  write(6,*)
-  write(6,*)
-  write(6,*) '  second derivatives of energies'
-  write(6,*)
-
-  do nl = 1,nlevel
-
-    if(levdeg(nl) == 1) then
-      n = leveigs(nl,1)
-      write(6,'(i5,f14.6)') n, d2eidk2_fd(n)
-    else
-
-      do nk = 1,levdeg(nl)
-        n = leveigs(nl,nk)
-        write(6,'(i5,f14.6)') n, d2eidk2_fd(n)
-      enddo
-
-    endif
-  enddo
-  write(6,*)
-
-
-  write(6,*)
-  write(6,*)
-  write(6,*) '  Effective masses'
-  write(6,*)
-  write(6,*) '  n       energy(eV)        Effective mass'
-  write(6,*)
-
-  do nl = 1,nlevel
-
-    if(levdeg(nl) == 1) then
-      n = leveigs(nl,1)
-      write(6,'(i5,f12.3,5x,f14.6)') n, ei(n)*HARTREE, UM/d2eidk2_fd(n)
-    else
-
-      do nk = 1,levdeg(nl)
-        n = leveigs(nl,nk)
-        write(6,'(i5,f12.3,5x,f14.6)') n, ei(n)*HARTREE, UM/d2eidk2_fd(n)
-      enddo
-
-    endif
-  enddo
-  write(6,*)
+    call out_mass_print(nlevel, levdeg, leveigs,                         &
+        ei, deidk_fd, d2eidk2_fd,                                        &
+        mxdbnd, mxdlev, mxddeg)
 
     write(6,*)
     write(6,*) '  Do you want another direction? (y/n)'

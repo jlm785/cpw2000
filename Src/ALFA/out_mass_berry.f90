@@ -11,14 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-! !>  Calculates the effective mass for a given k-vector
-! !>  and direction (effective mass tensor for non-degenerate levels)
-! !>  using a k.p method.
-!>  FAKE  FAKE   FAKE  FAKE  WARNING
+!>  Calculates the effective mass for a given k-vector
+!>  and direction (effective mass tensor for non-degenerate levels)
+!>  using a Berry topological tools.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.08
-!>  \date         18 january 2022. 8 November 2023.
+!>  \date         9 November 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -32,11 +31,6 @@ subroutine out_mass_berry(ioreplay,                                      &
     latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
-
-
-! Adapted from out_band_onek plus old "Silvaco" subroutines. 18 january 2022. JLM
-! Better user interface, 1 April 2023. JLM
-! calls out_mass_kdotp_xk instead of local code.  8 November 2023. JLM
 
   implicit none
 
@@ -52,7 +46,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
-  integer, intent(in)                :: ioreplay                         !<  tape number for reproducing calculations
+  integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4), intent(in)       ::  flgdal                          !<  dual approximation if equal to 'DUAL'
@@ -95,9 +89,325 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
 
+
+
+! allocatable arrays with larger scope
+
+  real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
+  real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
+  integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
+  real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
+  real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
+  complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
+  real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
+
+  real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+
+  integer, allocatable               ::  levdeg(:)                       !  degeneracy of energy level
+  integer, allocatable               ::  leveigs(:,:)                    !  states belonging to level
+
+  real(REAL64), allocatable          ::  deidxk(:)                       !  derivative of energy
+  real(REAL64), allocatable          ::  d2eidxk2(:)                     !  second derivative of energy
+
+  complex(REAL64), allocatable       ::  dhdkpsi(:,:,:)                  !  d H d k | psi>
+  complex(REAL64), allocatable       ::  dpsidk(:,:,:)                   !  d |psi> / d k
+  complex(REAL64), allocatable       ::  psidhdkpsi(:,:,:,:)             !  <psi_n| d H / d k |psi_m> for each energy level (lattice coordinates)
+  real(REAL64), allocatable          ::  bcurv(:,:)                      !  Berry curvature
+  real(REAL64), allocatable          ::  tmag(:,:,:,:,:)                 !  Tensor of orbital magnetization
+
+  complex(REAL64), allocatable       ::  tmass(:,:,:,:,:)                !  Tensor of the inverse effective mass (lattice coordinates)
+  real(REAL64), allocatable          ::  qmetric(:,:,:)                  !  Tensor of the quantum metric (lattice coordinates)
+
+! local variables
+
+  integer           ::  mxdscr                                           !  array dimension for screening potential
+  integer           ::  mxdlev                                           !  array dimension for number of levels
+  integer           ::  mxddeg                                           !  array dimension for number of levels
+
+  integer           ::  ifail                                            !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
+
+  integer           ::  mxddim                                           !  array dimension for the hamiltonian
+  integer           ::  mxdbnd                                           !  array dimension for the number of bands
+  integer           ::  mxdwrk                                           !  array dimension for fft transform workspace
+
+  integer           ::  mtxd                                             !  dimension of the hamiltonian
+  integer           ::  neig                                             !  number of eigenvectors
+  integer           ::  kmscr(7)                                         !  max value of kgv(i,n) used for the potential fft mesh
+  integer           ::  idshift                                          !  shift of the fft mesh, used /= 0 only in highly banked memory.
+
+  real(REAL64)      ::  vmax, vmin                                       !  maximum and minimum values of vscr
+
+  integer           ::  ipr
+  integer           ::  nsfft(3)
+  real(REAL64)      ::  rkcar(3)
+
+  real(REAL64)      ::  rkpt(3)
+  character(len=20) ::  typeofk
+
+  real(REAL64)      ::  xk(3)
+  real(REAL64)      ::  xrk
+
+  character(len=1)  ::  yesno_dir
+
+  real(REAL64)      ::  bdot(3,3), vcell
+
+  integer           ::  nlevel              !  number of energy levels (not counting degeneracies)
+  integer           ::  maxdeg              !  maximum number of degeneracies
+
+  integer           ::  neigin              !  initial value of neig
+  integer           ::  nocc
+
+! constants
+
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
+  real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
+  real(REAL64), parameter     ::  TOL = 1.0E-8_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+
+! counters
+
+  integer    ::  i, j, k, n
+
+
+! calculates local potential in fft mesh
+
+
+  if(flgdal == 'DUAL') then
+    kmscr(1) = kmax(1)/2 + 2
+    kmscr(2) = kmax(2)/2 + 2
+    kmscr(3) = kmax(3)/2 + 2
+  else
+    kmscr(1) = kmax(1)
+    kmscr(2) = kmax(2)
+    kmscr(3) = kmax(3)
+  endif
+
+  call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
+
+  allocate(vscr(mxdscr))
+
+  ipr = 1
+
+  idshift = 0
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+      ng, kgv, phase, conj, ns, inds,                                    &
+      mxdscr, mxdgve, mxdnst)
+
+  write(6,*)
+  write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
+  read(5,*) neig
+  write(ioreplay,*) neig,'   initial desired number of bands'
+
+! allow for degeneracies
+
+  neigin = neig+5
+  mxdbnd = neigin+1
+
+! gets the k-point
+
+  call adot_to_bdot(adot,vcell,bdot)
+
+  typeofk = 'reference k-point'
+
+  call cpw_pp_get_k_vector(rkpt, rkcar, adot, typeofk, ioreplay)
+
+  write(6,*)
+  write(6,*) '  coordinates of the chosen k-point:'
+  write(6,*) '      lattice coord.                  cartesian coord.'
+  write(6,*)
+  write(6,'(4x,3f9.4,5x,3f9.4)') (rkpt(j),j=1,3), (rkcar(j),j=1,3)
+  write(6,*)
+
+! Tries to get good suggestions for the k.p model
+
+
+  call size_mtxd(emax, rkpt, adot, ng, kgv, mxddim)
+
+  mxddim = mxddim + 30
+
+! finds mxddim, mxdbnd
+
+! allocates arrays
+
+  allocate(ei(mxdbnd))
+  allocate(hdiag(mxddim))
+  allocate(isort(mxddim))
+  allocate(qmod(mxddim))
+  allocate(ekpg(mxddim))
+  allocate(psi(mxddim,mxdbnd))
+  allocate(hpsi(mxddim,mxdbnd))
+  allocate(ekpsi(mxdbnd))
+
+  nocc = neigin
+
+  ipr = 1
+
+  call h_kb_dia_all('pw  ', emax, rkpt, neigin, nocc,                    &
+      flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
+      ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
+      sfact, veff, icmplx,                                               &
+      nqnl, delqnl, vkb, nkb,                                            &
+      ntype, natom, rat, adot,                                           &
+      mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                           &
+      psi, hpsi, ei,                                                     &
+      vscr, kmscr,                                                       &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
+      mxdbnd, mxdscr, mxdlao)
+
+! energy levels.  first finds dimensions. recalculates neig according to degeneracies.
+
+  allocate(levdeg(1))
+  allocate(leveigs(1,1))
+
+  call berry_degeneracy(.TRUE., neigin, neig, ei, TOL,                   &
+         nlevel, maxdeg, levdeg, leveigs,                                &
+         mxdbnd, 1, 1)
+
+  mxdlev = nlevel
+  mxddeg = maxdeg
+
+  deallocate(levdeg)
+  deallocate(leveigs)
+
+  allocate(levdeg(mxdlev))
+  allocate(leveigs(mxdlev,mxddeg))
+
+! fills the information
+
+  call berry_degeneracy(.FALSE., neigin, neig, ei, TOL,                  &
+         nlevel, maxdeg, levdeg, leveigs,                                &
+         mxdbnd, mxdlev, mxddeg)
+
+  write(6,*)
+  write(6,'("   The system has ",i5," levels")') nlevel
+  do n = 1,nlevel
     write(6,*)
-    write(6,*) '   Not implemented yet.'
+    write(6,'("  Level ",i5," has degeneracy ",i3)') n, levdeg(n)
     write(6,*)
+    do j = 1,levdeg(n)
+      write(6,'(f12.6)') ei(leveigs(n,j))*HARTREE
+    enddo
+  enddo
+  write(6,*)
+
+! get berry quantities.  starts with allocations.
+
+  allocate(dhdkpsi(mxddim,mxdbnd,3))
+  allocate(dpsidk(mxddim,mxdbnd,3))
+
+  allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
+  allocate(bcurv(3,mxdbnd))
+  allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+
+  allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
+
+  allocate(qmetric(3,3,mxdbnd))
+
+
+
+  call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,           &
+    nlevel, levdeg, leveigs,                                             &
+    psi, ei,                                                             &
+    dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,            &
+    ng, kgv,                                                             &
+    vscr, kmscr,                                                         &
+    nqnl, delqnl, vkb, nkb,                                              &
+    ntype, natom, rat, adot,                                             &
+    mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
+    mxdlev, mxddeg)
+
+
+  allocate(deidxk(mxdbnd))
+  allocate(d2eidxk2(mxdbnd))
+
+! loop over directions
+
+  do i = 1,1000
+
+    typeofk = 'direction in k-space'
+
+    call cpw_pp_get_k_vector(xk, rkcar, adot, typeofk, ioreplay)
+
+    write(6,*)
+    write(6,*) '  coordinates of the chosen k-direction:'
+    write(6,*) '      lattice coord.                  cartesian coord.'
+    write(6,*)
+    write(6,'(4x,3f9.4,5x,3f9.4)') (xk(j),j=1,3), (rkcar(j),j=1,3)
+    write(6,*)
+
+!   renormalizes xk
+
+    xrk = ZERO
+    do j = 1,3
+    do k = 1,3
+      xrk = xrk + xk(k)*bdot(k,j)*xk(j)
+    enddo
+    enddo
+    if(xrk < EPS) THEN
+      write(6,*)
+      write(6,*) '  vector zero not allowed, using (1,0,0)'
+      write(6,*)
+      xk(1) = UM
+      xk(2) = ZERO
+      xk(3) = ZERO
+    endif
+
+    call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,               &
+        nlevel, levdeg, leveigs,                                         &
+        mxdbnd, mxdlev, mxddeg)
+
+    call berry_effective_mass(xk, adot, tmass, d2eidxk2,                 &
+        nlevel, levdeg, leveigs,                                         &
+        mxdbnd, mxdlev, mxddeg)
+
+    write(6,*)
+    write(6,*) '   Results from topological Berry quantities'
+    write(6,*)
+
+    call out_mass_print(nlevel, levdeg, leveigs,                         &
+        ei, deidxk, d2eidxk2,                                            &
+        mxdbnd, mxdlev, mxddeg)
+
+
+
+    write(6,*)
+    write(6,*) '  Do you want another direction? (y/n)'
+    write(6,*)
+
+    read(5,*) yesno_dir
+    write(ioreplay,*) yesno_dir,'      New direction'
+
+
+    if(yesno_dir /= 'y' .and. yesno_dir /= 'Y') exit
+
+  enddo
+
+  deallocate(vscr)
+
+  deallocate(ei)
+  deallocate(hdiag)
+  deallocate(isort)
+  deallocate(qmod)
+  deallocate(ekpg)
+  deallocate(psi)
+  deallocate(hpsi)
+  deallocate(ekpsi)
+
+  deallocate(dhdkpsi)
+  deallocate(dpsidk)
+  deallocate(psidhdkpsi)
+  deallocate(bcurv)
+  deallocate(tmag)
+  deallocate(tmass)
+  deallocate(qmetric)
+
+  deallocate(levdeg)
+  deallocate(leveigs)
+
+  deallocate(deidxk)
+  deallocate(d2eidxk2)
 
   return
 

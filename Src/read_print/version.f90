@@ -14,7 +14,7 @@
 !>  hardcoded library version
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.02
+!>  \version      5.09
 !>  \date         13 September 2021.
 !>  \copyright    GNU Public License v2
 
@@ -31,7 +31,7 @@ subroutine version(cpwversion, ldevel)
    character(len=4), intent(out)      ::  cpwversion                 !<  hardcoded library version
    logical, intent(out)               ::  ldevel                     !<  development branch, minor version may be incompatible
 
-   cpwversion = '5.07'
+   cpwversion = '5.09'
    ldevel = .TRUE.
 
    return
