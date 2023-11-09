@@ -20,8 +20,8 @@
 !>  It is a driver subroutine for each task.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.04
-!>  \date         December 18, 2013, 22 January 2022.
+!>  \version      5.08
+!>  \date         December 18, 2013, 8 November 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -37,7 +37,8 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Modified efermi, 29 November 2021.  JLM
 ! Modified, lproj, lso in input of out_dos, 7 December 2021. JLM
 ! Broken-up in children subroutines. 20 January 2022. JLM
-! Added out_effective_mass. 22 January 2022. JLM
+! Added out_effective_mass in 22 January 2022. JLM
+! Replaced out_effective_mass with cpw_pp_mass. 8 November 2023. JLM
 
   use cpw_variables
 
@@ -328,8 +329,9 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
     write(6,*) '      functions, oscillator strengths).'
     write(6,*) '  4:  Prepare file for dielectric function calculation.'
     write(6,*) '  5:  Calculate effective band masses'
+    write(6,*) '  6:  Calculate topological quantities'
     write(6,*)
-    write(6,*) '  6:  Reset dual approximation flag.'
+    write(6,*) '  7:  Reset dual approximation flag.'
     write(6,*)
     write(6,*) '  What task do you want to perform?'
 
@@ -404,23 +406,19 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
     elseif(itask == 5) then
 
 
-      call out_effective_mass(ioreplay,                                  &
-          pwexp_%emax, flags_%flgdal, flags_%flgpsd,                     &
-          iguess, epspsi, icmax, pseudo_%ztot,                           &
-          crys_%adot, crys_%ntype, crys_%natom, crys_%rat,               &
-          recip_%ng, recip_%kgv, recip_%phase, recip_%conj,              &
-          recip_%ns, recip_%inds, recip_%kmax,                           &
-          recip_%indv, recip_%ek,                                        &
-          strfac_%sfact, strfac_%icmplx,                                 &
-          vcomp_%veff,                                                   &
-          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
-          atorb_%wvfao,atorb_%lorb,                                      &
-          dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
-          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+      call cpw_pp_mass(ioreplay,                                         &
+           dims_, flags_, crys_, recip_, pseudo_, atorb_,                &
+           pwexp_, strfac_,  vcomp_,                                     &
+           epspsi, icmax)
 
 
-     elseif(itask == 6) then
+    elseif(itask == 6) then
+
+      write(6,*)
+      write(6,*) '  Not yet implemented'
+      write(6,*)
+
+    elseif(itask == 7) then
 
       if(flags_%flgdal == 'DUAL') then
 
@@ -490,5 +488,6 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
 
   return
+
 end subroutine cpw_pp_band_dos_opt
 

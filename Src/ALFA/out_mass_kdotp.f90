@@ -13,13 +13,14 @@
 
 !>  Calculates the effective mass for a given k-vector
 !>  and direction (effective mass tensor for non-degenerate levels)
+!>  using a k.p method.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         18 january 2022. 1 April 2023.
+!>  \version      5.08
+!>  \date         18 january 2022. 8 November 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine out_effective_mass(ioreplay,                                  &
+subroutine out_mass_kdotp(ioreplay,                                      &
     emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                   &
     adot, ntype, natom, rat,                                             &
     ng, kgv, phase, conj,                                                &
@@ -34,6 +35,7 @@ subroutine out_effective_mass(ioreplay,                                  &
 
 ! Adapted from out_band_onek plus old "Silvaco" subroutines. 18 january 2022. JLM
 ! Better user interface, 1 April 2023. JLM
+! calls out_mass_kdotp_xk instead of local code.  8 November 2023. JLM
 
   implicit none
 
@@ -49,7 +51,7 @@ subroutine out_effective_mass(ioreplay,                                  &
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
-  integer, intent(in)                :: ioreplay                         !<  tape number for reproducing calculations
+  integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4), intent(in)       ::  flgdal                          !<  dual approximation if equal to 'DUAL'
@@ -120,10 +122,6 @@ subroutine out_effective_mass(ioreplay,                                  &
   complex(REAL64), allocatable       ::  dhso0drk(:,:,:)                 !  d <Psi|H|Psi> d k
   complex(REAL64), allocatable       ::  d2hso0drk2(:,:,:,:)             !  d^2 <Psi|H|Psi> d k^2
 
-  real(REAL64), allocatable          ::  ei_p(:), ei_m(:)                !  eigenvalue no. i. (hartree)
-
-  real(REAL64), allocatable          ::  ei_so_p(:), ei_so_m(:)          !  eigenvalue no. i. (hartree)
-
   REAL(REAL64), allocatable          ::  xmass(:,:), xgrad(:)            !  effective mass and energy gradient
 
 ! local variables
@@ -145,32 +143,22 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   real(REAL64)      ::  vmax, vmin                                       !  maximum and minimum values of vscr
 
-  integer           ::  irk,nrka
+  integer           ::  nrka
   character(len=5)  ::  labelk
   integer           ::  ipr
   integer           ::  nsfft(3)
-  real(REAL64)      ::  rkin(3), rkcar(3)
+  real(REAL64)      ::  rkcar(3)
 
   real(REAL64)      ::  rk0(3)
+  character(len=20) ::  typeofk
 
-  real(REAL64)      ::  delrk(3), rk_p(3), rk_m(3)
+  real(REAL64)      ::  xk(3)
   real(REAL64)      ::  xrk, delta
 
   character(len=1)  ::  yesno, yesno_dir
   integer           ::  nocc
 
-  integer           ::  icoor               !  coordinate system
-
-  real(REAL64)      ::  avec(3,3)           !  primitive lattice vectors
-  real(REAL64)      ::  bvec(3,3)           !  reciprocal primitive lattice vectors
-  real(REAL64)      ::  aconv(3,3)          !  conventional lattice vectors of the Niggli cell
-  real(REAL64)      ::  avecnig(3,3)        !  primitive lattice vectors of the Niggli cell
   real(REAL64)      ::  bdot(3,3), vcell
-
-  real(REAL64)      ::  adotconv(3,3)
-  real(REAL64)      ::  bvecconv(3,3), tmp(3,3)
-
-  integer           ::  jmax
 
   integer           ::  kdotpsize(10)                   !  suggested sizes for kdotp problem
   integer           ::  nk                              !  number of suggested values.
@@ -182,10 +170,7 @@ subroutine out_effective_mass(ioreplay,                                  &
 
 ! constants
 
-  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
-  complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
-  real(REAL64), parameter     ::  PI = 3.14159265358979323846_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
   real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
   real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
 
@@ -231,138 +216,13 @@ subroutine out_effective_mass(ioreplay,                                  &
   write(6,*) '  The reference calculation will include ',neig,' bands'
   write(6,*)
 
-! gets the k-point, but first generates coordinate system
+! gets the k-point
 
-  call adot_to_avec_aconv(adot,avec,bvec,aconv,avecnig)
   call adot_to_bdot(adot,vcell,bdot)
 
-  write(6,*)
-  write(6,*) '   Which coordinate system do you want to use?'
-  write(6,*) '   1) Primitive lattice coordinates.'
-  write(6,*) '   2) Cartesian coordinates.'
-  write(6,*) '   3) Conventional lattice coordinates.'
-  write(6,*)
-  write(6,*) '   Enter your choice (1-3).'
-  write(6,*)
+  typeofk = 'reference k-point'
 
-  read(5,*) icoor
-  write(ioreplay,'(2x,i8,"   coordinate choice")') icoor
-
-  if(icoor <1 .or. icoor > 3) then
-    write(6,*) '   Wrong choice, using primitive lattice'
-    icoor = 1
-  endif
-
-! prints information about the coordinate system
-
-  if(icoor == 1) then
-
-    write(6,*)
-    write(6,*) '   using PRIMITIVE LATTICE COORDINATES '
-    write(6,*)
-    write(6,*) '   The primitive lattice vectors are: '
-    write(6,*)
-    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",f8.4,")")')   &
-        avec(1,1),avec(1,2),avec(1,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
-        avec(2,1),avec(2,2),avec(2,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
-        avec(3,1),avec(3,2),avec(3,3)
-     write(6,*)
-
-  else
-
-    if(icoor == 2) then
-
-      write(6,*)
-      write(6,*) '   using CARTESIAN COORDINATES (atomic units)'
-      write(6,*)
-
-    else
-
-      write(6,*)
-      write(6,*) '   using CONVENTIONAL LATTICE COORDINATES '
-      write(6,*)
-
-    endif
-
-    write(6,*) '   The conventional lattice vectors are: '
-    write(6,*)
-    write(6,'("  a1 = (",f8.4,")   a2 = (",f8.4,")   a3 = (",f8.4,")")')   &
-         aconv(1,1),aconv(1,2),aconv(1,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
-         aconv(2,1),aconv(2,2),aconv(2,3)
-     write(6,'("       (",f8.4,")        (",f8.4,")        (",f8.4,")")')  &
-         aconv(3,1),aconv(3,2),aconv(3,3)
-     write(6,*)
-
-  endif
-
-  write(6,*)
-  write(6,*) ' enter k-point '
-  write(6,*)
-
-  read(5,*) rkin(1),rkin(2),rkin(3)
-  write(ioreplay,'(5x,3f20.10,5x,"k-point")') rkin(1),rkin(2),rkin(3)
-
-! transforms to primitive coordinates
-
-  if(icoor == 1) then
-
-    do j = 1,3
-      rk0(j) = rkin(j)
-    enddo
-
-    do j = 1,3
-      rkcar(j) = ZERO
-      do k = 1,3
-        rkcar(j) = rkcar(j) + bvec(j,k)*rkin(k)
-      enddo
-    enddo
-
-  elseif(icoor == 2) then
-
-    do j = 1,3
-      rk0(j) = ZERO
-      do k = 1,3
-        rk0(j) = rk0(j) + rkin(k)*avec(k,j)
-      enddo
-      rk0(j) = rk0(j) / (2*PI)
-    enddo
-
-    do j = 1,3
-      rkcar(j) = rkin(j)
-    enddo
-
-  elseif(icoor == 3) then
-
-    do j = 1,3
-    do k = 1,3
-      adotconv(k,j) = ZERO
-      do m = 1,3
-        adotconv(k,j) = adotconv(k,j) + aconv(m,j)*aconv(m,k)
-      enddo
-    enddo
-    enddo
-
-    call adot_to_avec(adotconv,tmp,bvecconv)
-
-    do j = 1,3
-      rkcar(j) = ZERO
-      do k = 1,3
-        rkcar(j) = rkcar(j) + bvecconv(j,k)*rkin(k)
-      enddo
-    enddo
-
-    do j = 1,3
-      rk0(j) = ZERO
-      do k = 1,3
-        rk0(j) = rk0(j) + rkcar(k)*avec(k,j)
-      enddo
-      rk0(j) = rk0(j) / (2*PI)
-    enddo
-
-  endif
+  call cpw_pp_get_k_vector(rk0, rkcar, adot, typeofk, ioreplay)
 
   write(6,*)
   write(6,*) '  coordinates of the chosen k-point:'
@@ -464,14 +324,13 @@ subroutine out_effective_mass(ioreplay,                                  &
 
     nrka = -1
     call print_eig(ipr, 1, labelk, nrka, rk0,                            &
-        mtxd, icmplx, neig, psi,                                         &
+        mtxd, icmplx, nmodel+1, psi,                                     &
         adot, ei, ekpsi, isort, kgv,                                     &
         mxddim, mxdbnd, mxdgve)
 
     allocate(h0(mxdbnd,mxdbnd))
     allocate(dh0drk(mxdbnd,mxdbnd,3))
     allocate(d2h0drk2(mxdbnd,mxdbnd,3,3))
-    allocate(ei_p(mxdbnd),ei_m(mxdbnd))
 
     allocate(xmass(mxdbnd,3),xgrad(mxdbnd))
 
@@ -513,7 +372,6 @@ subroutine out_effective_mass(ioreplay,                                  &
     allocate(hso0(2*mxdbnd,2*mxdbnd))
     allocate(dhso0drk(2*mxdbnd,2*mxdbnd,3))
     allocate(d2hso0drk2(2*mxdbnd,2*mxdbnd,3,3))
-    allocate(ei_so_p(2*mxdbnd),ei_so_m(2*mxdbnd))
 
     allocate(xmass(2*mxdbnd,3),xgrad(2*mxdbnd))
 
@@ -536,71 +394,32 @@ subroutine out_effective_mass(ioreplay,                                  &
 
   do i = 1,1000
 
-    write(6,*)
-    write(6,*) ' enter k-direction '
-    write(6,*)
+    typeofk = 'direction in k-space'
 
-    read(5,*) rkin(1),rkin(2),rkin(3)
-    write(ioreplay,'(5x,3f20.10,5x,"k-direction")') rkin(1),rkin(2),rkin(3)
+    call cpw_pp_get_k_vector(xk, rkcar, adot, typeofk, ioreplay)
 
     write(6,*)
-    write(6,'("  The chosen direction is: ",3f12.4)') rkin(1),rkin(2),rkin(3)
+    write(6,*) '  coordinates of the chosen k-direction:'
+    write(6,*) '      lattice coord.                  cartesian coord.'
+    write(6,*)
+    write(6,'(4x,3f9.4,5x,3f9.4)') (xk(j),j=1,3), (rkcar(j),j=1,3)
     write(6,*)
 
-!   transforms to primitive coordinates
-
-    if(icoor == 1) then
-
-      do j = 1,3
-        delrk(j) = rkin(j)
-      enddo
-
-    elseif(icoor == 2) then
-
-      do j = 1,3
-        delrk(j) = ZERO
-        do k = 1,3
-          delrk(j) = delrk(j) + rkin(k)*avec(k,j)
-        enddo
-      enddo
-
-    elseif(icoor == 3) then
-
-      do j = 1,3
-        rkcar(j) = ZERO
-        do k = 1,3
-          rkcar(j) = rkcar(j) + bvecconv(j,k)*rkin(k)
-        enddo
-      enddo
-
-      do j = 1,3
-        delrk(j) = ZERO
-        do k = 1,3
-          delrk(j) = delrk(j) + rkcar(k)*avec(k,j)
-        enddo
-      enddo
-
-    endif
-
-!   renormalizes delrk
+!   renormalizes xk
 
     xrk = ZERO
     do j = 1,3
     do k = 1,3
-      xrk = xrk + delrk(k)*bdot(k,j)*delrk(j)
+      xrk = xrk + xk(k)*bdot(k,j)*xk(j)
     enddo
     enddo
     if(xrk < EPS) THEN
       write(6,*)
       write(6,*) '  vector zero not allowed, using (1,0,0)'
       write(6,*)
-      delrk(1) = UM
-      delrk(2) = ZERO
-      delrk(3) = ZERO
-    else
-      do j = 1,3
-        delrk(j) = delrk(j) / sqrt(xrk)
-      enddo
+      xk(1) = UM
+      xk(2) = ZERO
+      xk(3) = ZERO
     endif
 
     delta = UM/10
@@ -609,41 +428,26 @@ subroutine out_effective_mass(ioreplay,                                  &
 
       delta = delta / 10
 
-      do j = 1,3
-        rk_p(j) = rk0(j) + delta*delrk(j)
-        rk_m(j) = rk0(j) - delta*delrk(j)
-      enddo
-
       if(yesno /= 'y' .and. yesno /= 'Y') then
 
-        call kdotp_diag_nopsi(rk_p, nmodel, ei_p,                        &
-        rk0, h0, dh0drk, d2h0drk2,                                       &
-        mxdbnd)
-
-        call kdotp_diag_nopsi(rk_m, nmodel, ei_m,                        &
-        rk0, h0, dh0drk, d2h0drk2,                                       &
-        mxdbnd)
+        call out_mass_kdotp_xk(rk0, xk, nmodel, 3, delta,                &
+             xgrad, xmass(:,m),                                          &
+             adot, h0, dh0drk, d2h0drk2,                                 &
+             mxdbnd)
 
         do j = 1,nmodel
-          xmass(j,m) = (ei_p(j)+ei_m(j)-2*ei(j)) / (delta*delta)
           xmass(j,m) = UM / xmass(j,m)
-          xgrad(j) = (ei_p(j)-ei_m(j)) / (2*delta)
         enddo
 
       else
 
-        call kdotp_diag_nopsi(rk_p, 2*nmodel, ei_so_p,                   &
-        rk0, hso0, dhso0drk, d2hso0drk2,                                 &
-        2*mxdbnd)
+        call out_mass_kdotp_xk(rk0, xk, 2*nmodel, 3, delta,              &
+             xgrad, xmass(:,m),                                          &
+             adot, hso0, dhso0drk, d2hso0drk2,                           &
+             2*mxdbnd)
 
-        call kdotp_diag_nopsi(rk_m, 2*nmodel, ei_so_m,                   &
-        rk0, hso0, dhso0drk, d2hso0drk2,                                 &
-        2*mxdbnd)
-
-        do j=1,2*nmodel
-          xmass(j,m) = (ei_so_p(j)+ei_so_m(j)-2*ei_so(j)) / (delta*delta)
+        do j = 1,2*nmodel
           xmass(j,m) = UM / xmass(j,m)
-          xgrad(j) = (ei_so_p(j)-ei_so_m(j)) / (2*delta)
         enddo
 
       endif
@@ -695,14 +499,12 @@ subroutine out_effective_mass(ioreplay,                                  &
     deallocate(h0)
     deallocate(dh0drk)
     deallocate(d2h0drk2)
-    deallocate(ei_p,ei_m)
 
   else
 
     deallocate(hso0)
     deallocate(dhso0drk)
     deallocate(d2hso0drk2)
-
 
     deallocate(ei_so)
     deallocate(psi_so)
@@ -718,9 +520,11 @@ subroutine out_effective_mass(ioreplay,                                  &
   deallocate(qmod)
   deallocate(ekpg)
   deallocate(psi)
+  deallocate(hpsi)
   deallocate(ekpsi)
 
   deallocate(xmass,xgrad)
 
   return
-end subroutine out_effective_mass
+
+end subroutine out_mass_kdotp
