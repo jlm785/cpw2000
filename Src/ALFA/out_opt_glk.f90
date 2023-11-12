@@ -14,28 +14,31 @@
 !>  Calculates the bands on an uniform grid
 !>  and the oscillator strengths for later processing.
 !>  Uses the generalized Luttinger-Kohn method
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.09
+!>  \date         8 may 2004, 11 November 2023.
+!>  \copyright    GNU Public License v2
 
-  subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                &
-  title, subtitle,                                                       &
-  emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                     &
-  adot, ntype, natom, rat, ntrans, mtrx,                                 &
-  ng, kgv, phase, conj,                                                  &
-  ns, inds, kmax, indv, ek,                                              &
-  sfact, icmplx,                                                         &
-  veff,                                                                  &
-  nqnl, delqnl, vkb, nkb,                                                &
-  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &     
-  mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
+      title, subtitle,                                                   &
+      emax, flgdal, flgpsd, epspsi, icmax, ztot,                         &
+      adot, ntype, natom, rat, ntrans, mtrx,                             &
+      ng, kgv, phase, conj,                                              &
+      ns, inds, kmax, indv, ek,                                          &
+      sfact, icmplx,                                                     &
+      veff,                                                              &
+      nqnl, delqnl, vkb, nkb,                                            &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 ! Adapted from out_dos
 ! Written from previous code Carlos Loia Reis
 ! Modified, latorb, 7 June 2020, ioreplay, icmax, 14 June 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified allk, workers, 7 December 2020. JLM
+! Modified, iguess, new name out_glk_prepare out_glk_interpolation, 12 November 2023. JLM
 
-! copyright  Carlos Loia Reis/Jose Luis Martins/INESC-MN
-
-! version 4.99
 
   implicit none
 
@@ -65,7 +68,6 @@
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4)                   ::  flgdal                          !<  dual approximation if equal to 'DUAL'
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
-  integer, intent(in)                ::  iguess                          !<  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
   integer, intent(in)                ::  icmax                           !<  maximum number of iterations for diagonalization
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
@@ -111,7 +113,7 @@
   integer, allocatable               ::  kmap(:,:,:,:)                   !  kmap(1,...) corresponding k-point, kmap(2,...) = 1 additional inversion, kmap(3,...) symmetry operation
   integer, allocatable               ::  nband(:)                        !  number of bands for each k-points
   integer, allocatable               ::  indk(:,:)                       !  index of the six k-points neighbouring k-point i
-  real(REAL64),allocatable           ::  rk(:,:)                         !  component in lattice coordinates of the k-point in the mesh 
+  real(REAL64),allocatable           ::  rk(:,:)                         !  component in lattice coordinates of the k-point in the mesh
   real(REAL64),allocatable           ::  wgk(:)                         !  weight in the integration of k-point
 
 ! allocatable arrays with larger scope
@@ -122,7 +124,7 @@
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
-  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
@@ -132,7 +134,7 @@
 
   real(REAL64), allocatable          ::  rk_ref(:,:)
 
-! oscillator strength stuff 
+! oscillator strength stuff
 
   complex(REAL64), allocatable       ::  h0(:,:)                         !  <Psi|H|Psi> without spin-orbit
   complex(REAL64), allocatable       ::  dh0drk(:,:,:)                   !  d <Psi|H|Psi> d k
@@ -182,10 +184,10 @@
   character(len=10)                  ::  filewvstem
 
   character(len=12)                  ::  filemesh
-  character(len=13)                  ::  filedhdrk 
-  character(len=16)                  ::  filedhdrkso 
+  character(len=13)                  ::  filedhdrk
+  character(len=16)                  ::  filedhdrkso
   character(len=12)                  ::  fileband
-  character(len=12)                  ::  filedos 
+  character(len=12)                  ::  filedos
 
   logical                            ::  lex
   logical                            ::  lmyjob
@@ -193,18 +195,18 @@
   integer                            ::  io60, io66, io67, io68          !  tape numbers
   integer                            ::  io11, iodos                     !  tape numbers
 
-! workers and restart  
-  
+! workers and restart
+
   integer                            ::  irk_rd
   integer                            ::  irec_err
   integer                            ::  ir_size
   integer                            ::  iworker, nworker, cworker
   integer                            ::  pp_flag
-  
+
   integer                            ::  nder
 
-  logical                            ::  lpsiso                          !   If true calculates the spin-orbit perturbed wave-functions 
-  
+  logical                            ::  lpsiso                          !   If true calculates the spin-orbit perturbed wave-functions
+
   integer                            ::  ic1,ic2,ic3
   integer                            ::  nc(3)
   integer, allocatable               ::  irk_from_ic(:,:,:)
@@ -216,8 +218,8 @@
   real(REAL64)                       ::  zk(4)
   real(REAL64)                       ::  y(3)
   integer                            ::  iq(4,3)
-  
-  integer                            ::  ix1, iy1, iz1 
+
+  integer                            ::  ix1, iy1, iz1
   integer                            ::  ix2, iy2, iz2
   integer                            ::  ix3, iy3, iz3
   integer                            ::  ix4, iy4, iz4
@@ -232,10 +234,10 @@
   integer                            ::  neig_all(4)
 
   integer                            ::  identif                         !  identifier
- 
+
   real(REAL64)                       ::  t0, t1, t2                      !  timings
-  
-! constants       
+
+! constants
 
   real(REAL64), parameter            ::  ZERO = 0.0_REAL64
   real(REAL64), parameter            ::  UM = 1.0_REAL64
@@ -307,9 +309,9 @@
       nc(3) = 2
     endif
 
-    close(unit=io11)       
+    close(unit=io11)
     mxdbnd = nbandi
-  else       
+  else
     mxdbnd = nint(ztot) + 4
     nbandi = mxdbnd
     nx = 8
@@ -335,7 +337,7 @@
   allocate(indk(6,mxdnrk))
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
-  
+
 
   call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
   adot,                                                                  &
@@ -385,7 +387,7 @@
     rkpt(1) = ic1*UM/(nc(1)*UM)
     rkpt(2) = ic2*UM/(nc(2)*UM)
     rkpt(3) = ic3*UM/(nc(3)*UM)
-    call size_mtxd(emax,rkpt,adot,ng,kgv,nd)         
+    call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
     if(nd > mxddim) mxddim = nd
   enddo
   enddo
@@ -407,23 +409,23 @@
   allocate(psi_so(2*mxddim,2*mxdbnd))
 
   nrk3 = (nc(1)+1)*(nc(2)+1)*(nc(3)+1)
-  
+
   allocate(irk_from_ic(0:nc(1),0:nc(2),0:nc(3)))
   allocate(ic_from_irk(3,nrk3))
 
   allocate(h0(mxdbnd,mxdbnd))
   allocate(dh0drk(mxdbnd,mxdbnd,3))
-  
+
   allocate(hso0(2*mxdbnd,2*mxdbnd))
   allocate(dhso0drk(2*mxdbnd,2*mxdbnd,3))
-  
+
   allocate(isort_all(mxddim,4))
   allocate(psi_all(mxddim,mxdbnd,4))
 
   allocate(dhdrk_32(neig,neig,3))
   allocate(dhsodrk_32(2*neig,2*neig,3))
 
-  inquire(iolength = ir_size) irk, mtxd, rkpt, psi(:,:), isort(:)  
+  inquire(iolength = ir_size) irk, mtxd, rkpt, psi(:,:), isort(:)
 
   if(lworkers) then
 
@@ -478,7 +480,7 @@
 
 ! 1.0 Preparatory calculation.
 
-           
+
   allocate(rk_ref(3,nrk3))
 
   irk = 1
@@ -494,7 +496,7 @@
     ic_from_irk(1,irk) = ic1
     ic_from_irk(2,irk) = ic2
     ic_from_irk(3,irk) = ic3
-    irk=irk+1  
+    irk=irk+1
 
   enddo
   enddo
@@ -502,20 +504,20 @@
 
 
 
-  call interp_glk_prep(diag_type, io60,                                  &
-    nrk3, rk_ref,                                                        &
-    emax, neig, flgpsd,                                                  &
-    epspsi, icmax,                                                       &
-    adot, ntype, natom, rat,                                             &
-    ng, kgv, phase, conj,                                                &
-    ns, inds, kmax, indv, ek,                                            &
-    sfact, icmplx,                                                       &
-    veff,                                                                &
-    nqnl, delqnl, vkb, nkb,                                              &
-    vscr, kmscr,                                                         &
-    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,              &
-    mxdbnd, mxdscr, mxdlao)
+  call out_glk_prepare(diag_type, io60,                                  &
+      nrk3, rk_ref,                                                      &
+      emax, neig, flgpsd,                                                &
+      epspsi, icmax,                                                     &
+      adot, ntype, natom, rat,                                           &
+      ng, kgv, phase, conj,                                              &
+      ns, inds, kmax, indv, ek,                                          &
+      sfact, icmplx,                                                     &
+      veff,                                                              &
+      nqnl, delqnl, vkb, nkb,                                            &
+      vscr, kmscr,                                                       &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
+      mxdbnd, mxdscr, mxdlao)
 
 
 
@@ -571,25 +573,25 @@
       iy2 = m2 + iq(2,2)
       iz2 = m3 + iq(2,3)
 
-      ix3 = m1 + iq(3,1)  
+      ix3 = m1 + iq(3,1)
       iy3 = m2 + iq(3,2)
       iz3 = m3 + iq(3,3)
 
-      ix4 = m1 + iq(4,1) 
+      ix4 = m1 + iq(4,1)
       iy4 = m2 + iq(4,2)
       iz4 = m3 + iq(4,3)
 
       read(io60,rec=irk_from_ic(ix1,iy1,iz1))  irk_rd, mtxd_all(1),      &
       rkpt_all(:,1), psi_all(:,:,1), isort_all(:,1)
-       
+
       read(io60,rec=irk_from_ic(ix2,iy2,iz2))  irk_rd, mtxd_all(2),      &
       rkpt_all(:,2), psi_all(:,:,2), isort_all(:,2)
-       
+
       read(io60,rec=irk_from_ic(ix3,iy3,iz3))  irk_rd, mtxd_all(3),      &
       rkpt_all(:,3), psi_all(:,:,3), isort_all(:,3)
-       
+
       read(io60,rec=irk_from_ic(ix4,iy4,iz4))  irk_rd, mtxd_all(4),      &
-      rkpt_all(:,4), psi_all(:,:,4), isort_all(:,4)          
+      rkpt_all(:,4), psi_all(:,:,4), isort_all(:,4)
 
 !     paranoid check
 
@@ -606,70 +608,70 @@
       enddo
 
 
-      call interpolation_glk(4, emax, neig, xsvd, csvd,                  &
-        ZK, rkpt_all, mtxd_all, neig_all,                                &
-        isort_all, psi_all,                                              &
-        ei, psi, hpsi, mtxd, isort, qmod, ekpg,                          &
-        ng, kgv,                                                         &
-        ntype, natom, rat, adot,                                         &
-        nqnl, delqnl, vkb, nkb,                                          &
-        vscr, kmscr,                                                     &
-        mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
+      call out_glk_interpolation(4, emax, neig, xsvd, csvd,              &
+          ZK, rkpt_all, mtxd_all, neig_all,                              &
+          isort_all, psi_all,                                            &
+          ei, psi, hpsi, mtxd, isort, qmod, ekpg,                        &
+          ng, kgv,                                                       &
+          ntype, natom, rat, adot,                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          vscr, kmscr,                                                   &
+          mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
 
       ipr = 1
       nrka = -1
       call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
-      mtxd, icmplx, neig, psi,                                           &
-      adot, ei, ekpsi, isort, kgv,                                       &
-      mxddim, mxdbnd, mxdgve)
+          mtxd, icmplx, neig, psi,                                       &
+          adot, ei, ekpsi, isort, kgv,                                   &
+          mxddim, mxdbnd, mxdgve)
 
 
       allocate(d2h0drk2(1,1,1,1))
       nder = 1
 
       call kdotp_matrix(mtxd, neig, psi, ei,                             &
-      rkpt, isort, nder,                                                 &
-      h0, dh0drk, d2h0drk2,                                              &
-      ng, kgv,                                                           &
-      ntype, natom, rat, adot,                                           &
-      nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          rkpt, isort, nder,                                             &
+          h0, dh0drk, d2h0drk2,                                          &
+          ng, kgv,                                                       &
+          ntype, natom, rat, adot,                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
       deallocate(d2h0drk2)
-       
-  
+
+
       call spin_orbit_perturb(rkpt, mtxd, isort,                         &
-      neig, psi, ei, ei_so, psi_so, lpsiso,                              &
-      ng, kgv,                                                           &
-      nqnl, delqnl, vkb, nkb,                                            &
-      ntype, natom, rat, adot,                                           &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
-  
+          neig, psi, ei, ei_so, psi_so, lpsiso,                          &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
       if(ipr == 2) then
-        call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,           &
-        mxddim,mxdbnd)
+        call kinetic_energy_so(neig, mtxd, ekpg, psi_so, ekpsi_so,       &
+            mxddim, mxdbnd)
       endif
-       
+
       call print_eig_so(ipr, irk, labelk, nrka, rkpt,                    &
-      mtxd, neig, psi_so,                                                &
-      adot, ei_so, ekpsi_so, isort, kgv,                                 &
-      mxddim, mxdbnd, mxdgve)
+          mtxd, neig, psi_so,                                            &
+          adot, ei_so, ekpsi_so, isort, kgv,                             &
+          mxddim, mxdbnd, mxdgve)
 
 
       nder = 1
       allocate(d2hso0drk2(1,1,1,1))
 
       call kdotp_matrix_so_pert(mtxd, neig, psi, ei,                     &
-      rkpt, isort, nder,                                                 &
-      hso0, dhso0drk, d2hso0drk2,                                        &
-      ng, kgv,                                                           &
-      ntype, natom, rat, adot,                                           &
-      nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          rkpt, isort, nder,                                             &
+          hso0, dhso0drk, d2hso0drk2,                                    &
+          ng, kgv,                                                       &
+          ntype, natom, rat, adot,                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
       call kdotp_matrix_so_convert(neig, hso0, dhso0drk, d2hso0drk2,     &
-      nder,                                                              &
-      mxdbnd)
+          nder,                                                          &
+          mxdbnd)
 
       deallocate(d2hso0drk2)
 
@@ -737,12 +739,12 @@
 
   deallocate(h0)
   deallocate(dh0drk)
-  
+
   deallocate(hso0)
   deallocate(dhso0drk)
 
   deallocate(irk_from_ic)
-  deallocate(isort_all)      
+  deallocate(isort_all)
   deallocate(psi_all)
 
   deallocate(dhdrk_32)
@@ -787,16 +789,16 @@
   else
     write(6,*) "this worker is done. run again when all workers are done to see results."
   endif
-  
+
   close(io66)
   close(io67)
   close(io68)
- 
+
 ! if run by a human clean up temporary files
 
   if(.not. lworkers) then
     call execute_command_line("rm " // fileband // " 2> /dev/null ")
- endif
+  endif
 
   deallocate(kmap)
   deallocate(nband)
@@ -805,4 +807,5 @@
   deallocate(wgk)
 
   return
-  end subroutine out_opt_glk
+
+end subroutine out_opt_glk

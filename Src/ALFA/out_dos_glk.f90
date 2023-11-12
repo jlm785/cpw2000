@@ -12,21 +12,26 @@
 !------------------------------------------------------------!
 
 !>  Calculates the bands on an uniform grid
-!>  for later processing using the GLK interpolation
+!>  for later processing.   Uses the GLK interpolation
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.09
+!>  \date         8 may 2004, 11 November 2023.
+!>  \copyright    GNU Public License v2
 
-  subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                &
-  title, subtitle,                                                       &
-  emax, flgdal, flgpsd,                                                  &
-  epspsi, icmax, ztot,                                                   &
-  adot, ntype, natom, rat, ntrans, mtrx,                                 &
-  ng, kgv, phase, conj,                                                  &
-  ns, inds, kmax, indv, ek,                                              &
-  sfact, icmplx,                                                         &
-  veff,                                                                  &
-  nqnl, delqnl, vkb, nkb,                                                &
-  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
-  mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
-     
+subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
+      title, subtitle,                                                   &
+      emax, flgdal, flgpsd,                                              &
+      epspsi, icmax, ztot,                                               &
+      adot, ntype, natom, rat, ntrans, mtrx,                             &
+      ng, kgv, phase, conj,                                              &
+      ns, inds, kmax, indv, ek,                                          &
+      sfact, icmplx,                                                     &
+      veff,                                                              &
+      nqnl, delqnl, vkb, nkb,                                            &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+
 
 ! version 4.42. 8 may 2004. jlm
 ! modified 11 february 2008 (read from file). JLM
@@ -38,13 +43,10 @@
 ! modified, diag_type, icmax, 8-14 June 2020. JLM
 ! modified, nc(3), cube2tetra, x/csvd, 15 September 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
-
-! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
+! Modified, new name out_glk_prepare out_glk_interp, 12 November 2023. JLM
 
 
 ! The reference states are calculated in an inefficient way....
-
-! version 4.99
 
   implicit none
 
@@ -126,7 +128,7 @@
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
-  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
@@ -145,9 +147,9 @@
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
-  
-  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions 
-  
+
+  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions
+
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
   integer                            ::  mxdwrk                          !  array dimension for fft transform workspace
@@ -179,8 +181,8 @@
   character(len=15)                  ::  file_eig
   character(len=12)                  ::  filedos
 
-! workers and restart  
-  
+! workers and restart
+
   integer                            ::  nc(3)                           !  size of reference mesh
 
   integer                            ::  irec_err
@@ -201,18 +203,18 @@
   real(REAL64)                       ::  zk(4)
   real(REAL64)                       ::  y(3)
   integer                            ::  iq(4,3)
-  
-  integer                            ::  ix1, iy1, iz1 
+
+  integer                            ::  ix1, iy1, iz1
   integer                            ::  ix2, iy2, iz2
   integer                            ::  ix3, iy3, iz3
   integer                            ::  ix4, iy4, iz4
-  
+
   real(REAL64)                       ::  rkpt_all(3,4)
   real(REAL64)                       ::  rki
 
   integer                            ::  mtxd_all(4)                     !  mtxd for the 4 reference points
-  integer                            ::  neig_all(4)                     !  neig for the 4 reference points      
-  
+  integer                            ::  neig_all(4)                     !  neig for the 4 reference points
+
   logical                            ::  lex
 
   real(REAL64)                       ::  t0, t1 , t2                     !  timings
@@ -237,7 +239,7 @@
   file_wf = 'wf_dos_rec.dat'
   file_eig = 'eig_dos_rec.dat'
   filedos = 'dos_file.dat'
-  
+
 ! calculates local potential in fft mesh
 
 
@@ -252,16 +254,16 @@
   endif
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
-  
+
   allocate(vscr(mxdscr))
-  
+
   ipr = 1
   idshift = 0
-  
+
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
-  
+
   ipr = 2
 
   lfile = .false.
@@ -280,10 +282,10 @@
       nc(2) = 2
       nc(3) = 2
     endif
-             
-    close(unit=io11)       
+
+    close(unit=io11)
     mxdbnd = nbandi
-  else       
+  else
     mxdbnd = nint(ztot) + 4
     nbandi = mxdbnd
     nx = 8
@@ -296,11 +298,11 @@
     nc(2) = 2
     nc(3) = 2
   endif
-  
+
   write(6,*)
   write(6,*) "  nc subdivision is", nc(1),nc(2),nc(3)
   write(6,*)
-  
+
   call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
   mxdnrk)
 
@@ -309,7 +311,7 @@
   allocate(indk(6,mxdnrk))
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
-  
+
   call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
   adot,                                                                  &
   ntrans, mtrx,                                                          &
@@ -317,15 +319,15 @@
   mxdnrk, mxdbnd)
 
   neig = nbandi
-  
+
 ! finds mxddim
 
   if(lworkers) then
-    write(6,*) "Using Workers and Restart Capablities"       
+    write(6,*) "Using Workers and Restart Capablities"
 
     write(6,*) 'how many workers ?'
     read(5,*) nworker
-  
+
     write(6,*) 'current worker ?'
     read(5,*) iworker
   else
@@ -340,7 +342,7 @@
       rkpt(1) = rk(1,irk)
       rkpt(2) = rk(2,irk)
       rkpt(3) = rk(3,irk)
-      call size_mtxd(emax,rkpt,adot,ng,kgv,nd)         
+      call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
       if(nd > mxddim) mxddim = nd
     endif
   enddo
@@ -351,7 +353,7 @@
     rkpt(1) = ic1*UM/(nc(1)*UM)
     rkpt(2) = ic2*UM/(nc(2)*UM)
     rkpt(3) = ic3*UM/(nc(3)*UM)
-    call size_mtxd(emax,rkpt,adot,ng,kgv,nd)         
+    call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
     if(nd > mxddim) mxddim = nd
   enddo
   enddo
@@ -370,21 +372,21 @@
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
   allocate(ekpsi_so(2*mxdbnd))
-  
+
   lpsiso = .FALSE.
 
   allocate(psi_so(2*mxddim,2*mxdbnd))
   allocate(ei_so(2*mxdbnd))
 
   nrk3 = (nc(1)+1)*(nc(2)+1)*(nc(3)+1)
-  
+
   allocate(irk_from_ic(0:nc(1),0:nc(2),0:nc(3)))
   allocate(ic_from_irk(3,nrk3))
-  
-  allocate(isort_all(mxddim,4))      
+
+  allocate(isort_all(mxddim,4))
   allocate(psi_all(mxddim,mxdbnd,4))
 
-  
+
 ! open files
 
   irk=1
@@ -433,7 +435,7 @@
     ic_from_irk(1,irk) = ic1
     ic_from_irk(2,irk) = ic2
     ic_from_irk(3,irk) = ic3
-    irk=irk+1  
+    irk=irk+1
 
   enddo
   enddo
@@ -441,20 +443,20 @@
 
 
 
-  call interp_glk_prep(diag_type, io66,                                  &
-    nrk3, rk_ref,                                                        &
-    emax, neig, flgpsd,                                                  &
-    epspsi, icmax,                                                       &
-    adot, ntype, natom, rat,                                             &
-    ng, kgv, phase, conj,                                                &
-    ns, inds, kmax, indv, ek,                                            &
-    sfact, icmplx,                                                       &
-    veff,                                                                &
-    nqnl, delqnl, vkb, nkb,                                              &
-    vscr, kmscr,                                                         &
-    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,              &
-    mxdbnd, mxdscr, mxdlao)
+  call out_glk_prepare(diag_type, io66,                                  &
+      nrk3, rk_ref,                                                      &
+      emax, neig, flgpsd,                                                &
+      epspsi, icmax,                                                     &
+      adot, ntype, natom, rat,                                           &
+      ng, kgv, phase, conj,                                              &
+      ns, inds, kmax, indv, ek,                                          &
+      sfact, icmplx,                                                     &
+      veff,                                                              &
+      nqnl, delqnl, vkb, nkb,                                            &
+      vscr, kmscr,                                                       &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
+      mxdbnd, mxdscr, mxdlao)
 
 
 
@@ -473,16 +475,16 @@
     cworker = mod(irk-1,nworker) + 1
     lmyjob = .TRUE.
     if(cworker == iworker) then
-      irk_rd = -10        
+      irk_rd = -10
       read(io67,rec=irk, iostat=irec_err) irk_rd
       if(irk_rd == irk) then
         write(6,'("not computing k-point #",i5)') irk
-        lmyjob = .FALSE.                                
-      endif            
+        lmyjob = .FALSE.
+      endif
     else
       write(6,'("not computing k-point #",i5)') irk
-      lmyjob = .FALSE.                   
-    endif 
+      lmyjob = .FALSE.
+    endif
 
     if(lmyjob) then
 
@@ -508,25 +510,25 @@
       iy2 = m2 + iq(2,2)
       iz2 = m3 + iq(2,3)
 
-      ix3 = m1 + iq(3,1)  
+      ix3 = m1 + iq(3,1)
       iy3 = m2 + iq(3,2)
       iz3 = m3 + iq(3,3)
 
-      ix4 = m1 + iq(4,1) 
+      ix4 = m1 + iq(4,1)
       iy4 = m2 + iq(4,2)
       iz4 = m3 + iq(4,3)
 
       read(io66,rec=irk_from_ic(ix1,iy1,iz1))  irk_rd, mtxd_all(1),      &
-      rkpt_all(:,1), psi_all(:,:,1), isort_all(:,1)          
-       
+      rkpt_all(:,1), psi_all(:,:,1), isort_all(:,1)
+
       read(io66,rec=irk_from_ic(ix2,iy2,iz2))  irk_rd, mtxd_all(2),      &
-      rkpt_all(:,2), psi_all(:,:,2), isort_all(:,2)          
-       
+      rkpt_all(:,2), psi_all(:,:,2), isort_all(:,2)
+
       read(io66,rec=irk_from_ic(ix3,iy3,iz3))  irk_rd, mtxd_all(3),      &
-      rkpt_all(:,3), psi_all(:,:,3), isort_all(:,3)                
-       
+      rkpt_all(:,3), psi_all(:,:,3), isort_all(:,3)
+
       read(io66,rec=irk_from_ic(ix4,iy4,iz4))  irk_rd,  mtxd_all(4),     &
-      rkpt_all(:,4), psi_all(:,:,4), isort_all(:,4)          
+      rkpt_all(:,4), psi_all(:,:,4), isort_all(:,4)
 
 !     paranoid check
 
@@ -544,48 +546,48 @@
       enddo
 
 
-      call interpolation_glk(4, emax, neig, xsvd, csvd,                  &
-        ZK, rkpt_all, mtxd_all, neig_all,                                &
-        isort_all, psi_all,                                              &
-        ei, psi, hpsi, mtxd, isort, qmod, ekpg,                          &
-        ng, kgv,                                                         &
-        ntype, natom, rat, adot,                                         &
-        nqnl, delqnl, vkb, nkb,                                          &
-        vscr, kmscr,                                                     &
-        mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
+      call out_glk_interpolation(4, emax, neig, xsvd, csvd,              &
+          ZK, rkpt_all, mtxd_all, neig_all,                              &
+          isort_all, psi_all,                                            &
+          ei, psi, hpsi, mtxd, isort, qmod, ekpg,                        &
+          ng, kgv,                                                       &
+          ntype, natom, rat, adot,                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          vscr, kmscr,                                                   &
+          mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
 
 
       ipr = 1
       nrka = -1
-      call print_eig(ipr,irk,labelk,nrka,rkpt,                           &
-      mtxd,icmplx,neig,psi,                                              &
-      adot,ei,ekpsi,isort,kgv,                                           &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
+          mtxd, icmplx, neig, psi,                                       &
+          adot, ei, ekpsi, isort, kgv,                                   &
+          mxddim, mxdbnd, mxdgve)
 
 
-      call spin_orbit_perturb(rkpt,mtxd,isort,                           &
-      neig,psi,ei,ei_so,psi_so,lpsiso,                                   &
-      ng,kgv,                                                            &
-      nqnl,delqnl,vkb,nkb,                                               &
-      ntype,natom,rat,adot,                                              &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          neig, psi, ei, ei_so, psi_so, lpsiso,                          &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
       if(ipr == 2) then
-        call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,           &
-        mxddim,mxdbnd)
+        call kinetic_energy_so(neig, mtxd, ekpg, psi_so, ekpsi_so,       &
+        mxddim, mxdbnd)
       endif
 
-      call print_eig_so(ipr,irk,labelk,nrka,rkpt,                        &
-      mtxd,neig,psi_so,                                                  &
-      adot,ei_so,ekpsi_so,isort,kgv,                                     &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig_so(ipr, irk, labelk, nrka, rkpt,                    &
+          mtxd, neig, psi_so,                                            &
+          adot, ei_so, ekpsi_so, isort, kgv,                             &
+          mxddim, mxdbnd, mxdgve)
 
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
                 & ,i5, "   of ", i5)') iworker, irk,nrk
       write(6,*)
 
-      write(io67, rec = irk) irk, ei(:), ei_so(:)                        
+      write(io67, rec = irk) irk, ei(:), ei_so(:)
 
     endif
 
@@ -595,13 +597,13 @@
 
   do irk = 1, nrk
     read(io67, rec = irk, iostat = irec_err) irk_rd
-    if(irk_rd /= irk) then 
+    if(irk_rd /= irk) then
        pp_flag = 0
 
        exit
 
-    endif            
-    pp_flag = 1            
+    endif
+    pp_flag = 1
   enddo
 
   call zeelap(t2)
@@ -623,10 +625,10 @@
   deallocate(ekpsi_so)
 
   deallocate(psi_so)
-  
+
   deallocate(irk_from_ic)
   deallocate(ic_from_irk)
-  deallocate(isort_all)      
+  deallocate(isort_all)
   deallocate(psi_all)
 
   allocate(e_of_k(neig,nrk))
@@ -646,7 +648,7 @@
   deallocate(ei)
   deallocate(ei_so)
 
-  if(pp_flag == 1) then        
+  if(pp_flag == 1) then
 
     write(6,*)
     write(6,*) '  Generating DOS files!'
@@ -664,10 +666,10 @@
 
     close(io66)
     close(io67)
-    write(6,*) "this worker is done. run again when all workers are done to see results."          
+    write(6,*) "this worker is done. run again when all workers are done to see results."
 
   endif
- 
+
 ! if run by a human clean up temporary files
 
   if(.not. lworkers) then
@@ -687,4 +689,5 @@
   deallocate(e_of_k_so)
 
   return
-  end subroutine out_dos_glk
+
+end subroutine out_dos_glk

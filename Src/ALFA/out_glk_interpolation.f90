@@ -16,7 +16,7 @@
 !>  are the points used in interpolation
 
 
-subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
+subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
     xw_all, rkpt_all, mtxd_all, neig_all, isort_all, psi_all,            &
     ei, psi, hpsi, mtxd, isort, qmod, ekpg,                              &
     ng, kgv,                                                             &
@@ -141,7 +141,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
 ! some checks
 
   if(nrk_int < 2) then
-    write(6,'("   stopped in interpolation_glk: nrk = ",i7)') nrk_int
+    write(6,'("   stopped in out_glk_interpolation: nrk = ",i7)') nrk_int
 
     stop
 
@@ -153,7 +153,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
   enddo
 
   if(abs(xsum - UM) > EPS) then
-    write(6,'("   stopped in interpolation_glk:")')
+    write(6,'("   stopped in out_glk_interpolation:")')
     write(6,'("   sum of weights is not 1")')
 
     stop
@@ -198,7 +198,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
     neig_tot = neig_tot + neig_all(k)
 
     if(neig_tot > mxdbnd*nrk_int) then
-      write(6,'("   Stopped in interpolation_glk,  ",                    &
+      write(6,'("   Stopped in out_glk_interpolation,  ",                &
               & "neig_tot > mxdbnd*nrk_int: ",2i5)')                     &
               neig_tot, mxdbnd*nrk_int
 
@@ -233,7 +233,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
       mxddim, mxdbnd*nrk_int)
 
   if(info /= 0) then
-    write(6,'("   Stopped in interpolation_glk:  ",                      &
+    write(6,'("   Stopped in out_glk_interpolation:  ",                  &
               & "svd_c16 info = ",i5)') info
 
     stop
@@ -277,7 +277,7 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
   call diag_c16(nglk, hred, eig_svd, vec, nglk, info)
 
   if(info /= 0) then
-    write(6,'("   Stopped in interpolation_glk:  ",                      &
+    write(6,'("   Stopped in out_glk_interpolation:  ",                  &
              &  "diag_c16 info = ",i5)') info
 
     stop
@@ -301,4 +301,5 @@ subroutine interpolation_glk(nrk_int, emax, neig, xsvd, csvd,            &
   deallocate(singval)
 
   return
-end subroutine interpolation_glk
+
+end subroutine out_glk_interpolation

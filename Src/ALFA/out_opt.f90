@@ -13,27 +13,31 @@
 
 !>  This subroutine calculates the bands on an uniform grid
 !>  and the oscillator strengths for later processing.
+!>
+!>
+!>  \author       Carlos Loia reis, Jose Luis Martins
+!>  \version      5.09
+!>  \date         7 June 2020. 12 November 2023.
+!>  \copyright    GNU Public License v2
 
-  subroutine out_opt(diag_type, lworkers,                                &
+subroutine out_opt(diag_type, lworkers,                                  &
     title, subtitle,                                                     &
-    emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                   &
+    emax, flgdal, flgpsd, epspsi, icmax, ztot,                           &
     adot, ntype, natom, rat, ntrans, mtrx,                               &
     ng, kgv, phase, conj,                                                &
     ns, inds, kmax, indv, ek,                                            &
     sfact, icmplx,                                                       &
     veff,                                                                &
     nqnl, delqnl, vkb, nkb,                                              &
-    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &     
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)          
+    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
+    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 ! Adapted from out_dos, CLR
 ! Modified, latorb, 7 June 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified allk, details of workers, 7 December 2020. JLM
+! Modified iguess, 12 November 2023. JLM
 
-! copyright  Carlos Loia Reis/Jose Luis Martins/INESC-MN
-
-! version 4.99
 
   implicit none
 
@@ -60,7 +64,6 @@
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4)                   ::  flgdal                          !<  dual approximation if equal to 'DUAL'
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
-  integer, intent(in)                ::  iguess                          !<  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
 
@@ -116,7 +119,7 @@
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
-  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi> 
+  complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
@@ -124,12 +127,12 @@
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
 
-! oscillator strength stuff 
+! oscillator strength stuff
 
   complex(REAL64), allocatable       ::  h0(:,:)                         !  <Psi|H|Psi> without spin-orbit
   complex(REAL64), allocatable       ::  dh0drk(:,:,:)                   !  d <Psi|H|Psi> d k
   complex(REAL64), allocatable       ::  d2h0drk2(:,:,:,:)               !  d^2 <Psi|H|Psi> d k^2 (not allocated/computed)
-  
+
   complex(REAL64), allocatable       ::  hso0(:,:)                       !  <Psi|H|Psi> with spin-orbit
   complex(REAL64), allocatable       ::  dhso0drk(:,:,:)                 !  d <Psi|H|Psi> d k
   complex(REAL64), allocatable       ::  d2hso0drk2(:,:,:,:)             !  d^2 <Psi|H|Psi> d k^2 (not allocated/computed)
@@ -141,7 +144,7 @@
 
   complex(REAL32), allocatable       ::  dhdrk_32(:,:,:)                 !  d <Psi|H|Psi> d k
   complex(REAL32), allocatable       ::  dhsodrk_32(:,:,:)               !  d <Psi|H|Psi> d k
-  
+
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
@@ -173,10 +176,10 @@
 
   integer                            ::  ioerr                           !  error in opening/reading/writing files
   character(len=12)                  ::  filemesh
-  character(len=13)                  ::  filedhdrk 
-  character(len=16)                  ::  filedhdrkso 
+  character(len=13)                  ::  filedhdrk
+  character(len=16)                  ::  filedhdrkso
   character(len=12)                  ::  fileband
-  character(len=12)                  ::  filedos 
+  character(len=12)                  ::  filedos
 
   logical                            ::  lex
   integer                            ::  nocc
@@ -185,16 +188,17 @@
   integer                            ::  identif                         !  identifier
 
   logical                            ::  lkpg                            !  If true use the previous G-vectors (same mtxd and isort)
-  
+
   real(REAL64)                       ::  t1, t2
-  
+
   integer                            ::  nder
 
   integer                            ::  icmax                           !  maximum value of outer iteration
+  integer                            ::  iguess                          !  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
   integer                            ::  ifail                           !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
 
-! workers and restart  
-  
+! workers and restart
+
   integer                            ::  irec_err
   integer                            ::  irk_rd
   integer                            ::  iworker, nworker, cworker
@@ -266,7 +270,7 @@
     sz = 0.0
   endif
 
- 
+
   call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
   mxdnrk)
 
@@ -282,7 +286,7 @@
     mxdnrk, mxdbnd)
 
   neig = nbandi
-  
+
   nval = nint(0.5*ztot)
   ncond = neig - nval
 
@@ -402,6 +406,7 @@
       ipr = 0
 
       nocc = neig
+      iguess = 0
 
       call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
@@ -464,7 +469,7 @@
         ntype, natom, rat, adot,                                         &
         nqnl, delqnl, vkb, nkb,                                          &
         mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
-     
+
       call kdotp_matrix_so_convert(neig, hso0, dhso0drk, d2hso0drk2,     &
         nder,                                                            &
         mxdbnd)
@@ -570,11 +575,11 @@
   else
     write(6,*) "this worker is done. run again when all workers are done to see results."
   endif
-  
+
   close(io66)
   close(io67)
   close(io68)
- 
+
 ! if run by a human clean up temporary files
 
   if(.not. lworkers) then
@@ -591,4 +596,5 @@
   deallocate(wgk)
 
   return
-  end subroutine out_opt
+
+end subroutine out_opt

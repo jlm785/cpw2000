@@ -14,6 +14,12 @@
 !>  calculates the hamiltonian for one k-point and diagonalizes
 !>  either in a plane wave basis basis
 !>  or in an LCAO basis.
+!>
+!>
+!>  \author       Carlos Loia reis, Jose Luis Martins
+!>  \version      5.09
+!>  \date         May 2020. 11 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   flgpsd, ipr, ifail, icmax, iguess, epspsi,                             &
@@ -24,7 +30,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   mtxd, hdiag, isort, qmod, ekpg, lkpg,                                  &
   psi, hpsi, ei,                                                         &
   vscr, kmscr,                                                           &
-  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &     
+  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
   mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,                &
   mxdbnd, mxdscr, mxdlao)
 
@@ -32,10 +38,8 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 ! Modified, latorb, 7 June 2020. JLM
 ! Added nocc for future use. 12 June 2020. JLM
 ! Modified, norbtot bug, 30 November 2020. JLM
-! Modified, k-point far from 1st BZ, 30 January 2021.JLM
-! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
-
-! version 4.99
+! Modified, k-point far from 1st BZ, 30 January 2021. JLM
+! default value of ifail. 11 November 2023. JLM
 
   implicit none
 
@@ -65,7 +69,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   integer, intent(in)                ::  icmax                           !<  maximum value of outer iteration
   integer, intent(in)                ::  iguess                          !<  tells if guess eigenvectors are available
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
-  
+
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
   complex(REAL64), intent(in)        ::  phase(mxdgve)                   !<  real part of the phase factor of G-vector n
@@ -93,18 +97,18 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh and fft mesh size
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
-  
+
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l 
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
 
-       
-  real(REAL64)                       ::  veffr1 
+
+  real(REAL64)                       ::  veffr1
 
 
 ! input and output
@@ -146,12 +150,17 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   integer        ::  mtxd_tr
 
 ! parameters
-  
+
   real(REAL64), parameter    ::  UM = 1.0_REAL64
 
 ! counter
 
   integer        ::  i
+
+! AVOIDS WARNINGS UNTIL NOCC IS IMPLEMENTED
+  IFAIL = NOCC
+
+  ifail = 0
 
 
 ! deals with k-points far away from the 1st Brillouin zone
@@ -179,9 +188,9 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
 
   lhpsi = .FALSE.
-  
+
   iguess_local = 0
-  
+
   veffr1 = real(veff(1),REAL64)
 
   if(diag_type == "pw  ") then
@@ -210,11 +219,11 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
       iguess_local = 1
 
-    
+
     endif
 
     call h_kb_dia(emax, rk_tmp, neig, flgpsd,                            &
-        ipr, ifail, icmax, iguess_local, epspsi,                         &  
+        ipr, ifail, icmax, iguess_local, epspsi,                         &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
         nqnl, delqnl, vkb, nkb,                                          &
@@ -228,14 +237,14 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
     if(ifail /= 0) then
       call ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
           mxddim, mxdbnd)
-      
+
       if(xmax > 4.0*epspsi*epspsi) then
         write(6,*)
         write(6,*) '  WARNING       WARNING:   After h_kb_dia '
         write(6,*) '  The estimated error in energy has an accuracy'
         write(6,'("  of ",f8.1," digits")') -log10(xmax)
         write(6,*)
-      
+
         if(ifail < 4) then
           write(6,*)
           write(6,*) '  STOPPED   in h_kb_dia_all.'
@@ -247,11 +256,11 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         endif
 
       endif
-      
+
     endif
-     
+
   elseif(diag_type == "aojc") then
-   
+
     call h_kb_dia_ao(emax, rk_tmp, neig, flgpsd, 'AOJC  ',               &
         veffr1, icmplx, lhpsi,                                           &
         ng, kgv,                                                         &
@@ -265,7 +274,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
 
   elseif(diag_type == "ao  ") then
-               
+
     call h_kb_dia_ao(emax, rk_tmp, neig, flgpsd, 'AO    ',               &
         veffr1, icmplx, lhpsi,                                           &
         ng, kgv,                                                         &
@@ -276,7 +285,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
         mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
-           
+
   endif
 
   if(lkshift) then

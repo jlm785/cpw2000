@@ -14,8 +14,8 @@
 !>  Driver for the calculation of the band structure
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.04
-!>  \date         20 January 2022.
+!>  \version      5.09
+!>  \date         20 January 2022. 11 November 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band(ioreplay,                                         &
@@ -24,7 +24,9 @@ subroutine cpw_pp_band(ioreplay,                                         &
            efermi, meta_cpw2000, title, subtitle,                        &
            epspsi, icmax)
 
-! Breakup of cpw_pp_band_dos_opt. 20 Janeiro 2022. JLM
+! Breakup of cpw_pp_band_dos_opt. 20 January 2022. JLM
+! Remove iguess. 11 November 2023. JLM
+
 
   use cpw_variables
 
@@ -58,7 +60,6 @@ subroutine cpw_pp_band(ioreplay,                                         &
   integer                 ::  imeth, idiag
 
 
-  integer                 :: iguess                                      !  kept for compatibility
   real(real64)            :: epspsi                                      !  accuracy of eigenvalues
   integer                 :: icmax                                       !  maximum number of iterations for diagonalization
 
@@ -114,7 +115,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
     call out_band(title, subtitle,                              &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
+    epspsi, icmax, pseudo_%ztot, efermi,                        &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -139,7 +140,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
     call out_band_kdotp_var(title, subtitle,                    &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
+    epspsi, icmax, pseudo_%ztot, efermi,                        &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -165,7 +166,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
     call out_band_kdotp_2nd(title, subtitle,                    &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
+    epspsi, icmax, pseudo_%ztot, efermi,                        &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -292,7 +293,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
     call out_band_glk(title, subtitle,                          &
     ninterp, nignore, xsvd, csvd,                               &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
+    epspsi, icmax, pseudo_%ztot, efermi,                        &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -352,7 +353,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
     call out_band_fold(diag_type, lworkers,                     &
     meta_cpw2000, title, subtitle,                              &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot,                        &
+    epspsi, icmax, pseudo_%ztot,                                &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &
@@ -412,7 +413,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
     call out_band_atom_info_fold(diag_type, lworkers,           &
     meta_cpw2000, title, subtitle,                              &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot, efermi,                &
+    epspsi, icmax, pseudo_%ztot, efermi,                        &
     crys_%adot, crys_%ntype, crys_%natom,                       &
     crys_%nameat, crys_%rat,                                    &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
@@ -532,7 +533,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
     call out_band_fold_glk(diag_type, lworkers, xsvd, csvd,     &
     meta_cpw2000, title, subtitle,                              &
     pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    iguess, epspsi, icmax, pseudo_%ztot,                        &
+    epspsi, icmax, pseudo_%ztot,                                &
     crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
     recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
     recip_%ns, recip_%inds, recip_%kmax,                        &

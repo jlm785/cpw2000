@@ -21,11 +21,12 @@
 subroutine cpw_pp_opt(ioreplay,                                          &
            dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,       &
            pwexp_, strfac_,  vcomp_,                                     &
-           efermi, meta_cpw2000, title, subtitle,                        &
+           title, subtitle,                                              &
            epspsi, icmax)
 
 ! Breakup of cpw_pp_band_dos_opt. 20 Janeiro 2022. JLM
 ! But tracked from Pedro Borlido report.  23 October 2023. JLM
+! Modified, iguess, 12 November 2023. JLM
 
   use cpw_variables
 
@@ -48,23 +49,16 @@ subroutine cpw_pp_opt(ioreplay,                                          &
 
  ! other input
 
-
-  real(REAL64), intent(in)                ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-
-  character(len=250), intent(in)          ::  meta_cpw2000               !<  metadata from cpw2000
   character(len=50), intent(in)           ::  title                      !<  title for plots
   character(len=140), intent(in)          ::  subtitle                   !<  subtitle for plots
 
-  real(real64), intent(in)                :: epspsi                      !<  accuracy of eigenvalues
-  integer, intent(in)                     :: icmax                       !<  maximum number of iterations for diagonalization
+  real(real64), intent(in)                ::  epspsi                      !<  accuracy of eigenvalues
+  integer, intent(in)                     ::  icmax                       !<  maximum number of iterations for diagonalization
 
 ! other variables
 
   integer                 ::  ios
   integer                 ::  imeth, idiag
-
-
-  integer                 :: iguess                                      !  kept for compatibility
 
   character(len=1)        ::  yesno
 
@@ -142,7 +136,7 @@ subroutine cpw_pp_opt(ioreplay,                                          &
      call out_opt(diag_type, lworkers,                                   &
      title, subtitle,                                                    &
      pwexp_%emax, flags_%flgdal, flags_%flgpsd,                          &
-     iguess, epspsi, icmax, pseudo_%ztot,                                &
+     epspsi, icmax, pseudo_%ztot,                                        &
      crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                    &
      spaceg_%ntrans, spaceg_%mtrx,                                       &
      recip_%ng, recip_%kgv,recip_%phase,recip_%conj,                     &
@@ -260,7 +254,7 @@ subroutine cpw_pp_opt(ioreplay,                                          &
      call out_opt_glk(diag_type, lworkers, xsvd, csvd,                   &
      title, subtitle,                                                    &
      pwexp_%emax, flags_%flgdal, flags_%flgpsd,                          &
-     iguess, epspsi, icmax, pseudo_%ztot,                                &
+     epspsi, icmax, pseudo_%ztot,                                        &
      crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                    &
      spaceg_%ntrans, spaceg_%mtrx,                                       &
      recip_%ng, recip_%kgv,recip_%phase,recip_%conj,                     &
@@ -278,5 +272,6 @@ subroutine cpw_pp_opt(ioreplay,                                          &
   endif
 
   return
+
 end subroutine cpw_pp_opt
 

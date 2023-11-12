@@ -14,21 +14,21 @@
 !> Provides orbital information to post-processing companion program
 !>
 !>  \author       Carlos, Loia Reis, Jose Luis Martins
-!>  \version      5.03
-!>  \date         8 may 2004, 29 November 2021.
+!>  \version      5.09
+!>  \date         8 may 2004, 10 November 2023.
 !>  \copyright    GNU Public License v2
 
-  subroutine out_band_atom_info_fold(diag_type, lworkers,                &
-  pwline, title, subtitle,                                               &
-  emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,             &
-  adot, ntype, natom, nameat, rat,                                       &
-  ng, kgv, phase, conj,                                                  &
-  ns, inds, kmax, indv, ek,                                              &
-  sfact, icmplx,                                                         &
-  veff,                                                                  &
-  nqnl, delqnl, vkb, nkb,                                                &
-  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
-  mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
+      pwline, title, subtitle,                                           &
+      emax, flgdal, flgpsd,  epspsi, icmax, ztot, efermi,                &
+      adot, ntype, natom, nameat, rat,                                   &
+      ng, kgv, phase, conj,                                              &
+      ns, inds, kmax, indv, ek,                                          &
+      sfact, icmplx,                                                     &
+      veff,                                                              &
+      nqnl, delqnl, vkb, nkb,                                            &
+      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 !  Adapted 2 June 2019. JLM.
 !  Modified for unfolding June 2019. CLR.
@@ -39,13 +39,13 @@
 !  Modified, vmax, vmin, 27 November 2020. JLM
 !  Modified for QtBandViewer, July 2021. CLR.
 !  Modified, efermi, 29 November 2021. JLM
-!  copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN.
+!  Modified annoying warning pkn, iguess. 10 November 2023. JLM
 
   implicit none
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
-  ! input
+! input
 
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
@@ -109,9 +109,8 @@
 
   ! input and output
 
-  integer, intent(inout)             ::  iguess                          !<  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
 
-  ! allocatable arrays for Brillouin zone path
+! allocatable arrays for Brillouin zone path
 
   integer                            ::  nlines                          !  number of lines in reciprocal space
   integer, allocatable               ::  nkstep(:)                       !  number of steps in line
@@ -125,7 +124,7 @@
   character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
-  ! allocatable arrays with larger scope
+! allocatable arrays with larger scope
 
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
   real(REAL64), allocatable          ::  ev(:)                           !  eigenvalue no. i. (hartree)
@@ -142,7 +141,7 @@
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
 
-  ! variables for local orbitals
+! variables for local orbitals
 
   integer                            ::  mxdorb                          !  array dimension of number of local orbitals
   integer                            ::  nbaslcao                        !  number of atomic orbitals
@@ -159,13 +158,15 @@
   real(REAL64), allocatable          ::  basxpsi_so(:,:,:)               !  |<bas|psi>|^2 for each k
   complex(REAL64), allocatable       ::  psi_in(:,:)                     !  component j of eigenvector i (guess on input)
 
-  ! local variables
+! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
 
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
   integer                            ::  mxdwrk                          !  array dimension for fft transform workspace
+
+  integer                            ::  iguess                          !  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
 
   integer                            ::  mtxd                            !  dimension of the hamiltonian
   integer                            ::  neig                            !  number of eigenvectors required (maybe modified on output)
@@ -188,17 +189,17 @@
   integer                            ::  nl                              !  keeps track of next lines
   real(REAL64)                       ::  sq
 
-  ! constants
+! constants
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  :: C_UM = cmplx(UM,ZERO,REAL64)
 
-  ! counters
+! counters
 
   integer    ::  i, j, n
 
-  ! unfolding
+! unfolding
 
   integer                            ::  iMinv(3,3)
   integer                            ::  idet
@@ -208,6 +209,8 @@
 
   real(REAL64),allocatable           ::  pkn(:,:)
   real(REAL64),allocatable           ::  pkn_so(:,:)
+  real(REAL64),allocatable           ::  pkn_tmp(:)
+  real(REAL64),allocatable           ::  pkn_tmp_so(:)
 
   integer                            ::  idum(3,3)
   character(len=6)                   ::  fdum
@@ -224,7 +227,7 @@
   integer, allocatable               ::  irow(:)
   complex(REAL64), allocatable       ::  hxvec(:)
 
-  ! orbital information with Lowdin orthogonalization
+! orbital information with Lowdin orthogonalization
 
   complex(REAL64), allocatable       ::  S(:,:)
   complex(REAL64), allocatable       ::  S12(:,:)
@@ -232,7 +235,7 @@
   complex(REAL64), allocatable       ::  Swrk(:,:)
   real(REAL64),    allocatable       ::  ev_wrk(:)
 
-  ! workers and restart
+! workers and restart
 
   integer                            :: irec_err
   integer                            :: irk_rd, irk_start
@@ -250,7 +253,7 @@
 
   io62 = 62
 
-  !  calculates local potential in fft mesh
+!  calculates local potential in fft mesh
 
   if(flgdal == 'DUAL') then
     kmscr(1) = kmax(1)/2 + 4
@@ -280,8 +283,9 @@
 ! pwline from old PW_RHO_V.DAT does not work due to a bug in out_rho_v
 ! this is a workaround
 
+  fdum = '      '
   read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                          &
- ((idum(i,j),i=1,3),j=1,3),fdum
+  ((idum(i,j),i=1,3),j=1,3),fdum
 
   if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
     pwlinloc = pwline
@@ -350,14 +354,14 @@
 
 ! allocates arrays
 
-! THERE IS A PROBLEM HERE>>>>>>> ei can be larger than mxdbnd in ditsp* subroutines
-
 !-----------------------------------------------------------------------
   allocate(pkn(nrk2,neig))
   allocate(pkn_so(nrk2,2*neig))
+  allocate(pkn_tmp(neig))
+  allocate(pkn_tmp_so(2*neig))
 !-----------------------------------------------------------------------
 
-  allocate(ei(mxddim))
+  allocate(ei(mxdbnd))
   allocate(ei_so(2*mxdbnd))
 
   allocate(ev(mxdbnd))
@@ -423,14 +427,14 @@
   irk =1
   inquire(iolength=ir_size) irk_rd,                                      &
   e_of_k(:,irk),                                                         &
-  pkn(irk,:),  e_of_k_so(:,irk),                                         &
-  pkn_so(irk,:),                                                         &
+  pkn_tmp(:),  e_of_k_so(:,irk),                                         &
+  pkn_tmp_so(:),                                                         &
   basxpsi(:,:,irk),                                                      &
   basxpsi_so(:,:,irk),                                                   &
   infolcao,                                                              &
   infolcao_so
 
-  ! if run by a human do not restart
+! if run by a human do not restart
 
   if(.not. lworkers) then
     inquire(unit = io62, exist=lex)
@@ -447,7 +451,7 @@
 
   call zeelap(t1)
 
-  ! loop over k-points
+! loop over k-points
 
   do irk=1,nrk2
 
@@ -457,12 +461,16 @@
       irk_rd = -10
       read(io62,rec=irk, iostat=irec_err) irk_rd,                        &
       e_of_k(:,irk),                                                     &
-      pkn(irk,:), e_of_k_so(:,irk),                                      &
-      pkn_so(irk,:),                                                     &
+      pkn_tmp(:), e_of_k_so(:,irk),                                      &
+      pkn_tmp_so(:),                                                     &
       basxpsi(:,:,irk),                                                  &
       basxpsi_so(:,:,irk),                                               &
       infolcao,                                                          &
       infolcao_so
+
+      pkn(irk,:) = pkn_tmp(:)
+      pkn_so(irk,:) = pkn_tmp_so(:)
+
 
       if(irk_rd ==irk) then
         write(*,'("not computing k-point #",i5)') irk
@@ -605,14 +613,20 @@
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
           &        ,i5, "   of ", i5)') iworker, irk,nrk2
 
+
       if (cworker== iworker) then
+
+        pkn_tmp(:) = pkn(irk,:)
+        pkn_tmp_so(:) = pkn_so(irk,:)
+
         write(io62,rec=irk) irk, ev(:),                                  &
-        pkn(irk,:),ei_so(:),                                             &
-        pkn_so(irk,:),                                                   &
+        pkn_tmp(:),ei_so(:),                                             &
+        pkn_tmp_so(:),                                                   &
         basxpsi(:,:,irk),                                                &
         basxpsi_so(:,:,irk),                                             &
         infolcao,                                                        &
         infolcao_so
+
       endif
 
     endif
@@ -621,13 +635,16 @@
 
   do irk = 1, nrk2
     read(io62,rec=irk, iostat=irec_err) irk_rd,                          &
-     e_of_k(:,irk),                                                      &
-     pkn(irk,:),  e_of_k_so(:,irk),                                      &
-     pkn_so(irk,:),                                                      &
-     basxpsi(:,:,irk),                                                   &
-     basxpsi_so(:,:,irk),                                                &
-     infolcao,                                                           &
-     infolcao_so
+      e_of_k(:,irk),                                                     &
+      pkn_tmp(:),  e_of_k_so(:,irk),                                     &
+      pkn_tmp_so(:),                                                     &
+      basxpsi(:,:,irk),                                                  &
+      basxpsi_so(:,:,irk),                                               &
+      infolcao,                                                          &
+      infolcao_so
+
+      pkn(irk,:) = pkn_tmp(:)
+      pkn_so(irk,:) = pkn_tmp_so(:)
 
 
     if(irk_rd /=irk) then
@@ -658,7 +675,7 @@
 
   nocc = n
 
-  ! writes the output files for xmgrace and gnuplot
+! writes the output files for xmgrace and gnuplot
 
   iotape = 15
   nstyle = 2
@@ -703,6 +720,13 @@
   2*nbaslcao,infolcao_so,basxpsi_so,pkn_so,                              &
   nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
 
+!------------------------------------------------------------------
+  deallocate(pkn)
+  deallocate(pkn_so)
+  deallocate(pkn_tmp)
+  deallocate(pkn_tmp_so)
+!------------------------------------------------------------------
+
   deallocate(nkstep)
   deallocate(ljump)
 
@@ -738,4 +762,5 @@
   deallocate(prod_so)
 
   return
-  end subroutine out_band_atom_info_fold
+
+end subroutine out_band_atom_info_fold

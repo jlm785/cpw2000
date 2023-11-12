@@ -20,7 +20,7 @@
 !>  It is a driver subroutine for each task.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.08
+!>  \version      5.09
 !>  \date         December 18, 2013, 8 November 2023.
 !>  \copyright    GNU Public License v2
 
@@ -39,6 +39,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Broken-up in children subroutines. 20 January 2022. JLM
 ! Added out_effective_mass in 22 January 2022. JLM
 ! Replaced out_effective_mass with cpw_pp_mass. 8 November 2023. JLM
+! Removed efermi cpw_pp_opt. 12 November 2023. JLM
 
   use cpw_variables
 
@@ -400,7 +401,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
       call  cpw_pp_opt(ioreplay,                                         &
           dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,        &
           pwexp_, strfac_,  vcomp_,                                      &
-          efermi, meta_cpw2000, title, subtitle,                         &
+          title, subtitle,                                               &
           epspsi, icmax)
 
     elseif(itask == 5) then
