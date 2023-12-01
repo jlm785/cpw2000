@@ -67,7 +67,7 @@ subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
     enddo
   enddo
 
-  nanlso = 0
+  nanlspin = 0
   do k=1,ntype
 
     ic = 0
