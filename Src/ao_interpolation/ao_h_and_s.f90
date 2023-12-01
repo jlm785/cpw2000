@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates the hamiltonian and overlap for one k-point 
+!>  Calculates the hamiltonian and overlap for one k-point
 !>  with non-orthogonal atomic orbitals.
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.09
+!>  \date         before 2015. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     ng, kgv,                                                             &
@@ -22,10 +27,10 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     mtxd, hdiag, isort, qmod, ekpg,                                      &
     norbat, nqwf, delqwf, wvfao, lorb,                                   &
     psi, hpsi,                                                           &
-    Hao, S, dh0drk,                                                      &            
+    Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdbnd,              &
-    mxdscr,mxdorb,mxdlao)
+    mxdscr, mxdorb, mxdlao)
 
 ! Written by Carlos Loia Reis adapting previous code.
 ! Modified 25 November 2015. JLM
@@ -33,9 +38,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified, documentation, 25 May 2020, JLM
 ! Modified, hamilt_pw, 6 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
-
-! version 4.99
+! Modified, nanlspin, 30 November 2023. JLM
 
   implicit none
 
@@ -116,8 +119,8 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)       integer    ::  mxdanl, mxdsml
   integer    ::  mxdanl
-  integer    ::  nanl, nanlso
-  real(REAL64)  ::  bdot(3,3),vcell,veffr1  
+  integer    ::  nanl, nanlso, nanlspin
+  real(REAL64)  ::  bdot(3,3),vcell,veffr1
 
 ! constants
 
@@ -143,7 +146,8 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   veffr1 = real(veff(1),REAL64)
 
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+      mxdtyp)
 
   mxdanl = nanl
   allocate(xnlkb(mxdanl))
@@ -192,13 +196,13 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   call zgemm('c','n', nbaslcao, nbaslcao, mtxd, C_UM, hpsi, mxddim,      &
       psi, mxddim, C_ZERO, Hao, mxdorb)
-  
+
   deallocate(xnlkb)
   deallocate(anlga)
-  
-  deallocate(h0)        
+
+  deallocate(h0)
   deallocate(ev_fake)
-  
+
 
   return
 end subroutine ao_h_and_s

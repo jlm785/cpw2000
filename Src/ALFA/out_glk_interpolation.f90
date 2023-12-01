@@ -14,6 +14,11 @@
 !>  Interpolates the bands between nrk_int points.
 !>  k=0 is the point to be interpolated, k = 1,2,...,nrk_int
 !>  are the points used in interpolation
+!>
+!>  \author       José Luís Martins
+!>  \version      5.09
+!>  \date         23 August 2020. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 
 subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
@@ -28,9 +33,8 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 ! Written 23 August 2020. JLM
 ! Based on interpolation_svd and out_band_dos
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, nanlspin, indentation, 30 November 2023. JLM
 
-! version 4.989
 
   implicit none
 
@@ -116,6 +120,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
   integer                ::  nanl                                        !  number of Kleinman-Bylander projectorswithout spin-orbit.
   integer                ::  mxdanl
   integer                ::  nanlso                                      !  number of Kleinman-Bylander projectors with spin-orbit.
+  integer                ::  nanlspin                                    !  number of Kleinman-Bylander projectors with or without spin-orbit.
 
   integer                ::  neig_tot
   integer                ::  i1, i2
@@ -171,7 +176,8 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
       ng, kgv, adot,                                                     &
       mxdgve, mxddim)
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+      mxdtyp)
 
   mxdanl = nanl
 

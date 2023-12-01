@@ -366,9 +366,8 @@ subroutine out_mass_berry(ioreplay,                                      &
     write(6,*) '   Results from topological Berry quantities'
     write(6,*)
 
-    call out_mass_print(nlevel, levdeg, leveigs,                         &
-        ei, deidxk, d2eidxk2,                                            &
-        mxdbnd, mxdlev, mxddeg)
+    call out_mass_print(neig, ei, deidxk, d2eidxk2,                      &
+        mxdbnd)
 
 
 

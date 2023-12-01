@@ -21,8 +21,8 @@
 !>  or input wave-function is not accurate.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         18 January 2023.
+!>  \version      5.09
+!>  \date         18 January 2023. 30 November 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
@@ -35,6 +35,10 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
     mxdlev, mxddeg)
+
+! Written by Jose Luis Martins, 18 january 2023.
+! Final debugged version 3 November 2023. JLM
+! Modified, nanlspin, 30 November 2023. JLM
 
 
   implicit none
@@ -120,7 +124,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   integer           ::  nder                                             !  order of derivative
 
-  integer           ::  nanl, nanlso
+  integer           ::  nanl, nanlso, nanlspin
   integer           ::  mxdanl
   real(REAL64)      ::  vcell, bdot(3,3)
 
@@ -144,7 +148,8 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 ! projector and derivatives
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+      mxdtyp)
 
   mxdanl = nanl
 

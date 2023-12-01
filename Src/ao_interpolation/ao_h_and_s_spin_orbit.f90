@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates the hamiltonian and overlap for one k-point 
+!>  Calculates the hamiltonian and overlap for one k-point
 !>  with non-orthogonal atomic orbitals. Spin-Orbit version.
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.09
+!>  \date         before 2015. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
     flgpsd,                                                              &
@@ -23,7 +28,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
     mtxd, hdiag, isort, qmod, ekpg,                                      &
     norbat, nqwf, delqwf, wvfao, lorb,                                   &
     psi, hpsi,                                                           &
-    Hao, S, dh0drk,                                                      &            
+    Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdbnd,              &
     mxdscr, mxdorb, mxdlao)
@@ -35,9 +40,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 ! Modified 25 May 2020, Documentation, cleanup. JLM
 ! Modified, hamilt_pw, 6 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
-
-! version 4.99
+! Modified, nanlspin, 30 November 2023. JLM
 
   implicit none
 
@@ -114,7 +117,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
   complex(REAL64), allocatable       ::  anlso(:,:)                      !   KB projectors with spin-orbit
   real(REAL64), allocatable          ::  xnlkbspin(:)                    !   KB normalization without spin-orbit
   real(REAL64), allocatable          ::  xnlkbso(:)                      !   KB normalization with spin-orbit
- 
+
   complex(REAL64), allocatable       ::  psi_in(:,:)                     !  component j of eigenvector i (guess on input)
   complex(REAL64), allocatable       ::  hpsi_in(:,:)                    !  component j of eigenvector i (guess on input)
 
@@ -125,21 +128,21 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)
   integer       ::  mxdanl, mxdaso
-  integer       ::  nanl, nanlso
-  real(REAL64)  ::  veffr1 
+  integer       ::  nanl, nanlso, nanlspin
+  real(REAL64)  ::  veffr1
 
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
-  
+
 ! counters
 
   integer :: i, j
 
 
-  allocate(h0(2*mxdorb,2*mxdorb)) 
+  allocate(h0(2*mxdorb,2*mxdorb))
   allocate(ev_fake(2*mxdorb))
 
 
@@ -153,7 +156,8 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 
   veffr1 = real(veff(1),REAL64)
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+      mxdtyp)
 
   mxdanl = nanl
   allocate(xnlkb(mxdanl))
@@ -269,7 +273,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
   deallocate(psi_in)
   deallocate(hpsi_in)
 
-  deallocate(h0)        
+  deallocate(h0)
   deallocate(ev_fake)
 
   return

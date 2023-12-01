@@ -19,8 +19,9 @@
 !>  \date         7 November 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
+subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
     deidk, d2eidk2,                                                      &
+    ei_so, deidk_so, d2eidk2_so,                                         &
     emax, flgdal, flgpsd, epspsi, icmax,                                 &
     adot, ntype, natom, rat,                                             &
     ng, kgv, phase, conj,                                                &
@@ -57,6 +58,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
 
   integer, intent(in)                ::  npt                             !<  2*npt+1 is the total number of interpolation points
   real(REAL64), intent(in)           ::  delta                           !<  spacing between the poins used in the interpolation
+  logical, intent(in)                ::  lso                             !<  calculates with spin-orbit in perturbation
 
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
@@ -104,6 +106,10 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
   real(REAL64), intent(out)          ::  deidk(mxdbnd)                   !<  d E / d xk  (lattice coordinates)
   real(REAL64), intent(out)          ::  d2eidk2(mxdbnd)                 !<  d^2 E / d xk^2  (lattice coordinates)
 
+  real(REAL64), intent(out)          ::  ei_so(2*mxdbnd)                 !<  eigenvalue no. i. (hartree)with perturbation spin-orbit
+  real(REAL64), intent(out)          ::  deidk_so(2*mxdbnd)              !<  d E / d xk  with perturbation spin-orbit (lattice coordinates)
+  real(REAL64), intent(out)          ::  d2eidk2_so(2*mxdbnd)            !<  d^2 E / d xk^2  with perturbation spin-orbit (lattice coordinates)
+
 ! allocatable arrays with larger scope
 
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
@@ -119,6 +125,9 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
 
   real(REAL64), allocatable          ::  ei_l(:,:)                       !  eigenvalue no. i. in the line (hartree)
   real(REAL64), allocatable          ::  rk_l(:,:)                       !  k-point on the line
+  real(REAL64), allocatable          ::  ei_l_so(:,:)                    !  eigenvalue no. i. in the line (hartree) with so
+
+  complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i with so
 
   real(REAL64), allocatable          ::  xin(:), yin(:)
 
@@ -248,6 +257,11 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
   allocate(ei_l(mxdbnd,-npt:npt))
   allocate(rk_l(3,-npt:npt))
 
+  if(lso) then
+    allocate(ei_l_so(2*mxdbnd,-npt:npt))
+    allocate(psi_so(2*mxddim,2*mxdbnd))
+  endif
+
   do n = -npt,npt
 
     do k = 1,3
@@ -279,6 +293,17 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
         mtxd, icmplx, neig, psi,                                         &
         adot, ei_l(:,n), ekpsi, isort, kgv,                              &
         mxddim, mxdbnd, mxdgve)
+
+    if(lso) then
+
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          neig, psi, ei_l(:,n), ei_l_so(:,n), psi_so, .TRUE.,            &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+    endif
 
   enddo
 
@@ -315,6 +340,38 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
 
   enddo
 
+! repeats for spin-orbit
+
+  if(lso) then
+
+    deallocate(ipl)
+    allocate(ipl(2*neig))
+
+    call out_mass_match(2*neig, npt, ei_l_so, ipl,                       &
+       2*mxdbnd)
+
+  do n = 1,2*neig
+
+    do j = -npt,-1
+      yin(j) = ei_l_so(ipl(n),j) - ei_l_so(n,0)
+    enddo
+
+    do j = 0,npt
+      yin(j) = ei_l_so(n,j) - ei_l_so(n,0)
+    enddo
+
+    call poly_interp(y, dy, xin, yin, 2*npt, 2)
+
+    d2eidk2_so(n) = y(2)
+    deidk_so(n) = y(1)
+    ei_so(n) = y(0) + ei_l_so(n,0)
+
+  enddo
+
+
+
+  endif
+
   deallocate(vscr)
 
   deallocate(ei)
@@ -328,6 +385,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta,                    &
 
   deallocate(ei_l)
   deallocate(rk_l)
+  if(lso) deallocate(ei_l_so)
 
   deallocate(xin,yin)
   deallocate(ipl)

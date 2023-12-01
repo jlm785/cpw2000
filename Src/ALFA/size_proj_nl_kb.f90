@@ -11,59 +11,85 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the number of Kleinman-Bylander projectors
+!>  calculates the number of Kleinman-Bylander projectors
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.09
+!>  \date         December 20, 2013. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
-       subroutine size_proj_nl_kb(ntype,natom,nkb,nanl,nanlso,mxdtyp)
+subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
+              mxdtyp)
 
-!      written December 20, 2013. jlm
-!      adapted from proj_nl_kb.
-!      modified February 10, 2014. jlm
-!      Modified, documentation, January 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+! written December 20, 2013. jlm
+! adapted from proj_nl_kb.
+! modified February 10, 2014. jlm
+! Modified, documentation, January 2020. JLM
+! Added nanlspin, 30 November 2023.   NEW API   NEW API
 
-!      version 4.94
+  implicit none
 
-       implicit none
+!  integer, parameter          :: REAL64 = selected_real_kind(12)
+ integer, parameter          ::  LMAX = 3
 
-!       integer, parameter          :: REAL64 = selected_real_kind(12)
+! input
 
-!      input
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
 
-       integer, intent(in)                ::  mxdtyp                     !<  array dimension of types of atoms
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
 
-       integer, intent(in)                ::  ntype                      !<  number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
+  integer, intent(in)                ::  nkb(0:LMAX,-1:1,mxdtyp)         !<  KB pseudo.  normalization for atom k, ang. mom. l
 
-       integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)       !<  KB pseudo.  normalization for atom k, ang. mom. l
+! output
 
-!      output
+  integer, intent(out)               ::  nanl                            !<  number of Kleinman-Bylander projectors without spin-orbit.
+  integer, intent(out)               ::  nanlso                          !<  number of Kleinman-Bylander projectors with spin-orbit.
+  integer, intent(out)               ::  nanlspin                        !<  number of Kleinman-Bylander projectors with or without spin-orbit depending on pseudopotential
 
-       integer, intent(out)               ::  nanl                       !<  number of Kleinman-Bylander projectorswithout spin-orbit.
-       integer, intent(out)               ::  nanlso                     !<  number of Kleinman-Bylander projectors with spin-orbit.
-       
-!      counters
+! counters
 
-       integer    ::  k
+  integer    ::  k, l, ic
 
-       nanl = 0
-       do k=1,ntype
-         if(nkb(0,0,k) /= 0) nanl = nanl + natom(k)
-         if(nkb(1,0,k) /= 0) nanl = nanl + 3*natom(k)
-         if(nkb(2,0,k) /= 0) nanl = nanl + 5*natom(k)
-         if(nkb(3,0,k) /= 0) nanl = nanl + 7*natom(k)
-       enddo
+  nanl = 0
+  do k = 1,ntype
+    do l = 0,LMAX
+      if(nkb(l,0,k) /= 0) nanl = nanl + (2*l+1)*natom(k)
+    enddo
+  enddo
 
-       nanlso = 0
-       do k=1,ntype
-         if(nkb(1,-1,k) /= 0) nanlso = nanlso + 2*natom(k)
-         if(nkb(2,-1,k) /= 0) nanlso = nanlso + 4*natom(k)
-         if(nkb(3,-1,k) /= 0) nanlso = nanlso + 6*natom(k)
-         if(nkb(0, 1,k) /= 0) nanlso = nanlso + 2*natom(k)
-         if(nkb(1, 1,k) /= 0) nanlso = nanlso + 4*natom(k)
-         if(nkb(2, 1,k) /= 0) nanlso = nanlso + 6*natom(k)
-         if(nkb(3, 1,k) /= 0) nanlso = nanlso + 8*natom(k)
-       enddo
+  nanlso = 0
+  do k=1,ntype
+    if(nkb(0, 1,k) /= 0) nanlso = nanlso + 2*natom(k)
+    do l = 1,LMAX
+      if(nkb(l,-1,k) /= 0) nanlso = nanlso + (2*l)*natom(k)
+      if(nkb(l, 1,k) /= 0) nanlso = nanlso + (2*l+2)*natom(k)
+    enddo
+  enddo
 
-       return
+  nanlso = 0
+  do k=1,ntype
 
-       end subroutine size_proj_nl_kb
+    ic = 0
+    if(nkb(0, 1,k) /= 0) ic = ic+1
+    do l = 1,LMAX
+      if(nkb(l,-1,k) /= 0) ic = ic+1
+      if(nkb(l, 1,k) /= 0) ic = ic+1
+    enddo
+
+    if(ic == 0) then
+      do l = 0,LMAX
+        if(nkb(l,0,k) /= 0) nanlspin = nanlspin + (2*l+1)*natom(k)
+      enddo
+    else
+      if(nkb(0, 1,k) /= 0) nanlspin = nanlspin + 2*natom(k)
+      do l = 1,LMAX
+        if(nkb(l,-1,k) /= 0) nanlspin = nanlspin + (2*l)*natom(k)
+        if(nkb(l, 1,k) /= 0) nanlspin = nanlspin + (2*l+2)*natom(k)
+      enddo
+    endif
+  enddo
+
+  return
+
+end subroutine size_proj_nl_kb

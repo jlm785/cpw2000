@@ -13,6 +13,11 @@
 
 !>  This subroutine calculates the Langreth-Kohn
 !>  variational k.p energies and eigenvectors.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.09
+!>  \date         7 February 2014. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
     psi, ei, mtxd, isort, qmod, ekpg, lkpg,                              &
@@ -25,9 +30,8 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
 ! Written 7 February 2014. JLM
 ! modified, documentation, lkpg, February 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, nanlspin, 30 November 2023. JLM
 
-! version 4.99
 
   implicit none
 
@@ -89,7 +93,7 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
 
 ! local variables
 
-  integer             ::  nanl, nanlso                                   !  number of KB projectors
+  integer             ::  nanl, nanlso, nanlspin                         !  number of KB projectors
   integer             ::  mxdanl                                         !  array dimension of number of projectors
 
   logical             ::  lnewanl                                        !  indicates that anlga has been recalculated (not used in default implementation)
@@ -113,7 +117,8 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
   call psi_convert(neig, mtxd0, isort0, psi0, mtxd, isort, psi_lk,       &
       mxddim, mxdbnd)
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+       mxdtyp)
 
   mxdanl = nanl
 

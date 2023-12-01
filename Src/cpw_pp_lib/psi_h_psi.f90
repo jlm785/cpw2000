@@ -12,6 +12,11 @@
 !------------------------------------------------------------!
 
 !>  Calculates <psi|H|psi> = <psi|v_loc|psi> + <psi|v_nl|psi> + <psi|0.5 nabla^2|psi>
+!>
+!>  \author       José Luís Martins
+!>  \version      5.09
+!>  \date         7 February 2014. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,                &
     hloc, hkin, hnl,                                                     &
@@ -26,9 +31,8 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,                &
 ! Modified 8 November 2015. Compatibility new libpw. JLM
 ! Modified, documentation, 21 February 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, nanlspin, 30 November 2023. JLM
 
-! version 4.99
 
   implicit none
 
@@ -82,11 +86,12 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,                &
 
 ! local variables
 
-  integer             ::  nanl, nanlso                                   !  number of KB projectors
+  integer             ::  nanl, nanlso, nanlspin                         !  number of KB projectors
   integer             ::  mxdanl                                         !  array dimension of number of projectors
 
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+       mxdtyp)
 
   mxdanl = nanl
 
@@ -114,4 +119,5 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,                &
   deallocate(xnlkb)
 
   return
+
 end subroutine psi_h_psi

@@ -13,6 +13,11 @@
 
 !>  Calculates the hamiltonian for one k-point
 !>  and diagonalizes it
+!>
+!>  \author       José Luís Martins
+!>  \version      5.09
+!>  \date         18 october 1993. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
     ipr, ifail, icmax, iguess, epspsi,                                   &
@@ -39,9 +44,8 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 ! Modified, dimension of ei fixed. icmax,ifail. 18 February 2020. JLM
 ! Modified, hamilt_pw, 2 June 2020. JLM
 ! Modified, qmod-->ekpg in ditsp_c16. 13 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, nanlspin, 30 November 2023. JLM
 
-! version 4.99
 
   implicit none
 
@@ -128,7 +132,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 
   real(REAL64)    ::  veffr1
   integer         ::  mxdanl,mxdsml
-  integer         ::  nanl, nanlso
+  integer         ::  nanl, nanlso, nanlspin
   integer         ::  mtxds
   INTEGER         ::  NDUM
 
@@ -145,7 +149,8 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 
   veffr1 = real(veff(1),REAL64)
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+      mxdtyp)
 
   mxdanl = nanl
 

@@ -13,6 +13,11 @@
 
 !>  Calculates the hamiltonian for one k-point in the atomic basis
 !>  and diagonalizes it in an LCAO basis.  It can do also a Jacobian update improvement.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.09
+!>  \date         18 october 1993. 30 November 2023.
+!>  \copyright    GNU Public License v2
 
 
 
@@ -43,9 +48,8 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 ! Modified, corrected dimension ei. 18 February 2020. JLM
 ! Modified, hamilt_pw, diag_c16_gen, hk_from_bas_diag, 2 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, nanlspin, 30 November 2023. JLM
 
-! version 4.99
 
   implicit none
 
@@ -125,7 +129,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
   integer       ::  mxdorb, mxdanl
 
   integer       ::  nbasorb
-  integer       ::  nanl, nanlso, ndeg
+  integer       ::  nanl, nanlso, nanlspin, ndeg
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)
   logical       ::  lhpsiloc                                             !  local value of lhpsi
@@ -157,7 +161,8 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 
   endif
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, mxdtyp)
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+       mxdtyp)
 
   mxdanl = nanl
 

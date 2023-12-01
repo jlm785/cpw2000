@@ -36,7 +36,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
   implicit none
 
-  integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          ::  REAL64 = selected_real_kind(12)
 
 ! input
 
@@ -109,8 +109,12 @@ subroutine out_mass_fd(ioreplay,                                         &
   integer, allocatable               ::  levdeg(:)                       !  degeneracy of energy level
   integer, allocatable               ::  leveigs(:,:)                    !  states belonging to level
 
-  real(REAL64), allocatable          ::  deidk_fd(:)                      !  derivative of energy
-  real(REAL64), allocatable          ::  d2eidk2_fd(:)                    !  second derivative of energy
+  real(REAL64), allocatable          ::  deidk_fd(:)                     !  derivative of energy
+  real(REAL64), allocatable          ::  d2eidk2_fd(:)                   !  second derivative of energy
+
+  real(REAL64), allocatable          ::  ei_so(:)                        !  energy with so
+  real(REAL64), allocatable          ::  deidk_fd_so(:)                  !  derivative of energy with so
+  real(REAL64), allocatable          ::  d2eidk2_fd_so(:)                !  second derivative of energy with so
 
 ! local variables
 
@@ -139,9 +143,11 @@ subroutine out_mass_fd(ioreplay,                                         &
   character(len=20) ::  typeofk
 
   real(REAL64)      ::  xk(3)
-  real(REAL64)      ::  xrk, delta
+  real(REAL64)      ::  xrk, delta          !  delta is interpolation step,
+  integer           ::  npt                 !  2*npt+1 is order of interpolatiopn
 
   character(len=1)  ::  yesno_dir
+  character(len=1)  ::  yesno_so
 
   real(REAL64)      ::  bdot(3,3), vcell
 
@@ -149,6 +155,9 @@ subroutine out_mass_fd(ioreplay,                                         &
   integer           ::  maxdeg              !  maximum number of degeneracies
 
   integer           ::  neigin              !  initial value of neig
+
+  logical           ::  lsoinfo             !  pseudopotential includes spin-orbit components
+  logical           ::  lso                 !  calculates with spin-orbit in perturbation
 
 ! constants
 
@@ -159,8 +168,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
 ! counters
 
-  integer    ::  i, j, k, n
-  integer    ::  nl, nk
+  integer    ::  i, j, k, l, n
 
 
 ! calculates local potential in fft mesh
@@ -186,6 +194,21 @@ subroutine out_mass_fd(ioreplay,                                         &
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
+
+! checks if there is spin-orbit information
+
+  lsoinfo = .FALSE.
+  do n = 1,ntype
+    do l = 0,3
+      if(nkb(n,-1,n) /=0 .or. nkb(n,-1,n) /=0) then
+       lsoinfo = .TRUE.
+       exit
+      endif
+    enddo
+    if(lsoinfo) exit
+  enddo
+
+! finds number of bands
 
   write(6,*)
   write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
@@ -284,6 +307,10 @@ subroutine out_mass_fd(ioreplay,                                         &
   allocate(deidk_fd(mxdbnd))
   allocate(d2eidk2_fd(mxdbnd))
 
+  allocate(ei_so(2*mxdbnd))
+  allocate(deidk_fd_so(2*mxdbnd))
+  allocate(d2eidk2_fd_so(2*mxdbnd))
+
 ! loop over directions
 
   do i = 1,1000
@@ -316,34 +343,81 @@ subroutine out_mass_fd(ioreplay,                                         &
       xk(3) = ZERO
     endif
 
+    write(6,*)
+    write(6,*) '  choose step for and order (2 n + 1) of finite differences:'
+    write(6,*)
+    write(6,*) '  enter delta and n (suggested 0.0001 and 3)'
+    write(6,*)
+    read(5,*) delta, npt
+    write(ioreplay,'(g16.8,5x,i5,10x,"delta,npt")') delta, npt
 
-  delta = 0.0001
+    if(delta <= ZERO) then
+      write(6,*)
+      write(6,*) '   negative values of delta not allowed'
+      write(6,*) '   setting delta to 0.0001'
+      write(6,*)
+      delta = 0.0001
+    endif
+
+    if(delta < TOL) then
+      write(6,*)
+      write(6,*) '   unreasonably small value of delta'
+      write(6,*) '   expect disaster'
+      write(6,*)
+    endif
+
+    if(npt < 1 .or. npt > 10) then
+      write(6,*)
+      write(6,*) '   unreasonably value of n'
+      write(6,*) '   setting n to 3'
+      write(6,*)
+      npt = 3
+    endif
 
     write(6,*)
-    write(6,'("   using delta = ",e12.3)') delta
+    write(6,'("   using delta = ",e12.3,"  and order ",i5)') delta, 2*npt+1
+    write(6,*)
 
+    lso = .FALSE.
+    if(lsoinfo) then
+      write(6,*)
+      write(6,*) '  Do you want the results with spin-orbit in perturbation (y/n)?'
+      write(6,*)
+      read(5,*) yesno_so
+      write(ioreplay,*) yesno_so,'      with spin-orbit'
+      if(yesno_so == 'y' .or. yesno_so == 'Y') lso = .TRUE.
+    endif
 
-  call out_mass_fd_xk(rk0, xk, neig, 3, delta,                           &
-    deidk_fd, d2eidk2_fd,                                                &
-    emax, flgdal, flgpsd, epspsi, icmax,                                 &
-    adot, ntype, natom, rat,                                             &
-    ng, kgv, phase, conj,                                                &
-    ns, inds, kmax, indv, ek,                                            &
-    sfact, icmplx,                                                       &
-    veff,                                                                &
-    nqnl, delqnl, vkb, nkb,                                              &
-    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao,              &
-    mxddim, mxdbnd)
+    call out_mass_fd_xk(rk0, xk, neig, npt, delta, lso,                  &
+        deidk_fd, d2eidk2_fd,                                            &
+        ei_so, deidk_fd_so, d2eidk2_fd_so,                               &
+        emax, flgdal, flgpsd, epspsi, icmax,                             &
+        adot, ntype, natom, rat,                                         &
+        ng, kgv, phase, conj,                                            &
+        ns, inds, kmax, indv, ek,                                        &
+        sfact, icmplx,                                                   &
+        veff,                                                            &
+        nqnl, delqnl, vkb, nkb,                                          &
+        latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
+        mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao,          &
+        mxddim, mxdbnd)
 
 
     write(6,*)
     write(6,*) '   Results from finite differences'
+    if(lso) write(6,*) '   without spin-orbit'
     write(6,*)
 
-    call out_mass_print(nlevel, levdeg, leveigs,                         &
-        ei, deidk_fd, d2eidk2_fd,                                        &
-        mxdbnd, mxdlev, mxddeg)
+    call out_mass_print(neig, ei, deidk_fd, d2eidk2_fd,                  &
+        mxdbnd)
+
+    if(lso) then
+
+      call out_mass_print(2*neig, ei_so, deidk_fd_so, d2eidk2_fd_so,     &
+           2*mxdbnd)
+
+
+    endif
 
     write(6,*)
     write(6,*) '  Do you want another direction? (y/n)'
@@ -373,6 +447,10 @@ subroutine out_mass_fd(ioreplay,                                         &
 
   deallocate(deidk_fd)
   deallocate(d2eidk2_fd)
+
+  deallocate(ei_so)
+  deallocate(deidk_fd_so)
+  deallocate(d2eidk2_fd_so)
 
   return
 

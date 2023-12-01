@@ -1,25 +1,27 @@
 *> \brief \b DLASCL multiplies a general rectangular matrix by a real scalar defined as cto/cfrom.
 *
+*  MODIFIED BY JLM TO AVOID GFORTRAN UNDERFLOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*
 *  =========== DOCUMENTATION ===========
 *
-* Online html documentation available at 
-*            http://www.netlib.org/lapack/explore-html/ 
+* Online html documentation available at
+*            http://www.netlib.org/lapack/explore-html/
 *
 *> \htmlonly
-*> Download DLASCL + dependencies 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/dlascl.f"> 
-*> [TGZ]</a> 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/dlascl.f"> 
-*> [ZIP]</a> 
-*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/dlascl.f"> 
+*> Download DLASCL + dependencies
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.tgz?format=tgz&filename=/lapack/lapack_routine/dlascl.f">
+*> [TGZ]</a>
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.zip?format=zip&filename=/lapack/lapack_routine/dlascl.f">
+*> [ZIP]</a>
+*> <a href="http://www.netlib.org/cgi-bin/netlibfiles.txt?format=txt&filename=/lapack/lapack_routine/dlascl.f">
 *> [TXT]</a>
-*> \endhtmlonly 
+*> \endhtmlonly
 *
 *  Definition:
 *  ===========
 *
 *       SUBROUTINE DLASCL( TYPE, KL, KU, CFROM, CTO, M, N, A, LDA, INFO )
-* 
+*
 *       .. Scalar Arguments ..
 *       CHARACTER          TYPE
 *       INTEGER            INFO, KL, KU, LDA, M, N
@@ -28,7 +30,7 @@
 *       .. Array Arguments ..
 *       DOUBLE PRECISION   A( LDA, * )
 *       ..
-*  
+*
 *
 *> \par Purpose:
 *  =============
@@ -127,10 +129,10 @@
 *  Authors:
 *  ========
 *
-*> \author Univ. of Tennessee 
-*> \author Univ. of California Berkeley 
-*> \author Univ. of Colorado Denver 
-*> \author NAG Ltd. 
+*> \author Univ. of Tennessee
+*> \author Univ. of California Berkeley
+*> \author Univ. of Colorado Denver
+*> \author NAG Ltd.
 *
 *> \date September 2012
 *
@@ -245,7 +247,15 @@
       CTOC = CTO
 *
    10 CONTINUE
-      CFROM1 = CFROMC*SMLNUM
+
+!     avoid underflow
+
+      if(cfromc .lt. one) then
+        cfrom1 = zero
+      else
+        CFROM1 = CFROMC*SMLNUM
+      endif
+
       IF( CFROM1.EQ.CFROMC ) THEN
 !        CFROMC is an inf.  Multiply by a correctly signed zero for
 !        finite CTOC, or a NaN if CTOC is infinite.
@@ -253,7 +263,15 @@
          DONE = .TRUE.
          CTO1 = CTOC
       ELSE
-         CTO1 = CTOC / BIGNUM
+
+!        avoid underflow
+
+         if(ctoc .lt. one) then
+           ct01 = zero
+         else
+           CTO1 = CTOC / BIGNUM
+         endif
+
          IF( CTO1.EQ.CTOC ) THEN
 !           CTOC is either 0 or an inf.  In both cases, CTOC itself
 !           serves as the correct multiplication factor.
