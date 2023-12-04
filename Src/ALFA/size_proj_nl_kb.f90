@@ -79,7 +79,7 @@ subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlsp,      &
 
     if(ic == 0) then
       do l = 0,LMAX
-        if(nkb(l,0,k) /= 0) nanlsp = nanlsp + (2*l+1)*natom(k)
+        if(nkb(l,0,k) /= 0) nanlsp = nanlsp + 2*(2*l+1)*natom(k)
       enddo
     else
       if(nkb(0, 1,k) /= 0) nanlsp = nanlsp + 2*natom(k)

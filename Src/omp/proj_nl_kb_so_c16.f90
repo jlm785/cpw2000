@@ -161,7 +161,7 @@ subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
 
       do l = 0,LMAX
         if(nkb(l,0,k) /= 0) then
-          nanlsp = nanlsp + (2*l+1)*natom(k)
+          nanlsp = nanlsp + 2*(2*l+1)*natom(k)
           lmx = max(lmx,l)
         endif
       enddo
