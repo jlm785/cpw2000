@@ -15,10 +15,10 @@
 !>  non local part of the hamiltonian for a given k-point
 !>  Kleinman and Bylander pseudo-potential
 !>  and its derivatives with respect to k-point coordinate
-!>  including the spin perturbation
+!>  for use with the spin perturbation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.0.3
+!>  \version      5.0.9
 !>  \date         28 January 2020, 7 December 2021.
 !>  \copyright    GNU Public License v2
 
@@ -27,16 +27,16 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
     ng, kgv,                                                             &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    anlspin, anlsop, anlsom, xnlkbspin, xnlkbso,                         &
-    danlspindrk, danlsopdrk, danlsomdrk,                                 &
-    d2anlspindrk2, d2anlsopdrk2, d2anlsomdrk2,                           &
+    anlnoso, anlsop, anlsom, xnlkbnoso, xnlkbso,                         &
+    danlnosodrk, danlsopdrk, danlsomdrk,                                 &
+    d2anlnosodrk2, d2anlsopdrk2, d2anlsomdrk2,                           &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdaso, mxdgve)
 
 
 ! written 28 January 2020 from the non-perturbation version. JLM
 ! openmp version 19 January 2020. JLM
 ! LMAX,lmx, 7 December 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
+! comments, anlspins -> anlnoso, 4 December 2023. JLM
 
 
   implicit none
@@ -76,15 +76,15 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
   integer, intent(out)               ::  nanl                            !<  half of number of projectors without spin
   integer, intent(out)               ::  nanlso                          !<  number of projectors witn spin
 
-  complex(REAL64), intent(out)       ::  anlspin(mxddim,mxdanl)          !<  KB projectors without spin-orbit
+  complex(REAL64), intent(out)       ::  anlnoso(mxddim,mxdanl)          !<  KB projectors without spin-orbit
   complex(REAL64), intent(out)       ::  anlsop(mxddim,mxdaso)           !<  KB projectors with spin-orbit m_s = + 1/2
   complex(REAL64), intent(out)       ::  anlsom(mxddim,mxdaso)           !<  KB projectors with spin-orbit m_s = - 1/2
 
-  real(REAL64), intent(out)          ::  xnlkbspin(mxdanl)               !<  KB normalization without spin-orbit
+  real(REAL64), intent(out)          ::  xnlkbnoso(mxdanl)               !<  KB normalization without spin-orbit
   real(REAL64), intent(out)          ::  xnlkbso(mxdaso)                 !<  KB normalization with spin-orbit
 
-  complex(REAL64), intent(out)     ::  danlspindrk(mxddim,mxdanl,3)      !<  d anlspin / d rkpt
-  complex(REAL64), intent(out)     ::  d2anlspindrk2(mxddim,mxdanl,3,3)  !<  d^2 anlspin / d rkpt^2
+  complex(REAL64), intent(out)     ::  danlnosodrk(mxddim,mxdanl,3)      !<  d anlnoso / d rkpt
+  complex(REAL64), intent(out)     ::  d2anlnosodrk2(mxddim,mxdanl,3,3)  !<  d^2 anlnoso / d rkpt^2
   complex(REAL64), intent(out)     ::  danlsopdrk(mxddim,mxdaso,3)       !<  d anlsop / d rkpt
   complex(REAL64), intent(out)     ::  d2anlsopdrk2(mxddim,mxdaso,3,3)   !<  d^2 anlsop / d rkpt^2
   complex(REAL64), intent(out)     ::  danlsomdrk(mxddim,mxdaso,3)       !<  d anlsom / d rkpt
@@ -212,7 +212,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
   endif
 
   ind = 0
-  do k=1,ntype
+  do k = 1,ntype
     do l = 1,LMAX
       if(nkb(l,-1,k) /= 0) then
         ind = ind + (2*l)*natom(k)
@@ -308,7 +308,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 !$omp  parallel do default(private)                                      &
 !$omp& shared(kgv, bvec, bdot, ntype, natom, mtxd, rkpt, isort, rat)     &
 !$omp& shared(nder, lmx, delqnl, nqnl, vkb, fac)                         &
-!$omp& shared(nanl, anlspin, danlspindrk, d2anlspindrk2)                 &
+!$omp& shared(nanl, anlnoso, danlnosodrk, d2anlnosodrk2)                 &
 !$omp& shared(nanlso, anlsop, danlsopdrk, d2anlsopdrk2)                  &
 !$omp& shared(anlsom, danlsomdrk, d2anlsomdrk2)                          &
 !$omp& shared(k_ind, kk_ind, l_ind, m_ind)                               &
@@ -659,11 +659,11 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
       l = l_ind(ind)
       m = m_ind(ind)
 
-      anlspin(i,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
+      anlnoso(i,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
 
       if(nder > 0) then
         do n = 1,3
-          danlspindrk(i,ind,n) = st(kk,k)*                               &
+          danlnosodrk(i,ind,n) = st(kk,k)*                               &
              ( dzylmdrk(n,l,m)*vqil(l,0,k)                               &
                + zylm(l,m)*dvqildq(l,0,k)*dqidrk(n) )
         enddo
@@ -678,7 +678,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
         if(lqi) then
           do n1 = 1,3
           do n2 = 1,3
-            d2anlspindrk2(i,ind,n2,n1) = st(kk,k)*                       &
+            d2anlnosodrk2(i,ind,n2,n1) = st(kk,k)*                       &
               (  d2zylmdrk2(n2,n1,l,m)*vqil(l,0,k)                       &
                + dzylmdrk(n1,l,m)*dvqildq(l,0,k)*dqidrk(n2)              &
                + dzylmdrk(n2,l,m)*dvqildq(l,0,k)*dqidrk(n1)              &
@@ -689,7 +689,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
         else
           do n1 = 1,3
           do n2 = 1,3
-            d2anlspindrk2(i,ind,n2,n1) = st(kk,k)*                       &
+            d2anlnosodrk2(i,ind,n2,n1) = st(kk,k)*                       &
                 ( d2zylmdrk2(n2,n1,l,m)*vqil(l,0,k) +                    &
                   zylm(l,m)*d2vqildq2(l,0,k)*bdot(n2,n1) )
           enddo
@@ -707,7 +707,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
 
   do ind = 1,nanl
-    xnlkbspin(ind) = UM*nkb(l_ind(ind),0,k_ind(ind))
+    xnlkbnoso(ind) = UM*nkb(l_ind(ind),0,k_ind(ind))
   enddo
 
   do ind = 1,nanlso

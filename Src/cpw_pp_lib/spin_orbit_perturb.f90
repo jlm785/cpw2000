@@ -30,6 +30,7 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
 ! Written 4 February 2014.  JLM
 ! modified, dimensions vkb, March 31, 2014. jlm
 ! modified, less memory, faster, 13 January 2020. JLM
+! indentation, anlspin -> anlnoso, 4 December 2023. JLM
 
 
   implicit none
@@ -75,14 +76,14 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
   integer       ::  mxdanl                                               !  array dimension of number of projectors
   integer       ::  mxdaso                                               !  array dimension of number of projectors with spin-orbit
   integer       ::  nanl                                                 !  half of number of projectors without spin
-  integer       ::  nanlso, nanlspin                                     !  number of projectors witn spin
+  integer       ::  nanlso, nanlnoso                                     !  number of projectors witn spin
 
   integer            ::  info
 
 ! allocatable local arrays
 
-  complex(REAL64), allocatable       ::  anlspin(:,:)               !  KB projectors without spin-orbit
-  real(REAL64), allocatable          ::  xnlkbspin(:)               !  KB normalization without spin-orbit
+  complex(REAL64), allocatable       ::  anlnoso(:,:)               !  KB projectors without spin-orbit
+  real(REAL64), allocatable          ::  xnlkbnoso(:)               !  KB normalization without spin-orbit
 
   complex(REAL64), allocatable       ::  anlsop(:,:)                !  KB projectors with spin-orbit
   complex(REAL64), allocatable       ::  anlsom(:,:)                !  KB projectors with spin-orbit
@@ -106,14 +107,14 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
 
   integer         ::  i, j
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlnoso,        &
        mxdtyp)
 
   mxdanl = nanl
   mxdaso = nanlso
 
-  allocate(anlspin(mxddim,mxdanl))
-  allocate(xnlkbspin(mxdanl))
+  allocate(anlnoso(mxddim,mxdanl))
+  allocate(xnlkbnoso(mxdanl))
   allocate(xnlkbso(mxdaso))
 
   allocate(anlsop(mxddim,mxdaso))
@@ -123,7 +124,7 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
-      anlspin, anlsop, anlsom, xnlkbspin, xnlkbso,                       &
+      anlnoso, anlsop, anlsom, xnlkbnoso, xnlkbso,                       &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdaso, mxdgve)
 
   allocate(h_so(2*neig,2*neig))
@@ -152,7 +153,7 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
   enddo
   enddo
 
-  call psi_vnl_psi(mtxd, neig, psi, hnlhalf, anlspin, xnlkbspin,         &
+  call psi_vnl_psi(mtxd, neig, psi, hnlhalf, anlnoso, xnlkbnoso,         &
       nanl, mxddim, neig, mxdanl)
 
   do i=1,neig
@@ -194,8 +195,8 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
 
   endif
 
-  deallocate(anlspin)
-  deallocate(xnlkbspin)
+  deallocate(anlnoso)
+  deallocate(xnlkbnoso)
   deallocate(xnlkbso)
 
   deallocate(anlsop)

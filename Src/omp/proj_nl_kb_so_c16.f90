@@ -11,34 +11,33 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Sets up the special representation of the
+!>  Sets up the special representation of the projectors of the
 !>  non local part of the hamiltonian for a given k-point
-!>  Kleinman and Bylander pseudo-potential
-!>  for use with spin-perturbation
+!>  Kleinman and Bylander pseudo-potential.
+!>  It includes both non-relativistic and relativistic
+!>  pseudopotentials wit the same representation.
 !>
-!>  It calculates the non-relativistic part of the pseudopotential without
-!>  spin, the relativistic part is separated into plus and minus projectors.
-!>  The projectors do not include spin in their indexes!
+!>  For spin-orbit perturbation use proj_nl_kb_so_pert_c16
+!>  that generates the projectors in both relativistic and relativistic
+!>
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.0.3
-!>  \date         January 2020, 7 December 2021.
+!>  \version      5.0.9
+!>  \date         3 December 2023
 !>  \copyright    GNU Public License v2
 
-subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
-    nanl, nanlso,                                                        &
+subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
+    nanlsp,                                                              &
     ng, kgv,                                                             &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    anlnoso, anlsop, anlsom, xnlkbnoso, xnlkbso,                         &
-    mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdaso, mxdgve)
+    anlsp, xnlkbsp,                                                      &
+    mxdtyp, mxdatm, mxdlqp, mxddim, mxdasp, mxdgve)
 
 
-! written 13 January 2020 from the non-perturbation version. JLM
-! synchronized with the version with derivatives 31 January 2020
-! openmp version 19 January 2020. JLM
-! LMAX,lmx, 7 December 2021. JLM
-! comments, anlspins -> anlnoso, 3 December 2023. JLM
+! Written 3 December 2023 from previous code. JLM
+! It is based on the perturbative subroutine and the old-subroutine.
+
 
   implicit none
 
@@ -51,8 +50,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
-  integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
-  integer, intent(in)                ::  mxdaso                          !<  array dimension of number of projectors with spin-orbit
+  integer, intent(in)                ::  mxdasp                          !<  array dimension of number of projectors with or without spin-orbit
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
@@ -72,15 +70,11 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
 ! output
 
-  integer, intent(out)               ::  nanl                            !<  half of number of projectors without spin
-  integer, intent(out)               ::  nanlso                          !<  number of projectors witn spin
+  integer, intent(out)               ::  nanlsp                          !<  number of Kleinman-Bylander projectors with or without spin-orbit depending on pseudopotential
 
-  complex(REAL64), intent(out)       ::  anlnoso(mxddim,mxdanl)          !<  KB projectors without spin-orbit
-  complex(REAL64), intent(out)       ::  anlsop(mxddim,mxdaso)           !<  KB projectors with spin-orbit m_s = + 1/2
-  complex(REAL64), intent(out)       ::  anlsom(mxddim,mxdaso)           !<  KB projectors with spin-orbit m_s = - 1/2
+  complex(REAL64), intent(out)       ::  anlsp(2*mxddim,mxdasp)          !<  KB projectors in spin representation
 
-  real(REAL64), intent(out)          ::  xnlkbnoso(mxdanl)               !<  KB normalization without spin-orbit
-  real(REAL64), intent(out)          ::  xnlkbso(mxdaso)                 !<  KB normalization with spin-orbit
+  real(REAL64), intent(out)          ::  xnlkbsp(mxdasp)                 !<  KB normalization without spin-orbit
 
 ! allocatable local variables
 
@@ -91,12 +85,11 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   integer, allocatable          ::  kk_ind(:)                            !  index of atom of type k
   integer, allocatable          ::  l_ind(:)                             !  quantum number l
   integer, allocatable          ::  m_ind(:)                             !  quantum number m
+  integer, allocatable          ::  ms_ind(:)                            !  2*quantum number ms
+  integer, allocatable          ::  j_ind(:)                             !  2* quantum number j
+  integer, allocatable          ::  mj_ind(:)                            !  2* quantum number m_j
 
-  integer, allocatable          ::  k_ind_so(:)                          !  index of atom type
-  integer, allocatable          ::  kk_ind_so(:)                         !  index of atom of type k
-  integer, allocatable          ::  l_ind_so(:)                          !  quantum number l
-  integer, allocatable          ::  j_ind_so(:)                          !  2* quantum number j
-  integer, allocatable          ::  mj_ind_so(:)                         !  2* quantum number m_j
+  logical, allocatable          ::  lso(:)                               !  indicates if the pseudopotential has relativistic components
 
 ! local variables
 
@@ -130,7 +123,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
   integer         ::  ind
   integer         ::  k, kk, l, m, j, mj, ms
-  integer         ::  i, ni
+  integer         ::  i, ni, ic
 
 
 ! paranoid check, stops complaint about unused ng...
@@ -140,9 +133,8 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   allocate(st(mxdatm,mxdtyp))
   allocate(vqil(0:LMAX,-LMAX:LMAX,mxdtyp))
 
-  allocate(k_ind(nanl), kk_ind(nanl), l_ind(nanl), m_ind(nanl))
-  allocate(k_ind_so(nanlso), kk_ind_so(nanlso), l_ind_so(nanlso))
-  allocate(j_ind_so(nanlso), mj_ind_so(nanlso))
+  allocate(lso(mxdtyp))
+
 
 ! cell stuff
 
@@ -152,59 +144,75 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
 ! checks dimensions and maximum angular momentum
 
-  ind = 0
+  nanlsp = 0
   lmx = 0
   do k = 1,ntype
-    do l = 0,LMAX
-      if(nkb(l,0,k) /= 0) then
-        ind = ind + (2*l+1)*natom(k)
-        lmx = max(lmx,l)
-      endif
+
+    ic = 0
+    if(nkb(0, 1,k) /= 0) ic = ic+1
+    do l = 1,LMAX
+      if(nkb(l,-1,k) /= 0) ic = ic+1
+      if(nkb(l, 1,k) /= 0) ic = ic+1
     enddo
+
+    if(ic == 0) then
+
+      lso(k) = .FALSE.
+
+      do l = 0,LMAX
+        if(nkb(l,0,k) /= 0) then
+          nanlsp = nanlsp + (2*l+1)*natom(k)
+          lmx = max(lmx,l)
+        endif
+      enddo
+
+    else
+
+      lso(k) = .TRUE.
+      if(nkb(0, 1,k) /= 0) nanlsp = nanlsp + 2*natom(k)
+
+      do l = 1,LMAX
+        if(nkb(l,-1,k) /= 0) then
+          nanlsp = nanlsp + (2*l)*natom(k)
+          lmx = max(lmx,l)
+        endif
+        if(nkb(l, 1,k) /= 0) then
+          nanlsp = nanlsp + (2*l+2)*natom(k)
+          lmx = max(lmx,l)
+        endif
+      enddo
+
+    endif
   enddo
-  nanl = ind
-  if(nanl > mxdanl) then
-    write(6,'("  proj_nl_kb_so(1):    increase mxdanl from ",i8,         &
-           &  " to ",2i8)')  mxdanl, nanl, ng
+
+  if(nanlsp > mxdasp) then
+    write(6,'("  proj_nl_kb_so_c16(1):    increase mxdasp from ",i8,     &
+           &  " to ",2i8)')  mxdasp, nanlsp, ng
 
     stop
 
   endif
 
   if(lmx > LMAX) then
-    write(6,'("  proj_nl_kb_so:    lmx = ",i8,                           &
+    write(6,'("  proj_nl_kb_so_c16:    lmx = ",i8,                       &
            &  " > ",i3," (max allowed in code)")')  lmx, LMAX
 
     stop
 
   endif
 
-  ind = 0
-  do k = 1,ntype
-    do l = 1,LMAX
-      if(nkb(l,-1,k) /= 0) then
-        ind = ind + (2*l)*natom(k)
-        lmx = max(lmx,l)
-      endif
-    enddo
-    do l = 0,LMAX
-      if(nkb(l,1,k) /= 0) then
-        ind = ind + (2*l+2)*natom(k)
-        lmx = max(lmx,l)
-      endif
-    enddo
-  enddo
-
-  nanlso = ind
-  if(nanlso > mxdaso) then
-    write(6,'("  proj_nl_kb_so:    increase mxdaso from ",i8,            &
-           &  " to ",i8)')  mxdaso,nanlso
-
-    stop
-
-  endif
-
 ! fills indexation array
+
+  allocate(k_ind(nanlsp), kk_ind(nanlsp), l_ind(nanlsp))
+  allocate(m_ind(nanlsp), ms_ind(nanlsp))
+  allocate(j_ind(nanlsp), mj_ind(nanlsp))
+
+  k_ind(:) = 0
+  kk_ind(:) = 0
+  l_ind(:) = 0
+  m_ind(:) = 0
+  j_ind(:) = 0
+  mj_ind(:) = 0
 
   ind = 0
   do k = 1,ntype
@@ -225,37 +233,68 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
     enddo    !  l=0,lmx
   enddo      !  k=1,ntype
 
+
   ind = 0
   do k = 1,ntype
-    do l = 0,lmx
-      if(nkb(l,1,k) /= 0) then
-        do mj = -2*l-1,2*l+1,2
-          do kk = 1,natom(k)
-            ind = ind + 1
-            k_ind_so(ind) = k
-            kk_ind_so(ind) = kk
-            l_ind_so(ind) = l
-            j_ind_so(ind) = 2*l+1
-            mj_ind_so(ind) = mj
-          enddo
-        enddo
-      endif
-      if(nkb(l,-1,k) /= 0) then
-        if(l > 0) then
-          do mj = -2*l+1,2*l-1,2
+
+    if(lso(k)) then
+
+      do l = 0,lmx
+
+        if(nkb(l,1,k) /= 0) then
+          do mj = -2*l-1,2*l+1,2
             do kk = 1,natom(k)
               ind = ind + 1
-              k_ind_so(ind) = k
-              kk_ind_so(ind) = kk
-              l_ind_so(ind) = l
-              j_ind_so(ind) = 2*l-1
-              mj_ind_so(ind) = mj
+              k_ind(ind) = k
+              kk_ind(ind) = kk
+              l_ind(ind) = l
+              j_ind(ind) = 2*l+1
+              mj_ind(ind) = mj
             enddo
           enddo
         endif
-      endif
-    enddo
-  enddo
+
+        if(nkb(l,-1,k) /= 0) then
+          if(l > 0) then
+            do mj = -2*l+1,2*l-1,2
+              do kk = 1,natom(k)
+                ind = ind + 1
+                k_ind(ind) = k
+                kk_ind(ind) = kk
+                l_ind(ind) = l
+                j_ind(ind) = 2*l-1
+                mj_ind(ind) = mj
+              enddo
+            enddo
+          endif
+        endif
+
+      enddo    !  l=0,lmx
+
+    else
+
+      do l = 0,lmx
+        if(nkb(l,0,k) /= 0) then
+
+          do m = -l,l
+            do kk = 1,natom(k)
+              do ms = -1,1,2
+                ind = ind + 1
+                k_ind(ind) = k
+                kk_ind(ind) = kk
+                l_ind(ind) = l
+                m_ind(ind) = m
+                ms_ind(ind) = ms
+              enddo
+            enddo
+          enddo
+
+        endif
+      enddo    !  l=0,lmx
+
+    endif
+
+  enddo        !  k=1,ntype
 
 ! Clebsch-Gordan coefficients
 
@@ -275,9 +314,9 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 !$omp  parallel do default(private)                                      &
 !$omp& shared(kgv, bvec, bdot, ntype, natom, mtxd, rkpt, isort, rat)     &
 !$omp& shared(lmx, delqnl, nqnl, vkb, fac)                               &
-!$omp& shared(nanl, anlnoso, nanlso, anlsop, anlsom)                     &
-!$omp& shared(k_ind, kk_ind, l_ind, m_ind)                               &
-!$omp& shared(k_ind_so, kk_ind_so, l_ind_so, j_ind_so, mj_ind_so)        &
+!$omp& shared(anlsp, nanlsp)                                             &
+!$omp& shared(k_ind, kk_ind, l_ind, m_ind, ms_ind)                       &
+!$omp& shared(j_ind, mj_ind)                                             &
 !$omp& shared(cg)
   do i = 1,mtxd
 
@@ -297,7 +336,7 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
 !   structure phase factor
 
-    do k=1,ntype
+    do k = 1,ntype
       do kk=1,natom(k)
         fi = kgv(1,isort(i))*rat(1,kk,k) +                               &
              kgv(2,isort(i))*rat(2,kk,k) +                               &
@@ -338,45 +377,55 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
 
 !   loop over second index
 
-    do ind = 1,nanlso
-
-      k = k_ind_so(ind)
-      kk = kk_ind_so(ind)
-      l = l_ind_so(ind)
-      j = j_ind_so(ind)
-      mj = mj_ind_so(ind)
-      ms = j - 2*l
-
-      if( mj == -2*l-1 ) then
-
-        anlsop(i,ind) = C_ZERO
-        anlsom(i,ind) = st(kk,k)*zylm(l,-l)*vqil(l,ms,k)
-
-      elseif( mj == 2*l+1 ) then
-
-        anlsop(i,ind) = st(kk,k)*zylm(l, l)*vqil(l,ms,k)
-        anlsom(i,ind) = ZERO
-
-
-      elseif( l > 0 ) then
-
-        anlsop(i,ind) =    st(kk,k)*zylm(l,(mj-1)/2)*vqil(l,ms,k)*cg(l, ms*mj)
-        anlsom(i,ind) = ms*st(kk,k)*vqil(l,ms,k)*zylm(l,(mj+1)/2)*cg(l,-ms*mj)
-
-      endif
-
-    enddo
-
-!   loop over second index, without spin-orbit
-
-    do ind = 1,nanl
+    do ind = 1,nanlsp
 
       k = k_ind(ind)
       kk = kk_ind(ind)
       l = l_ind(ind)
-      m = m_ind(ind)
 
-      anlnoso(i,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
+      if(lso(k)) then
+
+!       pseudopotential is relativistic
+
+        j = j_ind(ind)
+        mj = mj_ind(ind)
+        ms = j - 2*l
+
+        if( mj == -2*l-1 ) then
+
+          anlsp(2*i-1,ind) = C_ZERO
+          anlsp(2*i  ,ind) = st(kk,k)*zylm(l,-l)*vqil(l,ms,k)
+
+        elseif( mj == 2*l+1 ) then
+
+          anlsp(2*i-1,ind) = st(kk,k)*zylm(l, l)*vqil(l,ms,k)
+          anlsp(2*i  ,ind) = ZERO
+
+
+        elseif( l > 0 ) then
+
+          anlsp(2*i-1,ind) =    st(kk,k)*zylm(l,(mj-1)/2)*vqil(l,ms,k)*cg(l, ms*mj)
+          anlsp(2*i  ,ind) = ms*st(kk,k)*vqil(l,ms,k)*zylm(l,(mj+1)/2)*cg(l,-ms*mj)
+
+        endif
+
+      else
+
+!       pseudopotential is non-relativistic
+
+        l = l_ind(ind)
+        m = m_ind(ind)
+        ms = ms_ind(ind)
+
+        if(ms == 1) then
+          anlsp(2*i-1,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
+          anlsp(2*i  ,ind) = ZERO
+        else
+          anlsp(2*i-1,ind) = ZERO
+          anlsp(2*i  ,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
+        endif
+
+      endif
 
     enddo
 
@@ -384,27 +433,25 @@ subroutine proj_nl_kb_so_pert_c16(rkpt, mtxd, isort,                     &
   enddo        !  i=1,mtxd
 !$omp end parallel do
 
-
-
-  do ind = 1,nanl
-    xnlkbnoso(ind) = UM*nkb(l_ind(ind),0,k_ind(ind))
-  enddo
-
-  do ind = 1,nanlso
-    l = l_ind_so(ind)
-    j = j_ind_so(ind)
-    ms = j - 2*l
-    k = k_ind_so(ind)
-    xnlkbso(ind) = UM*nkb(l,ms,k)
+  do ind = 1,nanlsp
+    k = k_ind(ind)
+    l = l_ind(ind)
+    if(lso(k)) then
+      j = j_ind(ind)
+      ms = j - 2*l
+      xnlkbsp(ind) = UM*nkb(l,ms,k)
+    else
+      xnlkbsp(ind) = UM*nkb(l,0,k)
+    endif
   enddo
 
   deallocate(st)
   deallocate(vqil)
 
-  deallocate(k_ind, kk_ind, l_ind, m_ind)
-  deallocate(k_ind_so, kk_ind_so, l_ind_so)
-  deallocate(j_ind_so, mj_ind_so)
+  deallocate(k_ind, kk_ind, l_ind)
+  deallocate(m_ind, ms_ind)
+  deallocate(j_ind, mj_ind)
 
   return
 
-end subroutine proj_nl_kb_so_pert_c16
+end subroutine proj_nl_kb_so_c16

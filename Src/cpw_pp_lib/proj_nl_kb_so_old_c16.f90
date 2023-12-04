@@ -11,7 +11,7 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       subroutine proj_nl_kb_so_c16(rkpt,mtxd,isort,nanl,nanlso,        &
+       subroutine proj_nl_kb_so_old_c16(rkpt,mtxd,isort,nanl,nanlso,    &
      & ng,kgv,                                                          &
      & nqnl,delqnl,vkb,nkb,                                             &
      & ntype,natom,rat,adot,                                            &
@@ -22,7 +22,7 @@
 !      non local part of the hamiltonian for a given k-point
 !      Kleinman and Bylander pseudo-potential
 
-!      SPIN-ORBIT VERSION
+!      SPIN-ORBIT VERSION   WARNING KEPT FOR COMPATIBILITY
 
 !      written f90/complex  19 June 2012
 !      Modified 7 January 2014, style. JLM
@@ -330,4 +330,4 @@
 
        return
 
-       end subroutine proj_nl_kb_so_c16
+       end subroutine proj_nl_kb_so_old_c16

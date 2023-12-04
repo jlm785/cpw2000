@@ -182,7 +182,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 
 ! SHOULD MODERNIZE THIS CALL ONLY USED AS PERTURBATION
 
-  call proj_nl_kb_so_c16(rkpt, mtxd, isort, nanl, nanlso,                &
+  call proj_nl_kb_so_old_c16(rkpt, mtxd, isort, nanl, nanlso,            &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &

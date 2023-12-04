@@ -18,7 +18,7 @@
 !>  \date         December 20, 2013. 30 November 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
+subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlsp,      &
               mxdtyp)
 
 ! written December 20, 2013. jlm
@@ -45,7 +45,7 @@ subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
 
   integer, intent(out)               ::  nanl                            !<  number of Kleinman-Bylander projectors without spin-orbit.
   integer, intent(out)               ::  nanlso                          !<  number of Kleinman-Bylander projectors with spin-orbit.
-  integer, intent(out)               ::  nanlspin                        !<  number of Kleinman-Bylander projectors with or without spin-orbit depending on pseudopotential
+  integer, intent(out)               ::  nanlsp                          !<  number of Kleinman-Bylander projectors with or without spin-orbit depending on pseudopotential
 
 ! counters
 
@@ -67,8 +67,8 @@ subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
     enddo
   enddo
 
-  nanlspin = 0
-  do k=1,ntype
+  nanlsp = 0
+  do k = 1,ntype
 
     ic = 0
     if(nkb(0, 1,k) /= 0) ic = ic+1
@@ -79,13 +79,13 @@ subroutine size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,    &
 
     if(ic == 0) then
       do l = 0,LMAX
-        if(nkb(l,0,k) /= 0) nanlspin = nanlspin + (2*l+1)*natom(k)
+        if(nkb(l,0,k) /= 0) nanlsp = nanlsp + (2*l+1)*natom(k)
       enddo
     else
-      if(nkb(0, 1,k) /= 0) nanlspin = nanlspin + 2*natom(k)
+      if(nkb(0, 1,k) /= 0) nanlsp = nanlsp + 2*natom(k)
       do l = 1,LMAX
-        if(nkb(l,-1,k) /= 0) nanlspin = nanlspin + (2*l)*natom(k)
-        if(nkb(l, 1,k) /= 0) nanlspin = nanlspin + (2*l+2)*natom(k)
+        if(nkb(l,-1,k) /= 0) nanlsp = nanlsp + (2*l)*natom(k)
+        if(nkb(l, 1,k) /= 0) nanlsp = nanlsp + (2*l+2)*natom(k)
       enddo
     endif
   enddo

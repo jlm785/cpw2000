@@ -77,15 +77,15 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
   complex(REAL64), allocatable       ::  pmat(:,:,:)                     ! <Psi|p_j|Psi>
 
-  complex(REAL64), allocatable       ::  anlspin(:,:)                    !  KB projectors without spin-orbit but spin representation
-  real(REAL64), allocatable          ::  xnlkbspin(:)                    !  KB normalization without spin-orbit but spin representation
+  complex(REAL64), allocatable       ::  anlnoso(:,:)                    !  KB projectors without spin-orbit but spin representation
+  real(REAL64), allocatable          ::  xnlkbnoso(:)                    !  KB normalization without spin-orbit but spin representation
 
   complex(REAL64), allocatable       ::  anlsop(:,:)                     !  KB projectors with spin-orbit
   complex(REAL64), allocatable       ::  anlsom(:,:)                     !  KB projectors with spin-orbit
   real(REAL64), allocatable          ::  xnlkbso(:)                      !  KB normalization without spin-orbit
 
-  complex(REAL64), allocatable       ::  danlspindrk(:,:,:)              !  d anlspin / d rkpt
-  complex(REAL64), allocatable       ::  d2anlspindrk2(:,:,:,:)          !  d^2 anlspin / d rkpt^2
+  complex(REAL64), allocatable       ::  danlnosodrk(:,:,:)              !  d anlnoso / d rkpt
+  complex(REAL64), allocatable       ::  d2anlnosodrk2(:,:,:,:)          !  d^2 anlnoso / d rkpt^2
 
   complex(REAL64), allocatable       ::  danlsopdrk(:,:,:)               !  d anlsop / d rkpt
   complex(REAL64), allocatable       ::  d2anlsopdrk2(:,:,:,:)           !  d^2 anlsop / d rkpt^2
@@ -102,7 +102,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
   integer           ::  mxdanl         !  array dimension of number of projectors
   integer           ::  mxdaso         !  array dimension of number of projectors with spin-orbit
-  integer           ::  nanl, nanlso, nanlspin   !  number of KB projectors
+  integer           ::  nanl, nanlso, nanlnoso   !  number of KB projectors
   real(REAL64)      ::  vcell, bdot(3,3)
 
 ! constants
@@ -137,18 +137,18 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
   call psi_p_psi(mtxd, neig, psi, pmat, rkpt, isort, ng, kgv, .FALSE.,   &
   mxddim, mxdbnd, mxdgve)
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlnoso,        &
       mxdtyp)
 
   mxdanl = nanl
   mxdaso = nanlso
 
-  allocate(anlspin(mxddim,mxdanl))
-  allocate(xnlkbspin(mxdanl))
+  allocate(anlnoso(mxddim,mxdanl))
+  allocate(xnlkbnoso(mxdanl))
   allocate(xnlkbso(mxdaso))
 
-  allocate(danlspindrk(mxddim,mxdanl,3))
-  allocate(d2anlspindrk2(mxddim,mxdanl,3,3))
+  allocate(danlnosodrk(mxddim,mxdanl,3))
+  allocate(d2anlnosodrk2(mxddim,mxdanl,3,3))
 
   allocate(anlsop(mxddim,mxdaso))
   allocate(anlsom(mxddim,mxdaso))
@@ -162,9 +162,9 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
-      anlspin, anlsop, anlsom, xnlkbspin, xnlkbso,                       &
-      danlspindrk, danlsopdrk, danlsomdrk,                               &
-      d2anlspindrk2, d2anlsopdrk2, d2anlsomdrk2,                         &
+      anlnoso, anlsop, anlsom, xnlkbnoso, xnlkbso,                       &
+      danlnosodrk, danlsopdrk, danlsomdrk,                               &
+      d2anlnosodrk2, d2anlsopdrk2, d2anlsomdrk2,                         &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdaso, mxdgve)
 
   allocate(vnlso0(2*mxdbnd,2*mxdbnd))
@@ -204,7 +204,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
 ! remove non-local pseudopotential without spin-orbit
 
-  call psi_vnl_psi(mtxd, neig, psi, vnlhalf, anlspin, xnlkbspin,         &
+  call psi_vnl_psi(mtxd, neig, psi, vnlhalf, anlnoso, xnlkbnoso,         &
       nanl, mxddim, neig, mxdanl)
 
   do i=1,neig
@@ -264,15 +264,15 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
   deallocate(pmat)
 
-  deallocate(anlspin)
-  deallocate(xnlkbspin)
+  deallocate(anlnoso)
+  deallocate(xnlkbnoso)
 
   deallocate(anlsop)
   deallocate(anlsom)
   deallocate(xnlkbso)
 
-  deallocate(danlspindrk)
-  deallocate(d2anlspindrk2)
+  deallocate(danlnosodrk)
+  deallocate(d2anlnosodrk2)
 
   deallocate(danlsopdrk)
   deallocate(danlsomdrk)
