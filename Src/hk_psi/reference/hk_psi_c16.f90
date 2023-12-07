@@ -15,9 +15,15 @@
 !>  neig wavevectors. The non-local pseudopotential
 !>  is separable. The local potential is dealt with
 !>  fast Fourier transforms. Complex version
-
+!>
 !>  This is the generic version. There are special versions for
 !>  combinations of libraries and CPU/GPU
+!>
+!>
+!>  \author       Jose Luis Martins
+!>  \version      4.99
+!>  \date         February 2, 1990, 13 February 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                    &
     ng, kgv,                                                             &
@@ -33,9 +39,6 @@ subroutine hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                    &
 ! Modified kmscr, 28 October 2015. JLM
 ! Modified, documentation, January 2020. JLM
 ! Replaced qmod with ekpg.  13 February 2021. JLM         WARNING  API modification
-! copyright INESC-MN/Jose Luis Martins
-
-! version 4.99
 
 
   implicit none
@@ -159,7 +162,7 @@ subroutine hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                    &
   if(kd1 > (n1-1)/2 .or. kd2 > (n2-1)/2 .or. kd3 > (n3-1)/2) then
 
     write(6,'("   STOPPED in hk_psi_c16:      dimension of k ",          &
-          "index= ",3i5," exceeds ",3i5)') kd1,kd2,kd3,                  &
+         &  "index= ",3i5," exceeds ",3i5)') kd1,kd2,kd3,                &
                      (n1-1)/2,(n2-1)/2,(n3-1)/2
     write(6,*) ' You are probably using the dual approximation'
     write(6,*) ' with a k-point far away from the Brillouin zone'
@@ -234,4 +237,5 @@ subroutine hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                    &
   deallocate(ipoint)
 
   return
+
 end subroutine hk_psi_c16

@@ -62,7 +62,7 @@ subroutine spin_orbit_perturb(rkpt, mtxd, isort,                         &
 
   integer, intent(in)                ::  neig                            !<  number of eigenvectors required (maybe modified on output)
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i (guess on input)
-  real(REAL64), intent(in)           ::  ei(mxddim)                      !<  eigenvalue no. i. (hartree)
+  real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
 
   logical, intent(in)                ::  lpsiso                          !<  If true calculates the spin-orbit perturbed wave-functions
 

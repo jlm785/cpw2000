@@ -15,10 +15,10 @@
 !>  non local part of the hamiltonian for a given k-point
 !>  Kleinman and Bylander pseudo-potential.
 !>  It includes both non-relativistic and relativistic
-!>  pseudopotentials wit the same representation.
+!>  pseudopotentials with the same representation.
 !>
 !>  For spin-orbit perturbation use proj_nl_kb_so_pert_c16
-!>  that generates the projectors in both relativistic and relativistic
+!>  that generates the projectors in both relativistic and non-relativistic
 !>
 !>
 !>  \author       Jose Luis Martins
@@ -313,7 +313,7 @@ subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
 
 !$omp  parallel do default(private)                                      &
 !$omp& shared(kgv, bvec, bdot, ntype, natom, mtxd, rkpt, isort, rat)     &
-!$omp& shared(lmx, delqnl, nqnl, vkb, fac)                               &
+!$omp& shared(lmx, delqnl, nqnl, vkb, fac, lso)                          &
 !$omp& shared(anlsp, nanlsp)                                             &
 !$omp& shared(k_ind, kk_ind, l_ind, m_ind, ms_ind)                       &
 !$omp& shared(j_ind, mj_ind)                                             &
@@ -399,7 +399,7 @@ subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
         elseif( mj == 2*l+1 ) then
 
           anlsp(2*i-1,ind) = st(kk,k)*zylm(l, l)*vqil(l,ms,k)
-          anlsp(2*i  ,ind) = ZERO
+          anlsp(2*i  ,ind) = C_ZERO
 
 
         elseif( l > 0 ) then
@@ -419,9 +419,9 @@ subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
 
         if(ms == 1) then
           anlsp(2*i-1,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
-          anlsp(2*i  ,ind) = ZERO
+          anlsp(2*i  ,ind) = C_ZERO
         else
-          anlsp(2*i-1,ind) = ZERO
+          anlsp(2*i-1,ind) = C_ZERO
           anlsp(2*i  ,ind) = st(kk,k)*zylm(l,m)*vqil(l,0,k)
         endif
 

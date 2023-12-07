@@ -68,7 +68,7 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   integer, intent(in)                ::  leveigs(mxdlev,mxddeg)          !<  points to degenerate level
 
   complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
-  real(REAL64), intent(in)           ::  ei(mxddim)                      !<  eigenvalue no. i. (hartree)
+  real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
 
   complex(REAL64), intent(in)        ::  dhdkpsi(mxddim,mxdbnd,3)        !<  (d H /d k) |Psi>
 
