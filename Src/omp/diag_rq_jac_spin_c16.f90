@@ -13,6 +13,7 @@
 
 !>  Performs an approximate Newton step.
 !>  No relaxation on "coarse" grid, jacobi relaxation for fine grid.
+!>  For the spin representation
 !>
 !>  Some people call it pre-conditioning...
 !>
@@ -21,15 +22,11 @@
 !>  \date         October 4, 1989, January 2020.
 !>  \copyright    GNU Public License v2
 
-subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
+subroutine diag_rq_jac_spin_c16(phi, lambda, ekpg, mtxd, neig,           &
      mxddim, mxdbnd)
 
 
-! Written October 4, 1989. JLM
-! modified April 1999. JLM (order n**2)
-! modified April 22, 2014, f90. JLM
-! Modified, documentation, omp, January 2020. JLM
-! Modified indentation. 13 December 2023.
+! Adapted from the non-spin version. 13 December 2023. JLM
 
 
   implicit none
@@ -42,13 +39,13 @@ subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
 
   real(REAL64), intent(in)           ::  lambda(mxdbnd)                  !<  expectation values (Hartree)
-  real(REAL64), intent(in)           ::  hdiag(mxddim)                   !<  hamiltonian diagonal
+  real(REAL64), intent(in)           ::  ekpg(mxddim)                    !<  hamiltonian diagonal
   integer, intent(in)                ::  neig                            !<  number of eigenvectors
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
 
 ! input and output
 
-  complex(REAL64), intent(inout)     ::  phi(mxddim,mxdbnd)              !<  error vectors on input, correction on output
+  complex(REAL64), intent(inout)     ::  phi(2*mxddim,mxdbnd)              !<  error vectors on input, correction on output
 
 ! local variables
 
@@ -66,17 +63,18 @@ subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
   do i = 1,neig
 !$omp parallel do default(shared) private(j,x)
     do j = 1,mtxd
-      x = hdiag(j) - lambda(i)
+      x = ekpg(j) - lambda(i)
       if(x < UM) then
         x = UM
       else
         x = UM/x
       endif
-      phi(j,i) = -x * phi(j,i)
+      phi(2*j-1,i) = -x * phi(2*j-1,i)
+      phi(2*j  ,i) = -x * phi(2*j  ,i)
     enddo
 !$omp end parallel do
   enddo
 
   return
 
-end subroutine rq_jac_c16
+end subroutine diag_rq_jac_spin_c16
