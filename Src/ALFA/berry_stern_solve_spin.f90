@@ -14,20 +14,22 @@
 !>  Solves the Sternheimer equation with a RCI (reverse communication interface)
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.06
-!>  \date         13 January 2023.
+!>  \version      5.09
+!>  \date         13 January 2023, 15 december 2023.
 !>  \copyright    GNU Public License v2
 
 
-subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
+subroutine berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,    &
+    dpsi_sp, tol,                                                        &
     nlevel, levdeg, leveigs,                                             &
     isort, ekpg,                                                         &
-    vscr, kmscr,                                                         &
+    vscr_sp, kmscr, nsp,                                                 &
     ng, kgv,                                                             &
-    nanl, anlga, xnlkb,                                                  &
-    mxddim, mxdbnd, mxdgve, mxdscr, mxdanl, mxdlev, mxddeg)
+    nanlsp, anlsp, xnlkbsp,                                              &
+    mxddim, mxdbnd, mxdgve, mxdscr, mxdasp, mxdlev, mxddeg, mxdnsp)
 
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
+! spin version 15 December 2023. JLM
 
 
   implicit none
@@ -40,12 +42,13 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdscr                          !<  array dimension for screening potential
-  integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdasp                          !<  array dimension of number of projectors
   integer, intent(in)                ::  mxdlev                          !<  array dimension for number of levels
   integer, intent(in)                ::  mxddeg                          !<  array dimension for number of levels
+  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
 
-  integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
-  integer, intent(in)                ::  neig                            !<  number of bands
+  integer, intent(in)                ::  mtxd                            !<  wavefunction dimension (not counting spin)
+  integer, intent(in)                ::  neig                            !<  number of bands (including spin)
 
   real(REAL64), intent(in)           ::  tol                             !<  tolerance solution
 
@@ -56,24 +59,25 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
 
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for
-  real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
+  integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
+  real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh with spin components
 
-  integer, intent(in)                ::  nanl                            !<  half of number of projectors without spin
-  complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
-  real(REAL64), intent(in)           ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
+  integer, intent(in)                ::  nanlsp                          !<  number of projectors with spin
+  complex(REAL64), intent(in)        ::  anlsp(2*mxddim,mxdasp)          !<  KB projectors with spin-orbit
+  real(REAL64), intent(in)           ::  xnlkbsp(mxdasp)                 !<  KB normalization with spin-orbit
 
   integer, intent(in)                ::  nlevel                          !<  number of energy levels
   integer, intent(in)                ::  levdeg(mxdlev)                  !<  degeneragy of level
   integer, intent(in)                ::  leveigs(mxdlev,mxddeg)          !<  points to degenerate level
 
-  complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
+  complex(REAL64), intent(in)        ::  psi_sp(2*mxddim, mxdbnd)        !<  |psi_sp> (in principle eigen-functions)
   real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
 
-  complex(REAL64), intent(in)        ::  dhdkpsi(mxddim,mxdbnd,3)        !<  (d H /d k) |Psi>
+  complex(REAL64), intent(in)        ::  dhdkpsi_sp(2*mxddim,mxdbnd,3)   !<  (d H /d k) |Psi>
 
 ! output
 
-  complex(REAL64), intent(out)       ::  dpsi(mxddim, mxdbnd, 3)         !<  d |psi> / d k
+  complex(REAL64), intent(out)       ::  dpsi_sp(2*mxddim, mxdbnd, 3)    !<  d |psi_sp> / d k
 
 
 ! local allocatable variables
@@ -116,11 +120,11 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
 ! solves the equation
 
-  nitmax = max(150, 2*mtxd)
+  nitmax = max(150, 2*2*mtxd)
 
-  allocate(b(2*mtxd), x(2*mtxd))
-  allocate(tmp(2*mtxd,4))
-  allocate(ac(mtxd,1), bc(mtxd,1), acguess(mtxd,1))
+  allocate(b(2*2*mtxd), x(2*2*mtxd))
+  allocate(tmp(2*2*mtxd,4))
+  allocate(ac(2*mtxd,1), bc(2*mtxd,1), acguess(2*mtxd,1))
 
 ! for compatibility with intel MKL
 
@@ -141,9 +145,9 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
         if(ml /= nl) then
           do mk = 1,levdeg(ml)
             m = leveigs(ml,mk)
-            zz = zdotc(mtxd, psi(:,m), 1, dhdkpsi(:,n,j), 1)
+            zz = zdotc(2*mtxd, psi_sp(:,m), 1, dhdkpsi_sp(:,n,j), 1)
             zz = zz / (ei(n) - ei(m))
-            call zaxpy(mtxd, zz, psi(:,m), 1, ac(:,1), 1)
+            call zaxpy(2*mtxd, zz, psi_sp(:,m), 1, ac(:,1), 1)
           enddo
         endif
       enddo
@@ -152,56 +156,56 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
       ac(:,1) = C_ZERO
 
-      do k = 1,mtxd
+      do k = 1,2*mtxd
         x(2*k-1) = real(ac(k,1),REAL64)
         x(2*k  ) = dimag(ac(k,1))
       enddo
 
-      bc(:,1) = dhdkpsi(1:mtxd,n,j)
+      bc(:,1) = dhdkpsi_sp(1:2*mtxd,n,j)
 
-      call berry_project_one('O', psi, bc(:,1), mtxd, neig,              &
-            mxddim, mxdbnd)
+      call berry_project_one('O', psi_sp, bc(:,1), 2*mtxd, neig,         &
+            2*mxddim, mxdbnd)
 
-      do k = 1,mtxd
+      do k = 1,2*mtxd
         b(2*k-1) = real(bc(k,1),REAL64)
         b(2*k) = dimag(bc(k,1))
       enddo
-      xxb = dnrm2(2*mtxd, b, 1)
+      xxb = dnrm2(2*2*mtxd, b, 1)
 
       lfound = .FALSE.
 
-      call dcg_init (2*mtxd, x, b, job, ipar, dpar, tmp )
+      call dcg_init (2*2*mtxd, x, b, job, ipar, dpar, tmp )
 
       do niter = 1,nitmax
 
-        call dcg (2*mtxd, x, b, job, ipar, dpar, tmp )
+        call dcg (2*2*mtxd, x, b, job, ipar, dpar, tmp )
 
         if(job == 1) then
 
 !         matrix-vector multiply
 
-          do k = 1,mtxd
+          do k = 1,2*mtxd
             ac(k,1) = cmplx(tmp(2*k-1, 1 ),tmp(2*k, 1 ),REAL64)
           enddo
 
-          call berry_project_one('O', psi, ac(:,1), mtxd, neig,          &
-            mxddim, mxdbnd)
+          call berry_project_one('O', psi_sp, ac(:,1), 2*mtxd, neig,     &
+            2*mxddim, mxdbnd)
 
-          call hk_psi_c16(mtxd, 1, ac, bc, .TRUE.,                       &
+          call hk_psi_spin_c16(mtxd, 1, ac, bc, .TRUE.,                  &
              ng, kgv,                                                    &
-             ekpg, isort, vscr, kmscr,                                   &
-             anlga, xnlkb, nanl,                                         &
-             mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
+             ekpg, isort, vscr_sp, kmscr, nsp,                           &
+             anlsp, xnlkbsp, nanlsp,                                     &
+             mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
-          call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), ac(:,1), 1, bc(:,1), 1)
-          call zscal(mtxd, -C_UM, bc(:,1), 1)
+          call zaxpy(2*mtxd, cmplx(-ei(n),ZERO,REAL64), ac(:,1), 1, bc(:,1), 1)
+          call zscal(2*mtxd, -C_UM, bc(:,1), 1)
 
 !         |bc> = (E_n - H) |ac>. now orthogonalize within same energy
 
-          call berry_project_one('O', psi, bc(:,1), mtxd, neig,          &
-            mxddim, mxdbnd)
+          call berry_project_one('O', psi_sp, bc(:,1), 2*mtxd, neig,     &
+            2*mxddim, mxdbnd)
 
-          do k = 1,mtxd
+          do k = 1,2*mtxd
             tmp(2*k-1, 2 ) = real(bc(k,1),REAL64)
             tmp(2*k, 2 )   = dimag(bc(k,1))
           enddo
@@ -236,9 +240,9 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
 !         preconditioning
 
-          do k = 1,mtxd
+          do k = 1,2*mtxd
 
-            xpre = ekpg(k)
+            xpre = ekpg((k+1)/2)
 
             if(xpre > UM) then
               xpre = UM / xpre
@@ -251,11 +255,11 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
           enddo
 
-          call berry_project_one('O', psi, ac(:,1), mtxd, neig,          &
-            mxddim, mxdbnd)
+          call berry_project_one('O', psi_sp, ac(:,1), 2*mtxd, neig,     &
+            2*mxddim, mxdbnd)
 
 
-          do k = 1,mtxd
+          do k = 1,2*mtxd
             tmp(2*k-1, 4 ) = real(ac(k,1),REAL64)
             tmp(2*k, 4 )   = dimag(ac(k,1))
           enddo
@@ -274,14 +278,14 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
       endif
 
-      do k = 1,mtxd
-        dpsi(k,n,j) =  cmplx(x(2*k-1), x(2*k),REAL64)
+      do k = 1,2*mtxd
+        dpsi_sp(k,n,j) =  cmplx(x(2*k-1), x(2*k),REAL64)
       enddo
 
-      call berry_project_one('O', psi, dpsi(:,n,j), mtxd, neig,          &
-            mxddim, mxdbnd)
+      call berry_project_one('O', psi_sp, dpsi_sp(:,n,j), 2*mtxd, neig,  &
+            2*mxddim, mxdbnd)
 
-      dpsi(1:mtxd,n,j) = dpsi(1:mtxd,n,j) + acguess(1:mtxd,1)
+      dpsi_sp(1:2*mtxd,n,j) = dpsi_sp(1:2*mtxd,n,j) + acguess(1:2*mtxd,1)
 
     enddo
 
@@ -296,5 +300,5 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
   return
 
-end subroutine berry_stern_solve
+end subroutine berry_stern_solve_spin
 

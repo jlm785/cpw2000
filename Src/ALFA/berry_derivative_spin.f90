@@ -13,32 +13,32 @@
 
 !>  Calculates derivatives with respect to wave-vector k.
 !>  Hamiltonian acting on wave-function, d H / d k, energy levels d E_i / d k,
-!>  wave-functions d | psi_i > / d k.
+!>  wave-functions d | psi_sp_i > / d k.
 !>  It also calculates the orbital magnetization, the
 !>  inverse effective mass tensor, and the quantum metric.
 !>
 !>  The results may not be accurate if
-!>  the input wave-function is not accurate.
+!>  input wave-function is not accurate.
+!>
+!>  spin-wave-function version
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.09
-!>  \date         18 January 2023. 30 November 2023.
+!>  \date         15 December 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
+subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     nlevel, levdeg, leveigs,                                             &
-    psi, ei,                                                             &
-    dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,            &
+    psi_sp, ei,                                                          &
+    dhdkpsi_sp, dpsidk_sp, psidhdkpsi_sp, bcurv, tmag, tmass, qmetric,   &
     ng, kgv,                                                             &
-    vscr, kmscr,                                                         &
+    vscr_sp, kmscr, nsp,                                                 &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
-    mxdlev, mxddeg)
+    mxdlev, mxddeg, mxdnsp)
 
-! Written by Jose Luis Martins, 18 january 2023.
-! Final debugged version 3 November 2023. JLM
-! Modified, nanlspin, 30 November 2023. JLM
+! Adapted from the non-spin version 15 December 2023. JLM
 
 
   implicit none
@@ -57,10 +57,11 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   integer, intent(in)                ::  mxdscr                          !<  array dimension for screening potential
   integer, intent(in)                ::  mxdlev                          !<  array dimension for number of levels
   integer, intent(in)                ::  mxddeg                          !<  array dimension for number of levels
+  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
-  integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
-  integer, intent(in)                ::  neig                            !<  number of bands
+  integer, intent(in)                ::  mtxd                            !<  wavefunction dimension (not including spin)
+  integer, intent(in)                ::  neig                            !<  number of bands (including spin)
 
   logical, intent(in)                ::  lpsi                            !<  also calculates the wave-function derivative and Berry curvature
 
@@ -71,14 +72,15 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   integer, intent(in)                ::  levdeg(mxdlev)                  !<  degeneragy of level
   integer, intent(in)                ::  leveigs(mxdlev,mxddeg)          !<  points to degenerate level
 
-  complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
+  complex(REAL64), intent(in)        ::  psi_sp(2*mxddim, mxdbnd)        !<  |psi_sp> (in principle eigen-functions)
   real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
 
   integer, intent(in)                ::  ng                              !<  size of g-space
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
 
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for
-  real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened local potential
+  integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
+  real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened local potential (including spin)
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -92,10 +94,10 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 ! output
 
-  complex(REAL64), intent(out)       ::  dhdkpsi(mxddim, mxdbnd, 3)      !<  d H / d k | psi>  (lattice coordinates)
-  complex(REAL64), intent(out)       ::  dpsidk(mxddim, mxdbnd, 3)       !<  d |psi> / d k  (lattice coordinates)
+  complex(REAL64), intent(out)       ::  dhdkpsi_sp(2*mxddim, mxdbnd, 3) !<  d H / d k | psi_sp>  (lattice coordinates)
+  complex(REAL64), intent(out)       ::  dpsidk_sp(2*mxddim, mxdbnd, 3)  !<  d |psi_sp> / d k  (lattice coordinates)
 
-  complex(REAL64), intent(out)       ::  psidhdkpsi(mxddeg,mxddeg,3,mxdlev)  !<  <psi_n| d H / d k |psi_m>  for each energy level (lattice coordinates)
+  complex(REAL64), intent(out)       ::  psidhdkpsi_sp(mxddeg,mxddeg,3,mxdlev)  !<  <psi_sp_n| d H / d k |psi_sp_m>  for each energy level (lattice coordinates)
 
   real(REAL64), intent(out)          ::  bcurv(3,mxdbnd)                 !<  Berry curvature  (lattice coordinates)
   real(REAL64), intent(out)          ::  tmag(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor associated with orbital magnetization  (lattice coordinates)
@@ -105,13 +107,13 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 ! local allocatable variables
 
-  real(REAL64), allocatable          ::  xnlkb(:)
-  complex(REAL64), allocatable       ::  anlga(:,:)
+  real(REAL64), allocatable          ::  xnlkbsp(:)
+  complex(REAL64), allocatable       ::  anlsp(:,:)
 
-  complex(REAL64), allocatable       ::  danlgadrk(:,:,:)                !  d anlga / d rkpt
-  complex(REAL64), allocatable       ::  d2anlgadrk2(:,:,:,:)            !  d 2 anlga / d 2 rkp (unused)
+  complex(REAL64), allocatable       ::  danlspdrk(:,:,:)                !  d anlsp / d rkpt
+  complex(REAL64), allocatable       ::  d2anlspdrk2(:,:,:,:)            !  d 2 anlsp / d 2 rkp (unused)
 
-  complex(REAL64), allocatable       ::  hdpsidk(:,:,:)                  !  (H - E_n) ( d | psi_n > / d k )
+  complex(REAL64), allocatable       ::  hdpsidk_sp(:,:,:)                  !  (H - E_n) ( d | psi_sp_n > / d k )
 
   complex(REAL64), allocatable       ::  vnl0(:,:)                       !  <Psi|V_NL|Psi>
   complex(REAL64), allocatable       ::  dvnl0drk(:,:,:)                 !  d <Psi|V_NL|Psi> d k
@@ -125,8 +127,8 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   integer           ::  nder                                             !  order of derivative
 
-  integer           ::  nanl, nanlso, nanlspin
-  integer           ::  mxdanl
+  integer           ::  nanl, nanlso, nanlsp
+  integer           ::  mxdasp
   real(REAL64)      ::  vcell, bdot(3,3)
 
   complex(REAL64)   ::  cmat(3,3)                                        !  array for rank 1 quantities
@@ -149,16 +151,16 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 ! projector and derivatives
 
-  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &
+  call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlsp,          &
       mxdtyp)
 
-  mxdanl = nanl
+  mxdasp = nanlsp
 
-  allocate(anlga(mxddim,mxdanl))
-  allocate(xnlkb(mxdanl))
+  allocate(anlsp(2*mxddim,mxdasp))
+  allocate(xnlkbsp(mxdasp))
 
-  allocate(danlgadrk(mxddim,mxdanl,3))
-  allocate(d2anlgadrk2(mxddim,mxdanl,3,3))
+  allocate(danlspdrk(2*mxddim,mxdasp,3))
+  allocate(d2anlspdrk2(2*mxddim,mxdasp,3,3))
 
   nder = 1
   if(lpsi) then
@@ -167,17 +169,18 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     nder = 1
   endif
 
-  call proj_nl_kb_der_c16(rkpt, mtxd, isort, nanl, nder,                 &
+  call proj_nl_kb_so_der_c16(rkpt, mtxd, isort,                          &
+      nanlsp, nder,                                                      &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
-      anlga, xnlkb, danlgadrk, d2anlgadrk2,                              &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdgve)
+      anlsp, xnlkbsp, danlspdrk, d2anlspdrk2,                            &
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdasp, mxdgve)
 
-  call berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi       ,       &
+  call berry_dhdk_psi_spin(rkpt, adot, mtxd, neig, psi_sp, dhdkpsi_sp,   &
       kgv, isort,                                                        &
-      nanl, anlga, xnlkb, danlgadrk,                                     &
-      mxddim, mxdbnd, mxdgve, mxdanl)
+      nanlsp, anlsp, xnlkbsp, danlspdrk,                                 &
+      mxddim, mxdbnd, mxdgve, mxdasp)
 
   do nl = 1,nlevel
     do nk = 1,levdeg(nl)
@@ -185,7 +188,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
       do mk = 1,levdeg(nl)
         m = leveigs(nl,mk)
         do j = 1,3
-          psidhdkpsi(nk,mk,j,nl) = real( zdotc(mtxd,psi(:,n),1,dhdkpsi(:,m,j),1), REAL64)
+          psidhdkpsi_sp(nk,mk,j,nl) = real( zdotc(mtxd,psi_sp(:,n),1,dhdkpsi_sp(:,m,j),1), REAL64)
         enddo
       enddo
     enddo
@@ -195,13 +198,14 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 !   solves Sternheimer equation
 
-    call berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsidk, TOL,    &
+    call berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,      &
+       dpsidk_sp, TOL,                                                   &
        nlevel, levdeg, leveigs,                                          &
        isort, ekpg,                                                      &
-       vscr, kmscr,                                                      &
+       vscr_sp, kmscr, nsp,                                              &
        ng, kgv,                                                          &
-       nanl, anlga, xnlkb,                                               &
-       mxddim, mxdbnd, mxdgve, mxdscr, mxdanl, mxdlev, mxddeg)
+       nanlsp, anlsp, xnlkbsp,                                           &
+       mxddim, mxdbnd, mxdgve, mxdscr, mxdasp, mxdlev, mxddeg, mxdnsp)
 
 !   rank 1 quantities
 
@@ -209,7 +213,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
       do i = 1,3
       do j = i,3
-        cmat(i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, dpsidk(:,n,j), 1)
+        cmat(i,j) = zdotc(mtxd, dpsidk_sp(:,n,i), 1, dpsidk_sp(:,n,j), 1)
       enddo
       enddo
 
@@ -233,20 +237,21 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 !   rank 2 quantities
 
-    allocate(hdpsidk(mxddim,mxdbnd,3))
+    allocate(hdpsidk_sp(2*mxddim,mxdbnd,3))
     allocate(dmat(mxddeg,mxddeg,3,3))
 
     do j = 1,3
 
-      call hk_psi_c16(mtxd, neig, dpsidk(:,:,j), hdpsidk(:,:,j), .TRUE., &
-             ng, kgv,                                                    &
-             ekpg, isort, vscr, kmscr,                                   &
-             anlga, xnlkb, nanl,                                         &
-             mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
+      call hk_psi_spin_c16(mtxd, neig, dpsidk_sp(:,:,j), hdpsidk_sp(:,:,j), .TRUE.,  &
+             ng, kgv,                                                                &
+             ekpg, isort, vscr_sp, kmscr, nsp,                                       &
+             anlsp, xnlkbsp, nanlsp,                                                 &
+             mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
       do n = 1,neig
 
-        call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), dpsidk(:,n,j), 1, hdpsidk(:,n,j), 1)
+        call zaxpy(2*mtxd, cmplx(-ei(n),ZERO,REAL64), dpsidk_sp(:,n,j), 1,           &
+                    hdpsidk_sp(:,n,j), 1)
 
       enddo
 
@@ -258,10 +263,10 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 !   extra calculations may be needed later
 
-    call psi_vnl_psi_der(mtxd, neig, nanl, psi, nder,                    &
+    call psi_vnl_psi_der(2*mtxd, neig, nanlsp, psi_sp, nder,             &
         vnl0, dvnl0drk, d2vnl0drk2,                                      &
-        anlga, xnlkb, danlgadrk, d2anlgadrk2,                            &
-        mxddim, mxdbnd, mxdanl)
+        anlsp, xnlkbsp, danlspdrk, d2anlspdrk2,                          &
+        2*mxddim, mxdbnd, mxdasp)
 
     call adot_to_bdot(adot, vcell, bdot)
 
@@ -273,14 +278,14 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
           do i = 1,3
           do j = 1,3
-            dmat(nk,mk,i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, hdpsidk(:,m,j), 1)
+            dmat(nk,mk,i,j) = zdotc(2*mtxd, dpsidk_sp(:,n,i), 1, hdpsidk_sp(:,m,j), 1)
           enddo
           enddo
 
         enddo
       enddo
 
-!     symmetrizes
+!    symmetrizes
 
       do nk = 1,levdeg(nl)
         n = leveigs(nl,nk)
@@ -307,17 +312,17 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     deallocate(dvnl0drk)
     deallocate(d2vnl0drk2)
 
-    deallocate(hdpsidk)
+    deallocate(hdpsidk_sp)
     deallocate(dmat)
 
   endif
 
-  deallocate(anlga)
-  deallocate(xnlkb)
+  deallocate(anlsp)
+  deallocate(xnlkbsp)
 
-  deallocate(danlgadrk)
-  deallocate(d2anlgadrk2)
+  deallocate(danlspdrk)
+  deallocate(d2anlspdrk2)
 
   return
 
-end subroutine berry_derivative
+end subroutine berry_derivative_spin

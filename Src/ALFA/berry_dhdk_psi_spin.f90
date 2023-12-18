@@ -11,22 +11,24 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates the derivatives of V_NL|Psi>  + K |psi> for a separable non-local
+!>  Calculates the derivatives of V_NL|psi>  + K |psi> for a separable non-local
 !>  pseudopotential with respect to the k-vector.
+!>
+!>  spin-wavefunction version.
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.09
-!>  \date         9 January 2023. 15 December 2023.
+!>  \date         15 December 2023.
 !>  \copyright    GNU Public License v2
 
 
-subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
+subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
+    psi_sp, dhdkpsi_sp,                                                  &
     kgv, isort,                                                          &
-    nanl, anlga, xnlkb, danlgadrk,                                       &
-    mxddim, mxdbnd, mxdgve, mxdanl)
+    nanlsp, anlsp, xnlkbsp, danlspdrk,                                   &
+    mxddim, mxdbnd, mxdgve, mxdasp)
 
-! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
-! Non-local part in a separate subroutine. 15 December 2023. JLM
+! adapted from non-spin version, 15 December 2023. JLM
 
 
   implicit none
@@ -38,7 +40,7 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
-  integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdasp                          !<  array dimension of number of projectors
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
@@ -46,19 +48,19 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
   integer, intent(in)                ::  neig                            !<  wavefunction dimension
 
-  complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
+  complex(REAL64), intent(in)        ::  psi_sp(2*mxddim, mxdbnd)        !<  |psi_sp> (in principle eigen-functions)
 
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
   integer, intent(in)                ::  isort(mxddim)                   !<  G-vector corresponding to coefficient i of wavefunction
 
-  integer, intent(in)                ::  nanl                            !<  half of number of projectors without spin
-  complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
-  real(REAL64), intent(in)           ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
-  complex(REAL64), intent(in)        ::  danlgadrk(mxddim,mxdanl,3)      !<  d anlga / d rkpt
+  integer, intent(in)                ::  nanlsp                          !<  half of number of projectors without spin
+  complex(REAL64), intent(in)        ::  anlsp(2*mxddim,mxdasp)          !<  KB projectors without spin-orbit
+  real(REAL64), intent(in)           ::  xnlkbsp(mxdasp)                 !<  KB normalization without spin-orbit
+  complex(REAL64), intent(in)        ::  danlspdrk(2*mxddim,mxdasp,3)    !<  d anlsp / d rkpt
 
 ! output
 
-  complex(REAL64), intent(out)       ::  dhdkpsi(mxddim,mxdbnd,3)        !<  (d H /d k) |Psi>
+  complex(REAL64), intent(out)       ::  dhdkpsi_sp(2*mxddim,mxdbnd,3)   !<  (d H /d k) |psi_sp>
 
 ! local allocatable variables
 
@@ -83,9 +85,9 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 
 ! calculates the non local part
 
-  call berry_dvnldk_psi(mtxd, neig, psi, dhdkpsi,                        &
-    nanl, anlga, xnlkb, danlgadrk,                                       &
-    mxddim, mxdbnd, mxdanl)
+  call berry_dvnldk_psi(2*mtxd, neig, psi_sp, dhdkpsi_sp,                &
+    nanlsp, anlsp, xnlkbsp, danlspdrk,                                   &
+    2*mxddim, mxdbnd, mxdasp)
 
 ! kinetic energy operator derivative.  momentum operator in contravariant coordinates
 
@@ -106,7 +108,8 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   do j = 1,3
     do n = 1,neig
       do m = 1,mtxd
-        dhdkpsi(m,n,j) = dhdkpsi(m,n,j) + qcontra(j,m)*psi(m,n)
+        dhdkpsi_sp(2*m-1,n,j) = dhdkpsi_sp(2*m-1,n,j) + qcontra(j,m)*psi_sp(2*m-1,n)
+        dhdkpsi_sp(2*m  ,n,j) = dhdkpsi_sp(2*m  ,n,j) + qcontra(j,m)*psi_sp(2*m  ,n)
       enddo
     enddo
   enddo
@@ -116,5 +119,5 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 
   return
 
-end subroutine berry_dhdk_psi
+end subroutine berry_dhdk_psi_spin
 
