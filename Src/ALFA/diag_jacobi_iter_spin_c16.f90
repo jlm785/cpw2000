@@ -97,10 +97,10 @@ subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
 
   integer   ::   n, j
 
+
   allocate(eg(mxdbnd))
   allocate(xerror(2*mxddim,mxdbnd))
   allocate(hxerror(2*mxddim,mxdbnd))
-
 
 ! apply H to initial eigenvectors
 
@@ -155,6 +155,10 @@ subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
     enddo
 
   enddo
+
+  deallocate(eg)
+  deallocate(xerror)
+  deallocate(hxerror)
 
   return
 

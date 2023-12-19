@@ -100,7 +100,6 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i
   complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
-  real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
 
@@ -118,6 +117,14 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   complex(REAL64), allocatable       ::  tmass(:,:,:,:,:)                !  Tensor of the inverse effective mass (lattice coordinates)
   real(REAL64), allocatable          ::  qmetric(:,:,:)                  !  Tensor of the quantum metric (lattice coordinates)
+
+  real(REAL64), allocatable          ::  ei_so(:)                           !  eigenvalue no. i. (hartree)
+  real(REAL64), allocatable          ::  ei_sp(:)                           !  eigenvalue no. i. (hartree)
+
+  complex(REAL64), allocatable       ::  psi_sp(:,:)                        !  component j of eigenvector i
+  complex(REAL64), allocatable       ::  hpsi_sp(:,:)                       !  H | psi>
+
+  real(REAL64), allocatable          ::  vscr_sp(:,:)
 
 ! local variables
 
@@ -148,7 +155,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64)      ::  xk(3)
   real(REAL64)      ::  xrk
 
-  character(len=1)  ::  yesno_dir
+  character(len=1)  ::  yesno_dir, yesno_so
 
   real(REAL64)      ::  bdot(3,3), vcell
 
@@ -157,6 +164,9 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   integer           ::  neigin              !  initial value of neig
   integer           ::  nocc
+
+  integer           ::  nsp, mxdnsp
+  integer           ::  njac, nritz
 
 ! constants
 
@@ -237,7 +247,6 @@ subroutine out_mass_berry(ioreplay,                                      &
   allocate(ekpg(mxddim))
   allocate(psi(mxddim,mxdbnd))
   allocate(hpsi(mxddim,mxdbnd))
-  allocate(ekpsi(mxdbnd))
 
   nocc = neigin
 
@@ -258,69 +267,180 @@ subroutine out_mass_berry(ioreplay,                                      &
 
 ! energy levels.  first finds dimensions. recalculates neig according to degeneracies.
 
-  allocate(levdeg(1))
-  allocate(leveigs(1,1))
-
-  call berry_degeneracy(.TRUE., neigin, neig, ei, TOL,                   &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd, 1, 1)
-
-  mxdlev = nlevel
-  mxddeg = maxdeg
-
-  deallocate(levdeg)
-  deallocate(leveigs)
-
-  allocate(levdeg(mxdlev))
-  allocate(leveigs(mxdlev,mxddeg))
-
-! fills the information
-
-  call berry_degeneracy(.FALSE., neigin, neig, ei, TOL,                  &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd, mxdlev, mxddeg)
-
   write(6,*)
-  write(6,'("   The system has ",i5," levels")') nlevel
-  do n = 1,nlevel
-    write(6,*)
-    write(6,'("  Level ",i5," has degeneracy ",i3)') n, levdeg(n)
-    write(6,*)
-    do j = 1,levdeg(n)
-      write(6,'(f12.6)') ei(leveigs(n,j))*HARTREE
-    enddo
-  enddo
+  write(6,*) '   Do you wan the results with spin-orbit (y/n)'
   write(6,*)
 
-! get berry quantities.  starts with allocations.
+  read(5,*) yesno_so
 
-  allocate(dhdkpsi(mxddim,mxdbnd,3))
-  allocate(dpsidk(mxddim,mxdbnd,3))
+  write(ioreplay,*) yesno_so,'   with spin-orbit'
 
-  allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
-  allocate(bcurv(3,mxdbnd))
-  allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+  if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-  allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
-
-  allocate(qmetric(3,3,mxdbnd))
+!   first do perturbation
 
 
+    allocate(ei_so(2*mxdbnd))
+    allocate(psi_sp(2*mxddim,2*mxdbnd))
+    allocate(hpsi_sp(2*mxddim,2*mxdbnd))
 
-  call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,           &
-    nlevel, levdeg, leveigs,                                             &
-    psi, ei,                                                             &
-    dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,            &
+    njac = 3
+    nritz = 5
+    allocate(ei_sp(2*mxdbnd))
+
+    nsp = 1
+    mxdnsp = 1
+
+    allocate(vscr_sp(mxdscr,mxdnsp))
+
+    vscr_sp(:,1) = vscr(:)
+
+  call diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, TOL,         &
+    ei, psi,                                                             &
+    ei_so, ei_sp, psi_sp, hpsi_sp,                                       &
     ng, kgv,                                                             &
-    vscr, kmscr,                                                         &
+    ekpg, isort, vscr_sp, kmscr, nsp,                                    &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
-    mxdlev, mxddeg)
+    mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+
+!   now finds degeneracies
+
+    allocate(levdeg(1))
+    allocate(leveigs(1,1))
+
+    neig = 2*neig
+    neigin = neig
+
+    call berry_degeneracy(.TRUE., neigin, neig, ei_sp, TOL,              &
+           nlevel, maxdeg, levdeg, leveigs,                              &
+           2*mxdbnd, 1, 1)
+
+    mxdlev = nlevel
+    mxddeg = maxdeg
+
+    deallocate(levdeg)
+    deallocate(leveigs)
+
+    allocate(levdeg(mxdlev))
+    allocate(leveigs(mxdlev,mxddeg))
+
+!   fills the information
+
+    call berry_degeneracy(.FALSE., neigin, neig, ei_sp, TOL,             &
+           nlevel, maxdeg, levdeg, leveigs,                              &
+           2*mxdbnd, mxdlev, mxddeg)
+
+    write(6,*)
+    write(6,'("   The system has ",i5," levels")') nlevel
+    do n = 1,nlevel
+      write(6,*)
+      write(6,'("  Level ",i5," has degeneracy ",i3)') n, levdeg(n)
+      write(6,*)
+      do j = 1,levdeg(n)
+        write(6,'(f12.6)') ei_sp(leveigs(n,j))*HARTREE
+      enddo
+    enddo
+    write(6,*)
+
+!   get berry quantities.  starts with allocations.
+
+    allocate(dhdkpsi(2*mxddim,2*mxdbnd,3))
+    allocate(dpsidk(2*mxddim,2*mxdbnd,3))
+
+    allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
+    allocate(bcurv(3,2*mxdbnd))
+    allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(qmetric(3,3,2*mxdbnd))
+
+    call berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, .TRUE.,    &
+      nlevel, levdeg, leveigs,                                           &
+      psi_sp, ei_sp,                                                     &
+      dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,          &
+      ng, kgv,                                                           &
+      vscr_sp, kmscr, nsp,                                               &
+      nqnl, delqnl, vkb, nkb,                                            &
+      ntype, natom, rat, adot,                                           &
+      mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
+      mxdlev, mxddeg, mxdnsp)
+
+    deallocate(ei_so)
+    deallocate(psi_sp)
+    deallocate(hpsi_sp)
+    deallocate(vscr_sp)
+
+    allocate(deidxk(2*mxdbnd))
+    allocate(d2eidxk2(2*mxdbnd))
+
+  else
+
+    allocate(levdeg(1))
+    allocate(leveigs(1,1))
+
+    call berry_degeneracy(.TRUE., neigin, neig, ei, TOL,                 &
+           nlevel, maxdeg, levdeg, leveigs,                              &
+           mxdbnd, 1, 1)
+
+    mxdlev = nlevel
+    mxddeg = maxdeg
+
+    deallocate(levdeg)
+    deallocate(leveigs)
+
+    allocate(levdeg(mxdlev))
+    allocate(leveigs(mxdlev,mxddeg))
+
+!   fills the information
+
+    call berry_degeneracy(.FALSE., neigin, neig, ei, TOL,                &
+           nlevel, maxdeg, levdeg, leveigs,                              &
+           mxdbnd, mxdlev, mxddeg)
+
+    write(6,*)
+    write(6,'("   The system has ",i5," levels")') nlevel
+    do n = 1,nlevel
+      write(6,*)
+      write(6,'("  Level ",i5," has degeneracy ",i3)') n, levdeg(n)
+      write(6,*)
+      do j = 1,levdeg(n)
+        write(6,'(f12.6)') ei(leveigs(n,j))*HARTREE
+      enddo
+    enddo
+    write(6,*)
+
+!   get berry quantities.  starts with allocations.
+
+    allocate(dhdkpsi(mxddim,mxdbnd,3))
+    allocate(dpsidk(mxddim,mxdbnd,3))
+
+    allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
+    allocate(bcurv(3,mxdbnd))
+    allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(qmetric(3,3,mxdbnd))
 
 
-  allocate(deidxk(mxdbnd))
-  allocate(d2eidxk2(mxdbnd))
+
+    call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,         &
+      nlevel, levdeg, leveigs,                                           &
+      psi, ei,                                                           &
+      dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,          &
+      ng, kgv,                                                           &
+      vscr, kmscr,                                                       &
+      nqnl, delqnl, vkb, nkb,                                            &
+      ntype, natom, rat, adot,                                           &
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,            &
+      mxdlev, mxddeg)
+
+    allocate(deidxk(mxdbnd))
+    allocate(d2eidxk2(mxdbnd))
+
+  endif
 
 ! loop over directions
 
@@ -354,22 +474,42 @@ subroutine out_mass_berry(ioreplay,                                      &
       xk(3) = ZERO
     endif
 
-    call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,               &
-        nlevel, levdeg, leveigs,                                         &
-        mxdbnd, mxdlev, mxddeg)
+    if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-    call berry_effective_mass(xk, adot, tmass, d2eidxk2,                 &
-        nlevel, levdeg, leveigs,                                         &
-        mxdbnd, mxdlev, mxddeg)
+      call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,             &
+          nlevel, levdeg, leveigs,                                       &
+          2*mxdbnd, mxdlev, mxddeg)
 
-    write(6,*)
-    write(6,*) '   Results from topological Berry quantities'
-    write(6,*)
+      call berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
+          nlevel, levdeg, leveigs,                                       &
+          2*mxdbnd, mxdlev, mxddeg)
 
-    call out_mass_print(neig, ei, deidxk, d2eidxk2,                      &
-        mxdbnd)
+      write(6,*)
+      write(6,*) '   Results from topological Berry quantities'
+      write(6,*)
+
+      call out_mass_print(neig, ei_sp, deidxk, d2eidxk2,                 &
+          2*mxdbnd)
 
 
+    else
+
+      call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,             &
+          nlevel, levdeg, leveigs,                                       &
+          mxdbnd, mxdlev, mxddeg)
+
+      call berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
+          nlevel, levdeg, leveigs,                                       &
+          mxdbnd, mxdlev, mxddeg)
+
+      write(6,*)
+      write(6,*) '   Results from topological Berry quantities'
+      write(6,*)
+
+      call out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
+          mxdbnd)
+
+    endif
 
     write(6,*)
     write(6,*) '  Do you want another direction? (y/n)'
@@ -387,12 +527,16 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   deallocate(ei)
   deallocate(hdiag)
+
   deallocate(isort)
   deallocate(qmod)
   deallocate(ekpg)
+
   deallocate(psi)
   deallocate(hpsi)
-  deallocate(ekpsi)
+
+  deallocate(levdeg)
+  deallocate(leveigs)
 
   deallocate(dhdkpsi)
   deallocate(dpsidk)
@@ -402,11 +546,10 @@ subroutine out_mass_berry(ioreplay,                                      &
   deallocate(tmass)
   deallocate(qmetric)
 
-  deallocate(levdeg)
-  deallocate(leveigs)
-
   deallocate(deidxk)
   deallocate(d2eidxk2)
+
+  if(yesno_so == 'y' .or. yesno_so == 'Y') deallocate(ei_sp)
 
   return
 

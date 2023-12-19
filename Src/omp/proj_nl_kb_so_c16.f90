@@ -448,6 +448,8 @@ subroutine proj_nl_kb_so_c16(rkpt, mtxd, isort,                          &
   deallocate(st)
   deallocate(vqil)
 
+  deallocate(lso)
+
   deallocate(k_ind, kk_ind, l_ind)
   deallocate(m_ind, ms_ind)
   deallocate(j_ind, mj_ind)

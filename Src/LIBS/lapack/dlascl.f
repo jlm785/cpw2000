@@ -267,7 +267,7 @@
 !        avoid underflow
 
          if(ctoc .lt. one) then
-           ct01 = zero
+           cto1 = zero
          else
            CTO1 = CTOC / BIGNUM
          endif

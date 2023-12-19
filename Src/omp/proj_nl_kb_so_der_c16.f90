@@ -808,10 +808,14 @@ subroutine proj_nl_kb_so_der_c16(rkpt, mtxd, isort,                      &
   deallocate(st)
   deallocate(vqil)
 
+  deallocate(lso)
+
   deallocate(dvqildq)
   deallocate(d2vqildq2)
 
-  deallocate(k_ind, kk_ind, l_ind, m_ind)
+  deallocate(k_ind, kk_ind, l_ind)
+  deallocate(m_ind, ms_ind)
+  deallocate(j_ind, mj_ind)
 
   return
 end subroutine proj_nl_kb_so_der_c16
