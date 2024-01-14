@@ -11,68 +11,81 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       subroutine cpw_read_pseudo(iprglob,icorr,                         &
-     &      crys_,pseudo_,atorb_,dims_)
- 
-       use cpw_variables
+!>  Interface subroutine for read_pseudo
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.10
+!>  \date         19 November 2019. 13 January 2024.
+!>  \copyright    GNU Public License v2
 
-       implicit none
+subroutine cpw_read_pseudo(iprglob, author,                              &
+       crys_, pseudo_, atorb_, dims_)
 
-       type(dims_t)                       ::  dims_                      !<  array dimensions
-       type(crys_t)                       ::  crys_                      !<  crystal structure
-       type(pseudo_t)                     ::  pseudo_                    !<  pseudo-potential (Kleinman-Bylander)
-       type(atorb_t)                      ::  atorb_                     !<  atomic orbitals in G-space
+! Written 19 November 2019. JLM
+! Modifierd indentation, author, 13 January 2024. JLM
 
-       integer,intent(in)                 ::  iprglob                    !<  level of detail of printout
-       character(len=2),intent(in)        ::  icorr                      !<  eXchange-Correlation choice
- 
-       integer              ::  ipr
- 
-!      counters
+  use cpw_variables
 
-       integer              ::  nt, l
+  implicit none
 
-       ipr = 0
-       if(iprglob > 0) ipr = 1
-       
-       call size_mxdlqp_lao(crys_%ntype,crys_%nameat,                                 &
-     &        dims_%mxdtyp,dims_%mxdlqp,dims_%mxdlao)
+  type(dims_t)                       ::  dims_                           !<  array dimensions
+  type(crys_t)                       ::  crys_                           !<  crystal structure
+  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
 
-!      this is for compatibility between old and new version
+  integer,intent(in)                 ::  iprglob                         !<  level of detail of printout
+  character(len=*),intent(in)        ::  author                          !<  eXchange-Correlation choice
 
-       dims_%mxdlqp = dims_%mxdlqp + 10
-       
-       allocate(pseudo_%nq(dims_%mxdtyp))
-       allocate(pseudo_%delq(dims_%mxdtyp))
-       allocate(pseudo_%zv(dims_%mxdtyp))
-       allocate(pseudo_%nkb(0:3,-1:1,dims_%mxdtyp))
-       allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
-       allocate(pseudo_%dcor(-1:dims_%mxdlqp,dims_%mxdtyp))
-       allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
+  integer              ::  ipr
 
-       allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
-       
-       allocate(atorb_%norbat(dims_%mxdtyp))
-       allocate(atorb_%nqwf(dims_%mxdtyp))
-       allocate(atorb_%delqwf(dims_%mxdtyp))
-       allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
-       allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
+! counters
 
-       call read_pseudo(ipr,icorr,pseudo_%ealraw,                                &
-     & PSEUDO_%NQ,PSEUDO_%DELQ,pseudo_%vkb,pseudo_%nkb,pseudo_%vloc,pseudo_%dcor,pseudo_%dval,                                   &
-     & atorb_%norbat,atorb_%nqwf,atorb_%delqwf,atorb_%wvfao,atorb_%lorb,atorb_%latorb,                             &
-     & crys_%ntype,crys_%natom,crys_%nameat,pseudo_%zv,pseudo_%ztot,                                       &
-     & dims_%mxdtyp,dims_%mxdlqp,dims_%mxdlao)
-       
+  integer              ::  nt, l
 
-       do nt = 1,crys_%ntype
-       do l = 0,3
-         pseudo_%nkb(l,-1,nt) = 0
-         pseudo_%nkb(l, 1,nt) = 0
-       enddo
-       enddo
+  ipr = 0
+  if(iprglob > 0) ipr = 1
+
+  call size_mxdlqp_lao(crys_%ntype, crys_%nameat,                        &
+         dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
+
+! this is for compatibility between old and new version
+
+  dims_%mxdlqp = dims_%mxdlqp + 10
+
+  allocate(pseudo_%nq(dims_%mxdtyp))
+  allocate(pseudo_%delq(dims_%mxdtyp))
+  allocate(pseudo_%zv(dims_%mxdtyp))
+  allocate(pseudo_%nkb(0:3,-1:1,dims_%mxdtyp))
+  allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
+  allocate(pseudo_%dcor(-1:dims_%mxdlqp,dims_%mxdtyp))
+  allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
+
+  allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
+
+  allocate(atorb_%norbat(dims_%mxdtyp))
+  allocate(atorb_%nqwf(dims_%mxdtyp))
+  allocate(atorb_%delqwf(dims_%mxdtyp))
+  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
+  allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
+
+  call read_pseudo(ipr, author,                                          &
+       pseudo_%ealraw, PSEUDO_%NQ, PSEUDO_%DELQ, pseudo_%vkb,            &
+       pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
+       atorb_%norbat, atorb_%nqwf, atorb_%delqwf, atorb_%wvfao,          &
+       atorb_%lorb, atorb_%latorb,                                       &
+       crys_%ntype, crys_%natom, crys_%nameat,                           &
+       pseudo_%zv, pseudo_%ztot,                                         &
+       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
 
 
-       return
+  do nt = 1,crys_%ntype
+  do l = 0,3
+    pseudo_%nkb(l,-1,nt) = 0
+    pseudo_%nkb(l, 1,nt) = 0
+  enddo
+  enddo
 
-       end subroutine cpw_read_pseudo
+
+  return
+
+end subroutine cpw_read_pseudo

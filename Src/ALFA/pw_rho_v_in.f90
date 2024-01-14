@@ -41,6 +41,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Modified October 15 2018 to pass generation information for pwSCF.
 ! Modified, documentation, February 4 2020. JLM
 ! Modified, efermi order of ntrans, mtrx, tnp, 29 November 2021. JLM
+! Modified, size of author, 13 January 2024.
 
 
   implicit none
@@ -67,7 +68,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   character(len=140), intent(out)    ::  subtitle                        !<  subtitle for plots
   character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata from cpw2000
 
-  character(len=3), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
   character(len=6), intent(out)      ::  flgscf                          !<  type of self consistent field and diagonalization
   character(len=4), intent(out)      ::  flgdal                          !<  whether the dual approximation is used
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).

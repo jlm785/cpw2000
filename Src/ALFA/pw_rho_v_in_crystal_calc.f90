@@ -39,6 +39,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified, meta_cpw2000, author,nx,etc, January 10, 2017. JLM
 ! Modified, documentation, spacegroup, 31 December 2020. JLM
 ! Modified, meta_cpw2000 has information if file is old style, 15 February 2022. JLM
+! Modified, size of author, 13 January 2024.
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -75,7 +76,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 
 ! information about the calculation
 
-  character(len=3), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
   character(len=6), intent(out)      ::  flgscf                          !<  type of self consistent field and diagonalization
   character(len=4), intent(out)      ::  flgdal                          !<  whether the dual approximation is used
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
@@ -175,12 +176,22 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
               bdate,btime
 
   read(io) author,flgscf,flgdal
-  if(author == 'ca ' .or. author == 'CA ' .or. author == 'pz '           &
+  if(author == 'ca ' .or. author == 'CA' .or. author == 'pz '           &
           .or. author == 'PZ ') then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by Perdew and Zunger)")')
+  elseif(author == 'PW92' .or. author == 'pw92') then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Ceperley and Alder correlation")')
+    write(6,'("  (as parametrized by Perdew and Wang (1992) )")')
+  elseif(author == 'vwn' .or. author == 'VWN') then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Ceperley and Alder correlation")')
+    write(6,'("  (as parametrized by  Vosko, Wilk and Nusair)")')
   elseif(author == 'pbe' .or. author == 'PBE' ) then
     write(6,*)
     write(6,'("  The potential was calculated in the generalized",       &

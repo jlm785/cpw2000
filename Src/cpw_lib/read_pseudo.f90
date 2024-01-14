@@ -18,11 +18,11 @@
 !>  g-vectors.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
+!>  \version      5.10
 !>  \date         1980s, 29 November 2021.
 !>  \copyright    GNU Public License v2
 
-subroutine read_pseudo(ipr, icorr, ealraw,                               &
+subroutine read_pseudo(ipr, author, ealraw,                              &
       nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                       &
       norbat, nqwf, delqwf, wvfao, lorb, latorb,                         &
       ntype, natom, nameat, zv, ztot,                                    &
@@ -39,7 +39,7 @@ subroutine read_pseudo(ipr, icorr, ealraw,                               &
 ! Modified, documentation, January 2020. JLM
 ! Modified, eorbwv, 29 November 2021. JLM
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
-! Copyright INESC-MN/Jose Luis Martins
+! Modified, Perdew-Wang (1992) not flagged as unsupported. 12 January 2024. JLM
 
 
   implicit none
@@ -52,7 +52,7 @@ subroutine read_pseudo(ipr, icorr, ealraw,                               &
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
   integer, intent(in)                ::  ipr                             !<  should be equal to one if information is to be printed.
-  character(len=2), intent(in)       ::  icorr                           !<  type of correlation
+  character(len=*), intent(in)       ::  author                          !<  type of correlation
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
@@ -85,7 +85,7 @@ subroutine read_pseudo(ipr, icorr, ealraw,                               &
   character(len=12)        :: tfile
   character(len=14)        :: fnam
   integer                  :: it                !  tape number
-  character(len=2)         :: namel,icorrt
+  character(len=2)         :: namel, icorr, icorrt
   character(len=3)         :: irel
   character(len=4)         :: icore
   character(len=60)        :: iray
@@ -111,6 +111,8 @@ subroutine read_pseudo(ipr, icorr, ealraw,                               &
   if (ipr == 1) write(6,'(//," potentials :",/," ------------")')
 
   latorb = .TRUE.
+
+  icorr = author(1:2)
 
 ! start loop over atomic types
 
@@ -157,11 +159,14 @@ subroutine read_pseudo(ipr, icorr, ealraw,                               &
     if (namel /= nameat(nt)) write(6,'("  *** warning in read_",         &
       &     "pseudo   chemical symbols do not match")')
 
-    if(icorrt == 'ca') icorrt='CA'
-    if(icorrt == 'xa') icorrt='XA'
-    if(icorrt == 'wi') icorrt='WI'
-    if(icorrt == 'hl') icorrt='HL'
-    if(icorrt == 'pb') icorrt='PB'
+!     if(icorrt == 'ca') icorrt='CA'
+!     if(icorrt == 'xa') icorrt='XA'
+!     if(icorrt == 'wi') icorrt='WI'
+!     if(icorrt == 'hl') icorrt='HL'
+!     if(icorrt == 'pb') icorrt='PB'
+!     if(icorrt == 'pw') icorrt='PW'
+
+    call chrcap(icorrt,2)
     if(icorrt /= icorr) write(6,'("  *** warning in read_pseudo",        &
       &   "  correlation potential does not match")')
 

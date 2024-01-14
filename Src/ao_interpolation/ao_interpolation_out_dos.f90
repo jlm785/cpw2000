@@ -11,18 +11,21 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!> This subroutine calculates the bands on an uniform grid
-!> for later processing using the atomic orbital interpolation
+!>  Calculates the atomic orbital interpolation
+!>  for the density of states
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.10
+!>  \date         July 2014, 29 November 2021.
+!>  \copyright    GNU Public License v2
 
-  subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
+subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 
 ! Adapted to use ao interpolatiion package July, 2014. clr
 ! modified 25 November 2015. JLM
 ! Modified documentation May 2020. JLM
 ! Modfied, new dos file format June 2021. CLR
-! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
-
-! version 5.01
+! Modified, e_of_k allocations, 14 Janury 2024. JLM
 
   use NonOrthoInterp
 
@@ -139,10 +142,12 @@
 
   if(noiData%lso==1) then
     allocate(e_of_k_so(2*neig,nrk2))
+    allocate(e_of_k(1,1))
     allocate(basxpsi_of_k(noiData%nband,noiData%nband,nrk2))
     lscl = .false.
     lso  = .true.
   else
+    allocate(e_of_k_so(1,1))
     allocate(e_of_k(neig,nrk2))
     allocate(basxpsi_of_k(noiData%nband,noiData%nband,nrk2))
     lscl = .true.
@@ -217,11 +222,8 @@
 
   deallocate(basxpsi_of_k)
 
-  if(noiData%lso==1) then
-    deallocate(e_of_k_so)
-  else
-    deallocate(e_of_k)
-  endif
+  deallocate(e_of_k_so)
+  deallocate(e_of_k)
 
   deallocate(kmap2)
   deallocate(nband2)
@@ -233,9 +235,11 @@
   deallocate(psi)
 
   return
-  end subroutine ao_interpolation_out_dos
+
+end subroutine ao_interpolation_out_dos
 
 subroutine DiagByLowdin2(nband,Hao,S, ev, psi)
+
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -290,9 +294,9 @@ subroutine DiagByLowdin2(nband,Hao,S, ev, psi)
 
   deallocate(S12,ev_ao, S12_inv,Uao,Hao_tr,wrk,ev_s)
 
+  return
 
-
-end subroutine
+end subroutine DiagByLowdin2
 
 
 

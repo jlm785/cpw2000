@@ -27,7 +27,7 @@ subroutine plot_psi_sub(ioreplay)
 ! and rho_v_plot_sub.
 ! Modernized, documentation, APIs, 2 February 2021. JLM
 ! Modified, efermi, 29 November 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, size of author, 13 January 2024.
 
 
   use cpw_variables
@@ -189,7 +189,7 @@ subroutine plot_psi_sub(ioreplay)
 
 ! information about the calculation
 
-  character(len=3)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
 
   character(len=60)                  ::  pwline                     !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                      !  title for plots

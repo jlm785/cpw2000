@@ -11,11 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutines reads a file with the atomic structure and
-!>     the effective potential and charge density and writes files
-!>     for the band structure, DOS, charge, potentaial plots.
+!>  This subroutines reads a file with the atomic structure and
+!>  the effective potential and charge density and writes file
+!>  with the information for the atomic orbital interpolation
+!>  MTB (Modified Tight Binding) method.
 !>
-!>  \author       Carlos Lóia Reis, Jose Luis Martins
+!>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.03
 !>  \date         December 18, 2013, 29 November 2021.
 !>  \copyright    GNU Public License v2
@@ -30,7 +31,8 @@
 !      Modified, cpw_variables. 7 January 2020. JLM
 !      Modified, epspsi, icmax, 14 June 2020. JLM
 !      Modified, efermi, 29 November 2021. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+!      Modified, size of author, 13 January 2024.
+
 
        use cpw_variables
        use NonOrthoInterp
@@ -197,7 +199,7 @@
 
 !      information about the calculation
 
-       character(len=3)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
+       character(len=4)                   ::  author                     !  type of xc wanted (CA=PZ , PW92 , PBE)
 
        character(len=60)                  ::  pwline                     !  identifier of the calculation.  May contain miscellaneous information!
        character(len=50)                  ::  title                      !  title for plots

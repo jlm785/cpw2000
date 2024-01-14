@@ -66,7 +66,7 @@
        integer, intent(out)               ::  natom(mxdtyp)              !<  number of atoms of type i
        character(len=2), intent(out)      ::  nameat(mxdtyp)             !<  chemical symbol for the type i
        real(REAL64), intent(out)          ::  rat(3,mxdatm,mxdtyp)       !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-       real(REAL64), intent(out)          ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i 
+       real(REAL64), intent(out)          ::  atmass(mxdtyp)             !<  atomic mass (in a.u.) of atom of type i
 
        real(REAL64), intent(out)          ::  alatt                      !<  lattice constant
        logical, intent(out)               ::  lgeom                      !<  indicates if geometry was successfully read.
@@ -76,11 +76,11 @@
        integer, intent(out)               ::  nx, ny, nz                 !<  size of the integration mesh in k-space (nx*ny*nz)
        real(REAL64), intent(out)          ::  sx, sy, sz                 !<  offset of the integration mesh (usually 0.5)
 
-       integer, intent(out)               ::  nbandin                    !<  target for number of bands      
+       integer, intent(out)               ::  nbandin                    !<  target for number of bands
        logical, intent(out)               ::  lbz                        !<  indicates if Brillouin Zone data was successfully read.
 
        character(len=250), intent(out)    ::  meta_cpw2000               !<  metadata coded in cpw2000
-       
+
        logical, intent(out)               ::  symkip                     !<  whether symmetry should be conserved
        real(REAL64), intent(out)          ::  symtol                     !<  tolerance for symmetry recognition subroutines
 
@@ -92,17 +92,17 @@
        real(REAL64), intent(out)          ::  epscv                      !<  convergence criteria for potential self consistency
        real(REAL64), intent(out)          ::  epscvao                    !<  convergence criteria for potential self consistency in atomic orbitals
        real(REAL64), intent(out)          ::  epspsi                     !<  convergence criteria for iterative diagonalization
-       
+
        real(REAL64), intent(out)          ::  tempk                      !<  ionic temperature (in Kelvin)
        real(REAL64), intent(out)          ::  teleck                     !<  electronic temperature (in Kelvin)
        real(REAL64), intent(out)          ::  tempinik                   !<  initial ionic temperature (in Kelvin)
        integer, intent(out)               ::  nstep                      !<  number of MD or minimization steps
        real(REAL64), intent(out)          ::  tstep                      !<  time step for MD (in atomic units)
        real(REAL64), intent(out)          ::  beta                       !<  friction coefficient/mass (in a.u.)
-       integer, intent(out)               ::  iseed                      !<  initial seed for random number generator        
+       integer, intent(out)               ::  iseed                      !<  initial seed for random number generator
        real(REAL64), intent(out)          ::  pgtol                      !<  criteria for force and stress convergence
        real(REAL64), intent(out)          ::  dxmax                      !<  maximum step size in forces and stresses
-       
+
        real(REAL64), intent(out)          ::  press                      !<  external pressure
        real(REAL64), intent(out)          ::  strext(3,3)                !<  external applied stress
        real(real64), intent(out)          ::  celmas                     !<  fictitious cell mass
@@ -154,7 +154,7 @@
          if(vdriv(4:4) /= vdrloc(4:4)) then
 
            write(6,*)
-           write(6,'("     WARNING    WARNING     in read_esdf")') 
+           write(6,'("     WARNING    WARNING     in read_esdf")')
            write(6,*)
            write(6,'("  library version: ",a4," cpw driver version: ",   &
      &                a4)') vdriv,vdrloc
@@ -169,7 +169,7 @@
        write(6,*)
        write(6,*) '  input read from ',fname
        write(6,*)
-       
+
        call esdf_init(fname)
 
 !      type of calculation
@@ -198,7 +198,7 @@
 
        flgcal = esdf_string('MD.TypeOfRun',flgcal)
        call chrcap(flgcal,6)
-       
+
        if (command_argument_count() >=1) then
 !       if (iargc() >=1) then
 !         call getarg(1,flgcal)
@@ -211,12 +211,12 @@
 !      choice of exchange and correlation
 
 
-       author = 'CA '
-!      author = 'PBE'
+       author = 'CA  '
+!      author = 'PBE '
 
        author = esdf_string('XC.Authors',author)
        call chrcap(author,4)
-       
+
        if (command_argument_count() >=2) then
 !       if (iargc() >=2) then
 !         call getarg(2,author)
@@ -227,7 +227,7 @@
 
        tblaha = UM
        tblaha = esdf_double('Xc.TBL.C',tblaha)
-       
+
 
 !      global printing flag, the highest the more detail is printed
 
@@ -238,7 +238,7 @@
          iprglob = 1
        endif
 
-       iprglob = esdf_integer('PrintingLevel',iprglob)              
+       iprglob = esdf_integer('PrintingLevel',iprglob)
 
 
 !      type of pseudopotential
@@ -251,7 +251,7 @@
        call chrcap(flgpsd,6)
 
 
-       ipr = iprglob       
+       ipr = iprglob
 
        call read_esdf_crystal(ipr,                                       &
      & adot,ntype,natom,nameat,rat,                                      &

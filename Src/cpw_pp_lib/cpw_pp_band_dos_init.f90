@@ -30,6 +30,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
 ! written February 1, 2020 from previous code. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Deallocation, 15 September 2023. JLM
+! size of author, 13 January 2024. JLM
 
   use cpw_variables
 
@@ -56,7 +57,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
   type(chdens_t)                     ::  chdensin_                       !<  input charge densities
   type(vcomp_t)                      ::  vcompin_                        !<  local potential contributions
 
-  character(len=3), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
 
   character(len=60), intent(out)     ::  pwline                          !<  identifier of the calculation.  May contain miscellaneous information!
   character(len=50), intent(out)     ::  title                           !<  title for plots

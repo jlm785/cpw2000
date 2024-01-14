@@ -12,11 +12,11 @@
 !------------------------------------------------------------!
 
 
-!>     Total Energy Plane Wave Calculation
+!>  Total Energy Plane Wave Calculation
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.07
-!>  \date         20 April 2023
+!>  \version      5.10
+!>  \date         24 January 2024
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -151,7 +151,7 @@ program cpw2000
 
   icorr = xc_%author(1:2)
 
-  call cpw_read_pseudo(iprglob, icorr,                                   &
+  call cpw_read_pseudo(iprglob, xc_%author,                              &
        crys_, pseudo_, atorb_, dims_)
 
 

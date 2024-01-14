@@ -44,6 +44,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 ! Modified, documentation, February 4 2020. JLM
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
 ! Copyright INESC-MN/Jose Luis Martins
+! Modified, size of author, 13 January 2024.
 
 
   implicit none
@@ -62,7 +63,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
-  character(len=3), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=*), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
 
 ! output
 
@@ -148,15 +149,16 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
       &    "pw_rho_v_in_pseudo   chemical symbols do not match",         &
       &    3x,a2,3x,a2)') namel,nameat(nt)
 
-    if(icorrt == 'ca') icorrt='CA'
-    if(icorrt == 'xa') icorrt='XA'
-    if(icorrt == 'wi') icorrt='WI'
-    if(icorrt == 'hl') icorrt='HL'
-    if(icorrt == 'pb') icorrt='PB'
+!     if(icorrt == 'ca') icorrt='CA'
+!     if(icorrt == 'xa') icorrt='XA'
+!     if(icorrt == 'wi') icorrt='WI'
+!     if(icorrt == 'hl') icorrt='HL'
+!     if(icorrt == 'pb') icorrt='PB'
+    call chrcap(icorrt,2)
 
     if(icorrt /= author(1:2)) write(6,'("  *** warning in ",             &
        &    "pw_rho_v_in_pseudo:  correlation potential does not ",      &
-       &    "match",3x,a2,3x,a3)') icorrt,author
+       &    "match",3x,a2,3x,a2)') icorrt, author(1:2)
     icorr(nt) = icorrt
 
 !   sum up vql0 for the alpha energy

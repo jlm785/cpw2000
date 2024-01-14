@@ -20,7 +20,7 @@
 !>  It is a driver subroutine for each task.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.09
+!>  \version      5.10
 !>  \date         December 18, 2013, 8 November 2023.
 !>  \copyright    GNU Public License v2
 
@@ -40,6 +40,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Added out_effective_mass in 22 January 2022. JLM
 ! Replaced out_effective_mass with cpw_pp_mass. 8 November 2023. JLM
 ! Removed efermi cpw_pp_opt. 12 November 2023. JLM
+! size of author, 13 January 2024. JLM
 
   use cpw_variables
 
@@ -197,7 +198,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
 ! information about the calculation
 
-  character(len=3)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
 
   character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                           !  title for plots

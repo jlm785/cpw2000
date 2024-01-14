@@ -191,7 +191,7 @@ subroutine plot_rho_v_sub(ioreplay)
 
 ! information about the calculation
 
-  character(len=3)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
 
   character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                           !  title for plots

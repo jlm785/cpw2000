@@ -39,6 +39,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified, hamilt_pw, 6 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! Modified, allocation of d2h0drk2, 14 January 2024. JLM
 
   implicit none
 
@@ -187,12 +188,16 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   nder = 1
 
+  allocate(d2h0drk2(1,1,3,3))
+
   call kdotp_matrix(mtxd, mxdorb, psi, ev_fake, rkpt, isort, nder,       &
       h0, dh0drk, d2h0drk2,                                              &
       ng, kgv,                                                           &
       ntype, natom, rat, adot,                                           &
       nqnl, delqnl, vkb, nkb,                                            &
       mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+
+  deallocate(d2h0drk2)
 
   call zgemm('c','n', nbaslcao, nbaslcao, mtxd, C_UM, hpsi, mxddim,      &
       psi, mxddim, C_ZERO, Hao, mxdorb)

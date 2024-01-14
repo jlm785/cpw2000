@@ -58,7 +58,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   character(len=250), intent(in)     ::  meta_cpw2000                    !<  metadata from cpw2000
 
   character(len=*), intent(in)       ::  filename                        !<  input file
-  character(len=3), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
   real(REAL64), intent(in)           ::  tblaha                          !<  Tran-Blaha constant
   character(len=6), intent(in)       ::  flgscf                          !<  type of self consistent field and diagonalizatioN
   character(len=4), intent(in)       ::  flgdal                          !<  whether the dual approximation is used
