@@ -730,10 +730,10 @@
 !      Added guessed constants for Pb, May 22, 2020.  JLM
 !      and Arithmetic mean instead of geometric for carbides. JLM
 !      Added constants from doi:10.1016/j.physe.2009.11.035
+!      Bug in mean for carbides (other than SiC), consistency with rede. 21 February 2024. JLM
 !      copyright INESC-MN/Jose Luis Martins/C.L. Reis
 
-!      version 4.99 of pw
-!      version 1.6.0 of md
+!      version 5.10 of pw
 
        implicit none
 
@@ -767,6 +767,7 @@
        real(REAL64), parameter  :: ANG = 1E-10
 
        real(REAL64), parameter  :: UM = 1.0_REAL64
+       real(REAL64), parameter  :: S3O4 = sqrt(3.0_REAL64) / 4.0_REAL64
 
 
 !      same species alpha,dist,beta (group IV)
@@ -775,15 +776,15 @@
          nn2 = (n*(n+1))/2
          if(nameat(n) == 'C ' .or. nameat(n) == ' C') then
            alfa(nn2) = 129.33_REAL64
-           dist(nn2) = 1.545_REAL64
+           dist(nn2) = S3O4*3.5668_REAL64
            beta(n,nn2) = 0.655_REAL64*alfa(nn2)
          elseif(nameat(n) == 'Si') then
            alfa(nn2) = 48.50_REAL64
-           dist(nn2) = 2.352_REAL64
+           dist(nn2) = S3O4*5.4310_REAL64
            beta(n,nn2) = 0.285_REAL64*alfa(nn2)
          elseif(nameat(n) == 'Ge') then
            alfa(nn2) = 38.67_REAL64
-           dist(nn2) = 2.450_REAL64
+           dist(nn2) = S3O4*5.6579_REAL64
            beta(n,nn2) = 0.294_REAL64*alfa(nn2)
          elseif(nameat(n) == 'Sn') then
            alfa(nn2) = 25.45_REAL64
@@ -816,25 +817,25 @@
      &          nameat(m) == 'Si') .or. (nameat(n) == 'Si' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = 88.0_REAL64
-             dist(nm2) = 1.888_REAL64
+             dist(nm2) = S3O4*4.3596_REAL64
              beta(n,mm2) = 0.54_REAL64*alfa(nm2)
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Ge') .or. (nameat(n) == 'Ge' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = (dist(nn2)*dist(mm2))/2
+             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Sn') .or. (nameat(n) == 'Sn' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = (dist(nn2)*dist(mm2))/2
+             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Pb') .or. (nameat(n) == 'Pb' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = (dist(nn2)*dist(mm2))/2
+             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif((nameat(n) == 'Si' .and. nameat(m) == 'Ge') .or.        &
      &          (nameat(n) == 'Ge' .and. nameat(m) == 'Si')) then
@@ -907,7 +908,7 @@
            elseif((nameat(n) == 'Ga' .and. nameat(m) == 'As') .or.        &
      &          (nameat(n) == 'As' .and. nameat(m) == 'Ga')) then
              alfa(nm2) = 41.19_REAL64
-             dist(nm2) = 2.448_REAL64
+             dist(nm2) = S3O4*5.6532_REAL64
              beta(n,mm2) = 0.217_REAL64*alfa(nm2)
            elseif((nameat(n) == 'Ga' .and. nameat(m) == 'Sb') .or.        &
      &          (nameat(n) == 'Sb' .and. nameat(m) == 'Ga')) then
@@ -925,7 +926,7 @@
      &           nameat(m) == ' P')) .or. ((nameat(n) == 'P ' .or.        &
      &           nameat(n) == ' P') .and. nameat(m) == 'In')) then
              alfa(nm2) = 43.04_REAL64
-             dist(nm2) = 2.541_REAL64
+             dist(nm2) = S3O4*5.8687_REAL64
              beta(n,mm2) = 0.145_REAL64*alfa(nm2)
            elseif((nameat(n) == 'In' .and. nameat(m) == 'As') .or.        &
      &          (nameat(n) == 'As' .and. nameat(m) == 'In')) then

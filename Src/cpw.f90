@@ -124,7 +124,7 @@ program cpw2000
 
 ! Driver program version
 
-  vdriv = '5.10'
+  vdriv = '5.11'
 
 ! timing
 

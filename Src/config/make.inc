@@ -20,12 +20,14 @@ CPU=Intel
 #   Suggestions for compilers.  Feel free to override the suggestions.
 
 ifeq ($(CPU),Intel)
-   F77=ifort
+   F77=ifx
+   # F77=ifort
    # F77=gfortran
    # F77=pgfortran
 else
    ifeq ($(CPU),AMD)
       F77=gfortran
+      # F77=ifx
       # F77=ifort
       # F77=pgfortran
    else
@@ -68,9 +70,17 @@ PRE2008=false
 
 
 
-#  For Intel ifort compiler:
+#  For Intel ifort and ifx compiler:
 
+IFORTX=false
 ifeq ($(F77),ifort)
+   IFORTX=true
+endif
+ifeq ($(F77),ifx)
+  IFORTX=true
+endif
+
+ifeq ($(IFORTX),true)
 
    #   profiling option (-g,empty).  Use it for tunning the code.
 
@@ -116,7 +126,7 @@ ifeq ($(F77),ifort)
       FCOMP=-qopenmp
       # FCOMP=-openmp
    else
-      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g
+      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0
       FCOMP=
    endif
 
