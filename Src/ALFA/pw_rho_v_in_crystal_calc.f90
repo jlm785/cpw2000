@@ -15,8 +15,8 @@
 !>  from the "io" file (default PW_RHO_V.DAT)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         May 16, 2014, 15 February 2022.
+!>  \version      5.11
+!>  \date         May 16, 2014, 25 February 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_crystal_calc(io,                                  &
@@ -40,6 +40,8 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified, documentation, spacegroup, 31 December 2020. JLM
 ! Modified, meta_cpw2000 has information if file is old style, 15 February 2022. JLM
 ! Modified, size of author, 13 January 2024.
+! Modified, back compatibility with old files. adjustl. 23 february 2024. JLM
+
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -175,9 +177,18 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   write(6,'("  The data file was written on ",a9," at ",a8)')            &
               bdate,btime
 
-  read(io) author,flgscf,flgdal
-  if(author == 'ca ' .or. author == 'CA' .or. author == 'pz '           &
-          .or. author == 'PZ ') then
+  read(io,iostat = ioerr) author,flgscf,flgdal
+
+  if(ioerr /= 0) then
+    backspace(io)
+    read(io,iostat = ioerr2) author(1:3),flgscf,flgdal
+    author(4:4) = ' '
+  endif
+
+  if(adjustl(trim(author)) == 'ca' .or.                                  &
+     adjustl(trim(author)) == 'CA' .or.                                  &
+     adjustl(trim(author)) == 'pz' .or.                                  &
+     adjustl(trim(author)) == 'PZ') then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
@@ -187,20 +198,28 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by Perdew and Wang (1992) )")')
-  elseif(author == 'vwn' .or. author == 'VWN') then
+  elseif(adjustl(trim(author)) == 'vwn' .or.                             &
+         adjustl(trim(author)) == 'VWN') then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by  Vosko, Wilk and Nusair)")')
-  elseif(author == 'pbe' .or. author == 'PBE' ) then
+  elseif(adjustl(trim(author)) == 'pbe' .or.                             &
+         adjustl(trim(author)) == 'PBE' ) then
     write(6,*)
     write(6,'("  The potential was calculated in the generalized",       &
       &   " gradient aproximation as parametrized by Perdew, Burke ",    &
       &   "and Ernzerhof")')
+  elseif(adjustl(trim(author)) == 'tbl' .or.                             &
+         adjustl(trim(author)) == 'TBL' ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the modified",          &
+      &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')
   else
     write(6,*)
-    write(6,'("  The XC flag is:   ",a3)') author
+    write(6,'("  The XC flag is:   ",a4)') author
   endif
+
   if(flgscf(5:6) /= 'PW') then
     write(6,*)
     write(6,'("  The SCF flag is:   ",a6)') flgscf

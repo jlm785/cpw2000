@@ -731,9 +731,10 @@
 !      and Arithmetic mean instead of geometric for carbides. JLM
 !      Added constants from doi:10.1016/j.physe.2009.11.035
 !      Bug in mean for carbides (other than SiC), consistency with rede. 21 February 2024. JLM
+!      Bond lengths for carbides (other than SiC) are LDA*1.006. 29 February 2024. JLM
 !      copyright INESC-MN/Jose Luis Martins/C.L. Reis
 
-!      version 5.10 of pw
+!      version 5.11 of pw
 
        implicit none
 
@@ -823,19 +824,19 @@
      &          nameat(m) == 'Ge') .or. (nameat(n) == 'Ge' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
+             dist(nm2) = S3O4*4.61_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Sn') .or. (nameat(n) == 'Sn' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
+             dist(nm2) = S3O4*5.08_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Pb') .or. (nameat(n) == 'Pb' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = sqrt(dist(nn2)*dist(mm2))
+             dist(nm2) = S3O4*5.43_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif((nameat(n) == 'Si' .and. nameat(m) == 'Ge') .or.        &
      &          (nameat(n) == 'Ge' .and. nameat(m) == 'Si')) then

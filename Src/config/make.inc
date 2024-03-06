@@ -18,10 +18,11 @@ CPU=Intel
 
 
 #   Suggestions for compilers.  Feel free to override the suggestions.
+#   As of early 2024 ifx should be considered "beta" and unreliable.
 
 ifeq ($(CPU),Intel)
-   F77=ifx
-   # F77=ifort
+   F77=ifort
+   # F77=ifx
    # F77=gfortran
    # F77=pgfortran
 else

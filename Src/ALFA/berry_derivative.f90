@@ -21,8 +21,8 @@
 !>  the input wave-function is not accurate.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         18 January 2023. 30 November 2023.
+!>  \version      5.11
+!>  \date         18 January 2023. 5 March 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
@@ -39,6 +39,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 ! Written by Jose Luis Martins, 18 january 2023.
 ! Final debugged version 3 November 2023. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! Corrected psidhdkpsi_sp. 5 March 2024. JLM
 
 
   implicit none
@@ -185,7 +186,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
       do mk = 1,levdeg(nl)
         m = leveigs(nl,mk)
         do j = 1,3
-          psidhdkpsi(nk,mk,j,nl) = real( zdotc(mtxd,psi(:,n),1,dhdkpsi(:,m,j),1), REAL64)
+          psidhdkpsi(nk,mk,j,nl) = zdotc(mtxd,psi(:,n),1,dhdkpsi(:,m,j),1)
         enddo
       enddo
     enddo

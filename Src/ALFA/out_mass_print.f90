@@ -14,12 +14,17 @@
 !>  Prints the results of the calculation of the effective mass
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
+!>  \version      5.11
 !>  \date         8 - 14 November 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
      mxdbnd)
+
+! Written November 2024. JLM
+! Modified print statement. 5 March 2024. JLM
+
+
 
 
   implicit none
@@ -98,7 +103,7 @@ subroutine out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
 
     do nk = 1,levdeg(nl)
       n = leveigs(nl,nk)
-      write(6,'(i5,f12.3,5x,f14.6,2(5x,f12.3))') n, ei(n)*HARTREE,       &
+      write(6,'(i5,f12.3,5x,f14.6,5x,f12.3,5x,f14.6)') n, ei(n)*HARTREE, &
              UM/d2eidxk2(n), d2eidxk2(n), deidxk(n)
     enddo
     write(6,*)

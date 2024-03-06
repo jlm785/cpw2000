@@ -23,8 +23,8 @@
 !>  spin-wave-function version
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         15 December 2023.
+!>  \version      5.11
+!>  \date         15 December 2023. 5 March 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
@@ -39,6 +39,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     mxdlev, mxddeg, mxdnsp)
 
 ! Adapted from the non-spin version 15 December 2023. JLM
+! Corrected psidhdkpsi_sp. 5 March 2024. JLM
 
 
   implicit none
@@ -136,7 +137,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 ! parameters
 
   real(REAL64), parameter       ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter       ::  TOL = 1.0E-9_REAL64
+  real(REAL64), parameter       ::  TOL = 1.0E-12_REAL64
 
 ! counters
 
@@ -188,7 +189,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
       do mk = 1,levdeg(nl)
         m = leveigs(nl,mk)
         do j = 1,3
-          psidhdkpsi_sp(nk,mk,j,nl) = real( zdotc(mtxd,psi_sp(:,n),1,dhdkpsi_sp(:,m,j),1), REAL64)
+          psidhdkpsi_sp(nk,mk,j,nl) = zdotc(2*mtxd,psi_sp(:,n),1,dhdkpsi_sp(:,m,j),1)
         enddo
       enddo
     enddo

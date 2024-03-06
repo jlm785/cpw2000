@@ -14,7 +14,7 @@
 !>     prints the information about the parameters used in the calculation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
+!>  \version      5.11
 !>  \date         20 september 2002. 12 January 2024
 !>  \copyright    GNU Public License v2
 
@@ -29,6 +29,7 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 ! Modified f90, tblaha, 24 Outubro 2015. JLM
 ! Modified, documentation, kplusg,August 10 2019. JLM
 ! Modified, indentation, types of correlation, len=* in author. 12 January 2024. JLM
+! Modified, write statement continuation, 22 February 2024. JLM
 
 
   implicit none
@@ -75,19 +76,19 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 
   write(6,*)
   write(6,*)
-  if(author == 'CA' .or. author == 'PZ') then
+  if(adjustl(trim(author)) == 'CA' .or. adjustl(trim(author)) == 'PZ') then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Perdew and Zunger'
   elseif(author == 'PW92') then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Perdew and Wang (1992)'
-  elseif(author == 'VWN') then
+  elseif(adjustl(trim(author)) == 'VWN') then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Vosko, Wilk and Nusair'
-  elseif(author == 'PBE') then
+  elseif(adjustl(trim(author)) == 'PBE') then
     write(6,*) 'Generalized Gradient Approximation (GGA)',               &
          '   as parametrized by Perdew, Burke and Ernzerhof'
-  elseif(author == 'TBL') then
+  elseif(adjustl(trim(author)) == 'TBL') then
     write(6,*) '   Tran-Blaha meta-gga  '
     if(tblaha < 0) then
       write(6,*) ' Using calculated tb constant'
@@ -95,8 +96,8 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
       write(6,'("  Setting tb constant = ",f14.6)') tblaha
     endif
   else
-    write(6,'("   Unknown type of correlation, expect disaster ",        &
-          a3)') author
+    write(6,'("   Unknown type of correlation, expect disaster ",a3)')   &
+             author
   endif
   write(6,*)
 
@@ -106,22 +107,21 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
   endif
 
   write(6,'("    The energy cutoff for wave-function kinetic ",          &
-    "energy is",f12.3," Hartree")') emax
+        &   "energy is",f12.3," Hartree")') emax
   write(6,*)
 
   write(6,'("    SCF is converged when the difference in ",              &
-     "potentials is less then ",f14.8)') epscv
+        &   "potentials is less then ",f14.8)') epscv
   if(flgscf == 'AO    ' .or. flgscf == 'AOJC  ' .or.                     &
      flgscf == 'AOJCPW') then
-    write(6,'("   For atomic orbitals the SCF parameter is",             &
-         f14.8)') epscvao
+    write(6,'("   For atomic orbitals the SCF parameter is",f14.8)') epscvao
   endif
   write(6,'("    Iterative diagonalizationis converged when the",        &
-       "error in |h psi - e psi| is less then ",f14.8)') epspsi
+        &   "error in |h psi - e psi| is less then ",f14.8)') epspsi
   write(6,*)
 
   write(6,'("    The temperature for electron Fermi distribution",       &
-     " is",f12.3,"Kelvin")') teleck
+        &   " is",f12.3,"Kelvin")') teleck
   write(6,*)
 
   write(6,*)
@@ -139,18 +139,17 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
      flgcal == 'VCSLNG' .or. flgcal == 'VCSMIC' .or.                     &
      flgcal == 'EPILNG') then
     write(6,'("    The initial ion temperature is ",f13.3,               &
-      " Kelvin")') tempinik
+          &    " Kelvin")') tempinik
     write(6,'("    The time step is ",f12.3," au ",                      &
-  "      ( * 2.4 10**-17 s)")') tstep
+          &   "      ( * 2.4 10**-17 s)")') tstep
     write(6,'("    The number of MD steps is : ",i10)') nstep
   endif
 
   if(flgcal == 'LANG  ' .or. flgcal == 'VCSLNG' .or.                     &
      flgcal == 'VCSLNG') then
-    write(6,'("    The thermal bath temperature is ",f12.3,              &
-      " Kelvin")') tempk
+    write(6,'("    The thermal bath temperature is ",f12.3," Kelvin")') tempk
     write(6,'("    The relaxation time is",f10.2," time steps")')        &
-         1.0/(beta*tstep)
+           1.0/(beta*tstep)
     write(6,'("    The random number seed is : ",i10)') iseed
   endif
 
@@ -158,8 +157,8 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
      flgcal == 'EPILBF' .or. flgcal == 'VCSMIC' .or.                     &
      flgcal == 'EPILNG') then
     write(6,'("    The applied pressure is ",f12.3," GPa.  ",            &
-     "The stress tensor is",3f10.2,/,65x,3f10.2,/,65x,3f10.2)')          &
-         press*AUTOGPA, ((strext(i,j)*AUTOGPA,i=1,3),j=1,3)
+          &   "The stress tensor is",3f10.2,/,65x,3f10.2,/,65x,3f10.2)') &
+              press*AUTOGPA, ((strext(i,j)*AUTOGPA,i=1,3),j=1,3)
   endif
   if(flgcal == 'VCSLNG' .or. flgcal == 'VCSMIC' .or.                     &
      flgcal == 'EPILNG') then
@@ -175,11 +174,12 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
   if(flgcal == 'VCSLBF' .or. flgcal == 'EPILBF') then
     if(flgkplusg) then
       write(6,'("    Switches to constant k+G when error is ",            &
-         "smaller then: ",f16.8)') epskplusg
+            &   "smaller then: ",f16.8)') epskplusg
     endif
   endif
   write(6,*)
 
 
   return
-  end subroutine print_parameters
+
+end subroutine print_parameters

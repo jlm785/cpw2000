@@ -15,7 +15,7 @@
 !>  atomic core and valence charge densities tape io.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
+!>  \version      5.11
 !>  \date         1980s, 29 November 2021.
 !>  \copyright    GNU Public License v2
 
@@ -43,8 +43,8 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
 ! Modified, documentation, February 4 2020. JLM
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
-! Copyright INESC-MN/Jose Luis Martins
-! Modified, size of author, 13 January 2024.
+! Modified, size of author, 13 January 2024. JLM
+! Modified, avoid bug in ifx compiler. 25 February 2024. JLM
 
 
   implicit none
@@ -306,12 +306,16 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
         if(l == 0) then
           do j = 0,nqnl(nt)
             read(io) vkbraw(j,l,0,nt)
+          enddo
+          do j = 0,nqnl(nt)
             vkbraw(j,l,-1,nt) = vkbraw(j,l,0,nt)
             vkbraw(j,l, 1,nt) = vkbraw(j,l,0,nt)
           enddo
         else
           do j = 0,nqnl(nt)
             read(io) vkbraw(j,l,0,nt),vkbraw(j,l,1,nt)
+          enddo
+          do j = 0,nqnl(nt)
             vkbraw(j,l,-1,nt) = vkbraw(j,l,0,nt) - ((l+1)*vkbraw(j,l,1,nt))/2
             vkbraw(j,l, 1,nt) = vkbraw(j,l,0,nt) + (l*vkbraw(j,l,1,nt))/2
           enddo
@@ -319,6 +323,8 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
       else
         do j = 0,nqnl(nt)
           read(io) vkbraw(j,l,0,nt)
+        enddo
+        do j = 0,nqnl(nt)
           vkbraw(j,l,-1,nt) = vkbraw(j,l,0,nt)
           vkbraw(j,l, 1,nt) = vkbraw(j,l,0,nt)
         enddo

@@ -16,8 +16,8 @@
 !>  using a Berry topological tools.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
-!>  \date         9 November 2023.
+!>  \version      5.11.
+!>  \date         9 November 2023.  March 5 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -30,6 +30,9 @@ subroutine out_mass_berry(ioreplay,                                      &
     nqnl, delqnl, vkb, nkb,                                              &
     latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+
+! Written 9 November 2023. JLM
+! Modified, API berry_effective_mass. March 5 2024. JLM
 
 
   implicit none
@@ -500,7 +503,8 @@ subroutine out_mass_berry(ioreplay,                                      &
             nlevel, levdeg, leveigs,                                     &
             2*mxdbnd, mxdlev, mxddeg)
 
-        call berry_effective_mass(xk, adot, tmass, d2eidxk2,             &
+        call berry_effective_mass(xk, adot, psidhdkpsi, tmass,           &
+            d2eidxk2,                                                    &
             nlevel, levdeg, leveigs,                                     &
             2*mxdbnd, mxdlev, mxddeg)
 
@@ -518,7 +522,8 @@ subroutine out_mass_berry(ioreplay,                                      &
             nlevel, levdeg, leveigs,                                     &
             mxdbnd, mxdlev, mxddeg)
 
-        call berry_effective_mass(xk, adot, tmass, d2eidxk2,             &
+        call berry_effective_mass(xk, adot, psidhdkpsi, tmass,           &
+            d2eidxk2,                                                    &
             nlevel, levdeg, leveigs,                                     &
             mxdbnd, mxdlev, mxddeg)
 
@@ -623,7 +628,8 @@ subroutine out_mass_berry(ioreplay,                                      &
 
         if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-          call berry_effective_mass(xpoint(:,i), adot, tmass, d2eidxk2,      &
+          call berry_effective_mass(xpoint(:,i), adot, psidhdkpsi, tmass,    &
+              d2eidxk2,                                                      &
               nlevel, levdeg, leveigs,                                       &
               2*mxdbnd, mxdlev, mxddeg)
 
@@ -631,7 +637,8 @@ subroutine out_mass_berry(ioreplay,                                      &
 
         else
 
-          call berry_effective_mass(xpoint(:,i), adot, tmass, d2eidxk2,      &
+          call berry_effective_mass(xpoint(:,i), adot, psidhdkpsi, tmass,    &
+              d2eidxk2,                                                      &
               nlevel, levdeg, leveigs,                                       &
               mxdbnd, mxdlev, mxddeg)
 

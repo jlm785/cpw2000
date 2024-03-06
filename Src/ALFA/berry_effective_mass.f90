@@ -15,13 +15,17 @@
 !>  Can be used for other rank 2 (not counting eigenstate index) Berry quantities
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
-!>  \date         4 November 2023.
+!>  \version      5.11
+!>  \date         4 November 2023. 5 March 2024.
 !>  \copyright    GNU Public License v2
 
-subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
+subroutine berry_effective_mass(xk, adot, psidhdkpsi, tmass,             &
+    d2eidxk2,                                                            &
     nlevel, levdeg, leveigs,                                             &
     mxdbnd, mxdlev, mxddeg)
+
+! Written 4 November 2023. JLM
+! Modified, first order perturbation must be diagonalized.  5 March 2024. JLM
 
 
   implicit none
@@ -42,6 +46,7 @@ subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
+  complex(REAL64), intent(in)     ::  psidhdkpsi(mxddeg,mxddeg,3,mxdlev) !<  <psi_n| d H / d k |psi_m> for each energy level (lattice coordinates)
   complex(REAL64), intent(in)        ::  tmass(mxddeg,mxddeg,3,3,mxdlev) !<  Tensor associated with effective mass d^2 E_i /d k_1 d k_2 (lattice coordinates)
 
 ! output
@@ -50,9 +55,19 @@ subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
 
 ! allocatable arrays
 
-  complex(REAL64), allocatable       ::  aoper(:,:)                      !  hermitian operator
-  complex(REAL64), allocatable       ::  aeigvec(:,:)                    !  eigenvectors
-  real(REAL64), allocatable          ::  aeig(:)                         !  eigenvalues
+  complex(REAL64), allocatable       ::  h1(:,:)                         !  first order perturbation
+  complex(REAL64), allocatable       ::  h1eigvec(:,:)                   !  eigenvectors of first order
+  real(REAL64), allocatable          ::  h1eig(:)                        !  eigenvalues of first order
+
+  complex(REAL64), allocatable       ::  h2(:,:)                         !  second order perturbation
+  complex(REAL64), allocatable       ::  h2sub(:,:)                      !  second order perturbation on sublevel
+  complex(REAL64), allocatable       ::  h2eigvec(:,:)                   !  eigenvectors
+  real(REAL64), allocatable          ::  h2eig(:)                        !  eigenvalues
+
+  integer, allocatable               ::  levdegh1(:)                     !  degeneracy of sublevel
+  integer, allocatable               ::  leveigh1(:,:)                   !  points to degenerate level
+
+  complex(REAL64), allocatable       ::  tmp(:,:)                        !  temporary matrix
 
 ! local variables
 
@@ -60,14 +75,22 @@ subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
   real(REAL64)      ::  yk(3), xknorm
   integer           ::  info
 
+  integer           ::  nlh1                         !  number of sublevels
+  integer           ::  nh1, nnh1, maxdeg
+
 ! parameters
 
-  real(REAL64), parameter     ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
+  real(REAL64), parameter     ::  EPS = 1.0E-12_REAL64
+  real(REAL64), parameter     ::  TOL = 1.0E-5_REAL64
 
 ! counters
 
   integer    ::  i, j, n
   integer    ::  nl, nk, mk
+  integer    ::  jl
 
 
 ! normalizes xk
@@ -80,19 +103,43 @@ subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
     xknorm = xknorm + xk(i)*bdot(i,j)*xk(j)
   enddo
   enddo
+
+  if(xknorm < EPS) then
+    write(6,*)
+    write(6,*) "   STOPPED in berry_efective_mass, null direction  ",xk(1),xk(2),xk(3)
+    write(6,*)
+
+    stop
+
+  endif
+
   do i = 1,3
     yk(i) = xk(i) / sqrt(xknorm)
   enddo
 
-  allocate(aoper(mxddeg,mxddeg))
-  allocate(aeigvec(mxddeg,mxddeg))
-  allocate(aeig(mxddeg))
+! mxddeg is small no point in optimizing
+
+  allocate(h1(mxddeg,mxddeg))
+  allocate(h1eigvec(mxddeg,mxddeg))
+  allocate(h1eig(mxddeg))
+
+  allocate(h2(mxddeg,mxddeg))
+  allocate(h2sub(mxddeg,mxddeg))
+  allocate(h2eigvec(mxddeg,mxddeg))
+  allocate(h2eig(mxddeg))
+
+  allocate(levdegh1(mxddeg))
+  allocate(leveigh1(mxddeg,mxddeg))
+
+  allocate(tmp(mxddeg,mxddeg))
 
 ! loop over energy levels
 
   do nl = 1,nlevel
 
     if(levdeg(nl) == 1) then
+
+!     no degeneracy
 
       n = leveigs(nl,1)
       d2eidxk2(n) = ZERO
@@ -104,37 +151,112 @@ subroutine berry_effective_mass(xk, adot, tmass, d2eidxk2,               &
 
     else
 
+!     Degenerate case.  First diagonalize the first order perturbation
+
       do nk = 1,levdeg(nl)
       do mk = 1,levdeg(nl)
-        aoper(nk,mk) = ZERO
-        do i = 1,3
+        h1(nk,mk) = C_ZERO
         do j = 1,3
-          aoper(nk,mk) = aoper(nk,mk) + yk(i)*tmass(nk,mk,i,j,nl)*yk(j)
-        enddo
+          h1(nk,mk) = h1(nk,mk) + psidhdkpsi(nk,mk,j,nl)*yk(j)
         enddo
       enddo
       enddo
 
-      call diag_c16(levdeg(nl), aoper, aeig, aeigvec, mxddeg, info)
+      call diag_c16(levdeg(nl), h1, h1eig, h1eigvec, mxddeg, info)
       if(info /= 0) then
 
-        write(6,*) "   STOPPED in berry_effective_mass  info = ",info
+        write(6,*) "   STOPPED in berry_effective_mass first order  info = ",info
 
         stop
 
       endif
 
-      do nk = 1,levdeg(nl)
-        n = leveigs(nl,nk)
-        d2eidxk2(n) = aeig(nk)
+      nh1 = levdeg(nl)
+      nnh1 = nh1
+
+      call berry_degeneracy(.FALSE., nh1, nnh1, h1eig, TOL,              &
+          nlh1, maxdeg, levdegh1, leveigh1,                              &
+          mxddeg, mxddeg, mxddeg)
+
+!     calculates second order matrix
+
+      do nk = 1,nh1
+      do mk = 1,nh1
+        h2(nk,mk) = C_ZERO
+        do i = 1,3
+        do j = 1,3
+          h2(nk,mk) = h2(nk,mk) + yk(i)*tmass(nk,mk,i,j,nl)*yk(j)
+        enddo
+        enddo
+      enddo
       enddo
 
+!     rotates second order matrix according to the eigenvectors of the first order
+
+      call zgemm('n','n', nh1, nh1, nh1, C_UM, h2, mxddeg,               &
+                 h1eigvec, mxddeg, C_ZERO, tmp, mxddeg)
+      call zgemm('c','n', nh1, nh1, nh1, C_UM, h1eigvec, mxddeg,         &
+                 tmp, mxddeg, C_ZERO, h2, mxddeg)
+
+!     iterates over sublevels
+
+      do jl = 1,nlh1
+
+        if(levdegh1(jl) == 1) then
+
+          j = leveigh1(jl,1)
+          n = leveigs(nl,j)
+
+          d2eidxk2(n) = h2(j,j)
+
+        else
+
+          do i = 1,levdegh1(jl)
+          do j = 1,levdegh1(jl)
+            h2sub(i,j) = h2(leveigh1(jl,i),leveigh1(jl,j))
+          enddo
+          enddo
+
+          call diag_c16(levdegh1(jl), h2sub, h2eig, h2eigvec, mxddeg, info)
+          if(info /= 0) then
+
+            write(6,*) "   STOPPED in berry_effective_mass second order  info = ",info
+
+            stop
+
+          endif
+
+          do nk = 1,levdegh1(jl)
+            j = leveigh1(jl,nk)
+            n = leveigs(nl,j)
+            d2eidxk2(n) = h2eig(nk)
+          enddo
+
+        endif
+
+      enddo
+
+!     end of loop over sub-levels
+
     endif
+
   enddo
 
-  deallocate(aoper)
-  deallocate(aeigvec)
-  deallocate(aeig)
+! end of loop over levels
+
+  deallocate(h1)
+  deallocate(h1eigvec)
+  deallocate(h1eig)
+
+  deallocate(h2)
+  deallocate(h2sub)
+  deallocate(h2eigvec)
+  deallocate(h2eig)
+
+  deallocate(levdegh1)
+  deallocate(leveigh1)
+
+  deallocate(tmp)
 
   return
 

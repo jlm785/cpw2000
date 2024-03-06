@@ -15,8 +15,8 @@
 !>  for a given k-vector and direction with finite differences
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.08
-!>  \date         7 November 2023.
+!>  \version      5.11
+!>  \date         7 November 2023 .5 March 2024
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
@@ -33,7 +33,8 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao,              &
     mxddim, mxdbnd)
 
-! january 2023. JLM
+! January 2023. JLM
+! Modified, spin_perturb to spin_improve. 5 March 2024. JLM
 
   implicit none
 
@@ -127,7 +128,12 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
   real(REAL64), allocatable          ::  rk_l(:,:)                       !  k-point on the line
   real(REAL64), allocatable          ::  ei_l_so(:,:)                    !  eigenvalue no. i. in the line (hartree) with so
 
+  real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue in spin-peerturbation
+
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i with so
+  complex(REAL64), allocatable       ::  hpsi_so(:,:)                    !  H | psi>
+
+  real(REAL64), allocatable          ::  vscr_sp(:,:)
 
   real(REAL64), allocatable          ::  xin(:), yin(:)
 
@@ -155,8 +161,10 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
   integer           ::  nocc
   integer           ::  iguess
 
-  real(REAL64)      ::  yk(3), xknorm
+  integer           ::  nsp, mxdnsp
+  integer           ::  njac, nritz
 
+  real(REAL64)      ::  yk(3), xknorm
   real(REAL64)      ::  vcell, bdot(3,3)
 
   real(REAL64)      ::  y(0:2), dy(0:2)
@@ -260,6 +268,10 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
   if(lso) then
     allocate(ei_l_so(2*mxdbnd,-npt:npt))
     allocate(psi_so(2*mxddim,2*mxdbnd))
+    allocate(hpsi_so(2*mxddim,2*mxdbnd))
+    allocate(ei_pert(2*mxdbnd))
+    mxdnsp = 1
+    allocate(vscr_sp(mxdscr,mxdnsp))
   endif
 
   do n = -npt,npt
@@ -296,12 +308,30 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
     if(lso) then
 
-      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
-          neig, psi, ei_l(:,n), ei_l_so(:,n), psi_so, .TRUE.,            &
+      njac = 3
+      nritz = 5
+
+      nsp = 1
+
+      vscr_sp(:,1) = vscr(:)
+
+      call diag_improve_psi_spin(rk_l(:,n), mtxd, neig,                  &
+          njac, nritz, TOL,                                              &
+          ei_l(:,n), psi,                                                &
+          ei_pert, ei_l_so(:,n), psi_so, hpsi_so,                        &
           ng, kgv,                                                       &
+          ekpg, isort, vscr_sp, kmscr, nsp,                              &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+
+      ipr = 1
+
+      nrka = -1
+      call print_eig_so(ipr, 1, labelk, nrka, rk_l(:,n),                 &
+          mtxd, neig, psi_so,                                            &
+          adot, ei_l_so(:,n), ekpsi, isort, kgv,                         &
+          mxddim, mxdbnd, mxdgve)
 
     endif
 
@@ -385,7 +415,13 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
   deallocate(ei_l)
   deallocate(rk_l)
-  if(lso) deallocate(ei_l_so)
+  if(lso) then
+    deallocate(ei_l_so)
+    deallocate(psi_so)
+    deallocate(hpsi_so)
+    deallocate(ei_pert)
+    deallocate(vscr_sp)
+  endif
 
   deallocate(xin,yin)
   deallocate(ipl)
