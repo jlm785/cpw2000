@@ -45,6 +45,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 ! Modified, hamilt_pw, 2 June 2020. JLM
 ! Modified, qmod-->ekpg in ditsp_c16. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! Added the commented out alternative call to hamilt_kb_alt. 16 Mrch 2024. JLM
 
 
   implicit none
@@ -177,6 +178,16 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
       sfact, veff, nqnl, delqnl, vkb, nkb,                               &
       ntype, adot, hamsm,                                                &
       mxdtyp, mxdgve, mxdnst, mxdcub, mxdlqp, mxdsml)
+
+! the call to "old" hamilt_kb can be replaced to the call
+! to the new alternative hamilt_kb_alt
+
+!   call hamilt_kb_alt(rkpt, mtxds, isort, qmod, ekpg,                     &
+!       hamsm,                                                             &
+!       ng, kgv, phase, conj, inds, kmax, indv,                            &
+!       veff, nqnl, delqnl, vkb, nkb,                                      &
+!       ntype, natom, rat, adot,                                           &
+!       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, mxdsml)
 
   NDUM = NEIG
 
