@@ -132,15 +132,15 @@ subroutine hamilt_struct(emax, rkpt, mtxd, isort, qmod, ekpg, lkplusg,   &
   if(mtxd > mxddim) then
     mtry = nint(mxddim * (emax / ekin(irow(mxddim)))**1.5)
     write(6,'("   STOPPED in hamilt_struct:    Try to increase",    &
-       " mxddim to about",i8)') mtry
+       &      " mxddim to about",i8)') mtry
 
     stop
 
   endif
   if(mtxd == ng) then
     write(6,'("   STOPPED in hamilt_struct:    Something is",       &
-        " wrong, the size of g-space",i8," is the same as the",     &
-        " hamiltonian size")') ng
+       &      " wrong, the size of g-space",i8," is the same as the",     &
+       &      " hamiltonian size")') ng
 
     stop
 
