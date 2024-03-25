@@ -121,7 +121,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   complex(REAL64), allocatable       ::  tmass(:,:,:,:,:)                !  Tensor of the inverse effective mass (lattice coordinates)
   real(REAL64), allocatable          ::  qmetric(:,:,:)                  !  Tensor of the quantum metric (lattice coordinates)
 
-  real(REAL64), allocatable          ::  ei_so(:)                           !  eigenvalue no. i. (hartree)
+  real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue no. i. (hartree) spin-orbit perturbation
   real(REAL64), allocatable          ::  ei_sp(:)                           !  eigenvalue no. i. (hartree)
 
   complex(REAL64), allocatable       ::  psi_sp(:,:)                        !  component j of eigenvector i
@@ -130,6 +130,10 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), allocatable          ::  vscr_sp(:,:)
 
   real(REAL64), allocatable          ::  xpoint(:,:)
+
+  complex(REAL64), allocatable       ::  hamk_so(:,:)                    !  hamiltonian matrix with spin-orbit
+  real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
+  complex(REAL64), allocatable       ::  vecall_so(:,:)                  !  wave-functions
 
 ! local variables
 
@@ -180,6 +184,9 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   character(len=16) ::  filename
 
+  integer           ::  imethod, imethod2
+  integer           ::  info
+
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
@@ -190,6 +197,13 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! counters
 
   integer    ::  i, j, k, n
+
+
+! hard coded values
+
+  njac = 1
+  nritz = 120
+
 
 
 ! calculates local potential in fft mesh
@@ -289,16 +303,52 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-!   first do perturbation
+!   choose method for spin-orbitals
+
+    write(6,*)
+    write(6,*) '   How do you wanto to treat the reference wave-functions?'
+    write(6,*)
+    write(6,*) '   (1) Full diagonalization of the spin-orbit hamiltonian'
+    write(6,*) '       Recommended if you can afford to diagonalize a matrix'
+    write(6,'("       of size ",i6 " by ",i6)') 2*mtxd,2*mtxd
+    write(6,*) '   (2) Iterative diagonalization of the spin-orbit hamiltonian'
+    write(6,*) '   (3) First order perturbation in spin-orbit'
+    write(6,*)
+    write(6,*) '   Enter your choice 1-3'
+    write(6,*)
+
+    read(5,*) imethod
+
+    write(ioreplay,*) imethod,'   spin-orbit method'
+
+    if(imethod < 1 .or. imethod > 3) then
+      write(6,*)
+      write(6,*) '   Wrong value, enter method again 1,2,3'
+      write(6,*)
+
+      read(5,*) imethod
+
+      write(ioreplay,*) imethod2,'   spin-orbit method again'
+
+      if(imethod < 1 .or. imethod > 3) then
+        if(mtxd < 1000) then
+          write(6,*) '   Wrong value again, using full diagonalization'
+          imethod = 1
+        else
+          write(6,*) '   Wrong value again, using iterative diagonalization'
+          imethod = 2
+        endif
+      endif
+
+    endif
 
 
-    allocate(ei_so(2*mxdbnd))
+
+
+    allocate(ei_pert(2*mxdbnd))
+    allocate(ei_sp(2*mxdbnd))
     allocate(psi_sp(2*mxddim,2*mxdbnd))
     allocate(hpsi_sp(2*mxddim,2*mxdbnd))
-
-    njac = 3
-    nritz = 5
-    allocate(ei_sp(2*mxdbnd))
 
     nsp = 1
     mxdnsp = 1
@@ -307,14 +357,68 @@ subroutine out_mass_berry(ioreplay,                                      &
 
     vscr_sp(:,1) = vscr(:)
 
-  call diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, TOL,         &
-    ei, psi,                                                             &
-    ei_so, ei_sp, psi_sp, hpsi_sp,                                       &
-    ng, kgv,                                                             &
-    ekpg, isort, vscr_sp, kmscr, nsp,                                    &
-    nqnl, delqnl, vkb, nkb,                                              &
-    ntype, natom, rat, adot,                                             &
-    mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+    if(imethod == 1) then
+
+      allocate(hamk_so(2*mxddim,2*mxddim))
+      allocate(eiall_so(2*mxddim))
+      allocate(vecall_so(2*mxddim,2*mxddim))
+
+      call hamilt_kb_alt_so(rkpt, mtxd, isort, qmod, ekpg,               &
+           hamk_so,                                                      &
+           ng, kgv, phase, conj, inds, kmax, indv,                       &
+           veff, nqnl, delqnl, vkb, nkb,                                 &
+           ntype, natom, rat, adot,                                      &
+           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, 2*mxddim)
+
+      call diag_c16(2*mtxd, hamk_so, eiall_so, vecall_so, 2*mxddim, info)
+
+      if(info /= 0) then
+        write(6,*)
+        write(6,*) '   Stopped in out_mass_berry.  Failed diagonalization'
+        write(6,*) '   info = ',info
+
+        stop
+
+      endif
+
+      do n = 1,2*neig
+        ei_sp(n) = eiall_so(n)
+        psi_sp(:,n) = vecall_so(:,n)
+      enddo
+
+      deallocate(hamk_so)
+      deallocate(eiall_so)
+      deallocate(vecall_so)
+
+    elseif(imethod == 2) then
+
+      call diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, TOL,     &
+          ei, psi,                                                       &
+          ei_pert, ei_sp, psi_sp, hpsi_sp,                               &
+          ng, kgv,                                                       &
+          ekpg, isort, vscr_sp, kmscr, nsp,                              &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+
+    elseif(imethod == 3) then
+
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          neig, psi, ei, ei_pert, psi_sp, .TRUE.,                        &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+      ei_sp(:) = ei_pert(:)
+
+    else
+
+      write(6,*) '   Stopped in out_mass_berry.  paranoid check!'
+
+      stop
+
+    endif
 
 !   now finds degeneracies
 
@@ -379,7 +483,7 @@ subroutine out_mass_berry(ioreplay,                                      &
       mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
       mxdlev, mxddeg, mxdnsp)
 
-    deallocate(ei_so)
+    deallocate(ei_pert)
     deallocate(psi_sp)
     deallocate(hpsi_sp)
     deallocate(vscr_sp)
@@ -651,6 +755,8 @@ subroutine out_mass_berry(ioreplay,                                      &
       close(unit = itape)
 
     enddo
+
+    deallocate(xpoint)
 
   endif
 

@@ -16,10 +16,10 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.11
-!>  \date         7 November 2023 .5 March 2024
+!>  \date         7 November 2023. 25 March 2024
 !>  \copyright    GNU Public License v2
 
-subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
+subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
     deidk, d2eidk2,                                                      &
     ei_so, deidk_so, d2eidk2_so,                                         &
     emax, flgdal, flgpsd, epspsi, icmax,                                 &
@@ -35,6 +35,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
 ! January 2023. JLM
 ! Modified, spin_perturb to spin_improve. 5 March 2024. JLM
+! Modified, added full diagonalization, imethod. 25 March 2024. JLM
 
   implicit none
 
@@ -60,6 +61,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
   integer, intent(in)                ::  npt                             !<  2*npt+1 is the total number of interpolation points
   real(REAL64), intent(in)           ::  delta                           !<  spacing between the poins used in the interpolation
   logical, intent(in)                ::  lso                             !<  calculates with spin-orbit in perturbation
+  integer, intent(in)                ::  imethod                         !<  method for treating spin-orbit
 
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
@@ -139,6 +141,10 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
   integer, allocatable               ::  ipl(:)                          !  most similar levels.
 
+  complex(REAL64), allocatable       ::  hamk_so(:,:)                    !  hamiltonian matrix with spin-orbit
+  real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
+  complex(REAL64), allocatable       ::  vecall_so(:,:)                  !  wave-functions
+
 ! local variables
 
   integer           ::  mxdscr                                           !  array dimension for screening potential
@@ -163,11 +169,16 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
   integer           ::  nsp, mxdnsp
   integer           ::  njac, nritz
+  real(REAL64)      ::  epsloc
 
   real(REAL64)      ::  yk(3), xknorm
   real(REAL64)      ::  vcell, bdot(3,3)
 
   real(REAL64)      ::  y(0:2), dy(0:2)
+
+  integer           ::  info
+  integer           ::  i50
+  character(len=11) ::  filename
 
 ! constants
 
@@ -179,6 +190,15 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
   integer    ::  i, j, k, n
 
+! hard-coded parameters for iterative diagonalization
+
+  njac = 1
+  nritz = 120
+
+  epsloc = epspsi/10000
+
+  i50 = 50
+  filename = 'tmp_eig.dat'
 
   if(npt < 1) then
     write(6,*)
@@ -286,7 +306,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
     ipr = 1
 
     call h_kb_dia_all('pw  ', emax, rk_l(:,n), neig, nocc,               &
-        flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
+        flgpsd, ipr, ifail, icmax, iguess, epsloc,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
         nqnl, delqnl, vkb, nkb,                                          &
@@ -308,22 +328,71 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
 
     if(lso) then
 
-      njac = 3
-      nritz = 5
-
       nsp = 1
 
       vscr_sp(:,1) = vscr(:)
 
-      call diag_improve_psi_spin(rk_l(:,n), mtxd, neig,                  &
-          njac, nritz, TOL,                                              &
-          ei_l(:,n), psi,                                                &
-          ei_pert, ei_l_so(:,n), psi_so, hpsi_so,                        &
-          ng, kgv,                                                       &
-          ekpg, isort, vscr_sp, kmscr, nsp,                              &
-          nqnl, delqnl, vkb, nkb,                                        &
-          ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+      if(imethod == 1) then
+
+        allocate(hamk_so(2*mxddim,2*mxddim))
+        allocate(eiall_so(2*mxddim))
+        allocate(vecall_so(2*mxddim,2*mxddim))
+
+        call hamilt_kb_alt_so(rk_l(:,n), mtxd, isort, qmod, ekpg,          &
+             hamk_so,                                                      &
+             ng, kgv, phase, conj, inds, kmax, indv,                       &
+             veff, nqnl, delqnl, vkb, nkb,                                 &
+             ntype, natom, rat, adot,                                      &
+             mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, 2*mxddim)
+
+        call diag_c16(2*mtxd, hamk_so, eiall_so, vecall_so, 2*mxddim, info)
+
+        if(info /= 0) then
+          write(6,*)
+          write(6,*) '   Stopped in out_mass_berry.  Failed diagonalization'
+          write(6,*) '   info = ',info
+
+          stop
+
+        endif
+
+        do j = 1,2*neig
+          ei_l_so(j,n) = eiall_so(j)
+        enddo
+
+        deallocate(hamk_so)
+        deallocate(eiall_so)
+        deallocate(vecall_so)
+
+
+      elseif(imethod == 2) then
+
+        call diag_improve_psi_spin(rk_l(:,n), mtxd, neig,                &
+            njac, nritz, epspsi,                                         &
+            ei_l(:,n), psi,                                              &
+            ei_pert, ei_l_so(:,n), psi_so, hpsi_so,                      &
+            ng, kgv,                                                     &
+            ekpg, isort, vscr_sp, kmscr, nsp,                            &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
+
+      elseif(imethod == 3) then
+
+        call spin_orbit_perturb(rk_l(:,n), mtxd, isort,                  &
+            neig, psi, ei_l(:,n), ei_l_so(:,n), psi_so, .TRUE.,          &
+            ng, kgv,                                                     &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+      else
+
+        write(6,*) '   Stopped in out_mass_fd_xk.  paranoid check!'
+
+        stop
+
+      endif
 
       ipr = 1
 
@@ -377,28 +446,38 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso,               &
     deallocate(ipl)
     allocate(ipl(2*neig))
 
+!   things may be complicated with spin orbit...
+
+    open(unit = i50, file = filename, status = 'UNKNOWN', form = 'FORMATTED')
+
     call out_mass_match(2*neig, npt, ei_l_so, ipl,                       &
        2*mxdbnd)
 
-  do n = 1,2*neig
+    do n = 1,2*neig
 
-    do j = -npt,-1
-      yin(j) = ei_l_so(ipl(n),j) - ei_l_so(n,0)
+      do j = -npt,-1
+        yin(j) = ei_l_so(ipl(n),j) - ei_l_so(n,0)
+      enddo
+
+      do j = 0,npt
+        yin(j) = ei_l_so(n,j) - ei_l_so(n,0)
+      enddo
+
+      write(i50,'(i5)') n
+
+      do j = -npt,npt
+        write(i50,'(2f22.14)') xin(j),yin(j)
+      enddo
+
+      call poly_interp(y, dy, xin, yin, 2*npt, 2)
+
+      d2eidk2_so(n) = y(2)
+      deidk_so(n) = y(1)
+      ei_so(n) = y(0) + ei_l_so(n,0)
+
     enddo
 
-    do j = 0,npt
-      yin(j) = ei_l_so(n,j) - ei_l_so(n,0)
-    enddo
-
-    call poly_interp(y, dy, xin, yin, 2*npt, 2)
-
-    d2eidk2_so(n) = y(2)
-    deidk_so(n) = y(1)
-    ei_so(n) = y(0) + ei_l_so(n,0)
-
-  enddo
-
-
+    close(unit = i50)
 
   endif
 

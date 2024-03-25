@@ -16,13 +16,16 @@
 !>  with rank 1 (not counting the eigenstate index).
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
+!>  \version      5.11
 !>  \date         21 September 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_band_velocity(xk, adot, psidhdkpsi, deidxk,             &
     nlevel, levdeg, leveigs,                                             &
     mxdbnd, mxdlev, mxddeg)
+
+! Written 21 September 2023. JLM
+! removed write statement. 25 March 2024. JLM
 
 
   implicit none
@@ -100,7 +103,6 @@ subroutine berry_band_velocity(xk, adot, psidhdkpsi, deidxk,             &
       do j = 1,3
         deidxk(n) = deidxk(n) + real(psidhdkpsi(1,1,j,nl),REAL64)*yk(j)
       enddo
-      write(6,'(i5,f12.4)') n, deidxk(n)
 
     else
 

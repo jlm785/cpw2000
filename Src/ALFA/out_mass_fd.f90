@@ -16,8 +16,8 @@
 !>  using a finite difference interpolation.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
-!>  \date         8 November 2023.
+!>  \version      5.11
+!>  \date         8 November 2023. 25 March 2024
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd(ioreplay,                                         &
@@ -33,6 +33,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
 
 ! Adapted from old out_effective_mass and out_psi_test.  8 November 2023. JLM
+! imethod, 25 March 2025. JLM
 
   implicit none
 
@@ -158,6 +159,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
   logical           ::  lsoinfo             !  pseudopotential includes spin-orbit components
   logical           ::  lso                 !  calculates with spin-orbit in perturbation
+  integer           ::  imethod             !  method for treating spin-orbit
 
 ! constants
 
@@ -386,9 +388,34 @@ subroutine out_mass_fd(ioreplay,                                         &
       read(5,*) yesno_so
       write(ioreplay,*) yesno_so,'      with spin-orbit'
       if(yesno_so == 'y' .or. yesno_so == 'Y') lso = .TRUE.
+      if(lso) then
+
+        write(6,*)
+        write(6,*) '   How do you wanto to treat the reference wave-functions?'
+        write(6,*)
+        write(6,*) '   (1) Full diagonalization of the spin-orbit hamiltonian'
+        write(6,*) '       Recommended if you can afford to diagonalize a matrix'
+        write(6,'("       of size ",i6 " by ",i6)') 2*mtxd,2*mtxd
+        write(6,*) '   (2) Iterative diagonalization of the spin-orbit hamiltonian'
+        write(6,*) '   (3) First order perturbation in spin-orbit'
+        write(6,*)
+        write(6,*) '   Enter your choice 1-3'
+        write(6,*)
+
+        read(5,*) imethod
+
+        write(ioreplay,*) imethod,'   spin-orbit method'
+
+        if(imethod < 1 .or. imethod > 3) then
+          write(6,*)
+          write(6,*) '   Wrong value, using iterative diagonalization'
+          write(6,*)
+          imethod = 2
+        endif
+      endif
     endif
 
-    call out_mass_fd_xk(rk0, xk, neig, npt, delta, lso,                  &
+    call out_mass_fd_xk(rk0, xk, neig, npt, delta, lso, imethod,         &
         deidk_fd, d2eidk2_fd,                                            &
         ei_so, deidk_fd_so, d2eidk2_fd_so,                               &
         emax, flgdal, flgpsd, epspsi, icmax,                             &
