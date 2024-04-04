@@ -69,7 +69,7 @@ program cpw_post_process
     write(6,*) '              k.p files,'
     write(6,*) '              optical response,'
     write(6,*) '              effective masses,'
-    write(6,*) '              topological quantities.'
+    write(6,*) '              quantum geometric quantities.'
     write(6,*)
     write(6,*) '  2) Use the TB interpolation to generate band '
     write(6,*) '     structures and density-of-states'

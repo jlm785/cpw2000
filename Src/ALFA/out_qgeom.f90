@@ -11,17 +11,15 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates the effective mass for a given k-vector
-!>  and direction (effective mass tensor for non-degenerate levels)
-!>  using a Berry topological tools.
+!>  Calculates the quantum geometric properties for a given k-vector
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11.
-!>  \date         9 November 2023.  4 April 2024.
+!>  \date         4 April 2024.
 !>  \copyright    GNU Public License v2
 
-subroutine out_mass_berry(ioreplay,                                      &
-    emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                   &
+subroutine out_qgeom(ioreplay,                                           &
+    emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot, efermi,           &
     adot, ntype, natom, rat,                                             &
     ng, kgv, phase, conj,                                                &
     ns, inds, kmax, indv, ek,                                            &
@@ -31,9 +29,9 @@ subroutine out_mass_berry(ioreplay,                                      &
     latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
-! Written 9 November 2023. JLM
-! Modified, API berry_effective_mass. March 5 2024. JLM
-! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
+! Should be merged with out_mass_berry someday...
+
+! Adapted 4 April 2024 from out_mass_berry. JLM
 
 
   implicit none
@@ -59,6 +57,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
   integer, intent(in)                ::  icmax                           !<  maximum number of iterations for diagonalization
   real(REAL64)                       ::  ztot                            !<  total charge density (electrons/cell)
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
@@ -123,14 +122,12 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), allocatable          ::  tqmetric(:,:,:,:,:)             !  Tensor of the quantum metric (lattice coordinates)
 
   real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue no. i. (hartree) spin-orbit perturbation
-  real(REAL64), allocatable          ::  ei_sp(:)                        !  eigenvalue no. i. (hartree)
+  real(REAL64), allocatable          ::  ei_sp(:)                           !  eigenvalue no. i. (hartree)
 
-  complex(REAL64), allocatable       ::  psi_sp(:,:)                     !  component j of eigenvector i
-  complex(REAL64), allocatable       ::  hpsi_sp(:,:)                    !  H | psi>
+  complex(REAL64), allocatable       ::  psi_sp(:,:)                        !  component j of eigenvector i
+  complex(REAL64), allocatable       ::  hpsi_sp(:,:)                       !  H | psi>
 
   real(REAL64), allocatable          ::  vscr_sp(:,:)
-
-  real(REAL64), allocatable          ::  xpoint(:,:)
 
   complex(REAL64), allocatable       ::  hamk_so(:,:)                    !  hamiltonian matrix with spin-orbit
   real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
@@ -162,13 +159,9 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64)      ::  rkpt(3)
   character(len=20) ::  typeofk
 
-  real(REAL64)      ::  xk(3)
-  real(REAL64)      ::  xrk
-
-  character(len=1)  ::  yesno_dir, yesno_so, yesno
+  character(len=1)  ::  yesno_so
 
   real(REAL64)      ::  bdot(3,3), vcell
-  real(REAL64)      ::  avec(3,3), bvec(3,3)
 
   integer           ::  nlevel              !  number of energy levels (not counting degeneracies)
   integer           ::  maxdeg              !  maximum number of degeneracies
@@ -179,33 +172,24 @@ subroutine out_mass_berry(ioreplay,                                      &
   integer           ::  nsp, mxdnsp
   integer           ::  njac, nritz
 
-  integer           ::  nlin, npoint
-  integer           ::  itape
-  integer           ::  jband
-
-  character(len=16) ::  filename
-
   integer           ::  imethod, imethod2
   integer           ::  info
 
 ! constants
 
-  real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
-  real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
+!  real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
   real(REAL64), parameter     ::  TOL = 1.0E-8_REAL64
   real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
 
 ! counters
 
-  integer    ::  i, j, k, n
+  integer    ::  j, n
 
 
 ! hard coded values
 
   njac = 1
   nritz = 120
-
-
 
 ! calculates local potential in fft mesh
 
@@ -555,205 +539,19 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   endif
 
-! masses along chosen directions
+  if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-  write(6,*)
-  write(6,*) '  Do you want to see the masses in particular directions? (y/n)'
-  write(6,*)
+    call out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,              &
+        ei_sp, adot, efermi,                                             &
+        tbcurv, tmag, tmass, tqmetric,                                   &
+        2*mxdbnd, mxdlev, mxddeg)
 
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'      particular directions'
+  else
 
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-!   loop over directions
-
-    do i = 1,1000
-
-      typeofk = 'direction in k-space'
-
-      call cpw_pp_get_k_vector(xk, rkcar, adot, typeofk, ioreplay)
-
-      write(6,*)
-      write(6,*) '  coordinates of the chosen k-direction:'
-      write(6,*) '      lattice coord.                  cartesian coord.'
-      write(6,*)
-      write(6,'(4x,3f9.4,5x,3f9.4)') (xk(j),j=1,3), (rkcar(j),j=1,3)
-      write(6,*)
-
-!     renormalizes xk
-
-      xrk = ZERO
-      do j = 1,3
-      do k = 1,3
-        xrk = xrk + xk(k)*bdot(k,j)*xk(j)
-      enddo
-      enddo
-      if(xrk < EPS) THEN
-        write(6,*)
-        write(6,*) '  vector zero not allowed, using (1,0,0)'
-        write(6,*)
-        xk(1) = UM
-        xk(2) = ZERO
-        xk(3) = ZERO
-      endif
-
-      if(yesno_so == 'y' .or. yesno_so == 'Y') then
-
-        call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,           &
-            nlevel, levdeg, leveigs,                                     &
-            2*mxdbnd, mxdlev, mxddeg)
-
-        call berry_effective_mass(xk, adot, psidhdkpsi, tmass,           &
-            d2eidxk2,                                                    &
-            nlevel, levdeg, leveigs,                                     &
-            2*mxdbnd, mxdlev, mxddeg)
-
-        write(6,*)
-        write(6,*) '   Results from topological Berry quantities'
-        write(6,*)
-
-        call out_mass_print(neig, ei_sp, deidxk, d2eidxk2,               &
-            2*mxdbnd)
-
-
-      else
-
-        call berry_band_velocity(xk, adot, psidhdkpsi, deidxk,           &
-            nlevel, levdeg, leveigs,                                     &
-            mxdbnd, mxdlev, mxddeg)
-
-        call berry_effective_mass(xk, adot, psidhdkpsi, tmass,           &
-            d2eidxk2,                                                    &
-            nlevel, levdeg, leveigs,                                     &
-            mxdbnd, mxdlev, mxddeg)
-
-        write(6,*)
-        write(6,*) '   Results from topological Berry quantities'
-        write(6,*)
-
-        call out_mass_print(neig, ei, deidxk, d2eidxk2,                  &
-            mxdbnd)
-
-      endif
-
-      write(6,*)
-      write(6,*) '  Do you want another direction? (y/n)'
-      write(6,*)
-
-      read(5,*) yesno_dir
-      write(ioreplay,*) yesno_dir,'      New direction'
-
-
-      if(yesno_dir /= 'y' .and. yesno_dir /= 'Y') exit
-
-    enddo
-
-  endif
-
-!
-
-  write(6,*)
-  write(6,*) '  Do you want to generate data to plot all directions? (y/n)'
-  write(6,*)
-
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'      plot all directions'
-
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-    write(6,*)
-    write(6,*) '  The Mathematica commands to get the plots could be:'
-    write(6,*)
-    write(6,*) '  data = Import["path to directory/band_0xyz.dat","Table"]'
-    write(6,*) '  ListSurfacePlot3D[data, MaxPlotPoints -> 50]'
-    write(6,*)
-
-
-    nlin = 51
-    allocate(xpoint(3,4*nlin*nlin))
-
-    itape = 20
-
-    call berry_mass_directions(nlin, adot, npoint, xpoint)
-
-    call adot_to_avec_sym(adot,avec,bvec)
-
-    do n = 1,1000
-
-      write(6,*)
-      write(6,*) '  Which band you want to plot?'
-      write(6,*) '  Enter 0 to exit'
-      write(6,*)
-
-      read(5,*) jband
-      write(ioreplay,*) jband,'      band choice'
-
-      if(jband < 0 .or. jband > neig) then
-        write(6,*)
-        write(6,*) '  Wrong choice, exiting'
-        jband = 0
-      endif
-
-      if(jband == 0) exit
-
-      if(jband < 10) then
-        write(filename,'(a5,"000",i1)') 'band_',jband
-      elseif(jband < 100) then
-        write(filename,'(a5,"00",i2)') 'band_',jband
-      elseif(jband < 1000) then
-        write(filename,'(a5,"0",i3)') 'band_',jband
-      elseif(jband < 10000) then
-        write(filename,'(a5,i4)') 'band_',jband
-      else
-        filename = 'band_'
-      endif
-
-      if(yesno_so == 'y' .or. yesno_so == 'Y') then
-        filename = adjustl(trim(filename)) // '_so.dat'
-      else
-        filename = adjustl(trim(filename)) // '.dat'
-      endif
-
-      open(unit = itape, file = filename, form="formatted")
-
-      do i = 1,npoint
-
-        do j = 1,3
-          xk(j) = ZERO
-          do k = 1,3
-            xk(j) = xk(j) + bvec(j,k)*xpoint(k,i)
-          enddo
-        enddo
-
-        if(yesno_so == 'y' .or. yesno_so == 'Y') then
-
-          call berry_effective_mass(xpoint(:,i), adot, psidhdkpsi, tmass,    &
-              d2eidxk2,                                                      &
-              nlevel, levdeg, leveigs,                                       &
-              2*mxdbnd, mxdlev, mxddeg)
-
-          write(itape,'(3f16.8)') (xk(k)*abs(d2eidxk2(jband)),k=1,3)
-
-        else
-
-          call berry_effective_mass(xpoint(:,i), adot, psidhdkpsi, tmass,    &
-              d2eidxk2,                                                      &
-              nlevel, levdeg, leveigs,                                       &
-              mxdbnd, mxdlev, mxddeg)
-
-          write(itape,'(3f16.8)') (xk(k)*abs(d2eidxk2(jband)),k=1,3)
-
-        endif
-
-      enddo
-
-      close(unit = itape)
-
-    enddo
-
-    deallocate(xpoint)
+    call out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,              &
+        ei, adot, efermi,                                                &
+        tbcurv, tmag, tmass, tqmetric,                                   &
+        mxdbnd, mxdlev, mxddeg)
 
   endif
 
@@ -787,4 +585,4 @@ subroutine out_mass_berry(ioreplay,                                      &
 
   return
 
-end subroutine out_mass_berry
+end subroutine out_qgeom

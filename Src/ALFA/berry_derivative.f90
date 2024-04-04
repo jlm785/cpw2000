@@ -22,13 +22,13 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         18 January 2023. 5 March 2024.
+!>  \date         18 January 2023. 4 April 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     nlevel, levdeg, leveigs,                                             &
     psi, ei,                                                             &
-    dhdkpsi, dpsidk, psidhdkpsi, bcurv, tmag, tmass, qmetric,            &
+    dhdkpsi, dpsidk, psidhdkpsi, tbcurv, tmag, tmass, tqmetric,          &
     ng, kgv,                                                             &
     vscr, kmscr,                                                         &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -40,6 +40,8 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 ! Final debugged version 3 November 2023. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Corrected psidhdkpsi_sp. 5 March 2024. JLM
+! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
+
 
 
   implicit none
@@ -98,11 +100,11 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   complex(REAL64), intent(out)       ::  psidhdkpsi(mxddeg,mxddeg,3,mxdlev)  !<  <psi_n| d H / d k |psi_m>  for each energy level (lattice coordinates)
 
-  real(REAL64), intent(out)          ::  bcurv(3,mxdbnd)                 !<  Berry curvature  (lattice coordinates)
+  real(REAL64), intent(out)          ::  tbcurv(mxddeg,mxddeg,3,3,mxdlev)    !<  Tensor of Berry curvature  (lattice coordinates)
   real(REAL64), intent(out)          ::  tmag(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor associated with orbital magnetization  (lattice coordinates)
 
   complex(REAL64), intent(out)       ::  tmass(mxddeg,mxddeg,3,3,mxdlev) !<  Tensor associated with effective mass, d^2 E_i /d k_1 d k_2 (lattice coordinates)
-  real(REAL64), intent(out)          ::  qmetric(3,3,mxdbnd)             !<  Tensor of the quantum metic (lattice coordinates)
+  real(REAL64), intent(out)          ::  tqmetric(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor of the quantum metic (lattice coordinates)
 
 ! local allocatable variables
 
@@ -129,8 +131,6 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   integer           ::  nanl, nanlso, nanlspin
   integer           ::  mxdanl
   real(REAL64)      ::  vcell, bdot(3,3)
-
-  complex(REAL64)   ::  cmat(3,3)                                        !  array for rank 1 quantities
 
 ! parameters
 
@@ -204,35 +204,38 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
        nanl, anlga, xnlkb,                                               &
        mxddim, mxdbnd, mxdgve, mxdscr, mxdanl, mxdlev, mxddeg)
 
-!   rank 1 quantities
+!   geometric quantities
 
-    do n = 1,neig
+    do nl = 1,nlevel
+      do nk = 1,levdeg(nl)
+        n = leveigs(nl,nk)
+        do mk = 1,levdeg(nl)
+          m = leveigs(nl,mk)
 
-      do i = 1,3
-      do j = i,3
-        cmat(i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, dpsidk(:,n,j), 1)
-      enddo
-      enddo
+          do i = 1,3
+          do j = 1,3
+            dmat(nk,mk,i,j) = zdotc(mtxd, dpsidk(:,n,i), 1, dpsidk(:,m,j), 1)
+          enddo
+          enddo
 
-      do j = 1,2
-      do i = j+1,3
-        cmat(i,j) = conjg(cmat(j,i))
-      enddo
-      enddo
+          do i = 1,3
+          do j = 1,3
+            tbcurv(nk,mk,i,j,nl) = -dmat(nk,mk,i,j) + conjg(dmat(nk,mk,i,j))
+          enddo
+          enddo
 
-      bcurv(1,n) = -2*dimag(cmat(2,3))
-      bcurv(2,n) = -2*dimag(cmat(3,1))
-      bcurv(3,n) = -2*dimag(cmat(1,2))
+          do i = 1,3
+          do j = 1,3
+            tqmetric(nk,mk,i,j,nl) = real(dmat(nk,mk,i,j),REAL64)
+          enddo
+          enddo
 
-      do i = 1,3
-      do j = 1,3
-        qmetric(i,j,n) = real(cmat(i,j),REAL64)
-      enddo
+        enddo
       enddo
 
     enddo
 
-!   rank 2 quantities
+!   geometric*H quantities
 
     allocate(hdpsidk(mxddim,mxdbnd,3))
     allocate(dmat(mxddeg,mxddeg,3,3))
