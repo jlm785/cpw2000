@@ -147,6 +147,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   complex(REAL64) ,external   :: zdotc
 
 
+  allocate(dmat(mxddeg,mxddeg,3,3))
 
 ! projector and derivatives
 
@@ -238,7 +239,6 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 !   geometric*H quantities
 
     allocate(hdpsidk(mxddim,mxdbnd,3))
-    allocate(dmat(mxddeg,mxddeg,3,3))
 
     do j = 1,3
 
