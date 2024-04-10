@@ -52,10 +52,16 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   complex(REAL64), intent(in)        ::  tmass(mxddeg,mxddeg,3,3,mxdlev) !<  Tensor associated with effective mass, d^2 E_i /d k_1 d k_2 (lattice coordinates)
   real(REAL64), intent(in)           ::  tqmetric(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor of the quantum metic (lattice coordinates)
 
+! local allocatable arrays
+
+  real(REAL64), allocatable          ::  t_car(:,:,:,:)
+
 ! local variables
 
   integer          ::  nl, nq
-  real(REAL64)     ::  pcar(3)
+  real(REAL64)     ::  ttrace(3,3)
+  real(REAL64)     ::  pvec(3)
+  logical          ::  lcheck
 
 ! constants
 
@@ -66,13 +72,15 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   integer    ::  j, n, k, m, jrepeat
 
 
+  allocate(t_car(mxddeg,mxddeg,3,3))
+
   write(6,*)
   write(6,*) ' E-level     states        energy (eV)   Energy-E_F (eV)'
   write(6,*)
   do n = 1,nlevel
 
     if(levdeg(n) == 1) then
-      write(6,'(i5,5x,i5,6x,f13.3,5x,f13.3)') n, leveigs(n,1),           &
+      write(6,'(i5,5x,i5,8x,f13.3,5x,f13.3)') n, leveigs(n,1),           &
           ei(leveigs(n,1))*HARTREE, (ei(leveigs(n,1))-efermi)*HARTREE
     elseif(levdeg(n) == 2) then
       write(6,'(i5,5x,i5,", ",i3,2x,f13.3,5x,f13.3)') n,                 &
@@ -115,55 +123,134 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 
     if(nq == 1) then
 
+      call berry_tensor_lat2car(adot, tbcurv(:,:,:,:,nl), t_car,         &
+          levdeg(nl), mxddeg)
+
       write(6,*)
-      write(6,'("Berry curvature vector for level with energy ",         &
+      write(6,'("   Berry curvature tensor for level with energy ",      &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
+      write(6,*)
+      write(6,*) "   primitive (reciprocal) lattice coordinates"
       write(6,*)
       do n = 1,levdeg(nl)
         do j = 1,3
-          write(6,'(8(3f10.3,4x))') ((tbcurv(n,m,k,j,nl), k = 1,3), m = 1,levdeg(nl))
+          write(6,'(8(3f12.3,4x))') ((tbcurv(n,m,j,k,nl), k = 1,3), m = 1,levdeg(nl))
         enddo
         write(6,*)
       enddo
-!       do n = 1,levdeg(nl)
-!         call berry_pseudovec_lat2car(adot, bcurv(:,leveigs(nl,n)), pcar)
-!         write(6,'(3f14.5)') (pcar(k), k = 1,3)
-!       enddo
+
+      write(6,*)
+      write(6,*) "   Cartesian lattice coordinates"
+      write(6,*)
+      do n = 1,levdeg(nl)
+        do j = 1,3
+          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
+        enddo
+        write(6,*)
+      enddo
       write(6,*)
 
+      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'A', lcheck, mxddeg)
+
+      if(lcheck) then
+        if(levdeg(nl) == 1) then
+          write(6,*)
+          write(6,*) "   Berry curvature pseudo-vector"
+          write(6,*)
+        else
+          write(6,*)
+          write(6,*) "   Trace of Berry curvature pseudo-vector"
+          write(6,*)
+        endif
+        write(6, '(5x,3f12.3)') (pvec(k),k=1,3)
+      endif
+
     elseif(nq == 2) then
+
+      call berry_tensor_lat2car(adot, tqmetric(:,:,:,:,nl), t_car,       &
+          levdeg(nl), mxddeg)
 
       write(6,*)
       write(6,'("Quantum metric tensor for level with energy ",          &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
+      write(6,*)
+      write(6,*) "   primitive (reciprocal) lattice coordinates"
+      write(6,*)
       do n = 1,levdeg(nl)
         do j = 1,3
-          write(6,'(8(3f10.3,4x))') ((tqmetric(n,m,k,j,nl), k = 1,3), m = 1,levdeg(nl))
+          write(6,'(8(3f12.3,4x))') ((tqmetric(n,m,j,k,nl), k = 1,3), m = 1,levdeg(nl))
         enddo
         write(6,*)
       enddo
-!       do n = 1,levdeg(nl)
-!         do m = 1,3
-!           write(6,'(3f14.5)') (qmetric(m,k,leveigs(nl,n)), k = 1,3)
-!         enddo
-!         write(6,*)
-!       enddo
+
+      write(6,*)
+      write(6,*) "   Cartesian lattice coordinates"
+      write(6,*)
+      do n = 1,levdeg(nl)
+        do j = 1,3
+          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
+        enddo
+        write(6,*)
+      enddo
+      write(6,*)
+
+      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'S', lcheck, mxddeg)
+
+      if(lcheck .and. levdeg(nl) > 1) then
+        write(6,*)
+        write(6,*) "   Trace of quantum metric tensor"
+        write(6,*)
+        do j = 1,3
+          write(6, '(5x,3f12.3)') (ttrace(j,k),k=1,3)
+        enddo
+      endif
       write(6,*)
 
     elseif(nq == 3) then
+
+      call berry_tensor_lat2car(adot, tmag(:,:,:,:,nl), t_car,           &
+          levdeg(nl), mxddeg)
 
       write(6,*)
       write(6,'("Orbital magnetization for level with energy ",          &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
+      write(6,*)
+      write(6,*) "   primitive (reciprocal) lattice coordinates"
+      write(6,*)
       do n = 1,levdeg(nl)
         do j = 1,3
-          write(6,'(8(3f10.3,4x))') ((tmag(n,m,k,j,nl), k = 1,3), m = 1,levdeg(nl))
+          write(6,'(8(3f12.3,4x))') ((tmag(n,m,j,k,nl), k = 1,3), m = 1,levdeg(nl))
+        enddo
+        write(6,*)
+      enddo
+
+      write(6,*)
+      write(6,*) "   Cartesian lattice coordinates"
+      write(6,*)
+      do n = 1,levdeg(nl)
+        do j = 1,3
+          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
         enddo
         write(6,*)
       enddo
       write(6,*)
+
+      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'A', lcheck, mxddeg)
+
+      if(lcheck) then
+        if(levdeg(nl) == 1) then
+          write(6,*)
+          write(6,*) "   Orbital magnetization pseudo-vector"
+          write(6,*)
+        else
+          write(6,*)
+          write(6,*) "   Trace of orbital magnetization pseudo-vector"
+          write(6,*)
+        endif
+        write(6, '(5x,3f12.3)') (pvec(k),k=1,3)
+      endif
 
     elseif(nq == 4) then
 
@@ -192,6 +279,8 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
     endif
 
   enddo
+
+  deallocate(t_car)
 
   return
 

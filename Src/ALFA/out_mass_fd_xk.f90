@@ -466,7 +466,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
       write(i50,'(i5)') n
 
       do j = -npt,npt
-        write(i50,'(2f22.14)') xin(j),yin(j)
+        write(i50,'(2f24.16)') xin(j),yin(j)
       enddo
 
       call poly_interp(y, dy, xin, yin, 2*npt, 2)

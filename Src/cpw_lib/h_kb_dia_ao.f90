@@ -49,6 +49,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 ! Modified, hamilt_pw, diag_c16_gen, hk_from_bas_diag, 2 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! prefix diag_rq_jac. 17 March 2024. JLM
 
 
   implicit none
@@ -242,7 +243,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
       call zaxpy(mtxd, cmplx(-ei(n), ZERO, REAL64), psi(:,n), 1, hpsi(:,n), 1)
     enddo
 
-    call rq_jac_c16(hpsi, ei, hdiag, mtxd, ndeg, mxddim, mxdbnd)
+    call diag_rq_jac_c16(hpsi, ei, hdiag, mtxd, ndeg, mxddim, mxdbnd)
 
     do n = 1,ndeg
       call zcopy(mtxd, hpsi(:,n), 1, bas(:,n), 1)
@@ -270,4 +271,5 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
   deallocate(psibas)
 
   return
+
 end subroutine h_kb_dia_ao

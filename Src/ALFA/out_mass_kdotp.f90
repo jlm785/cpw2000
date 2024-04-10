@@ -153,7 +153,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   character(len=20) ::  typeofk
 
   real(REAL64)      ::  xk(3)
-  real(REAL64)      ::  xrk, delta
+  real(REAL64)      ::  xrk, delta, dx
+  integer           ::  npt
 
   character(len=1)  ::  yesno, yesno_dir
   integer           ::  nocc
@@ -332,7 +333,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
     allocate(dh0drk(mxdbnd,mxdbnd,3))
     allocate(d2h0drk2(mxdbnd,mxdbnd,3,3))
 
-    allocate(xmass(mxdbnd,3),xgrad(mxdbnd))
+    allocate(xmass(mxdbnd,4),xgrad(mxdbnd))
 
     nder = 2
 
@@ -364,7 +365,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 
     nrka = -1
     call print_eig_so(ipr, 1, labelk, nrka, rk0,                         &
-        mtxd, neig, psi_so,                                              &
+        mtxd, nmodel, psi_so,                                            &
         adot, ei_so, ekpsi_so, isort, kgv,                               &
         mxddim, mxdbnd, mxdgve)
 
@@ -373,7 +374,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
     allocate(dhso0drk(2*mxdbnd,2*mxdbnd,3))
     allocate(d2hso0drk2(2*mxdbnd,2*mxdbnd,3,3))
 
-    allocate(xmass(2*mxdbnd,3),xgrad(2*mxdbnd))
+    allocate(xmass(2*mxdbnd,4),xgrad(2*mxdbnd))
 
     nder = 2
 
@@ -422,15 +423,24 @@ subroutine out_mass_kdotp(ioreplay,                                      &
       xk(3) = ZERO
     endif
 
-    delta = UM/10
+    write(6,*)
+    write(6,*) '  choose step for and order (2 n + 1) of finite differences:'
+    write(6,*)
+    write(6,*) '  enter delta and n (suggested 0.0001 and 3)'
+    write(6,*)
+    read(5,*) delta, npt
+    write(ioreplay,'(g16.8,5x,i5,10x,"delta,npt")') delta, npt
 
-    do m = 1,3
+    do m = 1,4
 
-      delta = delta / 10
+      if(m == 1) dx = 10*delta
+      if(m == 2) dx =  5*delta
+      if(m == 3) dx =  2*delta
+      if(m == 4) dx =  1*delta
 
       if(yesno /= 'y' .and. yesno /= 'Y') then
 
-        call out_mass_kdotp_xk(rk0, xk, nmodel, 3, delta,                &
+        call out_mass_kdotp_xk(rk0, xk, nmodel, npt, dx,                 &
              xgrad, xmass(:,m),                                          &
              adot, h0, dh0drk, d2h0drk2,                                 &
              mxdbnd)
@@ -441,7 +451,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 
       else
 
-        call out_mass_kdotp_xk(rk0, xk, 2*nmodel, 3, delta,              &
+        call out_mass_kdotp_xk(rk0, xk, 2*nmodel, npt, dx,               &
              xgrad, xmass(:,m),                                          &
              adot, hso0, dhso0drk, d2hso0drk2,                           &
              2*mxdbnd)
@@ -459,12 +469,12 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 
     write(6,*)
     write(6,*) '        energy(eV)   effective masses                gradient'
-    write(6,*) '                     100*delta  10*delta   delta'
+    write(6,*) '                      10*delta   5*delta   2*delta   delta'
     write(6,*)
     if(yesno /= 'y' .and. yesno /= 'Y') then
       do j = 1,nmodel
-        write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei(j)*HARTREE,      &
-                  xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+        write(6,'(i5,f12.6,4(3x,f8.4),5x,f11.6)')  j, ei(j)*HARTREE,     &
+                  (xmass(j,k), k=1,4), xgrad(j)
       if(j == nint(ztot/2)) then
         write(6,*)
         write(6,*)
@@ -472,8 +482,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
     enddo
     else
       do j = 1,2*nmodel
-        write(6,'(i5,f12.6,3(3x,f8.4),5x,f8.3)')  j, ei_so(j)*HARTREE,   &
-                  xmass(j,1), xmass(j,2), xmass(j,3), xgrad(j)
+        write(6,'(i5,f12.6,4(3x,f8.4),5x,f11.6)')  j, ei_so(j)*HARTREE,  &
+                  (xmass(j,k), k=1,4), xgrad(j)
       if(j == nint(ztot)) then
         write(6,*)
         write(6,*)

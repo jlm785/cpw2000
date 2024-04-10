@@ -11,14 +11,17 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Converts a symmetric tensor from lattice to cartesian
+!>  Converts a tensor of the Berry type from lattice to cartesian
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         24 January 2023.
+!>  \version      5.11
+!>  \date         24 January 2023, 6 April 2024.
 !>  \copyright    GNU Public License v2
 
-subroutine berry_symtensor_lat2car(adot, stensor, stensor_car, pv, paxis)
+subroutine berry_tensor_lat2car(adot, t_lat, t_car, levdegnl, mxddeg)
+
+! adapted from berry_pseudovec_lat2car, 6 April 2024.  JLM
+
 
   implicit none
 
@@ -27,21 +30,20 @@ subroutine berry_symtensor_lat2car(adot, stensor, stensor_car, pv, paxis)
 
 ! input
 
+  integer, intent(in)                ::  mxddeg                          !<  array dimension for number of levels
+
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
-  real(REAL64), intent(in)           ::  stensor(3,3)                    !<  Symmetric tensor  (lattice coordinates)
+  real(REAL64), intent(in)           ::  t_lat(mxddeg,mxddeg,3,3)        !<  Berry tensor in reciprocal lattice coordinates
+  integer, intent(in)                ::  levdegnl                        !<  degeneracy of level
 
 ! output
 
-  real(REAL64), intent(out)          ::  stensor_car(3,3)                !<  Symmetric tensor (cartesian coordinates)
-  real(REAL64), intent(out)          ::  pv(3)                           !<  principal values
-  real(REAL64), intent(out)          ::  paxis(3,3)                      !<  principal axis
+  real(REAL64), intent(out)          ::  t_car(mxddeg,mxddeg,3,3)        !<  Berry tensor in cartesian coordinates
 
+! local variables
 
-! local variable
   real(REAL64)      ::  avec(3,3)           !  primitive lattice vectors
   real(REAL64)      ::  bvec(3,3)           !  reciprocal primitive lattice vectors
-
-  integer           ::  info                !  error from lapack
 
 ! constants
 
@@ -50,25 +52,29 @@ subroutine berry_symtensor_lat2car(adot, stensor, stensor_car, pv, paxis)
 
 ! counters
 
-  integer    ::  j, k, m, i
+  integer    ::  i, j, k1, k2, n1, n2
 
 
   call adot_to_avec_sym(adot, avec, bvec)
 
-  do j = 1,3
-  do k = 1,3
-    stensor_car(j,k) = ZERO
-    do m = 1,3
-    do i = 1,3
-      stensor_car(j,k) = stensor_car(j,k) + stensor(m,i)*avec(j,m)*avec(k,i)
-    enddo
-    enddo
-    stensor_car(j,k) = stensor_car(j,k) / (4*PI*PI)
-  enddo
-  enddo
+  do n1 = 1,levdegnl
+  do n2 = 1,levdegnl
 
-  call diag_r8(3, stensor_car, pv, paxis, 3, info)
+    do k1 = 1,3
+    do k2 = 1,3
+      t_car(n1,n2,k1,k2) = ZERO
+      do j = 1,3
+      do i = 1,3
+        t_car(n1,n2,k1,k2) = t_car(n1,n2,k1,k2) + avec(k1,i)*t_lat(n1,n2,i,j)*avec(k2,j)
+      enddo
+      enddo
+      t_car(n1,n2,k1,k2) = t_car(n1,n2,k1,k2) / (4*PI*PI)
+    enddo
+    enddo
+
+  enddo
+  enddo
 
   return
 
-end subroutine berry_symtensor_lat2car
+end subroutine berry_tensor_lat2car

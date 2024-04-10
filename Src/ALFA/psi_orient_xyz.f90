@@ -12,18 +12,22 @@
 !------------------------------------------------------------!
 
 !>  Orients the degenerate wavefunctions on a degenerate subspace
-!>  Along the canonical xyz axes.
+!>  along the canonical xyz axes.
 !>  Also chooses a phase for each wave-function
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
+!>  \version      5.11
 !>  \date         30 October 2023.
 !>  \copyright    GNU Public License v2
 
 subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
-    psi, ei, psi_xyz,                                                    &
+    psi, ei,                                                             &
     ng, kgv,                                                             &
     mxddim, mxdbnd, mxdgve)
+
+! Written 30 October 2023.  JLM
+! Modified TOL, coeficients, overwrites psi. 10 April 2024. JLM
+
 
 
   implicit none
@@ -42,7 +46,6 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
   integer, intent(in)                ::  isort(mxddim)                   !<  G-vector corresponding to coefficient i of wavefunction
 
-  complex(REAL64), intent(in)        ::  psi(mxddim, mxdbnd)             !<  |psi> (in principle eigen-functions)
   real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
 
   integer, intent(in)                ::  ng                              !<  size of g-space
@@ -50,9 +53,9 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
 
-! output
+! input and output
 
-  complex(REAL64), intent(out)       ::  psi_xyz(mxddim, mxdbnd)         !<  |psi_xyz> "aligned" psi within each degeneracy level
+  complex(REAL64), intent(inout)     ::  psi(mxddim, mxdbnd)             !<  |psi_xyz> "aligned" on output psi within each degeneracy level
 
 ! local allocatable variables
 
@@ -66,6 +69,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   real(REAL64), allocatable          ::  ekin(:)                         !  kinetic energy
 
   real(real64), allocatable          ::  ekpg(:)                         !  kinetic energy sorted
+  complex(REAL64), allocatable       ::  psi_tmp(:,:)                    !  temporary |psi>
 
 ! local variables
 
@@ -90,7 +94,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   real(REAL64), parameter       ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter    ::  C_UM = cmplx(UM,ZERO,REAL64)
   complex(REAL64), parameter    ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
-  real(REAL64), parameter       ::  TOL = 1.0E-10_REAL64
+  real(REAL64), parameter       ::  TOL = 1.0E-6_REAL64
 
 ! counters
 
@@ -128,10 +132,11 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   allocate(aeigvec(mxddeg,mxddeg))
   allocate(aeig(mxddeg))
 
+  allocate(psi_tmp(mxddim,mxddeg))
+
   allocate(ekin(ng))
 
   allocate(ekpg(mxddim))
-
 
   call adot_to_avec_sym(adot,avec,bvec)
 
@@ -142,7 +147,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
     qcar(1) = bvec(1,1)*qk(1) + bvec(1,2)*qk(2) + bvec(1,3)*qk(3)
     qcar(2) = bvec(2,1)*qk(1) + bvec(2,2)*qk(2) + bvec(2,3)*qk(3)
     qcar(3) = bvec(3,1)*qk(1) + bvec(3,2)*qk(2) + bvec(3,3)*qk(3)
-    ekin(i) = qcar(1)*qcar(1)*1.11 + qcar(2)*qcar(2)*1.13 + qcar(3)*qcar(3)*1.07
+    ekin(i) = 1.11*qcar(1)*qcar(1) + 2.03*qcar(2)*qcar(2) + 4.05*qcar(3)*qcar(3)
     ekin(i) = ekin(i) / 2
   enddo
 
@@ -154,52 +159,53 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
     if(levdeg(nl) /= 1) then
 
-      call psi_kin_psi(mtxd, levdeg(nl), psi(:,leveigs(nl,1)), aoper, ekpg,    &
+      do n = 1,levdeg(nl)
+        nk = leveigs(nl,1) + n - 1
+        psi_tmp(:,n) = psi(:,nk)
+      enddo
+
+      call psi_kin_psi(mtxd, levdeg(nl), psi_tmp, aoper, ekpg,           &
            mxddim, mxddeg)
 
       call diag_c16(levdeg(nl), aoper, aeig, aeigvec, mxddeg, info)
       if(info /= 0) then
 
-        write(6,*) "   STOPPED in berry_orient_xyz  info = ",info
+        write(6,*) "   STOPPED in psi_orient_xyz  info = ",info
 
         stop
 
       endif
 
       call zgemm('n','n', mtxd, levdeg(nl), levdeg(nl),                  &
-           C_UM, psi(:,leveigs(nl,1)), mxddim,                           &
-           aeigvec, mxddeg, C_ZERO,psi_xyz(:,leveigs(nl,1)), mxddim)
-
-    else
-
-      nk = leveigs(nl,1)
-      psi_xyz(:,nk) = psi(:,nk)
+           C_UM, psi_tmp, mxddim, aeigvec, mxddeg,                       &
+           C_ZERO,psi(:,leveigs(nl,1)), mxddim)
 
     endif
+
   enddo
 
-! chooses arbitrary phase
+! chooses a phase
 
   do nl = 1,nlevel
     do nk = 1,levdeg(nl)
 
       n = leveigs(nl,nk)
 
-      xmax = real(psi_xyz(1,n)*conjg(psi_xyz(1,n)),REAL64)
+      xmax = real(psi(1,n)*conjg(psi(1,n)),REAL64)
       imax = 1
 
       do i = 1,mtxd
-        tmax = real(psi_xyz(i,n)*conjg(psi_xyz(i,n)),REAL64)
+        tmax = real(psi(i,n)*conjg(psi(i,n)),REAL64)
         if(tmax > xmax + TOL) then
           imax = i
           xmax = tmax
         endif
       enddo
 
-      xmax = real(psi_xyz(imax,n)*conjg(psi_xyz(imax,n)),REAL64)
+      xmax = real(psi(imax,n)*conjg(psi(imax,n)),REAL64)
       xmax = sqrt(xmax)
-      phase = conjg(psi_xyz(imax,n)) / xmax
-      psi_xyz(:,n) = phase*psi_xyz(:,n)
+      phase = conjg(psi(imax,n)) / xmax
+      psi(:,n) = phase*psi(:,n)
 
     enddo
   enddo
@@ -210,6 +216,8 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
   deallocate(ekin)
   deallocate(ekpg)
+
+  deallocate(psi_tmp)
 
   return
 

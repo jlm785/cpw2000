@@ -224,7 +224,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
           do i = 1,3
           do j = 1,3
-            tbcurv(nk,mk,i,j,nl) = -dmat(nk,mk,i,j) + conjg(dmat(nk,mk,i,j))
+            tbcurv(nk,mk,i,j,nl) = -2*dimag(dmat(nk,mk,i,j))
           enddo
           enddo
 
@@ -299,8 +299,8 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
             tmass(nk,mk,i,j,nl) =                                        &
                - dmat(nk,mk,i,j) - conjg(dmat(mk,nk,i,j))                &
                + (d2vnl0drk2(n,m,i,j) + conjg(d2vnl0drk2(m,n,i,j))) / 2
-            tmag(nk,mk,i,j,nl) =                                         &
-               (dmat(nk,mk,i,j) - conjg(dmat(mk,nk,i,j))) / 4
+            tmag(nk,mk,i,j,nl) = dimag(dmat(nk,mk,i,j)) / 2              &
+                + (ei(n)+ei(m))*tbcurv(nk,mk,i,j,nl) / 8
             if(nk == mk) then
               tmass(nk,mk,i,j,nl) = tmass(nk,mk,i,j,nl) + bdot(i,j)
             endif

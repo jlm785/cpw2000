@@ -276,6 +276,13 @@ subroutine out_qgeom(ioreplay,                                           &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
 
+! tries to "align" eigenvectors
+
+  call psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                     &
+      psi, ei,                                                           &
+      ng, kgv,                                                           &
+      mxddim, mxdbnd, mxdgve)
+
 ! energy levels.  first finds dimensions. recalculates neig according to degeneracies.
 
   write(6,*)

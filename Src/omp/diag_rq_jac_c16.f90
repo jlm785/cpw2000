@@ -21,7 +21,7 @@
 !>  \date         October 4, 1989, January 2020.
 !>  \copyright    GNU Public License v2
 
-subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
+subroutine diag_rq_jac_c16(phi, lambda, hdiag, mtxd, neig,               &
      mxddim, mxdbnd)
 
 
@@ -30,6 +30,7 @@ subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
 ! modified April 22, 2014, f90. JLM
 ! Modified, documentation, omp, January 2020. JLM
 ! Modified indentation. 13 December 2023.
+! Prefix diag_, 17 March 2024. JLM
 
 
   implicit none
@@ -79,4 +80,4 @@ subroutine rq_jac_c16(phi, lambda, hdiag, mtxd, neig,                    &
 
   return
 
-end subroutine rq_jac_c16
+end subroutine diag_rq_jac_c16
