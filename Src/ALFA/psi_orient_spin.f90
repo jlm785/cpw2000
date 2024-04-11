@@ -11,22 +11,18 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Orients the degenerate wavefunctions on a degenerate subspace
-!>  along the canonical xyz axes.
-!>  Also chooses a phase for each wave-function
+!>  Orients the degenerate spin wavefunctions on a degenerate subspace
+!>  with respect to spin.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         30 October 2023.
+!>  \date         11 April 2024.
 !>  \copyright    GNU Public License v2
 
-subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
-    psi, ei,                                                             &
-    ng, kgv,                                                             &
-    mxddim, mxdbnd, mxdgve)
+subroutine psi_orient_spin(mtxd, neig, psi_sp, ei_sp,                    &
+    mxddim, mxdbnd)
 
-! Written 30 October 2023.  JLM
-! Modified TOL, coeficients, overwrites psi. 10 April 2024. JLM
+! Adapted form non-spin version. 11 April 2024. JLM
 
 
 
@@ -38,24 +34,16 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
-  integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
 
-  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
   integer, intent(in)                ::  neig                            !<  number of eigenvalues
 
-  integer, intent(in)                ::  isort(mxddim)                   !<  G-vector corresponding to coefficient i of wavefunction
-
-  real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
-
-  integer, intent(in)                ::  ng                              !<  size of g-space
-  integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
-  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  real(REAL64), intent(in)           ::  ei_sp(2*mxdbnd)                 !<  eigenvalue no. i. (hartree)
 
 
 ! input and output
 
-  complex(REAL64), intent(inout)     ::  psi(mxddim, mxdbnd)             !<  |psi_xyz> "aligned" on output psi within each degeneracy level
+  complex(REAL64), intent(inout)     ::  psi_sp(2*mxddim, 2*mxdbnd)      !<  |psi_xyz> "aligned" on output psi within each degeneracy level
 
 ! local allocatable variables
 
@@ -66,9 +54,6 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   complex(REAL64), allocatable       ::  aeigvec(:,:)                    !  eigenvectors
   real(REAL64), allocatable          ::  aeig(:)                         !  eigenvalues
 
-  real(REAL64), allocatable          ::  ekin(:)                         !  kinetic energy
-
-  real(real64), allocatable          ::  ekpg(:)                         !  kinetic energy sorted
   complex(REAL64), allocatable       ::  psi_tmp(:,:)                    !  temporary |psi>
 
 ! local variables
@@ -78,8 +63,6 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
   integer           ::  nlevel                          !  number of energy levels
 
-  real(REAL64)      ::  avec(3,3), bvec(3,3)
-  real(REAL64)      ::  qk(3), qcar(3)
   integer           ::  maxdeg
   integer           ::  info
 
@@ -109,9 +92,9 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   allocate(levdeg(1))
   allocate(leveigs(1,1))
 
-  call berry_degeneracy(.TRUE., neig, neigtmp, ei, TOL,                  &
+  call berry_degeneracy(.TRUE., neig, neigtmp, ei_sp, TOL,               &
          nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd, 1, 1)
+         2*mxdbnd, 1, 1)
 
   mxdlev = nlevel
   mxddeg = maxdeg
@@ -122,63 +105,56 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   allocate(levdeg(mxdlev))
   allocate(leveigs(mxdlev,mxddeg))
 
-  call berry_degeneracy(.FALSE., neig, neigtmp, ei, TOL,                 &
+  call berry_degeneracy(.FALSE., neig, neigtmp, ei_sp, TOL,              &
          nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd, mxdlev, mxddeg)
+         2*mxdbnd, mxdlev, mxddeg)
 
-! alignment with xyz
+! prepares alignment with xyz
 
   allocate(aoper(mxddeg,mxddeg))
   allocate(aeigvec(mxddeg,mxddeg))
   allocate(aeig(mxddeg))
 
-  allocate(psi_tmp(mxddim,mxddeg))
+  allocate(psi_tmp(2*mxddim,mxddeg))
 
-  allocate(ekin(ng))
-
-  allocate(ekpg(mxddim))
-
-  call adot_to_avec_sym(adot,avec,bvec)
-
-  do i=1,ng
-    qk(1) = rkpt(1) + kgv(1,i)
-    qk(2) = rkpt(2) + kgv(2,i)
-    qk(3) = rkpt(3) + kgv(3,i)
-    qcar(1) = bvec(1,1)*qk(1) + bvec(1,2)*qk(2) + bvec(1,3)*qk(3)
-    qcar(2) = bvec(2,1)*qk(1) + bvec(2,2)*qk(2) + bvec(2,3)*qk(3)
-    qcar(3) = bvec(3,1)*qk(1) + bvec(3,2)*qk(2) + bvec(3,3)*qk(3)
-    ekin(i) = 1.11*qcar(1)*qcar(1) + 2.03*qcar(2)*qcar(2) + 4.05*qcar(3)*qcar(3)
-    ekin(i) = ekin(i) / 2
-  enddo
-
-  do i = 1,mtxd
-    ekpg(i) = ekin(isort(i))
-  enddo
+! loop over degenerate levels
 
   do nl = 1,nlevel
 
     if(levdeg(nl) /= 1) then
 
+!     first diagonalizes sigma_z
+
       do n = 1,levdeg(nl)
         nk = leveigs(nl,1) + n - 1
-        psi_tmp(:,n) = psi(:,nk)
+        do i = 1,mtxd
+          psi_tmp(2*i-1,n) =  psi_sp(2*i-1,nk)
+          psi_tmp(2*i  ,n) = -psi_sp(2*i  ,nk)
+        enddo
       enddo
 
-      call psi_kin_psi(mtxd, levdeg(nl), psi_tmp, aoper, ekpg,           &
-           mxddim, mxddeg)
+      call zgemm('c','n', levdeg(nl), levdeg(nl), 2*mtxd,                &
+           C_UM, psi_sp(1,leveigs(nl,1)), 2*mxddim, psi_tmp, 2*mxddim,   &
+           C_ZERO, aoper, mxddeg)
+
+      do n = 1,levdeg(nl)
+        do i = 1,mtxd
+          psi_tmp(2*i  ,n) = -psi_tmp(2*i  ,n)
+        enddo
+      enddo
 
       call diag_c16(levdeg(nl), aoper, aeig, aeigvec, mxddeg, info)
       if(info /= 0) then
 
-        write(6,*) "   STOPPED in psi_orient_xyz  info = ",info
+        write(6,*) "   STOPPED in psi_orient_spin_xyz  info = ",info
 
         stop
 
       endif
 
-      call zgemm('n','n', mtxd, levdeg(nl), levdeg(nl),                  &
-           C_UM, psi_tmp, mxddim, aeigvec, mxddeg,                       &
-           C_ZERO,psi(1,leveigs(nl,1)), mxddim)
+      call zgemm('n','n', 2*mtxd, levdeg(nl), levdeg(nl),                &
+           C_UM, psi_tmp, 2*mxddim, aeigvec, mxddeg,                     &
+           C_ZERO,psi_sp(1,leveigs(nl,1)), 2*mxddim)
 
     endif
 
@@ -191,21 +167,21 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
       n = leveigs(nl,nk)
 
-      xmax = real(psi(1,n)*conjg(psi(1,n)),REAL64)
+      xmax = real(psi_sp(1,n)*conjg(psi_sp(1,n)),REAL64)
       imax = 1
 
       do i = 1,mtxd
-        tmax = real(psi(i,n)*conjg(psi(i,n)),REAL64)
+        tmax = real(psi_sp(i,n)*conjg(psi_sp(i,n)),REAL64)
         if(tmax > xmax + TOL) then
           imax = i
           xmax = tmax
         endif
       enddo
 
-      xmax = real(psi(imax,n)*conjg(psi(imax,n)),REAL64)
+      xmax = real(psi_sp(imax,n)*conjg(psi_sp(imax,n)),REAL64)
       xmax = sqrt(xmax)
-      phase = conjg(psi(imax,n)) / xmax
-      psi(:,n) = phase*psi(:,n)
+      phase = conjg(psi_sp(imax,n)) / xmax
+      psi_sp(:,n) = phase*psi_sp(:,n)
 
     enddo
   enddo
@@ -214,11 +190,8 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
   deallocate(aeigvec)
   deallocate(aeig)
 
-  deallocate(ekin)
-  deallocate(ekpg)
-
   deallocate(psi_tmp)
 
   return
 
-end subroutine psi_orient_xyz
+end subroutine psi_orient_spin

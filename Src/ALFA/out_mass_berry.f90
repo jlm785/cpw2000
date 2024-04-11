@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11.
-!>  \date         9 November 2023.  4 April 2024.
+!>  \date         9 November 2023.  11 April 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -34,6 +34,7 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! Written 9 November 2023. JLM
 ! Modified, API berry_effective_mass. March 5 2024. JLM
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
+! Complex tensors. 11 April 2024. JLM
 
 
   implicit none
@@ -93,8 +94,6 @@ subroutine out_mass_berry(ioreplay,                                      &
   real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
 
-
-
 ! allocatable arrays with larger scope
 
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
@@ -116,11 +115,12 @@ subroutine out_mass_berry(ioreplay,                                      &
   complex(REAL64), allocatable       ::  dhdkpsi(:,:,:)                  !  d H d k | psi>
   complex(REAL64), allocatable       ::  dpsidk(:,:,:)                   !  d |psi> / d k
   complex(REAL64), allocatable       ::  psidhdkpsi(:,:,:,:)             !  <psi_n| d H / d k |psi_m> for each energy level (lattice coordinates)
-  real(REAL64), allocatable          ::  tbcurv(:,:,:,:,:)               !  Tensor of Berry curvature
-  real(REAL64), allocatable          ::  tmag(:,:,:,:,:)                 !  Tensor of orbital magnetization
 
   complex(REAL64), allocatable       ::  tmass(:,:,:,:,:)                !  Tensor of the inverse effective mass (lattice coordinates)
-  real(REAL64), allocatable          ::  tqmetric(:,:,:,:,:)             !  Tensor of the quantum metric (lattice coordinates)
+
+  complex(REAL64), allocatable       ::  tfqg(:,:,:,:,:)                 !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
+  complex(REAL64), allocatable       ::  tgamma(:,:,:,:,:)               !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), allocatable       ::  td2hdk2(:,:,:,:,:)              !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
   real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue no. i. (hartree) spin-orbit perturbation
   real(REAL64), allocatable          ::  ei_sp(:)                        !  eigenvalue no. i. (hartree)
@@ -198,13 +198,13 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! counters
 
   integer    ::  i, j, k, n
+  integer    ::  nl, nk, mk
 
 
 ! hard coded values
 
   njac = 1
   nritz = 120
-
 
 
 ! calculates local potential in fft mesh
@@ -344,8 +344,6 @@ subroutine out_mass_berry(ioreplay,                                      &
     endif
 
 
-
-
     allocate(ei_pert(2*mxdbnd))
     allocate(ei_sp(2*mxdbnd))
     allocate(psi_sp(2*mxddim,2*mxdbnd))
@@ -466,21 +464,44 @@ subroutine out_mass_berry(ioreplay,                                      &
     allocate(dpsidk(2*mxddim,2*mxdbnd,3))
 
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
-    allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
-    allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
+
+!     allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
+!     allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
     allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
-    allocate(tqmetric(mxddeg,mxddeg,3,3,mxdlev))
+!     allocate(tqmetric(mxddeg,mxddeg,3,3,mxdlev))
 
     call berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, .TRUE.,    &
       nlevel, levdeg, leveigs,                                           &
       psi_sp, ei_sp,                                                     &
-      dhdkpsi, dpsidk, psidhdkpsi, tbcurv, tmag, tmass, tqmetric,        &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
       mxdlev, mxddeg, mxdnsp)
+
+    do nl = 1,nlevel
+    do nk = 1,levdeg(nl)
+    do mk = 1,levdeg(nl)
+    do i = 1,3
+    do j = 1,3
+      tmass(nk,mk,i,j,nl) =                                              &
+          - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))           &
+          + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
+    enddo
+    enddo
+    enddo
+    enddo
+    enddo
+
+    deallocate(tfqg)
+    deallocate(tgamma)
+    deallocate(td2hdk2)
 
     deallocate(ei_pert)
     deallocate(psi_sp)
@@ -532,23 +553,46 @@ subroutine out_mass_berry(ioreplay,                                      &
     allocate(dpsidk(mxddim,mxdbnd,3))
 
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
-    allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
-    allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
+
+    allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
+
+!     allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
+!     allocate(tmag(mxddeg,mxddeg,3,3,mxdlev))
     allocate(tmass(mxddeg,mxddeg,3,3,mxdlev))
-    allocate(tqmetric(mxddeg,mxddeg,3,3,mxdlev))
+!     allocate(tqmetric(mxddeg,mxddeg,3,3,mxdlev))
 
 
 
     call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,         &
       nlevel, levdeg, leveigs,                                           &
       psi, ei,                                                           &
-      dhdkpsi, dpsidk, psidhdkpsi, tbcurv, tmag, tmass, tqmetric,        &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
       ng, kgv,                                                           &
       vscr, kmscr,                                                       &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,            &
       mxdlev, mxddeg)
+
+    do nl = 1,nlevel
+    do nk = 1,levdeg(nl)
+    do mk = 1,levdeg(nl)
+    do i = 1,3
+    do j = 1,3
+      tmass(nk,mk,i,j,nl) =                                              &
+          - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))           &
+          + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
+    enddo
+    enddo
+    enddo
+    enddo
+    enddo
+
+    deallocate(tfqg)
+    deallocate(tgamma)
+    deallocate(td2hdk2)
 
     allocate(deidxk(mxdbnd))
     allocate(d2eidxk2(mxdbnd))
@@ -775,10 +819,8 @@ subroutine out_mass_berry(ioreplay,                                      &
   deallocate(dhdkpsi)
   deallocate(dpsidk)
   deallocate(psidhdkpsi)
-  deallocate(tbcurv)
-  deallocate(tmag)
+
   deallocate(tmass)
-  deallocate(tqmetric)
 
   deallocate(deidxk)
   deallocate(d2eidxk2)

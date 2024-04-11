@@ -14,8 +14,8 @@
 !>  Calculates derivatives with respect to wave-vector k.
 !>  Hamiltonian acting on wave-function, d H / d k, energy levels d E_i / d k,
 !>  wave-functions d | psi_sp_i > / d k.
-!>  It also calculates the orbital magnetization, the
-!>  inverse effective mass tensor, and the quantum metric.
+!>  It also calculates the tensors needed for Bery curvature,
+!>  orbital magnetization, inverse effective mass, and the quantum metric.
 !>
 !>  The results may not be accurate if
 !>  input wave-function is not accurate.
@@ -24,13 +24,13 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         15 December 2023. 4 April 2024.
+!>  \date         15 December 2023. 11 April 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     nlevel, levdeg, leveigs,                                             &
     psi_sp, ei,                                                          &
-    dhdkpsi_sp, dpsidk_sp, psidhdkpsi_sp, tbcurv, tmag, tmass, tqmetric, &
+    dhdkpsi_sp, dpsidk_sp, psidhdkpsi_sp, tfqg, tgamma, td2hdk2,         &
     ng, kgv,                                                             &
     vscr_sp, kmscr, nsp,                                                 &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -41,6 +41,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 ! Adapted from the non-spin version 15 December 2023. JLM
 ! Corrected psidhdkpsi_sp. 5 March 2024. JLM
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
+! Modified, complex tensors, quantities calculated elsewhere. 11 April 2024. JLM
 
 
   implicit none
@@ -101,13 +102,11 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
   complex(REAL64), intent(out)       ::  psidhdkpsi_sp(mxddeg,mxddeg,3,mxdlev)  !<  <psi_sp_n| d H / d k |psi_sp_m>  for each energy level (lattice coordinates)
 
-  real(REAL64), intent(out)          ::  tbcurv(mxddeg,mxddeg,3,3,mxdlev)    !<  Tensor of Berry curvature  (lattice coordinates)
-  real(REAL64), intent(out)          ::  tmag(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor associated with orbital magnetization  (lattice coordinates)
+  complex(REAL64), intent(out)       ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
+  complex(REAL64), intent(out)       ::  tgamma(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), intent(out)       ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev) !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
-  complex(REAL64), intent(out)       ::  tmass(mxddeg,mxddeg,3,3,mxdlev) !<  Tensor associated with effective mass, d^2 E_i /d k_1 d k_2 (lattice coordinates)
-  real(REAL64), intent(out)          ::  tqmetric(mxddeg,mxddeg,3,3,mxdlev)  !<  Tensor of the quantum metic (lattice coordinates)
-
-! local allocatable variables
+! local allocatable arrays
 
   real(REAL64), allocatable          ::  xnlkbsp(:)
   complex(REAL64), allocatable       ::  anlsp(:,:)
@@ -120,10 +119,6 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   complex(REAL64), allocatable       ::  vnl0(:,:)                       !  <Psi|V_NL|Psi>
   complex(REAL64), allocatable       ::  dvnl0drk(:,:,:)                 !  d <Psi|V_NL|Psi> d k
   complex(REAL64), allocatable       ::  d2vnl0drk2(:,:,:,:)             !  d^2 <Psi|V_NL|Psi> d k^2
-
-! allocatable arrays
-
-  complex(REAL64), allocatable       ::  dmat(:,:,:,:)                   !  array for rank 2 quantities
 
 ! local variables
 
@@ -148,7 +143,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   complex(REAL64) ,external   :: zdotc
 
 
-  allocate(dmat(mxddeg,mxddeg,3,3))
+!  allocate(dmat(mxddeg,mxddeg,3,3))
 
 ! projector and derivatives
 
@@ -218,19 +213,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
           do i = 1,3
           do j = 1,3
-            dmat(nk,mk,i,j) = zdotc(2*mtxd, dpsidk_sp(:,n,i), 1, dpsidk_sp(:,m,j), 1)
-          enddo
-          enddo
-
-          do i = 1,3
-          do j = 1,3
-            tbcurv(nk,mk,i,j,nl) = -2*dimag(dmat(nk,mk,i,j))
-          enddo
-          enddo
-
-          do i = 1,3
-          do j = 1,3
-            tqmetric(nk,mk,i,j,nl) = real(dmat(nk,mk,i,j),REAL64)
+            tfqg(i,j,nk,mk,nl) = zdotc(2*mtxd, dpsidk_sp(:,n,i), 1, dpsidk_sp(:,m,j), 1)
           enddo
           enddo
 
@@ -281,31 +264,19 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
           do i = 1,3
           do j = 1,3
-            dmat(nk,mk,i,j) = zdotc(2*mtxd, dpsidk_sp(:,n,i), 1, hdpsidk_sp(:,m,j), 1)
+            tgamma(i,j,nk,mk,nl) = zdotc(2*mtxd, dpsidk_sp(:,n,i), 1, hdpsidk_sp(:,m,j), 1)
           enddo
           enddo
 
-        enddo
-      enddo
-
-!    symmetrizes
-
-      do nk = 1,levdeg(nl)
-        n = leveigs(nl,nk)
-        do mk = 1,levdeg(nl)
-          m = leveigs(nl,mk)
           do i = 1,3
           do j = 1,3
-            tmass(nk,mk,i,j,nl) =                                        &
-               - dmat(nk,mk,i,j) - conjg(dmat(mk,nk,i,j))                &
-               + (d2vnl0drk2(n,m,i,j) + conjg(d2vnl0drk2(m,n,i,j))) / 2
-            tmag(nk,mk,i,j,nl) = dimag(dmat(nk,mk,i,j)) / 2              &
-                + (ei(n)+ei(m))*tbcurv(nk,mk,i,j,nl) / 8
+            td2hdk2(i,j,nk,mk,nl) = d2vnl0drk2(n,m,i,j)
             if(nk == mk) then
-              tmass(nk,mk,i,j,nl) = tmass(nk,mk,i,j,nl) + bdot(i,j)
+              td2hdk2(i,j,nk,mk,nl) = td2hdk2(i,j,nk,mk,nl) + bdot(i,j)
             endif
           enddo
           enddo
+
         enddo
       enddo
 
@@ -316,7 +287,6 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     deallocate(d2vnl0drk2)
 
     deallocate(hdpsidk_sp)
-    deallocate(dmat)
 
   endif
 
