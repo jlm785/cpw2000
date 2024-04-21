@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         27 December 2023, 11 April 2024.
+!>  \date         27 December 2023, 20 April 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
@@ -24,7 +24,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       mxdbnd, mxdlev, mxddeg)
 
 ! written 29 December 2023. JLM
-! major reworking, early April 2024. JLM
+! major reworking, April 2024. JLM
 
   implicit none
 
@@ -56,16 +56,12 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   real(REAL64), allocatable          ::  tbcurv(:,:,:,:)
   real(REAL64), allocatable          ::  tmag(:,:,:,:)
   COMPLEX(REAL64), ALLOCATABLE       ::  TMASS(:,:,:,:)
+  real(REAL64), allocatable          ::  rtmass(:,:,:,:)
   real(REAL64), allocatable          ::  tqmetric(:,:,:,:)
-
-  real(REAL64), allocatable          ::  t_car(:,:,:,:)
 
 ! local variables
 
   integer          ::  nl, nq
-  real(REAL64)     ::  ttrace(3,3)
-  real(REAL64)     ::  pvec(3)
-  logical          ::  lcheck
 
 ! constants
 
@@ -78,11 +74,10 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 
 
   allocate(tbcurv(mxddeg,mxddeg,3,3))
+  allocate(tqmetric(mxddeg,mxddeg,3,3))
   allocate(tmag(mxddeg,mxddeg,3,3))
   allocate(tmass(mxddeg,mxddeg,3,3))
-  allocate(tqmetric(mxddeg,mxddeg,3,3))
-
-  allocate(t_car(mxddeg,mxddeg,3,3))
+  allocate(rtmass(mxddeg,mxddeg,3,3))
 
   write(6,*)
   write(6,*) ' E-level     states        energy (eV)   Energy-E_F (eV)'
@@ -90,7 +85,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   do n = 1,nlevel
 
     if(levdeg(n) == 1) then
-      write(6,'(i5,5x,i5,8x,f13.3,5x,f13.3)') n, leveigs(n,1),           &
+      write(6,'(i5,5x,i5,7x,f13.3,5x,f13.3)') n, leveigs(n,1),           &
           ei(leveigs(n,1))*HARTREE, (ei(leveigs(n,1))-efermi)*HARTREE
     elseif(levdeg(n) == 2) then
       write(6,'(i5,5x,i5,", ",i3,2x,f13.3,5x,f13.3)') n,                 &
@@ -143,47 +138,12 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       enddo
       enddo
 
-      call berry_tensor_lat2car(adot, tbcurv, t_car, levdeg(nl),         &
-           mxddeg)
-
       write(6,*)
       write(6,'("   Berry curvature tensor for level with energy ",      &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
-      write(6,*) "   primitive (reciprocal) lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((tbcurv(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
 
-      write(6,*)
-      write(6,*) "   Cartesian lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
-      write(6,*)
-
-      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'A', lcheck, mxddeg)
-
-      if(lcheck) then
-        if(levdeg(nl) == 1) then
-          write(6,*)
-          write(6,*) "   Berry curvature pseudo-vector"
-          write(6,*)
-        else
-          write(6,*)
-          write(6,*) "   Trace of Berry curvature pseudo-vector"
-          write(6,*)
-        endif
-        write(6, '(5x,3f12.3)') (pvec(k),k=1,3)
-      endif
+      call berry_tensor_print(levdeg(nl), adot, tbcurv, 'A', mxddeg)
 
     elseif(nq == 2) then
 
@@ -197,45 +157,12 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       enddo
       enddo
 
-      call berry_tensor_lat2car(adot, tqmetric, t_car, levdeg(nl),       &
-          mxddeg)
-
       write(6,*)
       write(6,'("Quantum metric tensor for level with energy ",          &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
-      write(6,*)
-      write(6,*) "   primitive (reciprocal) lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((tqmetric(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
 
-      write(6,*)
-      write(6,*) "   Cartesian lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
-      write(6,*)
-
-      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'S', lcheck, mxddeg)
-
-      if(lcheck .and. levdeg(nl) > 1) then
-        write(6,*)
-        write(6,*) "   Trace of quantum metric tensor"
-        write(6,*)
-        do j = 1,3
-          write(6, '(5x,3f12.3)') (ttrace(j,k),k=1,3)
-        enddo
-      endif
-      write(6,*)
+      call berry_tensor_print(levdeg(nl), adot, tqmetric, 'S', mxddeg)
 
     elseif(nq == 3) then
 
@@ -252,48 +179,12 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       enddo
       enddo
 
-      call berry_tensor_lat2car(adot, tmag, t_car, levdeg(nl),           &
-          mxddeg)
-
       write(6,*)
       write(6,'("Orbital magnetization for level with energy ",          &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
-      write(6,*)
-      write(6,*) "   primitive (reciprocal) lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((tmag(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
 
-      write(6,*)
-      write(6,*) "   Cartesian lattice coordinates"
-      write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f12.3,4x))') ((t_car(n,m,j,k), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
-      write(6,*)
-
-      call  berry_tensor_trace(t_car, ttrace, pvec, levdeg(nl), 'A', lcheck, mxddeg)
-
-      if(lcheck) then
-        if(levdeg(nl) == 1) then
-          write(6,*)
-          write(6,*) "   Orbital magnetization pseudo-vector"
-          write(6,*)
-        else
-          write(6,*)
-          write(6,*) "   Trace of orbital magnetization pseudo-vector"
-          write(6,*)
-        endif
-        write(6, '(5x,3f12.3)') (pvec(k),k=1,3)
-      endif
+      call berry_tensor_print(levdeg(nl), adot, tmag, 'A', mxddeg)
 
     elseif(nq == 4) then
 
@@ -309,16 +200,14 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       enddo
       enddo
 
+      rtmass(:,:,:,:) = real(tmass(:,:,:,:), REAL64)
+
       write(6,*)
       write(6,'("Real part mass tensor for level with energy ",          &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f10.3,4x))') ((real(tmass(n,m,k,j)), k = 1,3), m = 1,levdeg(nl))
-        enddo
-        write(6,*)
-      enddo
+
+      call berry_tensor_print(levdeg(nl), adot, rtmass, 'S', mxddeg)
 
       write(6,*)
       write(6,'("Imaginary part of that mass tensor")')
@@ -336,11 +225,10 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   enddo
 
   deallocate(tbcurv)
+  deallocate(tqmetric)
   deallocate(tmag)
   deallocate(tmass)
-  deallocate(tqmetric)
-
-  deallocate(t_car)
+  deallocate(rtmass)
 
   return
 
