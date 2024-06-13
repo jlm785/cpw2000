@@ -13,6 +13,11 @@
 
 !>  writes the crystal structure part of a xsf
 !>  input file for vesta or xcrysden
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.11 (1.7 of md)
+!>  \date         July 2013.  5 June 2024.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_xsf_crys(iotape, lvesta,                                 &
    adot, ntype, natom, nameat, rat,                                      &
@@ -21,9 +26,6 @@ subroutine plot_xsf_crys(iotape, lvesta,                                 &
 ! written July 2013. JLM
 ! Heavily modified to use cpw crystal description, 31 January 2021. JLM
 
-! copyright  J.L.Martins, INESC-MN.
-
-! version 4.99
 
   implicit none
 
@@ -55,7 +57,7 @@ subroutine plot_xsf_crys(iotape, lvesta,                                 &
 ! constants
 
   real(REAL64), parameter  :: BOHR = 0.5291772109_REAL64
- 
+
 ! counters
 
   integer      :: nt, j, k
@@ -64,7 +66,7 @@ subroutine plot_xsf_crys(iotape, lvesta,                                 &
 ! converts stuff
 
   call adot_to_avec_sym(adot,avec,bvec)
-  
+
   do k = 1,3
     a1(k) = avec(k,1) * BOHR
     a2(k) = avec(k,2) * BOHR

@@ -11,8 +11,8 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     writes the cpw.out file with final geometry to be used as
-!>     basis for next cpw.in input file with new geometry
+!>  Writes the cpw.out file with final geometry to be used as
+!>  basis for next cpw.in input file with new geometry
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.01
@@ -28,8 +28,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Adapted June 2017. JLM
 ! Bug squashed (metadata not from rede) September 2017.
 ! Write ideal volume if superlattice information is available. 21 June 2021. JLM
-!
-! Copyright  J.L.Martins, INESC-MN.
+
 
   implicit none
 

@@ -11,51 +11,60 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     bubble sort by incresing order of the 5 elements of adist
-!>     use only for very short arrays.
-!>     jd and ntau are also permutted with adist. 
+!>  Bubble sort by incresing order of the 5 elements of adist
+!>  jd and ntau are also permutted with adist.
+!>
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.11 (1.7 of md)
+!>  \date         before January 2013.  5 June 2024.
+!>  \copyright    GNU Public License v2
 
-       subroutine vff_order(adist, jd, ntau)
-      
-!      modified January 2013, J.L.Martins, C.S.Loia
-!      Modified, documentation, details, December 2019. JLM
-!      copyright INESC-MN, J.L.Martins, C.S.Loia
+subroutine vff_order(adist, jd, ntau)
 
-!      version 4.94
+! modified January 2013, J.L.Martins, C.S.Loia
+! Modified, documentation, details, December 2019. JLM
+! Indentation, 5 June 2024. JLM
 
-       implicit none
+  implicit none
 
-       integer, parameter      :: REAL64 = selected_real_kind(12)
+  integer, parameter      :: REAL64 = selected_real_kind(12)
 
-!      input and output
+! input and output
 
-       real(REAL64), intent(inout)   :: adist(5)                         !<  distance, should be increasing on output
-       integer, intent(inout)        :: jd(5)                            !<  indicates the permutation 
-       integer, intent(inout)        :: ntau(3,5)                        !<  permutted tau...
+  real(REAL64), intent(inout)   ::  adist(5)                             !<  distance, should be increasing on output
+  integer, intent(inout)        ::  jd(5)                                !<  indicates the permutation
+  integer, intent(inout)        ::  ntau(3,5)                            !<  permutted tau...
 
-!      local variables
+! local variables
 
-       integer            :: i,j,k,nt
-       real(REAL64)       :: t
+  integer            ::  nt
+  real(REAL64)       ::  t
 
-       do i=1,4
-         do j=i+1,5
-           if(adist(i) > adist(j)) then
-             t = adist(i)
-             adist(i) = adist(j)
-             adist(j) = t
-             nt = jd(i)
-             jd(i) = jd(j)
-             jd(j) = nt
-             do k=1,3
-               nt = ntau(k,i)
-               ntau(k,i) = ntau(k,j)
-               ntau(k,j) = nt
-             enddo
-           endif
-         enddo
-       enddo
+! counters
 
-       return
+  integer            ::  i, j, k
 
-       end subroutine vff_order
+
+! Bubble sort is OK for very short arrays
+
+  do i = 1,4
+    do j = i+1,5
+      if(adist(i) > adist(j)) then
+        t = adist(i)
+        adist(i) = adist(j)
+        adist(j) = t
+        nt = jd(i)
+        jd(i) = jd(j)
+        jd(j) = nt
+        do k=1,3
+          nt = ntau(k,i)
+          ntau(k,i) = ntau(k,j)
+          ntau(k,j) = nt
+        enddo
+      endif
+    enddo
+  enddo
+
+  return
+
+end subroutine vff_order

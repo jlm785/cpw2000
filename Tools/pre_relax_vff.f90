@@ -1,11 +1,30 @@
-!>     pre-relaxation with valence force field
+!------------------------------------------------------------!
+! This file is distributed as part of the cpw2000 code and   !
+! under the terms of the GNU General Public License. See the !
+! file `LICENSE' in the root directory of the cpw2000        !
+! distribution, or http://www.gnu.org/copyleft/gpl.txt       !
+!                                                            !
+! The webpage of the cpw2000 code is not yet written         !
+!                                                            !
+! The cpw2000 code is hosted on GitHub:                      !
+!                                                            !
+! https://github.com/jlm785/cpw2000                          !
+!------------------------------------------------------------!
+
+!>  pre-relaxation with valence force field of tetrahedral structures
+!>
+!>  Must be compiled with the libpw library (and LAPACK)
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.11
+!>  \date         15 january 1999, 14 May 2024.
+!>  \copyright    GNU Public License v2
 
        program pre_relax_vff
 
 !      written 15 january 1999. jlm
 !      Modified, f90, new subroutines 3 June 2019. JLM
 !      Specialized for VFF relaxation
-!      copyright inesc-mn/jose luis martins
 
        implicit none
        integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -732,6 +751,7 @@
 !      Added constants from doi:10.1016/j.physe.2009.11.035
 !      Bug in mean for carbides (other than SiC), consistency with rede. 21 February 2024. JLM
 !      Bond lengths for carbides (other than SiC) are LDA*1.006. 29 February 2024. JLM
+!      Bond lengths for carbides (other than SiC) and Pb are from r2-SCAN
 !      copyright INESC-MN/Jose Luis Martins/C.L. Reis
 
 !      version 5.11 of pw
@@ -793,7 +813,8 @@
            beta(n,nn2) = 0.253_REAL64*alfa(nn2)
          elseif(nameat(n) == 'Pb') then
            alfa(nn2) = 22_REAL64
-           dist(nn2) = 2.99_REAL64
+!          dist(nn2) = 2.99_REAL64
+           dist(nn2) = S3O4*6.869_REAL64
            beta(n,nn2) = 0.25_REAL64*alfa(nn2)
          else
            alfa(nn2) = 100000.0
@@ -824,19 +845,22 @@
      &          nameat(m) == 'Ge') .or. (nameat(n) == 'Ge' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = S3O4*4.61_REAL64
+!            dist(nm2) = S3O4*4.61_REAL64
+             dist(nm2) = S3O4*4.573_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Sn') .or. (nameat(n) == 'Sn' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = S3O4*5.08_REAL64
+!            dist(nm2) = S3O4*5.08_REAL64
+             dist(nm2) = S3O4*5.038_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif(((nameat(n) == 'C ' .or. nameat(n) == ' C') .and.       &
      &          nameat(m) == 'Pb') .or. (nameat(n) == 'Pb' .and.          &
      &          (nameat(m) == 'C ' .or. nameat(m) == ' C'))) then
              alfa(nm2) = (alfa(nn2)+alfa(mm2))/2
-             dist(nm2) = S3O4*5.43_REAL64
+!            dist(nm2) = S3O4*5.43_REAL64
+             dist(nm2) = S3O4*5.287_REAL64
              beta(n,mm2) = (beta(n,nn2)+beta(m,mm2))/2
            elseif((nameat(n) == 'Si' .and. nameat(m) == 'Ge') .or.        &
      &          (nameat(n) == 'Ge' .and. nameat(m) == 'Si')) then

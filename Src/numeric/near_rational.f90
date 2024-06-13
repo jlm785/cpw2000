@@ -11,101 +11,105 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     finds if a number is close to a rational or the square-root
-!>     of a rational
+!>  Finds if a number is close to a rational or the square-root
+!>  of a rational
+!>
+!>  \author       Jose Luis Martins
+!>  \version      4.94
+!>  \date         29 May 2014.  13 June 2024.
+!>  \copyright    GNU Public License v2
 
-       subroutine near_rational(x,lfound,lsquare,nnum,nden,ntry,eps)
+subroutine near_rational(x, lfound, lsquare, nnum, nden, ntry, eps)
 
-!      Written 29 May 2014. JLM
-!      Modified 21 June 2014, bug sqrt(small x). JLM
-!      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.94 of cpw
-!      version 1.5 of md
-
-       implicit none
-
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+! Written 29 May 2014. JLM
+! Modified 21 June 2014, bug sqrt(small x). JLM
+! Indentation, 6 June 2024. JLM
 
 
-!      input
+  implicit none
 
-       real(REAL64), intent(in)           ::  x                          !<  number to be approximated
-       integer, intent(in)                ::  ntry                       !<  tries denominators up to ntry
-       real(REAL64), intent(in)           ::  eps                        !<  tolerance
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      output
 
-       logical, intent(out)               ::  lfound                     !<  an approximation was found
-       logical, intent(out)               ::  lsquare                    !<  it is the square of a rati onal
-       integer, intent(out)               ::  nnum, nden                 !<  x ~ nnum/ndem or x**2 ~ nnum/nden and sign of nnum is the same as x
+! input
 
-!      local variables
+  real(REAL64), intent(in)           ::  x                               !<  number to be approximated
+  integer, intent(in)                ::  ntry                            !<  tries denominators up to ntry
+  real(REAL64), intent(in)           ::  eps                             !<  tolerance
 
-       integer       ::  nmax
-       real(REAL64)  ::  xn
-       real(REAL64)  ::  eps2
+! output
 
-!      constants
+  logical, intent(out)               ::  lfound                          !<  an approximation was found
+  logical, intent(out)               ::  lsquare                         !<  it is the square of a rational
+  integer, intent(out)               ::  nnum                            !<  x ~ nnum/ndem or x**2 ~ nnum/nden and sign of nnum is the same as x
+  integer, intent(out)               ::  nden                            !<  x ~ nnum/ndem or x**2 ~ nnum/nden and sign of nnum is the same as x
 
-       real(REAL64), parameter  :: UM = 1.0_REAL64
+! local variables
 
-!      counters
+  integer       ::  nmax
+  real(REAL64)  ::  xn
+  real(REAL64)  ::  eps2
 
-       integer       ::  n
+! constants
 
-       lfound = .FALSE.
-       lsquare = .FALSE.
-       nnum = 0
-       nden = 1
-       
-!      checks if input makes sense and avoids overflow
+  real(REAL64), parameter  :: UM = 1.0_REAL64
 
-       eps2 = max(eps,(UM/2)**30)
-       nmax = nint(0.1/eps2)
-       nmax = min(max(1,ntry),nmax)
- 
-       if(abs(x) < 2.0**30/ntry) then
+! counters
 
-         do n = 1,nmax
+  integer       ::  n
 
-           xn = n*x
-           if( abs(xn - nint(xn)) < n*eps2 ) then
+  lfound = .FALSE.
+  lsquare = .FALSE.
+  nnum = 0
+  nden = 1
 
-             nden = n
-             nnum = nint(xn)
+! checks if input makes sense and avoids overflow
 
-             lfound = .TRUE.
+  eps2 = max(eps,(UM/2)**30)
+  nmax = nint(0.1/eps2)
+  nmax = min(max(1,ntry),nmax)
 
-             exit
+  if(abs(x) < 2.0**30/ntry) then
 
-           endif
-   
-         enddo
+    do n = 1,nmax
 
-         if(.not. lfound) then
+      xn = n*x
+      if( abs(xn - nint(xn)) < n*eps2 ) then
 
-           do n = 1,nmax
+        nden = n
+        nnum = nint(xn)
 
-             xn = n*x*x
-             if(abs(abs(x)-sqrt((nint(xn)*UM)/(n*UM))) < eps2) then
+        lfound = .TRUE.
 
-               nden = n
-               nnum = nint(xn)
+        exit
 
-               lfound = .TRUE.
-               lsquare = .TRUE.
+      endif
 
-               exit
+    enddo
 
-             endif
-   
-           enddo
+    if(.not. lfound) then
 
-         endif
-       
-       endif
-       
-       return
+      do n = 1,nmax
 
-       end subroutine near_rational
+        xn = n*x*x
+        if(abs(abs(x)-sqrt((nint(xn)*UM)/(n*UM))) < eps2) then
+
+          nden = n
+          nnum = nint(xn)
+
+          lfound = .TRUE.
+          lsquare = .TRUE.
+
+          exit
+
+        endif
+
+      enddo
+
+    endif
+
+  endif
+
+  return
+
+end subroutine near_rational

@@ -11,7 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates bands, oscillator strengths, etc for a given k-vector
+!>  Calculates bands, hamiltonian components, kdotm matrices,
+!>  oscillator strengths, for a given k-vector
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.11
+!>  \date         8 May 2004.  16 May 2024.
+!>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
     emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,                   &
@@ -35,9 +41,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified h_kb_dia_all, icmax, 7-14 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi, psi_h_psi. 13 February 2021. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
-! copyright  Jose Luis Martins/INESC-MN
-
-! version 4.99
+! Modified, name oscillator_strength. 16 May 2024. JLM
 
   implicit none
 
@@ -434,7 +438,7 @@ subroutine out_band_onek(ioreplay,                                       &
       deallocate(h0)
       deallocate(d2h0drk2)
 
-      call oscillator_strength(neig, ei, dh0drk, adot, ztot, mxdbnd)
+      call out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, mxdbnd)
 
       deallocate(dh0drk)
 
@@ -605,7 +609,7 @@ subroutine out_band_onek(ioreplay,                                       &
 
       enddo
 
-      call oscillator_strength(2*neig, ei_so, dh_so, adot, 2*ztot, 2*mxdbnd)
+      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot, 2*ztot, 2*mxdbnd)
 
       deallocate(vec_so)
       deallocate(dh_so)
