@@ -438,7 +438,8 @@ subroutine out_band_onek(ioreplay,                                       &
       deallocate(h0)
       deallocate(d2h0drk2)
 
-      call out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, mxdbnd)
+      call out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, .FALSE.,  &
+          mxdbnd)
 
       deallocate(dh0drk)
 
@@ -609,7 +610,8 @@ subroutine out_band_onek(ioreplay,                                       &
 
       enddo
 
-      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot, 2*ztot, 2*mxdbnd)
+      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot, 2*ztot, .FALSE.,   &
+          2*mxdbnd)
 
       deallocate(vec_so)
       deallocate(dh_so)

@@ -18,7 +18,7 @@
 !>  \date         2 July 2014.  16 May 2024.
 !>  \copyright    GNU Public License v2
 
-subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
+subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    &
                mxdbnd)
 
 ! Written July 2, 2014. JLM
@@ -39,6 +39,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
   complex(REAL64), intent(in)        ::  dh0drk(mxdbnd,mxdbnd,3)         !<  d <Psi|H|Psi> d k
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
+  logical, intent(in)                ::  lpair                           !<  prints the oscllator strengths for pairs of bands
 
 ! local allocatable arrays
 
@@ -68,6 +69,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
   integer           ::  nlevpr                     !  number of levels that are printed
 
   real(REAL64)      ::  sm(3)                      !  sum of M^2
+  real(REAL64)      ::  so                         !  sum of F_if
 
 ! constants
 
@@ -132,27 +134,31 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
   enddo
   enddo
 
-  write(6,*)
-  write(6,*) '  Oscillator strengths by band pairs'
-  write(6,*)
+  if(lpair) then
 
-  write(6,*)
-  write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,                  &
-        &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_x|**2",4x,               &
-        &   "|M_y|**2",4x,"|M_z|**2")')
-  write(6,*)
+    write(6,*)
+    write(6,*) '  Oscillator strengths by band pairs'
+    write(6,*)
 
-  do i = 1,nval
-  do j = 1,ncond
-    ij = (i-1)*ncond + j
-    write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')           &
-          i,ei(i)*HARTREE,nval+j,ei(nval+j)*HARTREE,real(ematif(ij)),    &
-          (2.0/3.0)*real(ematif(ij))/efmei(ij),                          &
-          (abs(ematcar(ij,k))**2,k=1,3)
-  enddo
-  write(6,*)
-  enddo
-  write(6,*)
+    write(6,*)
+    write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,                &
+          &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_x|**2",4x,             &
+          &   "|M_y|**2",4x,"|M_z|**2")')
+    write(6,*)
+
+    do i = 1,nval
+    do j = 1,ncond
+      ij = (i-1)*ncond + j
+      write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')         &
+            i,ei(i)*HARTREE,nval+j,ei(nval+j)*HARTREE,real(ematif(ij)),  &
+            (2.0/3.0)*real(ematif(ij))/efmei(ij),                        &
+            (abs(ematcar(ij,k))**2,k=1,3)
+    enddo
+    write(6,*)
+    enddo
+    write(6,*)
+
+  endif
 
 ! now finds degeneracies but first sorts the excitation levels
 
@@ -171,12 +177,17 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
 
   neigin = nval*ncond
 
+! number of levels that we know there no other levels with smaller excitations
+
+  nlevpr = 1
+
+  do i = 1,neigin
+    if( efmeisort(i) > ei(neig) - ei(nval) ) exit
+    nlevpr = i
+  enddo
+
   allocate(levdeg(1))
   allocate(leveigs(1,1))
-
-! SHOULD HAVE SMART ALGORITHM SOMEDAY
-
-  NLEVPR = NEIGIN/2
 
   call berry_degeneracy(.TRUE., neigin, nlevpr, efmeisort, TOL,          &
          nlevel, maxdeg, levdeg, leveigs,                                &
@@ -202,32 +213,45 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot,    &
   write(6,*)
 
   do n = 1,nlevel
+
     write(6,*)
-    write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')  &
+    write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')   &
           n, levdeg(n), efmei(indx(leveigs(n,1)))*HARTREE
     write(6,*)
-    write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,                &
-        &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_x|**2",4x,               &
-        &   "|M_y|**2",4x,"|M_z|**2")')
+    write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,      &
+        &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                    &
+        &   "|M_x|**2",4x,"|M_y|**2",4x,"|M_z|**2",9x,                          &
+        &   "|Fij_x|**2",2x,"|Fij_y|**2",2x,"|Fij_z|**2")')
     write(6,*)
     do k = 1,3
       sm(k) = ZERO
     enddo
+    so = ZERO
 
     do m = 1,levdeg(n)
+
       ij = indx(leveigs(n,m))
       i = (ij-1) / ncond + 1
       j = ij - (i-1)*ncond + nval
       do k = 1,3
         sm(k) = sm(k) + abs(ematcar(ij,k))**2
       enddo
-      write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')         &
-          i, ei(i)*HARTREE, j, ei(j)*HARTREE, real(ematif(ij)),          &
-          (2.0/3.0)*real(ematif(ij))/efmei(ij),                          &
-          (abs(ematcar(ij,k))**2,k=1,3)
+      so = so + (2.0/3.0)*real(ematif(ij))/efmei(ij)
+
+      write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,3f12.5,4x,  &
+            &   3f12.5)')                                                &
+          efmei(ij)*HARTREE, i, ei(i)*HARTREE, j, ei(j)*HARTREE,         &
+          real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),        &
+          (abs(ematcar(ij,k))**2,k=1,3),                                 &
+          (abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
+
     enddo
     write(6,*)
-    write(6,'(62x,"sum = ",3f12.5)') (sm(k),k=1,3)
+    write(6,'(52x,"sum = ",f12.5,4x,3f12.5,4x,3f12.5)')                  &
+          so, (sm(k),k=1,3), (sm(k)/efmei(ij),k=1,3)
+    write(6,*)
+    write(6,*)
+
   enddo
 
 

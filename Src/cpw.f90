@@ -122,6 +122,7 @@ program cpw2000
 
 
 
+
 ! Driver program version
 
   vdriv = '5.11'
@@ -145,8 +146,6 @@ program cpw2000
      dims_, total_, ewald_)
 
 
-
-
 ! reads the pseudopotential data
 
   icorr = xc_%author(1:2)
@@ -154,7 +153,8 @@ program cpw2000
   call cpw_read_pseudo(iprglob, xc_%author,                              &
        crys_, pseudo_, atorb_, dims_)
 
-
+  call cpw_reset_nbandin(6, crys_%ntype, pseudo_%zv, pwexp_%nbandin,     &
+     dims_%mxdtyp)
 
 
 
