@@ -87,6 +87,7 @@
        real(REAL64)                       ::  ekcell                     !< fictitious cell kinetic energy
 
        character(len=6)                   ::  flgcal                     !<  type of calculation
+       character(len=6)                   ::  flgcal_new                 !<  new type of calculation
        character(len=6)                   ::  flgmod                     !<  classical potential model
 !       logical                            ::  lcluster                   !<  if true it is a cluster (not periodic)
 
@@ -239,11 +240,12 @@
 
        filename = 'cpw.out'
        callcode = 'pre_relax_vff'
+       flgcal_new = 'LBFSYM'
 
-       call write_cpwout(10, filename, meta_pwdat, flgcal, callcode,     &
+       call write_cpwout(10, filename, meta_pwdat, flgcal_new, callcode, &
      & adot, ntype, natom, nameat, rat, atmass, alatt,                   &
      & emax, nbandin, nx, ny, nz, sx, sy, sz,                            &
-     & .TRUE., .FALSE.,                                                  &
+     & .FALSE., .FALSE.,                                                 &
      & mxdtyp, mxdatm)
 
        iotape = 26

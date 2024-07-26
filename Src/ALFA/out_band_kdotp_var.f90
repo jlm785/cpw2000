@@ -18,8 +18,8 @@
 !>  Circuit for band structure is defined in BAND_LINES.DAT
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         8 may 2004, 11 November 2023.
+!>  \version      5.11
+!>  \date         8 may 2004, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_kdotp_var(title, subtitle,                           &
@@ -45,8 +45,7 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, iguess, mtxd0 in print_eig, indenttation, 11 November 2023. JLM
-
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
   implicit none
 
@@ -206,13 +205,13 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
 
   ipr = 1
   idshift = 0
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,       &
-  ng, kgv, phase, conj, ns, inds,                                   &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+  ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
 
 
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT',iotape,1,adot,        &
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot, ztot,    &
                    neig,nrk2,nlines,nvert)
 
   allocate(xk(nrk2))
@@ -223,9 +222,9 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
   allocate(label(nvert+nlines))
   allocate(xklab(nvert+nlines))
 
-  call out_band_get_circuit('BAND_LINES.DAT',iotape,1,adot,         &
-                   xk,rk,xcvert,ljump,nkstep,label,xklab,           &
-                   neig,nrk2,nlines,nvert)
+  call out_band_get_circuit('BAND_LINES.DAT', iotape, 1, adot,           &
+                   xk, rk, xcvert, ljump, nkstep, label, xklab,          &
+                   neig, nrk2, nlines, nvert)
 
 
   allocate(e_of_k(neig,nrk2))

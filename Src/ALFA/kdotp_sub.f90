@@ -14,8 +14,8 @@
 !>  Tests the kdotp output file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         May 3, 2014, 8 September 2022.
+!>  \version      5.11
+!>  \date         May 3, 2014, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 
@@ -25,9 +25,7 @@
 ! Modified, documentation, name, 15 June 2020. JLM
 ! Modified, last question, 30 September 2020. JLM
 ! Modified, neigso, new API kdotp_in. 8 September 2022. JLM
-! copyright  Jose Luis Martins/INESC-MN
-
-! version 5.04
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
   implicit none
 
@@ -142,7 +140,7 @@
 
   ztot = neltot
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot,          &
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot, ztot,    &
                    neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))

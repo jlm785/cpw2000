@@ -19,7 +19,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.09
-!>  \date         8 may 2004, 11 November 2023.
+!>  \date         8 may 2004, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
   subroutine out_band(title, subtitle,                                   &
@@ -48,7 +48,8 @@
 ! Modified h_kb_dia_all, 7 June 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, efermi, 29 November 2021. JLM
-! Modified, iguess, inentation, 11 November 2023. JLM
+! Modified, iguess, indentation, 11 November 2023. JLM
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
   implicit none
 
@@ -207,7 +208,7 @@
 
 
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot,          &
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot, ztot,    &
                    neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))

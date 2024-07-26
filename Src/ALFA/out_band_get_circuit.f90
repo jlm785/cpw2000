@@ -11,12 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Calculates the band structure path from
-!>     dat on filename (default BAND_LINES.DAT) or invents default.
+!>  Calculates the band structure path from
+!>  dat on filename (default BAND_LINES.DAT) or invents default.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         April 10, 2014. 17 February 2022
+!>  \version      5.11
+!>  \date         April 10, 2014. 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
@@ -27,6 +27,7 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
 ! Modified, ninterp, 11 June 2020. JLM
 ! Modified, dx < EPS, 19 August 2020. JLM
 ! Modified trim(adjustl, 19 February 2022. JLM
+! Modified, inconsistent number of bands. 26 July 2024. JLM
 
   implicit none
 
@@ -167,10 +168,10 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
   endif
 
   if(neigloc /= neig) then
-    write(6,'("   error in out_band_get_circuit:  inconsistent ",        &
+    write(6,*)
+    write(6,'("   WARNING in out_band_get_circuit:  inconsistent ",      &
       &    "number of bands ",2i5)') neigloc, neig
-
-    stop
+    write(6,*)
 
   endif
 

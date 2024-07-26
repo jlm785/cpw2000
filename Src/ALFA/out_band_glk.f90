@@ -18,8 +18,8 @@
 !>  Circuit for band structure is defined in BAND_LINES.DAT
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         8 may 2004, 11 November 2023.
+!>  \version      5.11
+!>  \date         8 may 2004, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_glk(title, subtitle,                                 &
@@ -51,6 +51,7 @@ subroutine out_band_glk(title, subtitle,                                 &
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, iguess, indentation, out_glk_interpolation name, 11 November 2023. JLM
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
 
 
@@ -261,7 +262,7 @@ subroutine out_band_glk(title, subtitle,                                 &
       mxdscr, mxdgve, mxdnst)
 
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, ninterp, adot,    &
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, ninterp, adot, ztot,    &
                    neig,nrk2,nlines,nvert)
 
   allocate(xk(nrk2))

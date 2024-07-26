@@ -14,8 +14,8 @@
 !>  prints the list of atoms ordered by position along the third axis.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         2 March 2023.
+!>  \version      5.11
+!>  \date         2 March 2023, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_z1D_print_ordered(ipr, io, ntype, natom, nameat, rat,    &
@@ -23,6 +23,7 @@ subroutine plot_z1D_print_ordered(ipr, io, ntype, natom, nameat, rat,    &
        mxdtyp, mxdatm)
 
 ! adapted from print_crystal, 2 March 2023. JLM
+! modified, added periodic images. 26 July 2024. JLM
 
   implicit none
 
@@ -55,6 +56,9 @@ subroutine plot_z1D_print_ordered(ipr, io, ntype, natom, nameat, rat,    &
 
 !  local variables
 
+! parameters
+
+  real(REAL64), parameter  ::  UM = 1.0_REAL64
 
 ! counters
 
@@ -90,17 +94,39 @@ subroutine plot_z1D_print_ordered(ipr, io, ntype, natom, nameat, rat,    &
     write(io,*)
     write(io,'(5x,"index",3x,"atom type",5x,"lattice coordinates")')
     write(io,*)
+
+    do icount = min(3*ntot/4,ntot),ntot
+      write(io,'(5x,i5,3x,a2,1x,i5,3x,3f10.4)')                          &
+               icount, nameat(iptype(icount)), ipnatom(icount),          &
+               (rat(j,ipnatom(icount),iptype(icount)),j=1,2),            &
+               zcoord(indx(icount))-UM
+    enddo
+
+    write(io,*) ' ----------------------------------------------------'
+
     do icount = 1,ntot
-      write(6,'(5x,i5,3x,a2,1x,i5,3x,3f10.4)')                           &
+      write(io,'(5x,i5,3x,a2,1x,i5,3x,3f10.4)')                          &
                icount, nameat(iptype(icount)), ipnatom(icount),          &
                (rat(j,ipnatom(icount),iptype(icount)),j=1,2),            &
                zcoord(indx(icount))
     enddo
+
+    write(io,*) ' ----------------------------------------------------'
+
+    do icount = 1,max(ntot/4,1)
+      write(io,'(5x,i5,3x,a2,1x,i5,3x,3f10.4)')                          &
+               icount, nameat(iptype(icount)), ipnatom(icount),          &
+               (rat(j,ipnatom(icount),iptype(icount)),j=1,2),            &
+               zcoord(indx(icount))+UM
+    enddo
+
     write(io,*)
+
   endif
 
   deallocate(zcoord)
   deallocate(indx, indnt, indj)
 
   return
+
 end subroutine plot_z1D_print_ordered

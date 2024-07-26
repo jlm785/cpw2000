@@ -79,7 +79,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      crys_%rat, crys_%atmass, crys_%alatt,                               &
      pwexp_%emax, pwexp_%nbandin, kpoint_%nx, kpoint_%ny,                &
      kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
-     .TRUE., .TRUE.,                                                     &
+     .FALSE., .TRUE.,                                                    &
      dims_%mxdtyp, dims_%mxdatm)
 
 end subroutine cpw_finish

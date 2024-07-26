@@ -11,16 +11,16 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Calculates the dimensions required to
-!>     store the band structure along a path from
-!>     dat on filename (default BAND_LINES.DAT) or invents default.
+!>  Calculates the dimensions required to
+!>  store the band structure along a path from
+!>  dat on filename (default BAND_LINES.DAT) or invents default.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         April 10, 2014. 17 February 2022
+!>  \version      5.11
+!>  \date         April 10, 2014. 26 July 2024
 !>  \copyright    GNU Public License v2
 
-subroutine out_band_circuit_size(filename, iotape, ninterp, adot,        &
+subroutine out_band_circuit_size(filename, iotape, ninterp, adot, ztot,  &
                    neig, nrk, nlines, nvert)
 
 ! Written, April 10, 2014. jlm
@@ -29,6 +29,7 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot,        &
 ! Modified, ninterp, 12 June 2020. JLM
 ! Modified, dx < EPS, 19 August 2020. JLM
 ! Modified trim(adjustl, 19 February 2022. JLM
+! Modified API, added ztot to have at least valence states plus. 26 July 2024. JLM
 
   implicit none
 
@@ -40,6 +41,7 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot,        &
   character(len=*), intent(in)       ::  filename                        !<  file to be read
   integer, intent(in)                ::  iotape                          !<  tape number
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
 
   integer, intent(in)                ::  ninterp                         !<  density of points is reduced by ninterp.  In normal cases ninterp = 1.
 
@@ -109,26 +111,29 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot,        &
 
       stop
 
-    else
+    endif
 
-      if(dx < EPS) then
+    if(dx < EPS) then
 
-        ldens = .FALSE.
-
-      endif
+      ldens = .FALSE.
 
     endif
 
-    if(neig < 1) then
-      write(6,*)
-      write(6,'("  input error in out_band_circuit_size:    ",           &
-        &     "number of bands = ",i10)') neig
 
-      stop
+    if(neig < nint(ztot/2)+4) then
+
+      write(6,*)
+      write(6,*) "   WARNING   WARNING   WARNING   WARNING"
+      write(6,*)
+      write(6,'("  The input number of bands ",i10," is small")') neig
+      neig = nint(ztot/2)+4
+      write(6,'("  Number of bands increased to ",i10)') neig
+      write(6,*)
 
     endif
 
   else
+
     write(6,*)
     write(6,*) '  error in out_band_circuit_size:    ',                  &
            'problem opening   ',filename
@@ -188,6 +193,6 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot,        &
 
   close(unit=iotape)
 
-
   return
+
 end subroutine out_band_circuit_size

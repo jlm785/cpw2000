@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutine calculates the band structure along a path
-!>     using atomic orbital interpolation
+!>  Calculates the band structure along a path
+!>  using atomic orbital interpolation
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.11
+!>  \date         May 2020. 26 July 2024
+!>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band_fold_full(ioreplay,         &
   pwline,title,subtitle,noiData,                                   &
@@ -27,9 +32,9 @@
 ! ao_interpolation_out_band_fold.
 ! Modified, documentation, May 2020. JLM
 ! Modified, projection on atomic orbitals, July 2021. CLR
-! copyright  Carlos Loia Reis/INESC-MN.
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
-! version 5.01
+
 
   use NonOrthoInterp
 
@@ -43,52 +48,52 @@
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
-    
+
   integer, intent(in)                :: ioreplay                         !<  tape number for reproducing calculations
-    
+
   character(len=50), intent(in)      ::  title                           !<  title for plots
   character(len=140), intent(in)     ::  subtitle                        !<  subtitle for plots
   character(len=60), intent(in)      ::  pwline                          !<  line with unfolding data
-    
+
   type(noiData_t)                    ::  noiData                         !<  see NonOrthoInterp
-    
+
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
-    
+
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
-  character(len=2)                   ::  nameat(mxdtyp)                  !<  chemical symbol for the type i       
+  character(len=2)                   ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-    
+
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
-    
+
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
-    
+
   integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
   real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)       !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
-    
-! allocatable arrays     
-    
-  complex(REAL64), allocatable       ::  psi_ao(:,:)     
-  complex(REAL64), allocatable       ::  ao_basis(:,:)     
-  complex(REAL64), allocatable       ::  ao_basis_so(:,:)    
-    
+
+! allocatable arrays
+
+  complex(REAL64), allocatable       ::  psi_ao(:,:)
+  complex(REAL64), allocatable       ::  ao_basis(:,:)
+  complex(REAL64), allocatable       ::  ao_basis_so(:,:)
+
   real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
   integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
   real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
-    
+
   integer, allocatable               ::  infolcao(:,:)                   !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
   integer, allocatable               ::  infolcao_so(:,:)                !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
-    
-    
-! allocatable arrays for Brillouin zone path     
-    
+
+
+! allocatable arrays for Brillouin zone path
+
   integer                            ::  nlines                          !  number of lines in reciprocal space
   integer, allocatable               ::  nkstep(:)                       !  number of steps in line
   logical, allocatable               ::  ljump(:)                        !  indicates if the new line contains a jump from the preceeding
@@ -101,45 +106,45 @@
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !  spin-orbit band energies of k-point in plot
   character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
-    
+
   real(REAL64),allocatable           ::  pkn(:,:)                        !  weight of unfolded band
   real(REAL64),allocatable           ::  pkn_so(:,:)                     !  weight of unfolded band (spin-orbit)
-    
-! local variables    
-    
+
+! local variables
+
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
-  real(REAL64)                       ::  bdot(3,3),vcell     
+  real(REAL64)                       ::  bdot(3,3),vcell
   integer                            ::  mtxd                            !  dimension of the hamiltonian
-  integer                            ::  nd, mxdorb, lmax, k     
-  logical                            ::  lnewanl     
-    
-  logical                            ::  true_pkn    
-    
+  integer                            ::  nd, mxdorb, lmax, k
+  logical                            ::  lnewanl
+
+  logical                            ::  true_pkn
+
   integer           ::  neig                                             !  number of eigenvectors required (maybe modified on output)
   real(REAL64)      ::  rkpt(3)                                          !  j-th component in lattice coordinates of the k-point
-    
+
   real(REAL64)      ::  eref                                             !  reference energy for plot
   integer           ::  nocc                                             !  number of occupied states (different color)
   integer           ::  nstyle                                           !  choice of plot style
-    
-  integer           ::  irk    
-  integer           ::  iotape     
-  integer           ::  nrk2     
-    
-  integer           ::  iMinv(3,3)     
-  integer           ::  idet     
-  real(REAL64)      ::  avec(3,3),bvec(3,3), adot_pc(3,3)    
-    
-  integer            ::  idum(3,3)     
-  character(len=6)   ::  fdum    
-  integer            ::  ioerr     
+
+  integer           ::  irk
+  integer           ::  iotape
+  integer           ::  nrk2
+
+  integer           ::  iMinv(3,3)
+  integer           ::  idet
+  real(REAL64)      ::  avec(3,3),bvec(3,3), adot_pc(3,3)
+
+  integer            ::  idum(3,3)
+  character(len=6)   ::  fdum
+  integer            ::  ioerr
   character(len=60)  ::  pwlinloc                                        !  local version of pwline
-    
-  real(REAL64), allocatable :: ev_interp(:)    
-    
-  real(REAL64), allocatable    ::  basxpsi_of_k(:,:,:)     
-  complex(REAL64), allocatable :: wrk(:,:)     
-    
+
+  real(REAL64), allocatable :: ev_interp(:)
+
+  real(REAL64), allocatable    ::  basxpsi_of_k(:,:,:)
+  complex(REAL64), allocatable :: wrk(:,:)
+
   logical       ::  lkplusg                                              !  If true use the previous G-vectors (same mtxd and isort)
 
   integer neig_try
@@ -196,9 +201,9 @@
   call Fold_Get_adot_pc(pwlinloc, avec, adot_pc)
 !-----------------------------------------------------------------------
 
-! band circuit section 
+! band circuit section
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc,       & ! note call with adot_pc
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc, ztot,   & ! note call with adot_pc
   neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))
@@ -255,7 +260,7 @@
   allocate(pkn(nrk2,neig))
   allocate(pkn_so(nrk2,2*neig))
   allocate(ev_interp(noiData%nband))
-  
+
   pkn(:,:)    = 1.0D0
   pkn_so(:,:) = 1.0D0
 
@@ -264,7 +269,7 @@
   if (true_pkn) then
 
     call adot_to_bdot(adot,vcell,bdot)
-  
+
     ! finds mxdddim
     mxddim = 1
     do irk=1,nrk2
@@ -274,7 +279,7 @@
       call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
       if(nd > mxddim) mxddim = nd
     enddo
-  
+
     ! finds mxdorb
     mxdorb = 0
     lmax = 0
@@ -284,17 +289,17 @@
         lmax = max(lorb(j,k),lmax)
       enddo
     enddo
-  
+
     allocate(hdiag(mxddim))
     allocate(isort(mxddim))
     allocate(qmod(mxddim))
     allocate(ekpg(mxddim))
-    
+
     ! allocate wavefunctions needded for pkn calculation
     allocate(ao_basis(mxddim,mxdorb))
-    allocate(infolcao(5,mxdorb))        
+    allocate(infolcao(5,mxdorb))
     allocate(wrk(noiData%nband,noiData%nband))
-  
+
     if(noiData%lso==1) then
     allocate(psi_ao(2*mxddim,2*mxdorb))
     allocate(ao_basis_so(2*mxddim,2*mxdorb))
@@ -302,7 +307,7 @@
     allocate(basxpsi_of_k(2*mxdorb,2*neig,nrk2))
     else
     allocate(psi_ao(mxddim,mxdorb))
-    allocate(basxpsi_of_k(mxdorb,neig,nrk2))        
+    allocate(basxpsi_of_k(mxdorb,neig,nrk2))
     endif
 
   endif
@@ -321,55 +326,55 @@
 
     call NonOrthoInterpRun(noiData,rkpt,ev_interp)
 
-    if(noiData%lso==1) then    
+    if(noiData%lso==1) then
       do j=1,2*neig
         e_of_k_so(j,irk) = ev_interp(j)
       enddo
-    else      
+    else
       do j=1,neig
         e_of_k(j,irk) = ev_interp(j)
       enddo
     endif
-      
+
     ! compute spectral weights
 
     if (true_pkn) then
-    
+
       call fi_hamiltonian_get_hk(noiData%fiData,rkpt,noiData%Hao_tr, noiData%nband)
-      call fi_hamiltonian_get_sk(noiData%fiData,rkpt,noiData%Uao, noiData%nband)          
-  
-      call DiagByLowdin2(noiData%nband,noiData%Hao_tr,noiData%Uao, ev_interp, wrk)                
-  
+      call fi_hamiltonian_get_sk(noiData%fiData,rkpt,noiData%Uao, noiData%nband)
+
+      call DiagByLowdin2(noiData%nband,noiData%Hao_tr,noiData%Uao, ev_interp, wrk)
+
       if(noiData%lso==1) then
       do j=1,2*neig
         e_of_k_so(j,irk) = ev_interp(j)
         do iorb = 1, noiData%nband
           basxpsi_of_k(iorb,j,irk) = real(wrk(iorb,j)*conjg(wrk(iorb,j)),REAL64)
-        enddo            
+        enddo
       enddo
       else
       do j=1,neig
         e_of_k(j,irk) = ev_interp(j)
         do iorb = 1, noiData%nband
           basxpsi_of_k(iorb,j,irk) = real(wrk(iorb,j)*conjg(wrk(iorb,j)),REAL64)
-        enddo            
+        enddo
       enddo
       endif
-    
+
       lkplusg = .false.
 
       call hamilt_struct(emax,rkpt,mtxd,isort,qmod,ekpg,lkplusg,         &
       ng,kgv,adot,mxdgve,mxddim)
 
       lnewanl = .TRUE.
-        
+
       call atomic_orbital_c16(rkpt,mtxd,isort,icmplx,                    &
       mxdorb,ao_basis,infolcao,                                          &
       ng,kgv,                                                            &
       norbat,nqwf,delqwf,wvfao,lorb,                                     &
       ntype,natom,rat,adot,                                              &
       mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
-      
+
       if(noiData%lso==1) then
         do i=1,mxdorb
         do j=1,mtxd
@@ -379,12 +384,12 @@
           ao_basis_so(2*j  ,2*i-1       ) = ao_basis(j,i)
         enddo
         enddo
-     
+
         do i=1,mxdorb
           infolcao_so(:,2*i)   = infolcao(:,i)
           infolcao_so(:,2*i-1) = infolcao(:,i)
         enddo
-     
+
        ! noiData%wrk has the eigenvectors corresponding to ev_interp
 
         call zgemm('N','N',2*mtxd,2*mxdorb,2*mxdorb,C_UM,ao_basis_so,    &
@@ -411,7 +416,7 @@
 
   iotape = 15
   nstyle = 2
-    
+
   if(noiData%lso==1) then
 
     n = min(nint(ztot + 0.01),2*neig)
@@ -440,7 +445,7 @@
     endif
 
     else
-    
+
       n = min(nint(0.5*ztot + 0.01),neig)
       eref = e_of_k(n,1)
       do irk = 1,nrk2
@@ -450,9 +455,9 @@
       enddo
 
       noiData%eref  =eref
-     
+
       nocc = n
-      
+
       call out_band_fold_xmgrace('mtb_band.agr',iotape,                  &
       title,subtitle,nstyle,                                             &
       pkn,neig,nrk2,xk,e_of_k,eref,nocc,                                 &
@@ -480,10 +485,10 @@
 
   deallocate(xk)
   deallocate(rk)
-  
+
   deallocate(e_of_k)
   deallocate(e_of_k_so)
-  
+
   deallocate(ev_interp)
 
   if (true_pkn) then
@@ -493,10 +498,10 @@
     deallocate(isort)
     deallocate(qmod)
     deallocate(ekpg)
-  
+
     deallocate(ao_basis)
     deallocate(infolcao)
-  
+
     if(noiData%lso==1) then
       deallocate(psi_ao)
       deallocate(ao_basis_so)
@@ -509,5 +514,5 @@
   write(*,*) 'Band Structure Calcultion Done.'
 
   return
-  
+
   end subroutine ao_interpolation_out_band_fold_full

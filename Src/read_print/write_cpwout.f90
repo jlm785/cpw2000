@@ -280,38 +280,35 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
     write(io,*)
   endif
 
-  write(io,'("UseSymmetry                   .true.        ",             &
-      & "# .true. , .false. ")')
+  write(io,'("UseSymmetry                   .true.        # .true. , .false. ")')
   write(io,*)
 
   if(lkeat) then
-    write(io,'("MD.UseKeatingCorrections      .true.        ",           &
-      & "# .true. , .false. ")')
+    write(io,'("MD.UseKeatingCorrections      .true.        # .true. , .false. ")')
   else
-    write(io,'("MD.UseKeatingCorrections      .false.       ",           &
-      & "# .true. , .false. ")')
+    write(io,'("MD.UseKeatingCorrections      .false.       # .true. , .false. ")')
   endif
   write(io,*)
 
-  write(io,'("MD.CG.UseFixedkplusG          .true.        ",             &
-      & "# .true. , .false. ")')
+  if(flgcal == "EPILBF" .or. flgcal == "VCSLBF") then
+    write(io,'("MD.CG.UseFixedkplusG          .true.        # .true. , .false. ")')
+    write(io,*)
+  else
+    write(io,'("MD.CG.UseFixedkplusG          .false.       # .true. , .false. ")')
+    write(io,*)
+  endif
+
+
+  write(io,'("TypeOfScfDiag                 AOJCPW        # PW,AO,AOJC,AOJCPW")')
   write(io,*)
 
-
-  write(io,'("TypeOfScfDiag                 PW            ",             &
-      & "# PW,AO,AOJC,AOJCPW")')
-  write(io,*)
-
-  write(io,'("DualApproximation             .true.        ",             &
-      & "#  .true. , .false.")')
+  write(io,'("DualApproximation             .true.        #  .true. , .false.")')
   write(io,*)
 
   if(ltbl) then
-    write(io,'("XC.Authors                    TBL           ",           &
-      & "# CA, PBE, TBL")')
+    write(io,'("XC.Authors                    TBL           # CA, PBE, TBL")')
   else
-    write(io,'("XC.Authors                    CA            ",           &
-      & "# CA, PBE, TBL")')
+    write(io,'("XC.Authors                    CA            # CA, PBE, TBL")')
   endif
   write(io,*)
 
@@ -360,12 +357,10 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("#MaxSCFIterations             20              #")')
   write(io,*)
   write(io,'("#MaxSCFIterations             20              #")')
-  write(io,'("#TypeOfPseudoMixing           BROYD1          #",          &
-      & " BROYD1, BFGS#")')
+  write(io,'("#TypeOfPseudoMixing           BROYD1          # BROYD1, BFGS#")')
   write(io,*)
   write(io,'("#ElectronicTemperature        1000 K          #")')
-  write(io,'("#TypeOfPseudopotential        PSEUKB          #",          &
-      & " PSEUKB")')
+  write(io,'("#TypeOfPseudopotential        PSEUKB          # PSEUKB")')
   write(io,*)
   write(io,'("#ScfTolerance                 0.00005         #")')
   write(io,'("#DiagTolerance                0.0001          #")')

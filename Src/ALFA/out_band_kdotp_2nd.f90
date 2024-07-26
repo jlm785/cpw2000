@@ -20,7 +20,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.09
-!>  \date         8 may 2004, 11 November 2023.
+!>  \date         8 may 2004, 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_kdotp_2nd(title, subtitle,                           &
@@ -34,19 +34,20 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
-!      version 4.42. 8 may 2004. jlm
-!      modified 11 february 2008 (read from file). JLM
-!      modified September 5, 2012 (f90, circuit). jlm
-!      modified October 18, 2013 (band index permutations). jlm
-!      modified January 8, 2013 (new interface). jlm
-!      modified, vkb dimensions, March 31, 2014. jlm
-!      modified (title,subtitle) xmgrace plot. 4 August 2012. JLM
-!      modified 1 August 2019. Introduce changes in out_band.f90. JLM
-!      Modified February 2020. Documentation, ifail, icmax,
-!      Modified h_kb_dia_all, 8 June 2020, icmax 14 June 2020. JLM
-!      Modified, vmax, vmin, 27 November 2020. JLM
-!      Modified, efermi, 29 November 2021. JLM
-!      Modified, iguess, indentation, 11 November 2023. JLM
+! version 4.42. 8 may 2004. jlm
+! modified 11 february 2008 (read from file). JLM
+! modified September 5, 2012 (f90, circuit). jlm
+! modified October 18, 2013 (band index permutations). jlm
+! modified January 8, 2013 (new interface). jlm
+! modified, vkb dimensions, March 31, 2014. jlm
+! modified (title,subtitle) xmgrace plot. 4 August 2012. JLM
+! modified 1 August 2019. Introduce changes in out_band.f90. JLM
+! Modified February 2020. Documentation, ifail, icmax,
+! Modified h_kb_dia_all, 8 June 2020, icmax 14 June 2020. JLM
+! Modified, vmax, vmin, 27 November 2020. JLM
+! Modified, efermi, 29 November 2021. JLM
+! Modified, iguess, indentation, 11 November 2023. JLM
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
   implicit none
 
@@ -248,7 +249,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
       mxdscr, mxdgve, mxdnst)
 
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot,          &
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot, ztot,    &
                    neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))

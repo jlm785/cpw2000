@@ -16,8 +16,8 @@
 !>
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
-!>  \version      5.09
-!>  \date         8 May 2004. 9 November 2023.
+!>  \version      5.11
+!>  \date         8 May 2004. 26 July 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_fold(diag_type, lworkers,                            &
@@ -47,6 +47,7 @@ subroutine out_band_fold(diag_type, lworkers,                            &
 ! Modified, latorb, 7 June 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, iguess, annoying pkn warning and presentation. 10 November 2023. JLM
+! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 
   implicit none
 
@@ -287,7 +288,7 @@ subroutine out_band_fold(diag_type, lworkers,                            &
 !------------------------------------------------------------------
 
   iotape = 13
-  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc,       &      ! note call with adot_pc
+  call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc, ztot, &      ! note call with adot_pc
        neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))
