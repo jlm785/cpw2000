@@ -15,22 +15,22 @@
 !>  for later processing by the density of states or optical program
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.03
-!>  \date         8 may 2004, 7 December 2021.
+!>  \version      5.11
+!>  \date         8 may 2004, 8 October 2024.
 !>  \copyright    GNU Public License v2
 
-  subroutine out_dos(diag_type, lworkers, lproj, lso,                    &
-  title, subtitle,                                                       &
-  emax, flgdal, flgpsd,                                                  &
-  epspsi, icmax, ztot,                                                   &
-  adot, ntype, natom, rat, ntrans, mtrx,                                 &
-  ng, kgv, phase, conj,                                                  &
-  ns, inds, kmax, indv, ek,                                              &
-  sfact, icmplx,                                                         &
-  veff,                                                                  &
-  nqnl, delqnl, vkb, nkb,                                                &
-  latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
-  mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
+    title, subtitle,                                                     &
+    emax, flgdal, flgpsd,                                                &
+    epspsi, icmax, ztot,                                                 &
+    adot, ntype, natom, rat, ntrans, mtrx,                               &
+    ng, kgv, phase, conj,                                                &
+    ns, inds, kmax, indv, ek,                                            &
+    sfact, icmplx,                                                       &
+    veff,                                                                &
+    nqnl, delqnl, vkb, nkb,                                              &
+    latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
+    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 
 ! version 4.42. 8 may 2004. jlm
@@ -46,8 +46,8 @@
 ! Modified, project wf on atomic orbitals, July 2021. CLR
 ! Modified, lproj, lso in input. JLM
 ! Modified, bug correction, Jan 2022. CLR.
-
-! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
+! Modified, indentation, documentaion, 29 September 2022. JLM
+! Modified, ao_int_GetS12, indentation, 8 October 2024. JLM
 
   implicit none
 
@@ -300,10 +300,10 @@
   allocate(wgk(mxdnrk))
 
   call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
-  adot,                                                                  &
-  ntrans, mtrx,                                                          &
-  nrk, rk, wgk, nband, indk, kmap,                                       &
-  mxdnrk, mxdbnd)
+      adot,                                                              &
+      ntrans, mtrx,                                                      &
+      nrk, rk, wgk, nband, indk, kmap,                                   &
+      mxdnrk, mxdbnd)
 
   neig = nbandi
 
@@ -446,39 +446,39 @@
       iguess = 0
 
       call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
-      flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
-      ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
-      sfact, veff, icmplx,                                               &
-      nqnl, delqnl, vkb, nkb,                                            &
-      ntype, natom, rat, adot,                                           &
-      mtxd, hdiag, isort, qmod, ekpg, lkpg,                              &
-      psi, hpsi, ei,                                                     &
-      vscr, kmscr,                                                       &
-      latorb, norbat, nqwf, delqwf, wvfao,lorb,                          &
-      mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
-      mxdbnd, mxdscr, mxdlao)
+          flgpsd, ipr, ifail, icmax, iguess, epspsi,                     &
+          ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
+          sfact, veff, icmplx,                                           &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
+          psi, hpsi, ei,                                                 &
+          vscr, kmscr,                                                   &
+          latorb, norbat, nqwf, delqwf, wvfao,lorb,                      &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
+          mxdbnd, mxdscr, mxdlao)
 
 !     atomic orbital stuff
 
       if (lproj) then
 
-        call atomic_orbital_c16(rkpt,mtxd,isort,1,                       &
-        nbaslcao,baslcao_aux,infolcao,                                   &
-        ng,kgv,                                                          &
-        norbat,nqwf,delqwf,wvfao,lorb,                                   &
-        ntype,natom,rat,adot,                                            &
-        mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
+        call atomic_orbital_c16(rkpt, mtxd, isort, 1,                    &
+            nbaslcao, baslcao_aux, infolcao,                             &
+            ng, kgv,                                                     &
+            norbat, nqwf, delqwf, wvfao, lorb,                           &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
 
-        call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao_aux,      &
-        mxddim,baslcao_aux,mxddim,C_ZERO,S,mxdorb)
+        call zgemm('C', 'N', nbaslcao, nbaslcao, mtxd, C_UM, baslcao_aux,      &
+            mxddim, baslcao_aux, mxddim, C_ZERO, S, mxdorb)
 
-        call  GetS12(S,S12,S12_inv,Swrk,ev_wrk,nbaslcao)
+        call  ao_int_GetS12(S, S12, S12_inv, Swrk, ev_wrk, nbaslcao)
 
-        call zgemm('n','n',mtxd,nbaslcao,nbaslcao,C_UM,baslcao_aux,      &
-        mxddim, S12,mxdorb,C_ZERO,baslcao,mxddim)
+        call zgemm('n', 'n', mtxd, nbaslcao, nbaslcao, C_UM, baslcao_aux,      &
+            mxddim,  S12, mxdorb, C_ZERO, baslcao, mxddim)
 
-        call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao,          &
-        mxddim, baslcao,mxddim,C_ZERO,S,mxdorb)
+        call zgemm('C', 'N', nbaslcao, nbaslcao, mtxd, C_UM, baslcao,          &
+            mxddim,  baslcao, mxddim, C_ZERO, S, mxdorb)
 
         do n = 1,nbaslcao
           sq = ZERO
@@ -491,8 +491,8 @@
           enddo
         enddo
 
-        call zgemm('C','N',nbaslcao,neig,mtxd,C_UM,baslcao,mxddim,       &
-        psi,mxddim,C_ZERO,prod,mxdorb)
+        call zgemm('C', 'N', nbaslcao, neig, mtxd, C_UM, baslcao, mxddim,      &
+            psi, mxddim, C_ZERO, prod, mxdorb)
 
 !!!       needs to be done with worker data when tested
 
@@ -504,22 +504,22 @@
 !!!
       endif
 
-      call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                      &
-      mxddim,mxdbnd)
+      call kinetic_energy(neig, mtxd, ekpg, psi, ekpsi,                  &
+      mxddim, mxdbnd)
 
       ipr = 1
       nrka = -1
-      call print_eig(ipr,irk,labelk,nrka,rkpt,                           &
-      mtxd,icmplx,neig,psi,                                              &
-      adot,ei,ekpsi,isort,kgv,                                           &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
+          mtxd, icmplx, neig, psi,                                       &
+          adot, ei, ekpsi, isort, kgv,                                   &
+          mxddim, mxdbnd, mxdgve)
 
-      call spin_orbit_perturb(rkpt,mtxd,isort,                           &
-      neig,psi,ei,ei_so,psi_so,lpsiso,                                   &
-      ng,kgv,                                                            &
-      nqnl,delqnl,vkb,nkb,                                               &
-      ntype,natom,rat,adot,                                              &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          neig, psi, ei, ei_so, psi_so, lpsiso,                          &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
 
 !    new adapted from ao_h_and_s_spin_orbit
@@ -540,8 +540,8 @@
         enddo
         enddo
 
-        call zgemm('c','n',2*nbaslcao,2*neig,2*mtxd,                       &
-        C_UM,psi_in,2*mxddim,psi_so,2*mxddim,C_ZERO,prod_so,2*mxdorb)
+        call zgemm('c', 'n', 2*nbaslcao, 2*neig, 2*mtxd,  C_UM, psi_in,  &
+            2*mxddim, psi_so, 2*mxddim, C_ZERO, prod_so, 2*mxdorb)
 
 !!!       needs to be done with worker data when tested
 
@@ -556,14 +556,14 @@
 
 
       if(ipr == 2) then
-        call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,           &
-        mxddim,mxdbnd)
+        call kinetic_energy_so(neig, mtxd, ekpg, psi_so, ekpsi_so,       &
+            mxddim, mxdbnd)
       endif
 
-      call print_eig_so(ipr,irk,labelk,nrka,rkpt,                        &
-      mtxd,neig,psi_so,                                                  &
-      adot,ei_so,ekpsi_so,isort,kgv,                                     &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig_so(ipr, irk, labelk, nrka, rkpt,                    &
+          mtxd, neig, psi_so,                                            &
+          adot, ei_so, ekpsi_so, isort, kgv,                             &
+          mxddim, mxdbnd, mxdgve)
 
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
@@ -731,4 +731,5 @@
 
 
   return
-  end subroutine out_dos
+
+end subroutine out_dos

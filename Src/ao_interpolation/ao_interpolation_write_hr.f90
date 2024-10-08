@@ -15,13 +15,13 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         2020, 6 October 2024.
+!>  \date         2020, 8 October 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_write_hr(adot, ioreplay)
 
 ! Written by Carlos Lois Reis in an unknown date.
-! Documentation, indentation, 7 October 2024. JLM
+! Documentation, indentation, ao_int_, 8 October 2024. JLM
 
   use NonOrthoInterp
 
@@ -123,7 +123,7 @@ subroutine ao_interpolation_write_hr(adot, ioreplay)
     call fi_hamiltonian_get_hk(mtb%fiData,rkpt,H, nband)
     call fi_hamiltonian_get_sk(mtb%fiData,rkpt,S, nband)
 
-    call OrthoH(H,S,Hw,nband)
+    call ao_int_OrthoH(H, S, Hw, nband)
 
     ortho%Ham_k(:,:,ikpt) = Hw
     ortho%S_k(:,:,ikpt) = S

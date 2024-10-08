@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         May 2020, 6 October 2024.
+!>  \date         May 2020, 68 October 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
@@ -29,6 +29,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Written by Carlos Loia Reis, May 2020, based on previous code,
 ! ao_interpolation_out_band_fold.
 ! Modified, documentation, May 2020. JLM
+! Modified, indentation, ao_int_.., * October 2024. JLM
 
 
   use NonOrthoInterp
@@ -92,8 +93,8 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
   complex(REAL64), allocatable       ::  prod(:,:)                       !  <bas|psi>
 
-  integer, allocatable               :: nnlist(:, :)                          !
-  integer, allocatable               :: nncell(:, :, :)                       !*
+  integer, allocatable               :: nnlist(:, :)
+  integer, allocatable               :: nncell(:, :, :)
 
   real(REAL64),allocatable           :: kpt_lattice(:,:)
 
@@ -509,7 +510,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       call zgemm('C', 'N', norb, norb, 2*mtxd, C_UM, ao_basis_so,        &
           2*mxddim, ao_basis_so, 2*mxddim, C_ZERO, S, 2*mxdorb)
 
-      call  GetS12(S, S12, S12_inv, Swrk, ev_wrk, norb)
+      call  ao_int_GetS12(S, S12, S12_inv, Swrk, ev_wrk, norb)
 
       call zgemm('n', 'n', 2*mtxd, norb, norb, C_UM, ao_basis_so,        &
           2*mxddim,  S12, 2*mxdorb, C_ZERO, ao_basis_ortho, 2*mxddim)
@@ -544,7 +545,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       call zgemm('C', 'N', norb, norb, mtxd, C_UM, ao_basis,             &
           mxddim, ao_basis, mxddim, C_ZERO, S, mxdorb)
 
-      call GetS12(S, S12, S12_inv, Swrk, ev_wrk, norb)
+      call ao_int_GetS12(S, S12, S12_inv, Swrk, ev_wrk, norb)
 
 
       call zgemm('n', 'n', mtxd, norb, norb, C_UM, ao_basis,             &

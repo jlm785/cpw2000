@@ -19,14 +19,14 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         November 2018, 7 October 2024.
+!>  \date         November 2018, 8 October 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 
 
 ! Written November 2018. CLR
-! Modified, indentation, documentation, 7 October 2024. JLM
+! Modified, indentation, documentation, ao_int_, 8 October 2024. JLM
 
 
   use NonOrthoInterp
@@ -261,7 +261,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 
 !   Compute S^(-1/2) and S^(1/2) matrices
 
-    call GetS12(Sk,S12,S12_inv,wrk,ev_wrk,nband)
+    call ao_int_GetS12(Sk,S12,S12_inv,wrk,ev_wrk,nband)
 
 ! Solve the eigenvalue problem and get U matrix
 

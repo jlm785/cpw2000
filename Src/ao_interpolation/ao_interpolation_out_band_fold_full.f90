@@ -19,21 +19,21 @@
 !>  \date         May 2020. 26 July 2024
 !>  \copyright    GNU Public License v2
 
-  subroutine ao_interpolation_out_band_fold_full(ioreplay,         &
-  pwline,title,subtitle,noiData,                                   &
-  emax,ztot,                                                       &
-  adot,ntype,natom,nameat,rat,                                     &
-  ng,kgv,                                                          &
-  icmplx,                                                          &
-  norbat,nqwf,delqwf,wvfao,lorb,                                   &
-  mxdtyp,mxdatm,mxdgve,mxdlqp,mxdlao)
+subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
+      pwline, title, subtitle, noiData,                                  &
+      emax, ztot,                                                        &
+      adot, ntype, natom, nameat, rat,                                   &
+      ng, kgv,                                                           &
+      icmplx,                                                            &
+      norbat, nqwf, delqwf, wvfao, lorb,                                 &
+      mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao)
 
 ! Written by Carlos Loia Reis, May 2020, based on previous code,
 ! ao_interpolation_out_band_fold.
 ! Modified, documentation, May 2020. JLM
 ! Modified, projection on atomic orbitals, July 2021. CLR
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
-! Modified, ao_atomic_orbital, indentation improved. 6 october 2024. JLM
+! Modified, ao_int, indentation improved. 8 october 2024. JLM
 
 
 
@@ -361,7 +361,7 @@
       call fi_hamiltonian_get_hk(noiData%fiData, rkpt, noiData%Hao_tr, noiData%nband)
       call fi_hamiltonian_get_sk(noiData%fiData, rkpt, noiData%Uao, noiData%nband)
 
-      call DiagByLowdin2(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, wrk)
+      call ao_int_DiagByLowdin(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, wrk)
 
       if(noiData%lso==1) then
       do j=1,2*neig

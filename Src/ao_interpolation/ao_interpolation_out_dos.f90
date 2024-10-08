@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         July 2014, 29 November 2021.
+!>  \date         July 2014, 8 October 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
@@ -26,7 +26,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 ! Modified documentation May 2020. JLM
 ! Modfied, new dos file format June 2021. CLR
 ! Modified, e_of_k allocations, 14 Janury 2024. JLM
-! Modified, indentation, 6 October 2024. JLM
+! Modified, indentation, ao_int_, 8 October 2024. JLM
 
   use NonOrthoInterp
 
@@ -170,7 +170,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
     call fi_hamiltonian_get_hk(noiData%fiData, rkpt, noiData%Hao_tr, noiData%nband)
     call fi_hamiltonian_get_sk(noiData%fiData, rkpt, noiData%Uao, noiData%nband)
 
-    call DiagByLowdin2(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, psi)
+    call ao_int_DiagByLowdin(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, psi)
 
 !    call NonOrthoInterpRun(noiData,rkpt,ev_interp)
 

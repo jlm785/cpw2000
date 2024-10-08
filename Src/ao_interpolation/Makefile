@@ -4,7 +4,7 @@ include $(ROOT)/make.inc
 
 src90 = ao_h_and_s.f90                           ao_interpolation_sub.f90          \
         ao_h_and_s_spin_orbit.f90                ao_interpolation_w90.f90          \
-        ao_interpolation_core.f90                ao_interpolation_write_chk.f90    \
+        ao_interpolation_core.f90                                                  \
         ao_interpolation_out_band.f90            ao_interpolation_write_hr.f90     \
         ao_interpolation_out_band_fold_full.f90  ao_interpolation_write_wt_in.f90  \
         ao_interpolation_out_dos.f90             fourier_interpolation.f90         \
@@ -59,9 +59,6 @@ ao_interpolation_prepare.o:  ao_interpolation_prepare.f90 nonorthointerp.o irred
 
 ao_interpolation_w90.o:  ao_interpolation_w90.f90 nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_w90.f90
-
-ao_interpolation_write_chk.o:  ao_interpolation_write_chk.f90 nonorthointerp.o
-	$(F77) -c $(FCOPTS) ao_interpolation_write_chk.f90
 
 ao_interpolation_write_hr.o:  ao_interpolation_write_hr.f90 nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_write_hr.f90

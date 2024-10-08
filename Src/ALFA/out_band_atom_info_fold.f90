@@ -41,6 +41,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 !  Modified, efermi, 29 November 2021. JLM
 !  Modified annoying warning pkn, iguess. 10 November 2023. JLM
 !  Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+!  Modified, ao_int_, improved indentation. 8 October 2024. JLM
 
   implicit none
 
@@ -273,9 +274,9 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   ipr = 1
 
   idshift = 0
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,       &
-  ng, kgv, phase, conj, ns, inds,                                   &
-  mxdscr, mxdgve, mxdnst)
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+      ng, kgv, phase, conj, ns, inds,                                    &
+      mxdscr, mxdgve, mxdnst)
 
 
 !-----------------------------------------------------------------------
@@ -285,8 +286,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 ! this is a workaround
 
   fdum = '      '
-  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                          &
-  ((idum(i,j),i=1,3),j=1,3),fdum
+  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr) ((idum(i,j),i=1,3),j=1,3),fdum
 
   if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
     pwlinloc = pwline
@@ -328,9 +328,9 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   allocate(label(nvert+nlines))
   allocate(xklab(nvert+nlines))
 
-  call out_band_get_circuit('BAND_LINES.DAT',iotape,1,adot_pc,           &
-  xk,rk,xcvert,ljump,nkstep,label,xklab,                                 &
-  neig,nrk2,nlines,nvert)
+  call out_band_get_circuit('BAND_LINES.DAT', iotape, 1, adot_pc,        &
+      xk, rk, xcvert, ljump, nkstep, label, xklab,                       &
+      neig, nrk2, nlines, nvert)
 
   allocate(e_of_k(neig,nrk2))
   allocate(e_of_k_so(2*neig,nrk2))
@@ -349,7 +349,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
      rkpt(j) = rk_fld(j,irk)  ! computed in folded k-point
   enddo
 
-  call size_mtxd(emax,rkpt,adot,ng,kgv,nd)
+  call size_mtxd(emax, rkpt, adot, ng, kgv, nd)
   if(nd > mxddim) mxddim = int(1.05*nd)
 
 
@@ -379,8 +379,8 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   allocate(isort_so(2*mxddim))
   allocate(psi_so(2*mxddim,2*mxdbnd))
 
-  call size_nbaslcao(ntype,natom,norbat,lorb,nbaslcao,                   &
-  mxdtyp,mxdlao)
+  call size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,               &
+      mxdtyp, mxdlao)
 
 
   mxdorb = nbaslcao
@@ -427,15 +427,15 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 
   irk =1
   inquire(iolength=ir_size) irk_rd,                                      &
-  e_of_k(:,irk),                                                         &
-  pkn_tmp(:),  e_of_k_so(:,irk),                                         &
-  pkn_tmp_so(:),                                                         &
-  basxpsi(:,:,irk),                                                      &
-  basxpsi_so(:,:,irk),                                                   &
-  infolcao,                                                              &
-  infolcao_so
+                            e_of_k(:,irk),                               &
+                            pkn_tmp(:),  e_of_k_so(:,irk),               &
+                            pkn_tmp_so(:),                               &
+                            basxpsi(:,:,irk),                            &
+                            basxpsi_so(:,:,irk),                         &
+                            infolcao,                                    &
+                            infolcao_so
 
-! if run by a human do not restart
+!   if run by a human do not restart
 
   if(.not. lworkers) then
     inquire(unit = io62, exist=lex)
@@ -443,8 +443,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
     call execute_command_line("rm  band_info_rec.dat 2> /dev/null ")
   endif
 
-  open(unit = io62, file ="band_info_rec.dat", access="direct",          &
-  recl=ir_size)
+  open(unit = io62, file ="band_info_rec.dat", access="direct", recl=ir_size)
 
   irk_start=1
 
@@ -461,13 +460,13 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
     if (cworker== iworker) then
       irk_rd = -10
       read(io62,rec=irk, iostat=irec_err) irk_rd,                        &
-      e_of_k(:,irk),                                                     &
-      pkn_tmp(:), e_of_k_so(:,irk),                                      &
-      pkn_tmp_so(:),                                                     &
-      basxpsi(:,:,irk),                                                  &
-      basxpsi_so(:,:,irk),                                               &
-      infolcao,                                                          &
-      infolcao_so
+                                          e_of_k(:,irk),                 &
+                                          pkn_tmp(:), e_of_k_so(:,irk),  &
+                                          pkn_tmp_so(:),                 &
+                                          basxpsi(:,:,irk),              &
+                                          basxpsi_so(:,:,irk),           &
+                                          infolcao,                      &
+                                          infolcao_so
 
       pkn(irk,:) = pkn_tmp(:)
       pkn_so(irk,:) = pkn_tmp_so(:)
@@ -494,44 +493,44 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
       nocc = neig
 
       call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
-      flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
-      ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
-      sfact, veff, icmplx,                                               &
-      nqnl, delqnl, vkb, nkb,                                            &
-      ntype, natom, rat, adot,                                           &
-      mtxd, hdiag, isort, qmod, ekpg, lkpg,                              &
-      psi, hpsi, ei,                                                     &
-      vscr, kmscr,                                                       &
-      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
-      mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
-      mxdbnd, mxdscr, mxdlao)
+          flgpsd, ipr, ifail, icmax, iguess, epspsi,                     &
+          ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
+          sfact, veff, icmplx,                                           &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
+          psi, hpsi, ei,                                                 &
+          vscr, kmscr,                                                   &
+          latorb, norbat, nqwf, delqwf, wvfao, lorb,                     &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
+          mxdbnd, mxdscr, mxdlao)
 
       do j=1, neig
         ev(j) = ei(j)
       enddo
 
 !-----------------------------------------------------------------------
-     call Fold_GetPkn(pkn,iMinv,idet,irk,kgv,isort,psi, nrk2, neig,      &
-     mtxd, ng, mxdgve,mxddim,mxdbnd)
+     call Fold_GetPkn(pkn, iMinv, idet, irk, kgv, isort, psi, nrk2,      &
+         neig, mtxd, ng, mxdgve, mxddim, mxdbnd)
 !-----------------------------------------------------------------------
 
-      call atomic_orbital_c16(rkpt,mtxd,isort,1,                         &
-      nbaslcao,baslcao_aux,infolcao,                                     &
-      ng,kgv,                                                            &
-      norbat,nqwf,delqwf,wvfao,lorb,                                     &
-      ntype,natom,rat,adot,                                              &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
+      call atomic_orbital_c16(rkpt, mtxd, isort, 1,                      &
+          nbaslcao, baslcao_aux, infolcao,                               &
+          ng, kgv,                                                       &
+          norbat, nqwf, delqwf, wvfao, lorb,                             &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
 
-      call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao_aux,        &
-      mxddim,baslcao_aux,mxddim,C_ZERO,S,mxdorb)
+      call zgemm('C', 'N', nbaslcao, nbaslcao, mtxd, C_UM, baslcao_aux,  &
+          mxddim, baslcao_aux, mxddim, C_ZERO, S, mxdorb)
 
-      call  GetS12(S,S12,S12_inv,Swrk,ev_wrk,nbaslcao)
+      call  ao_int_GetS12(S, S12, S12_inv, Swrk, ev_wrk, nbaslcao)
 
-      call zgemm('n','n',mtxd,nbaslcao,nbaslcao,C_UM,baslcao_aux,        &
-      mxddim, S12,mxdorb,C_ZERO,baslcao,mxddim)
+      call zgemm('n', 'n', mtxd, nbaslcao, nbaslcao, C_UM, baslcao_aux,  &
+          mxddim, S12, mxdorb, C_ZERO, baslcao, mxddim)
 
-      call zgemm('C','N',nbaslcao,nbaslcao,mtxd,C_UM,baslcao,            &
-      mxddim, baslcao,mxddim,C_ZERO,S,mxdorb)
+      call zgemm('C', 'N', nbaslcao, nbaslcao, mtxd, C_UM, baslcao,      &
+          mxddim, baslcao, mxddim, C_ZERO, S, mxdorb)
 
       do n = 1,nbaslcao
         sq = ZERO
@@ -544,8 +543,8 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
         enddo
       enddo
 
-      call zgemm('C','N',nbaslcao,neig,mtxd,C_UM,baslcao,mxddim,         &
-      psi,mxddim,C_ZERO,prod,mxdorb)
+      call zgemm('C', 'N', nbaslcao, neig, mtxd, C_UM, baslcao, mxddim,  &
+          psi, mxddim, C_ZERO, prod, mxdorb)
 
       do n = 1,neig
       do j = 1,nbaslcao
@@ -554,12 +553,12 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
       enddo
 
       lpsiso = .true.
-      call spin_orbit_perturb(rkpt,mtxd,isort,                           &
-      neig,psi,ei,ei_so,psi_so,lpsiso ,                                  &
-      ng,kgv,                                                            &
-      nqnl,delqnl,vkb,nkb,                                               &
-      ntype,natom,rat,adot,                                              &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          neig, psi, ei, ei_so, psi_so, lpsiso ,                         &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
       do i=1,nbaslcao
        infolcao_so(:,2*i)   = infolcao(:,i)
@@ -568,47 +567,46 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 
       do i=1,nbaslcao
       do j=1,mtxd
-        psi_in(2*j-1,2*i         ) = baslcao(j,i)
-        psi_in(2*j  ,2*i         ) = C_ZERO
-        psi_in(2*j-1,2*i-1       ) = C_ZERO
-        psi_in(2*j  ,2*i-1       ) = baslcao(j,i)
+        psi_in(2*j-1,2*i  ) = baslcao(j,i)
+        psi_in(2*j  ,2*i  ) = C_ZERO
+        psi_in(2*j-1,2*i-1) = C_ZERO
+        psi_in(2*j  ,2*i-1) = baslcao(j,i)
       enddo
       enddo
 
-      call zgemm('c','n',2*nbaslcao,2*neig,2*mtxd,                       &
-      C_UM,psi_in,2*mxddim,psi_so,2*mxddim,C_ZERO,prod_so,2*mxdorb)
+      call zgemm('c', 'n', 2*nbaslcao, 2*neig, 2*mtxd, C_UM, psi_in,     &
+          2*mxddim, psi_so, 2*mxddim, C_ZERO, prod_so, 2*mxdorb)
 
       do n = 1,2*neig
       do j = 1,2*nbaslcao
-        basxpsi_so(j,n,irk) = real(prod_so(j,n)*conjg(prod_so(j,n)),     &
-        REAL64)
+        basxpsi_so(j,n,irk) = real(prod_so(j,n)*conjg(prod_so(j,n)),REAL64)
       enddo
       enddo
 
 !-----------------------------------------------------------------------
       call Fold_GetPknSO(pkn_so,iMinv,idet,irk,kgv,isort,psi_so, nrk2,   &
-       2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)
+          2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdbnd)
 !-----------------------------------------------------------------------
 
-      call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                      &
-      mxddim,mxdbnd)
+      call kinetic_energy(neig, mtxd, ekpg, psi, ekpsi,                  &
+          mxddim,mxdbnd)
 
       ipr = 1
       nrka = -1
-      call print_eig(ipr,irk,labelk,nrka,rkpt,                           &
-      mtxd,icmplx,neig,psi,                                              &
-      adot,ei,ekpsi,isort,kgv,                                           &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
+          mtxd, icmplx, neig, psi,                                       &
+          adot, ei, ekpsi, isort, kgv,                                   &
+          mxddim, mxdbnd, mxdgve)
 
       if(ipr == 2) then
-        call kinetic_energy_so(neig,mtxd,ekpg,psi_so,ekpsi_so,           &
-        mxddim,mxdbnd)
+        call kinetic_energy_so(neig, mtxd, ekpg, psi_so, ekpsi_so,       &
+            mxddim, mxdbnd)
       endif
 
-      call print_eig_so(ipr,irk,labelk,nrka,rkpt,                        &
-      mtxd,neig,psi_so,                                                  &
-      adot,ei_so,ekpsi_so,isort,kgv,                                     &
-      mxddim,mxdbnd,mxdgve)
+      call print_eig_so(ipr, irk, labelk, nrka, rkpt,                    &
+          mtxd, neig, psi_so,                                            &
+          adot, ei_so, ekpsi_so, isort, kgv,                             &
+          mxddim, mxdbnd, mxdgve)
 
 
       write(6,'( "iworker #",i5, "   writing in irk # "                  &
@@ -621,12 +619,12 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
         pkn_tmp_so(:) = pkn_so(irk,:)
 
         write(io62,rec=irk) irk, ev(:),                                  &
-        pkn_tmp(:),ei_so(:),                                             &
-        pkn_tmp_so(:),                                                   &
-        basxpsi(:,:,irk),                                                &
-        basxpsi_so(:,:,irk),                                             &
-        infolcao,                                                        &
-        infolcao_so
+                            pkn_tmp(:),ei_so(:),                         &
+                            pkn_tmp_so(:),                               &
+                            basxpsi(:,:,irk),                            &
+                            basxpsi_so(:,:,irk),                         &
+                            infolcao,                                    &
+                            infolcao_so
 
       endif
 
@@ -636,13 +634,13 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 
   do irk = 1, nrk2
     read(io62,rec=irk, iostat=irec_err) irk_rd,                          &
-      e_of_k(:,irk),                                                     &
-      pkn_tmp(:),  e_of_k_so(:,irk),                                     &
-      pkn_tmp_so(:),                                                     &
-      basxpsi(:,:,irk),                                                  &
-      basxpsi_so(:,:,irk),                                               &
-      infolcao,                                                          &
-      infolcao_so
+                                        e_of_k(:,irk),                   &
+                                        pkn_tmp(:),  e_of_k_so(:,irk),   &
+                                        pkn_tmp_so(:),                   &
+                                        basxpsi(:,:,irk),                &
+                                        basxpsi_so(:,:,irk),             &
+                                        infolcao,                        &
+                                        infolcao_so
 
       pkn(irk,:) = pkn_tmp(:)
       pkn_so(irk,:) = pkn_tmp_so(:)
@@ -684,19 +682,19 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
 
 !-----------------------------------------------------------------------
-  call out_band_fold_xmgrace('band_fld_ref.agr',iotape,                  &
-  title,subtitle,nstyle,                                                 &
-  pkn,neig,nrk2,xk,e_of_k,eref,nocc,                                     &
-  nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+  call out_band_fold_xmgrace('band_fld_ref.agr', iotape,                 &
+      title, subtitle, nstyle,                                           &
+      pkn, neig, nrk2, xk, e_of_k, eref, nocc,                           &
+      nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 !-----------------------------------------------------------------------
 
-  call out_band_info_write('BAND.DAT',iotape,                            &
-  title,subtitle,nstyle,                                                 &
-  neig,nrk2,rk,rk_fld,xk,e_of_k,eref,nocc,                               &
-  nbaslcao,infolcao,basxpsi,pkn,                                         &
-  nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
+  call out_band_info_write('BAND.DAT', iotape,                           &
+      title, subtitle, nstyle,                                           &
+      neig, nrk2, rk, rk_fld, xk, e_of_k, eref, nocc,                    &
+      nbaslcao, infolcao, basxpsi, pkn,                                  &
+      nvert, xcvert, nlines, ljump, nkstep, label, xklab, ntype, nameat)
 
-  call out_band_eref(neig,nrk2,ztot,efermi,1,1,e_of_k_so,eref,nocc)
+  call out_band_eref(neig, nrk2, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
 
   n = min(nint(ztot + 0.01),2*neig)
   eref = e_of_k_so(n,1)
@@ -709,17 +707,17 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   nocc = n
 
 !-----------------------------------------------------------------------
-  call out_band_fold_xmgrace('band_fld_ref_so.agr',iotape,               &
-  title,subtitle,nstyle,                                                 &
-  pkn_so,2*neig,nrk2,xk,e_of_k_so,eref,nocc,                             &
-  nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+  call out_band_fold_xmgrace('band_fld_ref_so.agr', iotape,              &
+      title, subtitle, nstyle,                                           &
+      pkn_so, 2*neig, nrk2, xk, e_of_k_so, eref, nocc,                   &
+      nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 !-----------------------------------------------------------------------
 
-  call out_band_info_write('BAND_SO.DAT',iotape,                         &
-  title,subtitle,nstyle,                                                 &
-  2*neig,nrk2,rk,rk_fld,xk,e_of_k_so,eref,nocc,                          &
-  2*nbaslcao,infolcao_so,basxpsi_so,pkn_so,                              &
-  nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
+  call out_band_info_write('BAND_SO.DAT', iotape,                        &
+      title, subtitle, nstyle,                                           &
+      2*neig, nrk2, rk, rk_fld, xk, e_of_k_so, eref, nocc,               &
+      2*nbaslcao, infolcao_so, basxpsi_so, pkn_so,                       &
+      nvert, xcvert, nlines, ljump, nkstep, label, xklab, ntype, nameat)
 
 !------------------------------------------------------------------
   deallocate(pkn)

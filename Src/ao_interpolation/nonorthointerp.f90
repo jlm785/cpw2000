@@ -118,39 +118,13 @@ module NonOrthoInterp
 
     this % fiData % S_k(:,:,ikpt) = S(:,:)
 
-      call   GetHpw(this%nband,this%nequal,Hao,S,ev_pw,                            &
+      call   ao_int_GetHpw(this%nband,this%nequal,Hao,S,ev_pw,                     &
     &               this%fiData%Ham_k(:,:,ikpt),this%S12,this%ev_ao,               &
     &               this%S12_inv,this%Uao,this%Hao_tr, this%wrk, this%ev_s)
 
 
   end subroutine NonOrthoInterpSetGridData
 
-   subroutine NonOrthoInterpRun2(this,Hao,S,rkpt,ev)
-    implicit none
-    type(noiData_t) :: this
-    real(REAL64) rkpt(3)
-    real(REAL64) ev(this%nband)
-
-    integer i,j
-
-    complex(REAL64) Hao(this%nband,this%nband)
-    complex(REAL64) S(this%nband,this%nband)
-
-    call fi_hamiltonian_get_hk(this%fiData,rkpt,Hao, this%nband)
-    call fi_hamiltonian_get_sk(this%fiData,rkpt,S,   this%nband)
-
-    do i=1,this%nband
-    do j=i+1,this%nband
-      Hao(j,i) = conjg(Hao(i,j))
-      S(j,i)   = conjg(S(i,j))
-    enddo
-    enddo
-
-
-
-    call DiagByLowdin(this%nband,Hao,S,this%S12,ev,this%S12_inv,this%Uao,this%Hao_tr, this%wrk, this%ev_s)
-
-  end subroutine NonOrthoInterpRun2
 
     subroutine NonOrthoInterpWriteToFile(this)
     implicit none
@@ -409,38 +383,3 @@ module NonOrthoInterp
 
 end module
 
-
-subroutine PrintMatrix(iunit,lab,M,n,nmax,prtreal)
-  implicit none
-  integer, parameter          :: REAL64 = selected_real_kind(12)
-  integer            :: iunit, n, nmax
-  integer            :: i,j
-  complex(REAL64)    :: M(n,n)
-  logical            :: prtreal
-  character(len=4)   :: lab
-
-  return
-
-  write(iunit,*) '*m--------------------------------------------------------------------'
-  write(6,*) '*m--------------------------------------------------------------------'
-
-  do i=1, nmax
-    if(prtreal) then
-      write(iunit,'(" *m",a4,i3,100f8.4)') lab,i, (ABS(M(i,j)), j=1,nmax)
-      write(6    ,'(" *m",a4,i3,100f8.4)') lab,i, (ABS(M(i,j)), j=1,nmax)
-!
-      write(iunit,'(" *m",a4,i3,100f8.4)') lab,i, (IMAG(M(i,j)), j=1,nmax)
-      write(6    ,'(" *m",a4,i3,100f8.4)') lab,i, (IMAG(M(i,j)), j=1,nmax)
-      write(6,*) '*m-----'
-!
-    else
-      write(iunit,'(" *m",a4,i3,100f8.4)') lab,i, (M(i,j), j=1,nmax)
-      write(6    ,'(" *m",a4,i3,100f8.4)') lab,i, (M(i,j), j=1,nmax)
-    endif
-  enddo
-
-  write(iunit,*) '*m--------------------------------------------------------------------'
-  write(6,*) '*m--------------------------------------------------------------------'
-
-
-end subroutine PrintMatrix

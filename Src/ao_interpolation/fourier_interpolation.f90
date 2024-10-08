@@ -37,15 +37,15 @@ module FourierInterpolation
     integer                       :: nrpts
     integer                       :: num_kpts
     real(REAL64),    allocatable  :: kpt_latt(:,:)
-        
+
     complex(REAL64), allocatable  ::  dh0drk_GridK(:,:,:,:)     ! d <Psi|H|Psi> d k
     complex(REAL64), allocatable  ::  dh0drk_GridR(:,:,:,:)     ! d <Psi|H|Psi> d k
-    
-    
+
+
   end type
-  
+
 !  integer, parameter, public          :: dp = selected_real_kind(15,300)
-  
+
   ! Module variables
 !  logical, save :: ham_have_setup=.false.
 !  logical, save :: have_ham_r=.false.
@@ -55,7 +55,7 @@ module FourierInterpolation
 contains
 
   subroutine fi_hamiltonian_get_hk(this,rkpt,ham, nband)
-    integer, parameter          :: REAL64 = selected_real_kind(12)        
+    integer, parameter          :: REAL64 = selected_real_kind(12)
     type(fiData_t):: this
     real(REAL64), parameter     :: pi=3.141592653589793238462643383279_REAL64
     real(REAL64), parameter     :: twopi=2.0_REAL64*pi
@@ -63,15 +63,15 @@ contains
     complex(REAL64), parameter  :: cmplx_0 = (0.0_REAL64,0.0_REAL64)
 
     integer nband
-    real(REAL64) rkpt(3)    
+    real(REAL64) rkpt(3)
     complex(REAL64) ham(nband,nband)
 
     real(REAL64) rdotk
     complex(REAL64) fac
-    
-    integer loop_rpt  
-!    integer loop_kpt 
-    
+
+    integer loop_rpt
+!    integer loop_kpt
+
     ham=cmplx_0
     do loop_rpt=1,this%nrpts
         rdotk=twopi*dot_product(rkpt,this%irvec(:,loop_rpt))
@@ -81,9 +81,9 @@ contains
   end subroutine fi_hamiltonian_get_hk
 
 
-  subroutine fi_hamiltonian_get_sk(this,rkpt,S, nband)  
+  subroutine fi_hamiltonian_get_sk(this,rkpt,S, nband)
     implicit none
-    integer, parameter          :: REAL64 = selected_real_kind(12)        
+    integer, parameter          :: REAL64 = selected_real_kind(12)
     type(fiData_t):: this
     real(REAL64), parameter     :: pi=3.141592653589793238462643383279_REAL64
     real(REAL64), parameter     :: twopi=2.0_REAL64*pi
@@ -91,15 +91,15 @@ contains
     complex(REAL64), parameter  :: cmplx_0 = (0.0_REAL64,0.0_REAL64)
 
     integer nband
-    real(REAL64) rkpt(3)    
+    real(REAL64) rkpt(3)
     complex(REAL64) S(nband,nband)
 
     real(REAL64) rdotk
     complex(REAL64) fac
-    
-    integer loop_rpt  
+
+    integer loop_rpt
 !    integer loop_kpt
-    
+
     S=cmplx_0
     do loop_rpt=1,this%nrpts
         rdotk=twopi*dot_product(rkpt,this%irvec(:,loop_rpt))
@@ -107,10 +107,10 @@ contains
         S=S+fac*this%S_r(:,:,loop_rpt)
     end do
   end subroutine fi_hamiltonian_get_sk
-          
+
   subroutine fi_hamiltonian_get_hr(this)
     implicit none
-    integer, parameter          :: REAL64 = selected_real_kind(12)        
+    integer, parameter          :: REAL64 = selected_real_kind(12)
     type(fiData_t):: this
     real(REAL64), parameter     :: pi=3.141592653589793238462643383279_REAL64
     real(REAL64), parameter     :: twopi=2.0_REAL64*pi
@@ -120,10 +120,10 @@ contains
     integer loop_kpt,loop_rpt
     real(REAL64) rdotk
     complex(REAL64) fac
-    
+
     this%ham_r = cmplx_0
     this%S_r = cmplx_0
-    
+
     do loop_rpt=1,this%nrpts
       do loop_kpt=1,this%num_kpts
           rdotk=twopi*dot_product(this%kpt_latt(:,loop_kpt),real(this%irvec(:,loop_rpt),REAL64))
@@ -132,7 +132,7 @@ contains
           this%S_r(:,:,loop_rpt)=this%S_r(:,:,loop_rpt)+fac*this%S_k(:,:,loop_kpt)
         enddo
       call progress(loop_rpt,this%nrpts)
-      call flush(6)        
+      call flush(6)
     enddo
 
   end subroutine fi_hamiltonian_get_hr
@@ -140,25 +140,25 @@ contains
 
   subroutine fi_hamiltonian_get_Op_k(this,rkpt,Op_R,Op_k, nband)
     implicit none
-    integer, parameter          :: REAL64 = selected_real_kind(12)        
+    integer, parameter          :: REAL64 = selected_real_kind(12)
     type(fiData_t):: this
     real(REAL64), parameter     :: pi=3.141592653589793238462643383279_REAL64
     real(REAL64), parameter     :: twopi=2.0_REAL64*pi
     complex(REAL64), parameter  :: cmplx_i = (0.0_REAL64,1.0_REAL64)
     complex(REAL64), parameter  :: cmplx_0 = (0.0_REAL64,0.0_REAL64)
     integer nband
-    real(REAL64) rkpt(3)    
+    real(REAL64) rkpt(3)
 
     complex(REAL64) Op_k(nband,nband,3)
     complex(REAL64) Op_R(nband,nband,3,this%nrpts)
 
     real(REAL64) rdotk
     complex(REAL64) fac
-    
-    integer loop_rpt  
-        
+
+    integer loop_rpt
+
     Op_k(:,:,:)=cmplx_0
-        
+
     do loop_rpt=1,this%nrpts
         rdotk=twopi*dot_product(rkpt,this%irvec(:,loop_rpt))
         fac=exp(cmplx_i*rdotk)/real(this%ndegen(loop_rpt),REAL64)
@@ -166,13 +166,13 @@ contains
         Op_k(:,:,2)=Op_k(:,:,2)+fac*Op_r(:,:,2,loop_rpt)
         Op_k(:,:,3)=Op_k(:,:,3)+fac*Op_r(:,:,3,loop_rpt)
     end do
-    
+
   end subroutine fi_hamiltonian_get_Op_k
 
   subroutine fi_hamiltonian_set_in_Rgrid(this,Op_k,Op_R,nband)
     implicit none
-    integer, parameter          :: REAL64 = selected_real_kind(12)    
-    type(fiData_t):: this  
+    integer, parameter          :: REAL64 = selected_real_kind(12)
+    type(fiData_t):: this
     real(REAL64), parameter     :: pi=3.141592653589793238462643383279_REAL64
     real(REAL64), parameter     :: twopi=2.0_REAL64*pi
     complex(REAL64), parameter  :: cmplx_i = (0.0_REAL64,1.0_REAL64)
@@ -181,14 +181,14 @@ contains
     integer loop_kpt,loop_rpt
     real(REAL64) rdotk
     complex(REAL64) fac
-    
+
     integer nband
-    
+
     complex(REAL64) Op_k(nband,nband,3,this%num_kpts)
     complex(REAL64) Op_R(nband,nband,3,this%nrpts)
 
     Op_R(:,:,:,:) = cmplx_0
-    
+
     do loop_rpt=1,this%nrpts
       do loop_kpt=1,this%num_kpts
           rdotk=twopi*dot_product(this%kpt_latt(:,loop_kpt),real(this%irvec(:,loop_rpt),REAL64))
@@ -197,12 +197,12 @@ contains
           Op_R(:,:,2,loop_rpt)=Op_R(:,:,2,loop_rpt)+fac*Op_k(:,:,2,loop_kpt)
           Op_R(:,:,3,loop_rpt)=Op_R(:,:,3,loop_rpt)+fac*Op_k(:,:,3,loop_kpt)
         enddo
-        
+
 !        write(6,FMT="(3x,A1,A,t21,F6.2,A)",ADVANCE="NO") achar(13), &
 !        & " Percent Complete: ", (real(loop_rpt)/real(this%nrpts))*100.0, "%"
       call progress(loop_rpt,this%nrpts)
       call flush(6)
-        
+
     enddo
 
   end subroutine fi_hamiltonian_set_in_Rgrid
@@ -211,32 +211,32 @@ contains
   subroutine fi_hamiltonian_setup(this,nband,n1,n2,n3,ws_n1,ws_n2,ws_n3,adot)
     implicit none
     type(fiData_t):: this
-    
+
     integer :: ierr
 
-    integer nband    
+    integer nband
     integer n1,n2,n3
     integer ws_n1, ws_n2,ws_n3
     integer i,j,k,ikpt
     real(REAL64) adot(3,3)
 
     complex(REAL64), parameter  :: cmplx_0 = (0.0_REAL64,0.0_REAL64)
-        
+
     this%num_kpts = n1*n2*n3
     allocate(this%kpt_latt(3,this%num_kpts))
-    
+
     this%mp_grid(1) = n1
     this%mp_grid(2) = n2
     this%mp_grid(3) = n3
-    
+
     this%real_metric(:,:) = adot(:,:)
 
     write(*,'("in setup nband, nk_grid, ws_search_size", 7i5)') nband,n1,n2,n3, ws_n1, ws_n2, ws_n3
-    
+
     this%ws_search_size(1) = ws_n1
     this%ws_search_size(2) = ws_n2
     this%ws_search_size(3) = ws_n3
-    
+
 
 !    if (ham_have_setup) return
 
@@ -270,74 +270,74 @@ contains
     !
 
 !    ham_have_setup = .true.
-    
+
     ikpt=1
     do i=1,n1
     do j=1,n2
     do k=1,n3
       this%kpt_latt(1,ikpt) = (i-1)*1.0D0/n1
       this%kpt_latt(2,ikpt) = (j-1)*1.0D0/n2
-      this%kpt_latt(3,ikpt) = (k-1)*1.0D0/n3    
+      this%kpt_latt(3,ikpt) = (k-1)*1.0D0/n3
       ikpt=ikpt+1
     enddo
     enddo
     enddo
-    
+
 !    write(*,*) 'kpt lattice'
 !    do ikpt=1,this%num_kpts
 !      write(*,'(3f8.5)') this%kpt_latt(:,ikpt)
 !    enddo
-        
+
     return
   end subroutine fi_hamiltonian_setup
-  
-  
-  subroutine fi_hamiltonian_wigner_seitz_uniform(this,count_pts, iprint)
-    implicit none
-    
-    ! uniform conjugate grid of r-points irvec. CLR
-
-    type(fiData_t):: this
-    
-    integer i, n1, n2, n3, iprint
-    logical count_pts
-    
-    integer, parameter :: stdout = 6
-    
-    
-    if (count_pts) then 
-      this %nrpts = this%mp_grid(1)*this%mp_grid(2)*this%mp_grid(3)
-      return    
-    endif
-        
-    i=1    
-    do n1=-this%mp_grid(1)/2 + 1, this%mp_grid(1)/2 
-    do n2=-this%mp_grid(2)/2 + 1, this%mp_grid(2)/2 
-    do n3=-this%mp_grid(3)/2 + 1, this%mp_grid(3)/2     
-          this%irvec(1, i) = n1
-          this%irvec(2, i) = n2
-          this%irvec(3, i) = n3
-          this%ndegen(i) = 1.0_REAL64
-          i=i+1
-    enddo
-    enddo
-    enddo
-    
-    write(*,*) 'i=',i
-
-    if (iprint >= 3 ) then
-      write (stdout, '(1x,i4,a,/)') this%nrpts, ' lattice points in Wigner-Seitz supercell:'
-      do i = 1, this%nrpts
-        write (stdout, '(4x,a,3(i3,1x),a,i2)') '  vector ', this%irvec(1, i), this%irvec(2, i), &
-          this%irvec(3, i), '  degeneracy: ', this%ndegen(i)
-      enddo
-      
-    endif
 
 
+!   subroutine fi_hamiltonian_wigner_seitz_uniform(this,count_pts, iprint)
+!     implicit none
+!
+!     ! uniform conjugate grid of r-points irvec. CLR
+!
+!     type(fiData_t):: this
+!
+!     integer i, n1, n2, n3, iprint
+!     logical count_pts
+!
+!     integer, parameter :: stdout = 6
+!
+!
+!     if (count_pts) then
+!       this %nrpts = this%mp_grid(1)*this%mp_grid(2)*this%mp_grid(3)
+!       return
+!     endif
+!
+!     i=1
+!     do n1=-this%mp_grid(1)/2 + 1, this%mp_grid(1)/2
+!     do n2=-this%mp_grid(2)/2 + 1, this%mp_grid(2)/2
+!     do n3=-this%mp_grid(3)/2 + 1, this%mp_grid(3)/2
+!           this%irvec(1, i) = n1
+!           this%irvec(2, i) = n2
+!           this%irvec(3, i) = n3
+!           this%ndegen(i) = 1.0_REAL64
+!           i=i+1
+!     enddo
+!     enddo
+!     enddo
+!
+!     write(*,*) 'i=',i
+!
+!     if (iprint >= 3 ) then
+!       write (stdout, '(1x,i4,a,/)') this%nrpts, ' lattice points in Wigner-Seitz supercell:'
+!       do i = 1, this%nrpts
+!         write (stdout, '(4x,a,3(i3,1x),a,i2)') '  vector ', this%irvec(1, i), this%irvec(2, i), &
+!           this%irvec(3, i), '  degeneracy: ', this%ndegen(i)
+!       enddo
+!
+!     endif
+!
+!
+!
+!   end subroutine fi_hamiltonian_wigner_seitz_uniform
 
-  end subroutine fi_hamiltonian_wigner_seitz_uniform
-  
   !================================================================================!
   subroutine fi_hamiltonian_wigner_seitz(this,count_pts, iprint)
     implicit none
@@ -350,7 +350,7 @@ contains
     !================================================================================!
 
     type(fiData_t):: this
-    
+
     integer, parameter :: stdout = 6
 
     real(REAL64), parameter:: eps7=1.0D-7
@@ -376,7 +376,7 @@ contains
     do i = 1, 3
       dist_dim = dist_dim*((this%ws_search_size(i) + 1)*2 + 1)
     end do
-    
+
     allocate (dist(dist_dim), stat=ierr)
 
     ! The Wannier functions live in a supercell of the real space unit cell
@@ -478,9 +478,9 @@ contains
   end subroutine fi_hamiltonian_wigner_seitz
 
   !============================================!
-  
-  
-  
-  
+
+
+
+
 
 end module

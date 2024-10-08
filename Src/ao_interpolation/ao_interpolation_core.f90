@@ -11,7 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-subroutine GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
+
+! cleaned in October 2024, JLM.  Needs some further simplification and clear documentation
+! ao_int_OrthoH and ao_int_GetHpw are only called once and subroutine or calling subroutine
+! have few executable lines.
+
+subroutine ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
   implicit none
 
@@ -59,7 +64,7 @@ subroutine GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
   if(info /= 0) then
     write(6,*)
-    write(6,*) '    STOPPED in GetS12'
+    write(6,*) '    STOPPED in ao_int_GetS12'
     write(6,*) '    diagonalization of S failed, info = ', info
      write(6,*)
 
@@ -75,7 +80,7 @@ subroutine GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
     if(ev_wrk(i) <= ZERO) then
       write(6,*)
-      write(6,*) '    STOPPED in GetS12'
+      write(6,*) '    STOPPED in ao_int_GetS12'
       write(6,*) '    overlap matrix is not positive definite!'
       write(6,*) '    negative eigenvalue', i, ev_wrk(i)
       write(6,*)
@@ -108,16 +113,13 @@ subroutine GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
   return
 
-end subroutine GetS12
+end subroutine ao_int_GetS12
 
 
 
-!   THIS SUBROUNTINE IS NOT USED   NonOrthoInterpRun2   IS NEVER CALLED
-
-!   subroutine DiagByLowdin(nband,Hao,S,S12,ev_ao,S12_inv,Uao,Hao_tr, wrk, ev_s)
 
 
-subroutine GetHpw(nband, nequal, Hao, S, ev_pw,                          &
+subroutine ao_int_GetHpw(nband, nequal, Hao, S, ev_pw,                   &
                   Hpw, S12, ev_ao,                                       &
                   S12_inv, Uao, Hao_tr, wrk, ev_s)
 
@@ -175,7 +177,7 @@ subroutine GetHpw(nband, nequal, Hao, S, ev_pw,                          &
   complex(REAL64), parameter         :: C_UM = cmplx(UM,ZERO,REAL64)
 
 
-  call GetS12(S, S12, S12_inv, wrk, ev_s, nband)
+  call ao_int_GetS12(S, S12, S12_inv, wrk, ev_s, nband)
 
 !    Hao_tr = matmul(S12,matmul(Hao,S12))
 !    call ZMul(transA,transB,A,B,C,n)
@@ -192,7 +194,7 @@ subroutine GetHpw(nband, nequal, Hao, S, ev_pw,                          &
 
   if(info /= 0) then
     write(6,*)
-    write(6,*) '    STOPPED in GetHpw'
+    write(6,*) '    STOPPED in ao_int_GetHpw'
     write(6,*) '    diagonalization of S failed, info = ', info
     write(6,*)
 
@@ -236,11 +238,14 @@ subroutine GetHpw(nband, nequal, Hao, S, ev_pw,                          &
                 C_ZERO,Hpw,nband)
 
 
-end subroutine GetHpw
+end subroutine ao_int_GetHpw
 
 
 
-subroutine OrthoH(H,S,Hw,n)
+
+
+
+subroutine ao_int_OrthoH(H,S,Hw,n)
 
   implicit none
 
@@ -262,7 +267,7 @@ subroutine OrthoH(H,S,Hw,n)
   allocate(wrk(n,n))
   allocate(ev_wrk(n))
 
-  call GetS12(S,S12,S12_inv,wrk,ev_wrk,n)
+  call ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, n)
 
 !  call ZMul('N','N',H,S12,wrk,n)
   call zgemm('N','N', n,n,n, C_UM,H,n, S12,n,        &
@@ -275,12 +280,12 @@ subroutine OrthoH(H,S,Hw,n)
 
   return
 
-end subroutine OrthoH
+end subroutine ao_int_OrthoH
 
 
 
 
-subroutine DiagByLowdin2(nband, Hao, S, ev, psi)
+subroutine ao_int_DiagByLowdin(nband, Hao, S, ev, psi)
 
   implicit none
 
@@ -326,7 +331,7 @@ subroutine DiagByLowdin2(nband, Hao, S, ev, psi)
   allocate(ev_s(nband))
 
 
-  call GetS12(S, S12, S12_inv, wrk, ev_s, nband)
+  call ao_int_GetS12(S, S12, S12_inv, wrk, ev_s, nband)
 
 !    call ZMul('N','N',Hao,S12,wrk,nband)
   call zgemm('N','N', nband,nband,nband, C_UM,Hao,nband, S12,nband,        &
@@ -340,7 +345,7 @@ subroutine DiagByLowdin2(nband, Hao, S, ev, psi)
   if(info /= 0) then
 
     write(6,*)
-    write(6,*) '     STOPPED IN DiagByLowdin2'
+    write(6,*) '     STOPPED IN ao_int_DiagByLowdin'
     write(6,*) '     Hao_tr diagonalization failed, info = ', info
     write(6,*)
 
@@ -352,61 +357,7 @@ subroutine DiagByLowdin2(nband, Hao, S, ev, psi)
 
   return
 
-end subroutine DiagByLowdin2
+end subroutine ao_int_DiagByLowdin
 
 
 
-subroutine ZMul(transA,transB,A,B,C,n)
-  implicit none
-  integer, parameter          :: REAL64 = selected_real_kind(12)
-  integer n
-  character(len=1)     ::  transA,transB
-  complex(REAL64) A(n,n),B(n,n),C(n,n)
-  complex(REAL64), parameter:: zum   = (1.0D0,0.0D0)
-  complex(REAL64), parameter:: zzero = (0.0D0,0.0D0)
-  if(n>2) stop
-end subroutine
-
-
-!   THIS SUBROUNTINE IS NOT USED   NonOrthoInterpRun2   IS NEVER CALLED
-
-!   subroutine DiagByLowdin(nband,Hao,S,S12,ev_ao,S12_inv,Uao,Hao_tr, wrk, ev_s)
-
-subroutine DiagByLowdin(nband,Hao,S,S12,ev_ao,S12_inv,Uao,Hao_tr, wrk, ev_s)
-  implicit none
-  integer, parameter          :: REAL64 = selected_real_kind(12)
-
-
-!      input
-  integer nband
-
-  complex(REAL64)                    :: Hao(nband,nband)
-  complex(REAL64)                    :: S(nband,nband)
-
-!      output
-  complex(REAL64)                    :: S12(nband,nband)
-  real(REAL64)                       :: ev_ao(nband)
-
-
-!      wrk
-  complex(REAL64)                    :: S12_inv(nband,nband)
-  complex(REAL64)                    :: Uao(nband,nband)
-  complex(REAL64)                    :: Hao_tr(nband,nband)
-  complex(REAL64)                    :: wrk(nband,nband)
-
-  real(REAL64)                       :: ev_s(nband)
-
-  integer  ::  info
-
-!  misc
-
-!  integer i,j
-
-
-
-
-    if(nband > 2) stop
-
-
-
-end subroutine
