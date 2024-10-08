@@ -11,7 +11,22 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, norbat, lorb, mxdtyp, mxdatm, mxdlao)
+!>  Writes the input file for WannierTools (wt.in)
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.11
+!>  \date         2020, 7 October 2024.
+!>  \copyright    GNU Public License v2
+
+
+
+subroutine ao_interpolation_write_wt_in(mtb,                             &
+    ztot, adot, ntype, natom, nameat, rat, norbat, lorb,                 &
+    mxdtyp, mxdatm, mxdlao)
+
+! Written by Carlos Lois Reis at an unknown date.
+! Documentation, indentation, 7 October 2024. JLM
+
   use NonOrthoInterp
 
   implicit none
@@ -20,39 +35,51 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
 
   type (noiData_t) :: mtb
 
-  integer, intent(in)           :: mxdtyp
-  integer, intent(in)           :: mxdatm
-  integer, intent(in)           :: mxdlao
+! input
 
-  real(REAL64), intent(in)      :: ztot
 
-  real(REAL64), intent(in)      :: adot(3,3)
-  integer, intent(in)           :: ntype
-  integer, intent(in)           :: natom(mxdtyp)
-  character(len=2)              :: nameat(mxdtyp)
-  real(REAL64), intent(in)      :: rat(3,mxdatm,mxdtyp)
-  integer, intent(in)           :: norbat(mxdtyp)
-  integer, intent(in)           :: lorb(mxdlao, mxdtyp)
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
+  integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
-  real(REAL64) :: avec(3,3), bvec(3,3)
-  integer      :: ntotal_atoms, nproj, numoccupied
-  integer      :: itype, iatom, k, iorb, iline
+  real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
 
-  character(len=40) :: hrfile
-  logical           :: BulkBand_calc
-  integer           :: soc
-  real(REAL64)      :: e_fermi
 
-  character(len= 6) :: orb_name(9)
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
+  character(len=2)                   ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
+  real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
 
+  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+
+! local variables
+
+  real(REAL64)         ::  avec(3,3), bvec(3,3)
+  integer              ::  ntotal_atoms, nproj, numoccupied
+  integer              ::  itype, iatom, k, iorb, iline
+
+  character(len=40)    ::  hrfile
+  logical              ::  BulkBand_calc
+  integer              ::  soc
+  real(REAL64)         ::  e_fermi
+
+  character(len= 6)    ::  orb_name(9)
+
+  integer              ::  nlines,ndum
+  real(REAL64)         ::  k_start(3), k_end(3)
+  character(len=6)     ::  label_start, label_mid, label_end
+
+! constants
+
+  real(REAL64), parameter     ::  EV = 27.21138505_REAL64
+
+! namelists   I do not like them...
 
   namelist /tb_file/ hrfile
   namelist /control/ BulkBand_calc
   namelist /system/ soc, e_fermi, numoccupied
-
-  integer nlines,ndum
-  real(REAL64) k_start(3), k_end(3)
-  character(len=6) label_start, label_mid, label_end
 
 !
   orb_name(1) = "s"
@@ -65,14 +92,14 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   orb_name(8) = "dx2-y2"
   orb_name(9) = "dz2"
 
-  do iorb=1, 9
-    write(*,*) 'orb', iorb, orb_name(iorb)
+  do iorb = 1,9
+    write(6,*) 'orb', iorb, orb_name(iorb)
   enddo
 
   open(unit=22, file="wt.in", form="formatted")
 
   hrfile  = "mtb_hr.dat"
-  BulkBand_calc = .true.
+  BulkBand_calc = .TRUE.
 
 ! input needed here
 
@@ -84,7 +111,7 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
     numoccupied = nint(ztot)/2
   endif
 
-  e_fermi = mtb %eref * 27.21138505_REAL64
+  e_fermi = mtb%eref * EV
 
   write(22,nml=tb_file)
   write(22,nml=control)
@@ -100,7 +127,6 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   write(22,'(3f14.8)') (avec(k,3),k=1,3)
 
   write(22,*)
-
 
   ntotal_atoms = 0
   do itype=1, ntype
@@ -170,5 +196,7 @@ subroutine ao_interpolation_write_wt_in(mtb,ztot,adot,ntype,natom,nameat,rat, no
   write(22,*)
 
   close(unit=22)
-!end program
-end subroutine
+
+  return
+
+end subroutine ao_interpolation_write_wt_in

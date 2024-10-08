@@ -83,7 +83,7 @@
 
   iotape = 13
   call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot, ztot,    &
-                   neig,nrk2,nlines,nvert)
+                   neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))
   allocate(rk(3,nrk2))
@@ -155,7 +155,7 @@
   call out_band_xmgrace('band_interp_so.agr', iotape,                    &
       title, subtitle, nstyle,                                           &
       2*neig, nrk2, xk, e_of_k_so, eref, nocc,                           &
-      nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+      nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
   call out_band_dots_xmgrace('dots_band_interp_so.agr', iotape,          &
       nint(ztot), 2*neig, nrk2, xk, e_of_k_so,                           &
@@ -183,7 +183,7 @@
    call out_band_xmgrace('band_interp.agr', iotape,                      &
          title, subtitle, nstyle,                                        &
          neig, nrk2, xk, e_of_k, eref, nocc,                             &
-         nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+         nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
    call out_band_dots_xmgrace('dots_band_interp.agr', iotape,            &
          nint(ztot)/2, neig, nrk2, xk, e_of_k,                           &

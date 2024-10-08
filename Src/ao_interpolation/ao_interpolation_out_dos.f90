@@ -15,7 +15,7 @@
 !>  for the density of states
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.10
+!>  \version      5.11
 !>  \date         July 2014, 29 November 2021.
 !>  \copyright    GNU Public License v2
 
@@ -26,6 +26,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 ! Modified documentation May 2020. JLM
 ! Modfied, new dos file format June 2021. CLR
 ! Modified, e_of_k allocations, 14 Janury 2024. JLM
+! Modified, indentation, 6 October 2024. JLM
 
   use NonOrthoInterp
 
@@ -123,11 +124,11 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
   allocate(rk2(3,mxdpnt))
   allocate(w2(mxdpnt))
 
-  call int_pnt(nbandi2,nx2,ny2,nz2,sx2,sy2,sz2,ipr,                      &
-  adot,                                                                  &
-  ntrans,mtrx,                                                           &
-  nrk2,rk2,w2,nband2,indk2,kmap2,                                        &
-  mxdpnt,mxdbnd)
+  call int_pnt(nbandi2, nx2, ny2, nz2, sx2, sy2, sz2, ipr,               &
+      adot,                                                              &
+      ntrans, mtrx,                                                      &
+      nrk2, rk2, w2, nband2, indk2, kmap2,                               &
+      mxdpnt, mxdbnd)
 
   neig = nbandi2
 
@@ -166,10 +167,10 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
     rkpt(2) = rk2(2,irk)
     rkpt(3) = rk2(3,irk)
 
-    call fi_hamiltonian_get_hk(noiData%fiData,rkpt,noiData%Hao_tr, noiData%nband)
-    call fi_hamiltonian_get_sk(noiData%fiData,rkpt,noiData%Uao, noiData%nband)
+    call fi_hamiltonian_get_hk(noiData%fiData, rkpt, noiData%Hao_tr, noiData%nband)
+    call fi_hamiltonian_get_sk(noiData%fiData, rkpt, noiData%Uao, noiData%nband)
 
-    call DiagByLowdin2(noiData%nband,noiData%Hao_tr,noiData%Uao, ev_interp, psi)
+    call DiagByLowdin2(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, psi)
 
 !    call NonOrthoInterpRun(noiData,rkpt,ev_interp)
 
@@ -205,10 +206,10 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
   close(unit=190)
 
   call out_dos_write(filedos, io, title, subtitle,                       &
-  lscl, lso, identif,                                                    &
-  nrk2, nx2, ny2, nz2, ztot, adot, ntrans, mtrx,                         &
-  nband2, rk2, w2, indk2, kmap2, e_of_k, e_of_k_so,                      &
-  mxdpnt, mxdbnd)
+      lscl, lso, identif,                                                &
+      nrk2, nx2, ny2, nz2, ztot, adot, ntrans, mtrx,                     &
+      nband2, rk2, w2, indk2, kmap2, e_of_k, e_of_k_so,                  &
+      mxdpnt, mxdbnd)
 
 
   if(noiData%lso==1) then
@@ -237,69 +238,6 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
   return
 
 end subroutine ao_interpolation_out_dos
-
-subroutine DiagByLowdin2(nband,Hao,S, ev, psi)
-
-  implicit none
-  integer, parameter          :: REAL64 = selected_real_kind(12)
-
-
-!      input
-  integer nband
-
-  complex(REAL64)                    :: Hao(nband,nband)
-  complex(REAL64)                    :: S(nband,nband)
-
-!      output
-
-  real(REAL64)                       :: ev(nband)
-  complex(REAL64)                    :: psi(nband,nband)
-
-!      wrk
-
-  complex(REAL64), allocatable       :: S12(:,:)
-  real(REAL64), allocatable          :: ev_ao(:)
-
-  complex(REAL64), allocatable       :: S12_inv(:,:)
-  complex(REAL64), allocatable       :: Uao(:,:)
-  complex(REAL64), allocatable       :: Hao_tr(:,:)
-  complex(REAL64), allocatable       :: wrk(:,:)
-
-  real(REAL64), allocatable          :: ev_s(:)
-
-  integer  ::  info
-
-! begin
-
-  allocate(S12(nband,nband))
-  allocate(ev_ao(nband))
-
-  allocate(S12_inv(nband,nband))
-  allocate(Uao(nband,nband))
-  allocate(Hao_tr(nband,nband))
-  allocate(wrk(nband,nband))
-
-  allocate(ev_s(nband))
-
-
-    call GetS12(S,S12,S12_inv,wrk,ev_s,nband)
-
-    call ZMul('N','N',Hao,S12,wrk,nband)
-    call ZMul('N','N',S12,wrk,Hao_tr,nband)
-
-    call diag_c16(nband,Hao_tr,ev,psi,nband,info)
-
-
-    if(info /= 0) stop
-
-  deallocate(S12,ev_ao, S12_inv,Uao,Hao_tr,wrk,ev_s)
-
-  return
-
-end subroutine DiagByLowdin2
-
-
-
 
 
 

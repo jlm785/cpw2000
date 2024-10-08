@@ -40,6 +40,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Modified, allocation of d2h0drk2, 14 January 2024. JLM
+! Modified ao_atomic_orbital, 6 October 2024. JLM
 
   implicit none
 
@@ -88,12 +89,6 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
 ! output
 
-  integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian
-  real(REAL64), intent(out)          ::  hdiag(mxddim)                   !<  hamiltonian diagonal
-  integer, intent(out)               ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
-  real(REAL64), intent(out)          ::  qmod(mxddim)                    !<  length of k+g-vector of row/column i
-  real(REAL64), intent(out)          ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
-
   integer, intent(inout)             ::  nbaslcao                        !<  number of eigenvectors
   complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i
   complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)             !<  component j of eigenvector i
@@ -102,6 +97,14 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   complex(REAL64), intent(out)       ::  S(mxdorb,mxdorb)                !<  overlap matrix of non-orthogonal atomic orbitals
 
   complex(REAL64), intent(out)       ::  dh0drk(mxdorb,mxdorb,3)         !<  d <Psi|H|Psi> d k (computed with atomic orbitals)
+
+! THESE ARRAYS SHOULD BE ALLOCATED, NOT OUTPUTED
+
+  integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian
+  real(REAL64), intent(out)          ::  hdiag(mxddim)                   !<  hamiltonian diagonal
+  integer, intent(out)               ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
+  real(REAL64), intent(out)          ::  qmod(mxddim)                    !<  length of k+g-vector of row/column i
+  real(REAL64), intent(out)          ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
 ! local allocatable arrays
 
@@ -119,13 +122,13 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   logical       ::  lkplusg                                              !  If true use the previous G-vectors (same mtxd and isort)
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)       integer    ::  mxdanl, mxdsml
-  integer    ::  mxdanl
-  integer    ::  nanl, nanlso, nanlspin
+  integer       ::  mxdanl
+  integer       ::  nanl, nanlso, nanlspin
   real(REAL64)  ::  bdot(3,3),vcell,veffr1
 
 ! constants
 
-  real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
 
@@ -154,7 +157,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   allocate(xnlkb(mxdanl))
   allocate(anlga(mxddim,mxdanl))
 
-  lkplusg = .false.
+  lkplusg = .FALSE.
 
   call hamilt_pw(emax, rkpt, lkplusg, veffr1, nanl,                      &
       mtxd, isort, qmod, ekpg, hdiag,                                    &
@@ -208,6 +211,6 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   deallocate(h0)
   deallocate(ev_fake)
 
-
   return
+
 end subroutine ao_h_and_s

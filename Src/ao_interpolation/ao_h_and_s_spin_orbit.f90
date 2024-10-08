@@ -41,6 +41,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 ! Modified, hamilt_pw, 6 June 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! Modified, ao_atomic_orbital, 6 October 2024. JLM
 
   implicit none
 
@@ -89,12 +90,6 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
 
 ! output
 
-  integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian
-  real(REAL64), intent(out)          ::  hdiag(mxddim)                   !<  hamiltonian diagonal
-  integer, intent(out)               ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
-  real(REAL64), intent(out)          ::  qmod(mxddim)                    !<  length of k+g-vector of row/column i
-  real(REAL64), intent(out)          ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
-
   integer, intent(out)               ::  nbaslcao                        !<  number of lcao basis vectors
   complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i
   complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)             !<  component j of eigenvector i
@@ -102,6 +97,14 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
   complex(REAL64), intent(out)       ::  Hao(2*mxdorb,2*mxdorb)          !<  hamiltonian in non-orthogonal atomic orbitals
   complex(REAL64), intent(out)       ::  S(2*mxdorb,2*mxdorb)            !<  overlap matrix of non-orthogonal atomic orbitals
   complex(REAL64), intent(out)       ::  dh0drk(2*mxdorb,2*mxdorb,3)     !<  d <Psi|H|Psi> d k
+
+! THESE ARRAYS SHOULD BE ALLOCATED, NOT OUTPUTED
+
+  integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian
+  real(REAL64), intent(out)          ::  hdiag(mxddim)                   !<  hamiltonian diagonal
+  integer, intent(out)               ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
+  real(REAL64), intent(out)          ::  qmod(mxddim)                    !<  length of k+g-vector of row/column i
+  real(REAL64), intent(out)          ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
 ! local allocatable arrays
 
@@ -277,4 +280,5 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao,                   &
   deallocate(ev_fake)
 
   return
+
 end subroutine ao_h_and_s_spin_orbit

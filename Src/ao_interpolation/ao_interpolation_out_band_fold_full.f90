@@ -33,6 +33,7 @@
 ! Modified, documentation, May 2020. JLM
 ! Modified, projection on atomic orbitals, July 2021. CLR
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+! Modified, ao_atomic_orbital, indentation improved. 6 october 2024. JLM
 
 
 
@@ -75,7 +76,7 @@
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)       !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
 
 ! allocatable arrays
 
@@ -150,13 +151,16 @@
   integer neig_try
   character(len=1)            ::  yesno
 
+  character(len=4)            ::  vers                                   !  hardcoded library version
+  logical                     ::  ldevel                                 !  unused
+
 ! counters
 
   integer    ::   i, j, n, iorb
 
 ! constants
 
-  real(REAL64), parameter     :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
 
@@ -196,15 +200,20 @@
   endif
 
 ! PrepFold needs avec
+
   call adot_to_avec_sym(adot,avec,bvec)
+
 ! ploting routines need metric of primitive cell !
+
   call Fold_Get_adot_pc(pwlinloc, avec, adot_pc)
+
 !-----------------------------------------------------------------------
 
 ! band circuit section
   iotape = 13
+
   call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc, ztot,   & ! note call with adot_pc
-  neig, nrk2, nlines, nvert)
+      neig, nrk2, nlines, nvert)
 
   allocate(xk(nrk2))
   allocate(rk(3,nrk2))
@@ -215,21 +224,25 @@
   allocate(label(nvert+nlines))
   allocate(xklab(nvert+nlines))
 
-  call out_band_get_circuit('BAND_LINES.DAT',iotape,1,adot_pc,           & ! note call with adot_pc
-  xk,rk,xcvert,ljump,nkstep,label,xklab,                                 &
-  neig,nrk2,nlines,nvert)
+  call out_band_get_circuit('BAND_LINES.DAT', iotape, 1, adot_pc,        & ! note call with adot_pc
+      xk, rk, xcvert, ljump, nkstep, label, xklab,                       &
+      neig, nrk2, nlines, nvert)
 
   neig_try = nint(1.5*(ztot/2))
-  if(neig_try <(ztot/2) + 8) then
-    neig_try = (ztot/2) + 8
+  if(neig_try < nint(ztot/2) + 8) then
+    neig_try = nint(ztot/2) + 8
   endif
 
+  call version(vers, ldevel)
+
+  write(6,*)
   write(6,*) ' Interpolated  band structure with unfolding '
-  write(6,*) ' version 5.01 '
+  write(6,*) ' version ', vers
   write(6,*)
   write(6,*) ' I recomend the following value '
   write(6,*) ' for the number of bands:', neig_try
   write(6,*) ' do you want to accept? (y/n)'
+  write(6,*)
 
   read(5,*) yesno
   write(ioreplay,*) yesno,'   accept suggested number of bands'
@@ -237,13 +250,15 @@
   if(yesno == 'y' .or. yesno == 'Y') then
     neig=neig_try
   else
-    write(6,*) '  Using',neig,' bands'
+    write(6,*) '  Using ',neig,' bands'
   endif
 
 !---
+
   write(6,*)
   write(6,*) 'do you want to compute the spectral weights? (y/n)'
   write(6,*) 'this requires additional computing resources'
+  write(6,*)
 
   read(5,*) yesno
   write(ioreplay,*) yesno,'   true_pkn'
@@ -261,8 +276,8 @@
   allocate(pkn_so(nrk2,2*neig))
   allocate(ev_interp(noiData%nband))
 
-  pkn(:,:)    = 1.0D0
-  pkn_so(:,:) = 1.0D0
+  pkn(:,:)    = UM
+  pkn_so(:,:) = UM
 
 !--------------- atomic orbital preparation section---------------------
 
@@ -270,7 +285,8 @@
 
     call adot_to_bdot(adot,vcell,bdot)
 
-    ! finds mxdddim
+! finds mxdddim
+
     mxddim = 1
     do irk=1,nrk2
       do j=1,3
@@ -280,7 +296,8 @@
       if(nd > mxddim) mxddim = nd
     enddo
 
-    ! finds mxdorb
+! finds mxdorb, lmax
+
     mxdorb = 0
     lmax = 0
     do k=1,ntype
@@ -295,19 +312,20 @@
     allocate(qmod(mxddim))
     allocate(ekpg(mxddim))
 
-    ! allocate wavefunctions needded for pkn calculation
+! allocate wavefunctions needded for pkn calculation
+
     allocate(ao_basis(mxddim,mxdorb))
     allocate(infolcao(5,mxdorb))
     allocate(wrk(noiData%nband,noiData%nband))
 
     if(noiData%lso==1) then
-    allocate(psi_ao(2*mxddim,2*mxdorb))
-    allocate(ao_basis_so(2*mxddim,2*mxdorb))
-    allocate(infolcao_so(5,2*mxdorb))
-    allocate(basxpsi_of_k(2*mxdorb,2*neig,nrk2))
-    else
-    allocate(psi_ao(mxddim,mxdorb))
-    allocate(basxpsi_of_k(mxdorb,neig,nrk2))
+      allocate(psi_ao(2*mxddim,2*mxdorb))
+      allocate(ao_basis_so(2*mxddim,2*mxdorb))
+      allocate(infolcao_so(5,2*mxdorb))
+      allocate(basxpsi_of_k(2*mxdorb,2*neig,nrk2))
+      else
+      allocate(psi_ao(mxddim,mxdorb))
+      allocate(basxpsi_of_k(mxdorb,neig,nrk2))
     endif
 
   endif
@@ -322,9 +340,9 @@
 
     write(*,'(i5,3f8.5)') irk, rkpt(1),rkpt(2),rkpt(3)
 
-    ! we need to find another way to do this ... 2 diags here
+!   WE NEED TO FIND ANOTHER WAY TO DO THIS ... 2 DIAGS HERE
 
-    call NonOrthoInterpRun(noiData,rkpt,ev_interp)
+    call NonOrthoInterpRun(noiData, rkpt, ev_interp)
 
     if(noiData%lso==1) then
       do j=1,2*neig
@@ -340,10 +358,10 @@
 
     if (true_pkn) then
 
-      call fi_hamiltonian_get_hk(noiData%fiData,rkpt,noiData%Hao_tr, noiData%nband)
-      call fi_hamiltonian_get_sk(noiData%fiData,rkpt,noiData%Uao, noiData%nband)
+      call fi_hamiltonian_get_hk(noiData%fiData, rkpt, noiData%Hao_tr, noiData%nband)
+      call fi_hamiltonian_get_sk(noiData%fiData, rkpt, noiData%Uao, noiData%nband)
 
-      call DiagByLowdin2(noiData%nband,noiData%Hao_tr,noiData%Uao, ev_interp, wrk)
+      call DiagByLowdin2(noiData%nband, noiData%Hao_tr, noiData%Uao, ev_interp, wrk)
 
       if(noiData%lso==1) then
       do j=1,2*neig
@@ -361,50 +379,50 @@
       enddo
       endif
 
-      lkplusg = .false.
+      lkplusg = .FALSE.
 
-      call hamilt_struct(emax,rkpt,mtxd,isort,qmod,ekpg,lkplusg,         &
-      ng,kgv,adot,mxdgve,mxddim)
+      call hamilt_struct(emax, rkpt, mtxd, isort, qmod, ekpg, lkplusg,   &
+          ng, kgv, adot, mxdgve, mxddim)
 
       lnewanl = .TRUE.
 
-      call atomic_orbital_c16(rkpt,mtxd,isort,icmplx,                    &
-      mxdorb,ao_basis,infolcao,                                          &
-      ng,kgv,                                                            &
-      norbat,nqwf,delqwf,wvfao,lorb,                                     &
-      ntype,natom,rat,adot,                                              &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve,mxdlao)
+      call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
+          mxdorb, ao_basis, infolcao,                                    &
+          ng, kgv,                                                       &
+          norbat, nqwf, delqwf, wvfao, lorb,                             &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
 
       if(noiData%lso==1) then
         do i=1,mxdorb
         do j=1,mtxd
-          ao_basis_so(2*j-1,2*i         ) = ao_basis(j,i)
-          ao_basis_so(2*j  ,2*i         ) = C_ZERO
-          ao_basis_so(2*j-1,2*i-1       ) = C_ZERO
-          ao_basis_so(2*j  ,2*i-1       ) = ao_basis(j,i)
+          ao_basis_so(2*j-1,2*i  ) = ao_basis(j,i)
+          ao_basis_so(2*j  ,2*i  ) = C_ZERO
+          ao_basis_so(2*j-1,2*i-1) = C_ZERO
+          ao_basis_so(2*j  ,2*i-1) = ao_basis(j,i)
         enddo
         enddo
 
         do i=1,mxdorb
-          infolcao_so(:,2*i)   = infolcao(:,i)
+          infolcao_so(:,2*i  ) = infolcao(:,i)
           infolcao_so(:,2*i-1) = infolcao(:,i)
         enddo
 
        ! noiData%wrk has the eigenvectors corresponding to ev_interp
 
-        call zgemm('N','N',2*mtxd,2*mxdorb,2*mxdorb,C_UM,ao_basis_so,    &
-        2*mxddim,noiData%wrk,2*mxdorb,C_ZERO,psi_ao,2*mxddim)
+        call zgemm('N', 'N', 2*mtxd, 2*mxdorb, 2*mxdorb, C_UM, ao_basis_so,    &
+            2*mxddim, noiData%wrk, 2*mxdorb, C_ZERO, psi_ao, 2*mxddim)
 
-        call Fold_GetPknSO(pkn_so,iMinv,idet,irk,kgv,isort,psi_ao, nrk2, &
-        2*neig, mtxd, ng, mxdgve,2*mxddim,2*mxdorb)
+        call Fold_GetPknSO(pkn_so, iMinv, idet, irk,kgv, isort, psi_ao, nrk2,  &
+            2*neig, mtxd, ng, mxdgve, 2*mxddim, 2*mxdorb)
 
       else
 
-        call zgemm('N','N',mtxd,mxdorb,mxdorb,C_UM,ao_basis,mxddim,      &
-        noiData%wrk,mxdorb,C_ZERO,psi_ao,mxddim)
+        call zgemm('N', 'N', mtxd, mxdorb, mxdorb, C_UM, ao_basis, mxddim,     &
+            noiData%wrk, mxdorb, C_ZERO, psi_ao, mxddim)
 
-        call Fold_GetPkn(pkn,iMinv,idet,irk,kgv,isort,psi_ao, nrk2,      &
-        neig, mtxd, ng, mxdgve,mxddim,mxdorb)
+        call Fold_GetPkn(pkn, iMinv, idet, irk, kgv, isort, psi_ao, nrk2,      &
+            neig, mtxd, ng, mxdgve,mxddim, mxdorb)
 
       endif
 
@@ -431,45 +449,45 @@
 
     nocc = n
 
-    call out_band_fold_xmgrace('mtb_band_so.agr',iotape,                 &
-    title,subtitle,nstyle,                                               &
-    pkn_so,2*neig,nrk2,xk,e_of_k_so,eref,nocc,                           &
-    nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+    call out_band_fold_xmgrace('mtb_band_so.agr', iotape,                &
+        title, subtitle, nstyle,                                         &
+        pkn_so, 2*neig, nrk2, xk, e_of_k_so, eref, nocc,                 &
+        nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
     if (true_pkn) then
-      call out_band_info_write('BAND_SO.DAT',iotape,                     &
-      title,subtitle,nstyle,                                             &
-      2*neig,nrk2,rk,rk_fld,xk,e_of_k_so,eref,nocc,                      &
-      noiData%nband,infolcao_so,basxpsi_of_k,pkn_so,                     &
-      nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
+      call out_band_info_write('BAND_SO.DAT', iotape,                    &
+          title, subtitle, nstyle,                                       &
+          2*neig, nrk2, rk, rk_fld, xk, e_of_k_so, eref, nocc,           &
+          noiData%nband, infolcao_so, basxpsi_of_k, pkn_so,              &
+          nvert, xcvert, nlines, ljump, nkstep, label, xklab, ntype, nameat)
     endif
 
-    else
+  else
 
-      n = min(nint(0.5*ztot + 0.01),neig)
-      eref = e_of_k(n,1)
-      do irk = 1,nrk2
-      do j=1,n
-        if(e_of_k(j,irk) > eref) eref = e_of_k(j,irk)
-      enddo
-      enddo
+    n = min(nint(0.5*ztot + 0.01),neig)
+    eref = e_of_k(n,1)
+    do irk = 1,nrk2
+    do j=1,n
+      if(e_of_k(j,irk) > eref) eref = e_of_k(j,irk)
+    enddo
+    enddo
 
-      noiData%eref  =eref
+    noiData%eref  =eref
 
-      nocc = n
+    nocc = n
 
-      call out_band_fold_xmgrace('mtb_band.agr',iotape,                  &
-      title,subtitle,nstyle,                                             &
-      pkn,neig,nrk2,xk,e_of_k,eref,nocc,                                 &
-      nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+    call out_band_fold_xmgrace('mtb_band.agr', iotape,                   &
+        title, subtitle, nstyle,                                         &
+        pkn, neig, nrk2, xk, e_of_k, eref, nocc,                         &
+        nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-      if (true_pkn) then
-        call out_band_info_write('BAND.DAT',iotape,                      &
-        title,subtitle,nstyle,                                           &
-        neig,nrk2,rk,rk_fld,xk,e_of_k,eref,nocc,                         &
-        noiData%nband,infolcao,basxpsi_of_k,pkn,                         &
-        nvert,xcvert,nlines,ljump,nkstep,label,xklab,ntype,nameat)
-      endif
+    if (true_pkn) then
+      call out_band_info_write('BAND.DAT', iotape,                       &
+          title, subtitle, nstyle,                                       &
+          neig, nrk2, rk, rk_fld, xk, e_of_k, eref, nocc,                &
+          noiData%nband, infolcao, basxpsi_of_k, pkn,                    &
+          nvert, xcvert, nlines, ljump, nkstep, label, xklab, ntype, nameat)
+    endif
 
   endif
 
@@ -511,8 +529,10 @@
     endif
   endif
 
-  write(*,*) 'Band Structure Calcultion Done.'
+  write(6,*)
+  write(6,*) 'Band Structure Calculation Done.'
+  write(6,*)
 
   return
 
-  end subroutine ao_interpolation_out_band_fold_full
+end subroutine ao_interpolation_out_band_fold_full
