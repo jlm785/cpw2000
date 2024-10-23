@@ -23,7 +23,7 @@ program pwrhov2other
 
 ! information about the calculation
 
-  character(len=3)                   ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
   character(len=6)                   ::  flgscf                          !<  type of self consistent field and diagonalizatioN
   character(len=4)                   ::  flgdalin                          !<  whether the dual approximation is used
   real(REAL64)                       ::  emaxin                          !<  kinetic energy cutoff of plane wave expansion (hartree).

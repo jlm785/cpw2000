@@ -1,51 +1,60 @@
-This directory contains the files needed to use quantum esspresso (QE) 
+This directory contains the files needed to use quantum esspresso (QE)
 or abinit after a cpw2000 run.
 
 The input is the PW_RHO_V.DAT file used for post-processing
 
-Files in_rho_v.f90 and in_rho_v_pseudo.f90 were modified and not yet merged in the main
-library.  Remove them after updating the library.
 
 To compile the program run the command
 
-$F90 pwrhov2other.f90  write_pwscf_in.f90  write_pwscf_upf_in.f90 in_rho_v.f90  in_rho_v_pseudo.f90 \
+$F90 pwrhov2other.f90  write_pwscf_in.f90  write_pwscf_upf_in.f90 default_conf.f90 write_abinit_in.f90 \
      default_conf.f90 $LIBPW.A -o pwrhov2other.exe
+
+Where $F90 is ifx, ifort, gfortran,... and $LIBPW.A is the library of the main code
+libpw_ifort.a or ... file.
 
 Run that program in a directory where you have the relevant PW_RHO_V.DAT file.
 
     For Quantum Espresso
     --------------------
 
-For each atom with chemical symbol XX in the crystal calculated by  cpw2000
-this program will  generates a file XX_nc_upf.in for input to the QE pseudopotential generator.  
+It will generate a file pwscf.in that has the atomic configuration etc... for the
+QE plane-wave code.
+
+For each atom with chemical symbol XX in the crystal calculated by cpw2000
+this program will  generates a file XX_nc_upf.in for input to the QE pseudopotential generator.
 This should be equivalent to the original atom input file (atom.dat).
-Obviously check the file as this is alpha code.
+
 Running the command
 
 $QEDIRECTORY/bin/ld1.x < XX_nc_upf.in
 
-will generate a lot of files including XX_LDA_ncpp.UPF that has the pseudopotential in 
+will generate a lot of files including XX_LDA_ncpp.UPF that has the pseudopotential in
 Unified Pseudopotential Format for atom species XX.
 
-It will generate also the file pwscf.in that has the atomic configuration etc... for the
-QE plane-wave code.
 Running the command
 
 $QEDIRECTORY/bin/pw.x < pwscf.in
 
 will do the crystal calculation.
 
+Obviously check you reproduce the cpw2000 results.  Things like total energies should agree
+within several decimal places.
+
+Notice that the atomic program (github.com/jlm785/pseudopotentials) can generate the UPF files
+corresponding to the XX_POTKB_F.DAT.  Again expect agreement within several decimal places.
+
+QE does not use Troullier-Martins pseudopotentials with spin-orbit.  This limits the comparison
+of the two codes.
+
+
+
       For abinit
-      ----------      
-      
-It will generate the input file abinit.in with the crystal specification
+      ----------
 
-      For both cases
-      --------------
+It will generate the input file abinit.in with the crystal specification.
 
-The atomic program later than 4.805 will also generate the relevant pseudopotentials.
-Both codes have an extensive library of pseudopotentials.
+This has not been used in a long time, so take extra care...
 
 
-THIS IS ALPHA CODE, CHECK THE FILES!!!!
+
 
