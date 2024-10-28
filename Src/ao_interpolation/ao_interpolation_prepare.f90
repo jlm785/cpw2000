@@ -278,6 +278,10 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
       nrk_irred, rk_irred, w_mesh, wrk_nband, indk, kmap,                &
       mxdpnt, 1)
 
+  deallocate(wrk_nband)
+  deallocate(indk)
+  deallocate(w_mesh)
+
 !  call IrredBZInit(IrredBZ, adot, ntrans, mtrx, nk1, nk2, nk3, 0.0D0, 0.0D0, 0.0D0)
 
 !----------------------------------------------------
@@ -552,6 +556,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   endif
 
+  deallocate(kmap)
+  deallocate(rk_irred)
+
 
 !-------------------------------------------------------------------------
 
@@ -669,6 +676,16 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   deallocate(ei_so)
   deallocate(psi_so)
+
+  deallocate(rk_grid)
+
+  deallocate(ev_pw)
+  deallocate(ev_pw_irred)
+  deallocate(ev_interp)
+  deallocate(Hao)
+  deallocate(S)
+  deallocate(dh0drk_AO)
+
 
   return
 
