@@ -8,8 +8,8 @@ src90 = ao_h_and_s.f90                           ao_interpolation_sub.f90       
         ao_interpolation_out_band.f90            ao_interpolation_write_hr.f90     \
         ao_interpolation_out_band_fold_full.f90  ao_interpolation_write_wt_in.f90  \
         ao_interpolation_out_dos.f90             fourier_interpolation.f90         \
-        ao_interpolation_out_ie.f90              irredbzinit.f90                   \
-        ao_interpolation_prepare.f90             nonorthointerp.f90
+        ao_interpolation_out_ie.f90              ao_interpolation_prepare.f90      \
+        nonorthointerp.f90
 
 
 
@@ -26,9 +26,6 @@ fourier_interpolation.o:  fourier_interpolation.f90
 
 nonorthointerp.o:  nonorthointerp.f90  fourier_interpolation.o
 	$(F77) -c $(FCOPTS) nonorthointerp.f90
-
-irredbzinit.o:  irredbzinit.f90
-	$(F77) -c $(FCOPTS) irredbzinit.f90
 
 ao_interpolation_sub.o:  ao_interpolation_sub.f90 mods nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_sub.f90
@@ -54,7 +51,7 @@ ao_interpolation_out_dos.o:  ao_interpolation_out_dos.f90 nonorthointerp.o
 ao_interpolation_out_ie.o:  ao_interpolation_out_ie.f90 nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_out_ie.f90
 
-ao_interpolation_prepare.o:  ao_interpolation_prepare.f90 nonorthointerp.o irredbzinit.o
+ao_interpolation_prepare.o:  ao_interpolation_prepare.f90 nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_prepare.f90
 
 ao_interpolation_w90.o:  ao_interpolation_w90.f90 nonorthointerp.o

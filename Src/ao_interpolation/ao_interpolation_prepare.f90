@@ -49,10 +49,11 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Modified documentation May 2020, nocc, icmax, June 12 2020.jlm
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, indentation, more comments. 2 October 2024. JLM
+! Modified, removed IrredBZM, only used here, 28 October 2024. JLM
 
 
   use NonOrthoInterp
-  use IrredBZM
+!  use IrredBZM
 
   implicit none
 
@@ -150,6 +151,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   real(REAL64)                       ::  vmax, vmin                      !  maximum and minimum values of vscr
 
   integer                            ::  irk
+  integer                            ::  idk
+
   integer                            ::  ipr,nd
   integer                            ::  nsfft(3)
   integer                            :: iband, jband, idir
@@ -167,7 +170,17 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   integer           ::  nkpt,norb, nequal, lmax
   integer           ::  nocc
 
-  type(IrredBZ_t)   ::  IrredBZ
+!  type(IrredBZ_t)   ::  IrredBZ
+
+  integer, allocatable               ::  kmap(:,:,:,:)                   !  kmap(1,...) corresponding k-point, kmap(2,...) = 1 additional inversion, kmap(3,...) symmetry operation
+  integer, allocatable               ::  wrk_nband(:)                    !  number of bands for each k-points
+  integer, allocatable               ::  indk(:,:)                       !  index of the six k-points neighbouring k-point i
+  real(REAL64), allocatable          ::  rk_irred(:,:)                   !  component in lattice coordinates of the k-point in the mesh
+  real(REAL64), allocatable          ::  w_mesh(:)                       !  weight in the integration of k-point
+  integer                            ::  nrk_irred                       !  number of irreducible k-points
+
+
+  integer           ::  mxdpnt
 
   integer           ::  lso
   integer           ::  loptical
@@ -175,6 +188,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 ! parameters
 
+  real(REAL64), parameter :: ZERO = 0.0_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
 
 ! counters
@@ -246,7 +260,25 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 ! Maybe should be inlined to simplify structure
 
-  call IrredBZInit(IrredBZ, adot, ntrans, mtrx, nk1, nk2, nk3, 0.0D0, 0.0D0, 0.0D0)
+  mxdpnt = nk1*nk2*nk3
+
+!  IrredBZ%nx = nk1
+!  IrredBZ%ny = nk2
+!  IrredBZ%nz = nk3
+
+  allocate(kmap(3,nk1,nk2,nk3))
+  allocate(wrk_nband(mxdpnt))
+  allocate(indk(6,mxdpnt))
+  allocate(rk_irred(3,mxdpnt))
+  allocate(w_mesh(mxdpnt))
+
+  call int_pnt(1, nk1,nk2,nk3, ZERO,ZERO,ZERO, 2,                        &
+      adot,                                                              &
+      ntrans, mtrx,                                                      &
+      nrk_irred, rk_irred, w_mesh, wrk_nband, indk, kmap,                &
+      mxdpnt, 1)
+
+!  call IrredBZInit(IrredBZ, adot, ntrans, mtrx, nk1, nk2, nk3, 0.0D0, 0.0D0, 0.0D0)
 
 !----------------------------------------------------
 
@@ -398,13 +430,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
     write(6,*) '  Computing full precision eigenvalues ev(i) including Spin-Orbit'
     write(6,*)
 
-    do irk=1, IrredBZ % nrk
+    do irk = 1,nrk_irred
 
-      rkpt(1) = IrredBZ %rk(1,irk)
-      rkpt(2) = IrredBZ %rk(2,irk)
-      rkpt(3) = IrredBZ %rk(3,irk)
+      rkpt(1) = rk_irred(1,irk)
+      rkpt(2) = rk_irred(2,irk)
+      rkpt(3) = rk_irred(3,irk)
 
-      write(6,'(2i5,3f8.5)') IrredBZ % nrk, irk, rkpt(1),rkpt(2),rkpt(3)
+      write(6,'(2i5,3f8.5)') nrk_irred, irk, rkpt(1),rkpt(2),rkpt(3)
 
       lkpg = .FALSE.
       ipr = 0
@@ -444,7 +476,21 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !   Maybe should be inlined to simplify structure
 
-    call UnpackEv(IrredBZ, ev_pw_irred, ev_pw, 2*norb, nkpt)
+!    call UnpackEv(IrredBZ, ev_pw_irred, ev_pw, 2*norb, nkpt)
+
+     irk = 1
+     do i = 1,nk1
+     do j = 1,nk2
+     do k = 1,nk3
+      idk = iabs(kmap(1,i,j,k))
+!      write(*,*) i,j,k, idk
+       do iband = 1,2*norb
+         ev_pw(iband,irk) = ev_pw_irred(iband,idk)
+       enddo
+       irk = irk+1
+     enddo
+     enddo
+     enddo
 
   else
 
@@ -452,13 +498,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
     write(6,*) '  Computing full precision eigenvalues ev(i)'
     write(6,*)
 
-    do irk=1, IrredBZ % nrk
+    do irk = 1, nrk_irred
 
-      rkpt(1) = IrredBZ %rk(1,irk)
-      rkpt(2) = IrredBZ %rk(2,irk)
-      rkpt(3) = IrredBZ %rk(3,irk)
+      rkpt(1) = rk_irred(1,irk)
+      rkpt(2) = rk_irred(2,irk)
+      rkpt(3) = rk_irred(3,irk)
 
-      write(*,'(2i5,3f8.5)') IrredBZ % nrk, irk, rkpt(1),rkpt(2),rkpt(3)
+      write(*,'(2i5,3f8.5)') nrk_irred, irk, rkpt(1),rkpt(2),rkpt(3)
 
       lkpg = .FALSE.
       ipr = 0
@@ -488,7 +534,21 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !   Maybe should be inlined to simplify structure
 
-    call UnpackEv(IrredBZ, ev_pw_irred, ev_pw, norb, nkpt)
+!    call UnpackEv(IrredBZ, ev_pw_irred, ev_pw, norb, nkpt)
+
+     irk = 1
+     do i = 1,nk1
+     do j = 1,nk2
+     do k = 1,nk3
+      idk = iabs(kmap(1,i,j,k))
+!      write(*,*) i,j,k, idk
+       do iband = 1,norb
+         ev_pw(iband,irk) = ev_pw_irred(iband,idk)
+       enddo
+       irk = irk+1
+     enddo
+     enddo
+     enddo
 
   endif
 
