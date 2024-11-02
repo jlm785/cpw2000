@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         before 2017. 26 July 2024
+!>  \date         before 2017. 1 November 2024
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -25,6 +25,7 @@
 ! Written by Carlos Loia Reis before 2017, based on previous code,
 ! Modified, documentation, May 2020. JLM
 ! Modified, ztot in out_band_circuit_size, indentation. 26 July 2024. JLM
+! Bug when neig greater than nband. 1 November 2024. JLM
 
 
   use NonOrthoInterp
@@ -97,6 +98,9 @@
                    xk, rk, xcvert, ljump, nkstep, label, xklab,          &
                    neig, nrk2, nlines, nvert)
 
+! checks maximum of number of bands
+
+  if(neig > noiData%nband) neig = noiData%nband
 
   allocate(e_of_k(neig,nrk2))
   allocate(e_of_k_so(2*neig,nrk2))
@@ -191,6 +195,8 @@
 
     endif
 
+!  WHAT IS THIS FOR????????????????????????
+
 ! cheat code
 ! loop over k-points
   lfile = .FALSE.
@@ -217,9 +223,9 @@
          call NonOrthoInterpRun(noiData,rkpt,ev_interp)
          write(*,'(i5,3f8.3)') irk, rkpt(1),rkpt(2),rkpt(3)
          if (noiData%lso==1) then
-           WRITE(127,'(200F22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
+           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
          else
-           WRITE(127,'(200F22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
+           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
          endif
      enddo
      close(unit=127)

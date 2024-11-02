@@ -80,15 +80,24 @@ module NonOrthoInterp
   subroutine NonOrthoInterpInit(this,lso,loptical,nk1,nk2,nk3,ws_n1,ws_n2,ws_n3,adot,nkpt,nband,nequal)
     implicit none
     type(noiData_t) :: this
-    integer lso, loptical
+    logical, intent(in)         ::  lso                                  !  if true use spin orbit
+    logical, intent(in)         ::  loptical                             !  if true calculate optical matrix elements
     integer nk1,nk2,nk3,nkpt
     integer ws_n1, ws_n2, ws_n3
 !    integer nk1,nk2,nk3,nkpt
     real(REAL64) adot(3,3)
     integer nband, nequal
 
-    this%lso        = lso
-    this%loptical   = loptical
+    if(lso) then
+      this%lso = 1
+    else
+      this%lso = 0
+    endif
+    if(loptical) then
+      this%loptical   = 1
+    else
+      this%loptical   = 0
+    endif
     this%nkpt   = nkpt
     this%nband  = nband
     this%nequal = nequal

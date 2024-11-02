@@ -19,12 +19,12 @@
 !>  \date         April 14, 2014. 30 November 2023.
 !>  \copyright    GNU Public License v2
 
-subroutine kdotp_matrix(mtxd,neig,psi,ei,rkpt,isort,nder,         &
-  h0,dh0drk,d2h0drk2,                                               &
-  ng,kgv,                                                           &
-  ntype,natom,rat,adot,                                             &
-  nqnl,delqnl,vkb,nkb,                                              &
-  mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+subroutine kdotp_matrix(mtxd, neig, psi, ei, rkpt, isort, nder,          &
+      h0, dh0drk, d2h0drk2,                                              &
+      ng, kgv,                                                           &
+      ntype, natom, rat, adot,                                           &
+      nqnl, delqnl, vkb, nkb,                                            &
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
 
 
 ! Written April 14, 2014, from previous code. JLM
@@ -101,6 +101,7 @@ subroutine kdotp_matrix(mtxd,neig,psi,ei,rkpt,isort,nder,         &
 ! counters
 
   integer    ::  i, j, m, n
+
 
   if(nder < 0 .or. nder > 2) then
     write(6,*)

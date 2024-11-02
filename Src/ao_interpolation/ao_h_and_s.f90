@@ -15,8 +15,8 @@
 !>  with non-orthogonal atomic orbitals.
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.09
-!>  \date         before 2015. 30 November 2023.
+!>  \version      5.11
+!>  \date         before 2015. 1 November 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
@@ -24,13 +24,12 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     veff, icmplx,                                                        &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    mtxd, hdiag, isort, qmod, ekpg,                                      &
     norbat, nqwf, delqwf, wvfao, lorb,                                   &
     psi, hpsi,                                                           &
     Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdbnd,              &
-    mxdscr, mxdorb, mxdlao)
+    mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,              &
+    mxdscr, mxdlao)
 
 ! Written by Carlos Loia Reis adapting previous code.
 ! Modified 25 November 2015. JLM
@@ -41,6 +40,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Modified, allocation of d2h0drk2, 14 January 2024. JLM
 ! Modified ao_atomic_orbital, 6 October 2024. JLM
+! Modified, removed mxdbnd, hdiag, etc... from API. 1 November 2024. JLM
 
   implicit none
 
@@ -54,7 +54,6 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdscr                          !<  array dimension of vscr
   integer, intent(in)                ::  mxdorb                          !<  array dimension for fft transform workspace
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
@@ -90,21 +89,13 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! output
 
   integer, intent(inout)             ::  nbaslcao                        !<  number of eigenvectors
-  complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i
-  complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)             !<  component j of eigenvector i
+  complex(REAL64), intent(out)       ::  psi(mxddim,mxdorb)              !<  component j of eigenvector i
+  complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdorb)             !<  component j of eigenvector i
 
   complex(REAL64), intent(out)       ::  Hao(mxdorb,mxdorb)              !<  hamiltonian in non-orthogonal atomic orbitals
   complex(REAL64), intent(out)       ::  S(mxdorb,mxdorb)                !<  overlap matrix of non-orthogonal atomic orbitals
 
   complex(REAL64), intent(out)       ::  dh0drk(mxdorb,mxdorb,3)         !<  d <Psi|H|Psi> d k (computed with atomic orbitals)
-
-! THESE ARRAYS SHOULD BE ALLOCATED, NOT OUTPUTED
-
-  integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian
-  real(REAL64), intent(out)          ::  hdiag(mxddim)                   !<  hamiltonian diagonal
-  integer, intent(out)               ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
-  real(REAL64), intent(out)          ::  qmod(mxddim)                    !<  length of k+g-vector of row/column i
-  real(REAL64), intent(out)          ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
 ! local allocatable arrays
 
@@ -116,9 +107,15 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   real(REAL64), allocatable          ::  ev_fake(:)
   integer, allocatable               ::  infolcao(:,:)                   !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
 
+  real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
+  integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
+  real(REAL64), allocatable          ::  qmod(:)                         !  length of k+g-vector of row/column i
+  real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (hartree) of k+g-vector of row/column i
+
 ! local varaibles
 
-  integer       :: nder
+  integer       ::  mtxd                                                 !  dimension of the hamiltonian
+  integer       ::  nder
   logical       ::  lkplusg                                              !  If true use the previous G-vectors (same mtxd and isort)
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)       integer    ::  mxdanl, mxdsml
@@ -157,6 +154,11 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   allocate(xnlkb(mxdanl))
   allocate(anlga(mxddim,mxdanl))
 
+  allocate(hdiag(mxddim))
+  allocate(isort(mxddim))
+  allocate(qmod(mxddim))
+  allocate(ekpg(mxddim))
+
   lkplusg = .FALSE.
 
   call hamilt_pw(emax, rkpt, lkplusg, veffr1, nanl,                      &
@@ -187,18 +189,18 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
       ng, kgv,                                                           &
       ekpg, isort, vscr, kmscr,                                          &
       anlga, xnlkb, nanl,                                                &
-      mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
+      mxddim, mxdorb, mxdanl, mxdgve, mxdscr)
 
   nder = 1
 
   allocate(d2h0drk2(1,1,3,3))
 
-  call kdotp_matrix(mtxd, mxdorb, psi, ev_fake, rkpt, isort, nder,       &
+  call kdotp_matrix(mtxd, nbaslcao, psi, ev_fake, rkpt, isort, nder,     &
       h0, dh0drk, d2h0drk2,                                              &
       ng, kgv,                                                           &
       ntype, natom, rat, adot,                                           &
       nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdbnd,mxdgve)
+      mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve)
 
   deallocate(d2h0drk2)
 
@@ -207,6 +209,11 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   deallocate(xnlkb)
   deallocate(anlga)
+
+  deallocate(hdiag)
+  deallocate(isort)
+  deallocate(qmod)
+  deallocate(ekpg)
 
   deallocate(h0)
   deallocate(ev_fake)
