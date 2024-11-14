@@ -5,9 +5,10 @@ program pwrhov2other
 
 ! Written October 12, 2018 from in_rho_v.f90. JLM
 ! Modernized, February 12, 2021. JLM
+! Removed unused variables, 14 November 2024. JLM
 ! copyright  J.L.Martins, INESC-MN.
 
-! version 4.99
+! version 5.11
 
   implicit none
 
@@ -170,27 +171,40 @@ program pwrhov2other
 
   emax = emaxin
 
+
+  call write_abinit_in(adot, ntype, natom, nameat, rat, alatt,           &
+      emax, nx,ny,nz,                                                    &
+      mxdtyp, mxdatm)
+
+  write(6,*)
+  write(6,*) '  Finished writing input file for abinit'
+  write(6,*) '  Check it is correct before using'
+  write(6,*)
+
   call write_pwscf_in(meta_cpw2000,                                      &
       adot, ntype, natom, nameat, rat, alatt,                            &
       emax, nbandin, nx,ny,nz, sx,sy,sz,                                 &
       mxdtyp, mxdatm)
 
-
-  call write_abinit_in(meta_cpw2000,                                     &
-      adot, ntype, natom, nameat, rat, alatt,                            &
-      emax, nbandin, nx,ny,nz, sx,sy,sz,                                 &
-      mxdtyp, mxdatm)
+  write(6,*)
+  write(6,*) '  Finished writing input file for Quantum Espresso'
+  write(6,*) '  Check it is correct before using'
+  write(6,*)
 
   do nt = 1,ntype
 
-    call write_pwscf_upf_in(nameat(nt), zv(nt),                          &
-        irel(nt), icore(nt), icorr(nt), iray(nt), ititle(nt),            &
-        nqnl(nt), delqnl(nt),                                            &
-        vkb(-2:mxdlqp,0:3,-1:1,nt), nkb(0:3,-1:1,nt),                    &
-        vloc(-1:mxdlqp,nt), dcor(-1:mxdlqp,nt), dval(-1:mxdlqp,nt),      &
-        mxdlqp)
+    call write_pwscf_upf_in(nameat(nt),                                  &
+        irel(nt), iray(nt), ititle(nt),                                  &
+        nkb(0:3,-1:1,nt))
+
+    write(6,*)
+    write(6,*) '  Finished writing pseudopotential generation file'
+    write(6,*) '  that can be used with Quantum Espresso'
+    write(6,*) '  for atom ',nameat(nt)
 
   enddo
+
+  write(6,*)
 
 
   stop

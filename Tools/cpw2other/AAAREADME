@@ -7,7 +7,7 @@ The input is the PW_RHO_V.DAT file used for post-processing
 To compile the program run the command
 
 $F90 pwrhov2other.f90  write_pwscf_in.f90  write_pwscf_upf_in.f90 default_conf.f90 write_abinit_in.f90 \
-     default_conf.f90 $LIBPW.A -o pwrhov2other.exe
+      $LIBPW.A -o pwrhov2other.exe
 
 Where $F90 is ifx, ifort, gfortran,... and $LIBPW.A is the library of the main code
 libpw_ifort.a or ... file.
@@ -31,6 +31,9 @@ $QEDIRECTORY/bin/ld1.x < XX_nc_upf.in
 will generate a lot of files including XX_LDA_ncpp.UPF that has the pseudopotential in
 Unified Pseudopotential Format for atom species XX.
 
+However some choices are incompatible between the codes, so you may have to edit the pseudopotential flags.
+For pseudopotentials with spin-orbit you should use that code.  Otherwise it is an option.
+
 Running the command
 
 $QEDIRECTORY/bin/pw.x < pwscf.in
@@ -43,8 +46,9 @@ within several decimal places.
 Notice that the atomic program (github.com/jlm785/pseudopotentials) can generate the UPF files
 corresponding to the XX_POTKB_F.DAT.  Again expect agreement within several decimal places.
 
-QE does not use Troullier-Martins pseudopotentials with spin-orbit.  This limits the comparison
-of the two codes.
+QE does not generate Troullier-Martins pseudopotentials with spin-orbit (using ld1.x).
+But it accepts pseudos written by the atomic program with spin-orbit (by pretending to be a ONCVSPP file).
+This is a new trick, so check carefully the results.
 
 
 

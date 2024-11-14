@@ -1,15 +1,20 @@
 !>  writes the abinit.in file
 
-subroutine write_abinit_in(meta_pwdat,                                   &
-  adot,ntype,natom,nameat,rat,alatt,                                     &
-  emax,nbandin,nx,ny,nz,sx,sy,sz,                                        &
-  mxdtyp,mxdatm)
+subroutine write_abinit_in(adot, ntype, natom, nameat, rat, alatt,       &
+    emax, nx,ny,nz,                                                      &
+    mxdtyp, mxdatm)
+
+! subroutine write_abinit_in(meta_pwdat,                                   &
+!   adot,ntype,natom,nameat,rat,alatt,                                     &
+!   emax,nbandin,nx,ny,nz,sx,sy,sz,                                        &
+!   mxdtyp,mxdatm)
 
 ! Written 30 October 2018.
 ! Documentation, 12 february 2021. JLM
+! Removed unused variables, 14 November 2024. JLM
 ! copyright  J.L.Martins, INESC-MN.
 
-! version 4.99
+! version 5.11
 
   implicit none
 
@@ -20,7 +25,7 @@ subroutine write_abinit_in(meta_pwdat,                                   &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of types of atoms
 
-  character(len=250), intent(in)     ::  meta_pwdat                      !<  metadata from cpw_in or PW.DAT
+!  character(len=250), intent(in)     ::  meta_pwdat                      !<  metadata from cpw_in or PW.DAT
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
@@ -31,21 +36,21 @@ subroutine write_abinit_in(meta_pwdat,                                   &
   real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
 
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
-  integer, intent(in)                ::  nbandin                         !<  target for number of bands      
+!  integer, intent(in)                ::  nbandin                         !<  target for number of bands
 
   integer, intent(in)                ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(in)           ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+!  real(REAL64), intent(in)           ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
 
 ! local:
-  
+
   real(REAL64)          ::  avec(3,3),bvec(3,3)
   integer               ::  nat
   integer               ::  io                                           !  tape number
-  real(REAL64)          ::  atmass
-  character(len=80)     ::  pseudofile
+!  real(REAL64)          ::  atmass
+!  character(len=80)     ::  pseudofile
 
   integer, allocatable  ::  iznuc(:)
-  
+
 
 ! counters
 
@@ -54,7 +59,7 @@ subroutine write_abinit_in(meta_pwdat,                                   &
 
 ! open file
 
-  io = 10 
+  io = 10
   open(unit = io, file = 'abinit.in',status='UNKNOWN', form='FORMATTED')
 
 ! Finds total number of atoms
@@ -65,7 +70,7 @@ subroutine write_abinit_in(meta_pwdat,                                   &
   enddo
 
 ! lattice vectors
-  
+
   call adot_to_avec_sym(adot,avec,bvec)
 
 ! nuclear charge

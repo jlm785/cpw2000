@@ -26,6 +26,7 @@ subroutine write_pwscf_in(meta_pwdat,                                    &
 ! Written 15 October 2018.
 ! Modernized 12 February 2021. JLM
 ! Bravais lattice for phonon calculations. 23 january 2022. JLM
+! Removed unused variables, 14 November 2024. JLM
 
   implicit none
 
@@ -77,7 +78,6 @@ subroutine write_pwscf_in(meta_pwdat,                                    &
 
 ! QE stuff
 
-  integer               ::  ibrqe
   real(REAL64)          ::  aa, bb, cc, cosbc, cosac, cosab
 
 ! parameter
