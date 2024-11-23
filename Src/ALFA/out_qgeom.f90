@@ -116,16 +116,16 @@ subroutine out_qgeom(ioreplay,                                           &
   complex(REAL64), allocatable       ::  psidhdkpsi(:,:,:,:)             !  <psi_n| d H / d k |psi_m> for each energy level (lattice coordinates)
 
   complex(REAL64), allocatable       ::  tfqg(:,:,:,:,:)                 !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
-  complex(REAL64), allocatable       ::  tgamma(:,:,:,:,:)               !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), allocatable       ::  tgammamf(:,:,:,:,:)             !<  Tensor Gamma-F, orbital magnetization and contribution to effective mass (lattice coordinates)
   complex(REAL64), allocatable       ::  td2hdk2(:,:,:,:,:)              !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
   real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue no. i. (hartree) spin-orbit perturbation
-  real(REAL64), allocatable          ::  ei_sp(:)                           !  eigenvalue no. i. (hartree)
+  real(REAL64), allocatable          ::  ei_sp(:)                        !  eigenvalue no. i. (hartree)
 
-  complex(REAL64), allocatable       ::  psi_sp(:,:)                        !  component j of eigenvector i
-  complex(REAL64), allocatable       ::  hpsi_sp(:,:)                       !  H | psi>
+  complex(REAL64), allocatable       ::  psi_sp(:,:)                     !  component j of eigenvector i
+  complex(REAL64), allocatable       ::  hpsi_sp(:,:)                    !  H | psi>
 
-  real(REAL64), allocatable          ::  vscr_sp(:,:)
+  real(REAL64), allocatable          ::  vscr_sp(:,:)                    !  screened potential (spin)
 
   complex(REAL64), allocatable       ::  hamk_so(:,:)                    !  hamiltonian matrix with spin-orbit
   real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
@@ -458,13 +458,13 @@ subroutine out_qgeom(ioreplay,                                           &
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
 
     allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
-    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgammamf(3,3,mxddeg,mxddeg,mxdlev))
     allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
 
     call berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, .TRUE.,    &
       nlevel, levdeg, leveigs,                                           &
       psi_sp, ei_sp,                                                     &
-      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -524,13 +524,13 @@ subroutine out_qgeom(ioreplay,                                           &
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
 
     allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
-    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgammamf(3,3,mxddeg,mxddeg,mxdlev))
     allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
 
     call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,         &
       nlevel, levdeg, leveigs,                                           &
       psi, ei,                                                           &
-      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr, kmscr,                                                       &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -547,14 +547,14 @@ subroutine out_qgeom(ioreplay,                                           &
 
     call out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,              &
         ei_sp, adot, efermi,                                             &
-        tfqg, tgamma, td2hdk2,                                           &
+        tfqg, tgammamf, td2hdk2,                                         &
         2*mxdbnd, mxdlev, mxddeg)
 
   else
 
     call out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,              &
         ei, adot, efermi,                                                &
-        tfqg, tgamma, td2hdk2,                                           &
+        tfqg, tgammamf, td2hdk2,                                         &
         mxdbnd, mxdlev, mxddeg)
 
   endif
@@ -579,7 +579,7 @@ subroutine out_qgeom(ioreplay,                                           &
   deallocate(psidhdkpsi)
 
   deallocate(tfqg)
-  deallocate(tgamma)
+  deallocate(tgammamf)
   deallocate(td2hdk2)
 
   deallocate(deidxk)

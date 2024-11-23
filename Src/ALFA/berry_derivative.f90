@@ -28,7 +28,7 @@
 subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     nlevel, levdeg, leveigs,                                             &
     psi, ei,                                                             &
-    dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                  &
+    dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,                &
     ng, kgv,                                                             &
     vscr, kmscr,                                                         &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -101,19 +101,19 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   complex(REAL64), intent(out)       ::  psidhdkpsi(mxddeg,mxddeg,3,mxdlev)  !<  <psi_n| d H / d k |psi_m>  for each energy level (lattice coordinates)
 
-  complex(REAL64), intent(out)       ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
-  complex(REAL64), intent(out)       ::  tgamma(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
-  complex(REAL64), intent(out)       ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev) !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
+  complex(REAL64), intent(out)       ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)      !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
+  complex(REAL64), intent(out)       ::  tgammamf(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma-F, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), intent(out)       ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev)   !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
 ! local allocatable arrays
 
-  real(REAL64), allocatable          ::  xnlkb(:)
-  complex(REAL64), allocatable       ::  anlga(:,:)
+  real(REAL64), allocatable          ::  xnlkb(:)                        !  KB normalization without spin-orbit
+  complex(REAL64), allocatable       ::  anlga(:,:)                      !  KB projectors without spin-orbit
 
   complex(REAL64), allocatable       ::  danlgadrk(:,:,:)                !  d anlga / d rkpt
   complex(REAL64), allocatable       ::  d2anlgadrk2(:,:,:,:)            !  d 2 anlga / d 2 rkp (unused)
 
-  complex(REAL64), allocatable       ::  hdpsidk(:,:,:)                  !  (H - E_n) ( d | psi_n > / d k )
+  complex(REAL64), allocatable       ::  hmedpsidk(:,:,:)                !  (H - E_n) ( d | psi_n > / d k )
 
   complex(REAL64), allocatable       ::  vnl0(:,:)                       !  <Psi|V_NL|Psi>
   complex(REAL64), allocatable       ::  dvnl0drk(:,:,:)                 !  d <Psi|V_NL|Psi> d k
@@ -124,9 +124,9 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
   integer           ::  nder                                             !  order of derivative
 
-  integer           ::  nanl, nanlso, nanlspin
-  integer           ::  mxdanl
-  real(REAL64)      ::  vcell, bdot(3,3)
+  integer           ::  nanl, nanlso, nanlspin                           !  number of projectors
+  integer           ::  mxdanl                                           !  maximum number of projectors
+  real(REAL64)      ::  vcell, bdot(3,3)                                 !  cell volume, metric reciprocal space
 
 ! parameters
 
@@ -222,19 +222,19 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
 !   geometric*H quantities
 
-    allocate(hdpsidk(mxddim,mxdbnd,3))
+    allocate(hmedpsidk(mxddim,mxdbnd,3))
 
     do j = 1,3
 
-      call hk_psi_c16(mtxd, neig, dpsidk(:,:,j), hdpsidk(:,:,j), .TRUE., &
-             ng, kgv,                                                    &
-             ekpg, isort, vscr, kmscr,                                   &
-             anlga, xnlkb, nanl,                                         &
+      call hk_psi_c16(mtxd, neig, dpsidk(:,:,j), hmedpsidk(:,:,j), .TRUE.,  &
+             ng, kgv,                                                       &
+             ekpg, isort, vscr, kmscr,                                      &
+             anlga, xnlkb, nanl,                                            &
              mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 
       do n = 1,neig
 
-        call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), dpsidk(:,n,j), 1, hdpsidk(:,n,j), 1)
+        call zaxpy(mtxd, cmplx(-ei(n),ZERO,REAL64), dpsidk(:,n,j), 1, hmedpsidk(:,n,j), 1)
 
       enddo
 
@@ -261,7 +261,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
           do i = 1,3
           do j = 1,3
-            tgamma(i,j,nk,mk,nl) = zdotc(mtxd, dpsidk(:,n,i), 1, hdpsidk(:,m,j), 1)
+            tgammamf(i,j,nk,mk,nl) = zdotc(mtxd, dpsidk(:,n,i), 1, hmedpsidk(:,m,j), 1)
           enddo
           enddo
 
@@ -283,7 +283,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
     deallocate(dvnl0drk)
     deallocate(d2vnl0drk2)
 
-    deallocate(hdpsidk)
+    deallocate(hmedpsidk)
 
   endif
 

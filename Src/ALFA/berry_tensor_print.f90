@@ -21,6 +21,7 @@
 subroutine berry_tensor_print(levdegnl, adot, t_lat, csym, mxddeg)
 
 ! Extracted and modified from out_qgeom_print 20 April 2024. JLM
+! dimensions t_lat. 23 November 2024. JLM
 
   implicit none
 
@@ -32,7 +33,7 @@ subroutine berry_tensor_print(levdegnl, adot, t_lat, csym, mxddeg)
 
   integer, intent(in)                ::  levdegnl                        !<  degeneracy of level
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
-  real(REAL64), intent(in)           ::  t_lat(3,3,mxddeg,mxddeg)        !<  Tensor in lattice coordinates
+  real(REAL64), intent(in)           ::  t_lat(mxddeg,mxddeg,3,3)        !<  Tensor in lattice coordinates
   character(len=1), intent(in)       ::  csym                            !<  indicates wether the tensor is symetric (S) or antisymetric (A)
 
 ! local allocatable arrays

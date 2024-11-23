@@ -119,7 +119,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   complex(REAL64), allocatable       ::  tmass(:,:,:,:,:)                !  Tensor of the inverse effective mass (lattice coordinates)
 
   complex(REAL64), allocatable       ::  tfqg(:,:,:,:,:)                 !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
-  complex(REAL64), allocatable       ::  tgamma(:,:,:,:,:)               !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), allocatable       ::  tgammamf(:,:,:,:,:)             !<  Tensor Gamma-F, orbital magnetization and contribution to effective mass (lattice coordinates)
   complex(REAL64), allocatable       ::  td2hdk2(:,:,:,:,:)              !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
   real(REAL64), allocatable          ::  ei_pert(:)                      !  eigenvalue no. i. (hartree) spin-orbit perturbation
@@ -466,7 +466,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
 
     allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
-    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgammamf(3,3,mxddeg,mxddeg,mxdlev))
     allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
 
 !     allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
@@ -477,7 +477,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     call berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, .TRUE.,    &
       nlevel, levdeg, leveigs,                                           &
       psi_sp, ei_sp,                                                     &
-      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -491,7 +491,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     do i = 1,3
     do j = 1,3
       tmass(nk,mk,i,j,nl) =                                              &
-          - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))           &
+          - tgammamf(i,j,nk,mk,nl) - conjg(tgammamf(i,j,mk,nk,nl))       &
           + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
     enddo
     enddo
@@ -500,7 +500,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     enddo
 
     deallocate(tfqg)
-    deallocate(tgamma)
+    deallocate(tgammamf)
     deallocate(td2hdk2)
 
     deallocate(ei_pert)
@@ -555,7 +555,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     allocate(psidhdkpsi(mxddeg,mxddeg,3,mxdlev))
 
     allocate(tfqg(3,3,mxddeg,mxddeg,mxdlev))
-    allocate(tgamma(3,3,mxddeg,mxddeg,mxdlev))
+    allocate(tgammamf(3,3,mxddeg,mxddeg,mxdlev))
     allocate(td2hdk2(3,3,mxddeg,mxddeg,mxdlev))
 
 !     allocate(tbcurv(mxddeg,mxddeg,3,3,mxdlev))
@@ -568,7 +568,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,         &
       nlevel, levdeg, leveigs,                                           &
       psi, ei,                                                           &
-      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgamma, td2hdk2,                &
+      dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr, kmscr,                                                       &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -582,7 +582,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     do i = 1,3
     do j = 1,3
       tmass(nk,mk,i,j,nl) =                                              &
-          - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))           &
+          - tgammamf(i,j,nk,mk,nl) - conjg(tgammamf(i,j,mk,nk,nl))       &
           + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
     enddo
     enddo
@@ -591,7 +591,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     enddo
 
     deallocate(tfqg)
-    deallocate(tgamma)
+    deallocate(tgammamf)
     deallocate(td2hdk2)
 
     allocate(deidxk(mxdbnd))

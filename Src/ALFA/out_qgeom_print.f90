@@ -15,16 +15,17 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         27 December 2023, 20 April 2024.
+!>  \date         27 December 2023, 23 November 2024
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       ei, adot, efermi,                                                  &
-      tfqg, tgamma, td2hdk2,                                             &
+      tfqg, tgammamf, td2hdk2,                                           &
       mxdbnd, mxdlev, mxddeg)
 
 ! written 29 December 2023. JLM
 ! major reworking, April 2024. JLM
+! Removed double double counting in orbital magnetization. 23 November 2024. JLM
 
   implicit none
 
@@ -47,9 +48,9 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
-  complex(REAL64), intent(in)        ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
-  complex(REAL64), intent(in)        ::  tgamma(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
-  complex(REAL64), intent(in)        ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev) !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
+  complex(REAL64), intent(in)        ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)      !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
+  complex(REAL64), intent(in)        ::  tgammamf(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), intent(in)        ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev)   !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
 ! local allocatable arrays
 
@@ -172,8 +173,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       m = leveigs(nl,mk)
       do i = 1,3
       do j = 1,3
-        tmag(nk,mk,i,j) = dimag(tgamma(i,j,nk,mk,nl)) / 2                &
-            - (ei(m)+ei(n))*dimag(tfqg(i,j,nk,mk,nl)) / 4
+        tmag(nk,mk,i,j) = dimag(tgammamf(i,j,nk,mk,nl))
       enddo
       enddo
       enddo
@@ -192,8 +192,8 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       do mk = 1,levdeg(nl)
       do i = 1,3
       do j = 1,3
-        tmass(nk,mk,i,j) =                                               &
-                - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))     &
+        tmass(nk,mk,i,j) =                                                   &
+                - tgammamf(i,j,nk,mk,nl) - conjg(tgammamf(i,j,mk,nk,nl))     &
                 + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
       enddo
       enddo
