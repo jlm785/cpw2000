@@ -15,8 +15,8 @@
 !>  total energy, forces and stresses.
 !>
 !>  \author       Jose Luis Martins,Sverre Froyen
-!>  \version      4.94
-!>  \date         ecember 16 1987.  6 June 2024.
+!>  \version      5.11
+!>  \date         December 16 1987.  5 December 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine ewald_sum(enerew, forcew, strew,                              &
@@ -30,6 +30,7 @@ subroutine ewald_sum(enerew, forcew, strew,                              &
 ! modified for f90, 22 October 2015. JLM
 ! Modified documentation, January 2020. JLM
 ! Indentation, 5 June 2024. JLM
+! Hack for zero charge artificial atoms.  5 December 2024. JLM
 
 
   implicit none
@@ -85,7 +86,7 @@ subroutine ewald_sum(enerew, forcew, strew,                              &
 ! parameters
 
   real(REAL64), parameter  :: PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter  :: SMALL = 0.000000000001_REAL64
+  real(REAL64), parameter  :: SMALL = 1.0E-12_REAL64
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
 ! counters
@@ -341,59 +342,68 @@ subroutine ewald_sum(enerew, forcew, strew,                              &
 
 !       loop over lattice points
 
-        esub = ZERO
-        do k = 1,3
-          fsub(k) = ZERO
-          do l = 1,3
-            ssub(l,k) = ZERO
-          enddo
-        enddo
+!       Artificial pseudopotentials with zero Coulomb charge
+!       may coincide with real atoms.  Correct only here
+!       to change only the code where strictly necessary...
 
-        do ii = -imx,imx
-        xir(1) = real(ii,REAL64)
-        do jj = -jmx,jmx
-        xir(2) = real(jj,REAL64)
-        do kk = -kmx,kmx
-        xir(3) = real(kk,REAL64)
-          rp(1) = xir(1) + rc(1,i) - rc(1,j)
-          rp(2) = xir(2) + rc(2,i) - rc(2,j)
-          rp(3) = xir(3) + rc(3,i) - rc(3,j)
-          rmod = ZERO
-          do l = 1,3
-          do m = 1,3
-            rmod = rmod + rp(l)*adot(l,m)*rp(m)
+        if(abs(zz(i)) > SMALL*SMALL .and. abs(zz(j)) > SMALL*SMALL) then
+
+          esub = ZERO
+          do k = 1,3
+            fsub(k) = ZERO
+            do l = 1,3
+              ssub(l,k) = ZERO
+            enddo
           enddo
-          enddo
-          rmod = sqrt(rmod)
-          arg = seps*rmod
-          if (arg < 25.0) then
-            exp1 = erfc(arg) / rmod
-            exp2 = (exp1 + sepi*exp(-arg*arg))/(rmod*rmod)
-            esub = esub + exp1
-            fsub(1) = fsub(1) + rp(1) * exp2
-            fsub(2) = fsub(2) + rp(2) * exp2
-            fsub(3) = fsub(3) + rp(3) * exp2
+
+          do ii = -imx,imx
+          xir(1) = real(ii,REAL64)
+          do jj = -jmx,jmx
+          xir(2) = real(jj,REAL64)
+          do kk = -kmx,kmx
+          xir(3) = real(kk,REAL64)
+            rp(1) = xir(1) + rc(1,i) - rc(1,j)
+            rp(2) = xir(2) + rc(2,i) - rc(2,j)
+            rp(3) = xir(3) + rc(3,i) - rc(3,j)
+            rmod = ZERO
             do l = 1,3
             do m = 1,3
-              ssub(m,l) = ssub(m,l) + rp(m) * exp2 * rp(l)
+              rmod = rmod + rp(l)*adot(l,m)*rp(m)
             enddo
             enddo
-          endif
-        enddo
-        enddo
-        enddo
+            rmod = sqrt(rmod)
+            arg = seps*rmod
+            if (arg < 25.0) then
+              exp1 = erfc(arg) / rmod
+              exp2 = (exp1 + sepi*exp(-arg*arg))/(rmod*rmod)
+              esub = esub + exp1
+              fsub(1) = fsub(1) + rp(1) * exp2
+              fsub(2) = fsub(2) + rp(2) * exp2
+              fsub(3) = fsub(3) + rp(3) * exp2
+              do l = 1,3
+              do m = 1,3
+                ssub(m,l) = ssub(m,l) + rp(m) * exp2 * rp(l)
+              enddo
+              enddo
+            endif
+          enddo
+          enddo
+          enddo
 
-        esub = esub - PI/(eps*vcell)
-        esumr = esumr + zz(i)*zz(j)*esub
-        do l = 1,3
-        do m = 1,3
-          ssumr(m,l) = ssumr(m,l) + zz(i)*zz(j)*ssub(m,l)
-        enddo
-        enddo
-        do k = 1,3
-          fsumr(k,i) = fsumr(k,i) + zz(i)*zz(j)*fsub(k)
-          fsumr(k,j) = fsumr(k,j) - zz(i)*zz(j)*fsub(k)
-        enddo
+          esub = esub - PI/(eps*vcell)
+          esumr = esumr + zz(i)*zz(j)*esub
+          do l = 1,3
+          do m = 1,3
+            ssumr(m,l) = ssumr(m,l) + zz(i)*zz(j)*ssub(m,l)
+          enddo
+          enddo
+          do k = 1,3
+            fsumr(k,i) = fsumr(k,i) + zz(i)*zz(j)*fsub(k)
+            fsumr(k,j) = fsumr(k,j) - zz(i)*zz(j)*fsub(k)
+          enddo
+
+        endif
+
       enddo
     endif
   enddo

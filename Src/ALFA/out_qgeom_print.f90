@@ -15,17 +15,18 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         27 December 2023, 23 November 2024
+!>  \date         27 December 2023, 13 January 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       ei, adot, efermi,                                                  &
-      tfqg, tgammamf, td2hdk2,                                           &
+      tquageom, tgamma, td2hdk2,                                         &
       mxdbnd, mxdlev, mxddeg)
 
 ! written 29 December 2023. JLM
 ! major reworking, April 2024. JLM
 ! Removed double double counting in orbital magnetization. 23 November 2024. JLM
+! Improved printing, 13 January 2025. JLM
 
   implicit none
 
@@ -48,21 +49,22 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
-  complex(REAL64), intent(in)        ::  tfqg(3,3,mxddeg,mxddeg,mxdlev)      !<  Tensor F quantum geomtric, curvature and metric, (lattice coordinates)
-  complex(REAL64), intent(in)        ::  tgammamf(3,3,mxddeg,mxddeg,mxdlev)  !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
+  complex(REAL64), intent(in)        ::  tquageom(3,3,mxddeg,mxddeg,mxdlev)  !<  Quantum geometric tensor, curvature and metric, (lattice coordinates)
+  complex(REAL64), intent(in)        ::  tgamma(3,3,mxddeg,mxddeg,mxdlev)    !<  Tensor Gamma, orbital magnetization and contribution to effective mass (lattice coordinates)
   complex(REAL64), intent(in)        ::  td2hdk2(3,3,mxddeg,mxddeg,mxdlev)   !<  <psi| d^2 H / d k^2 |psi> (lattice coordinates)
 
 ! local allocatable arrays
 
   real(REAL64), allocatable          ::  tbcurv(:,:,:,:)
   real(REAL64), allocatable          ::  tmag(:,:,:,:)
-  COMPLEX(REAL64), ALLOCATABLE       ::  TMASS(:,:,:,:)
+  complex(real64), allocatable       ::  tmass(:,:,:,:)
   real(REAL64), allocatable          ::  rtmass(:,:,:,:)
   real(REAL64), allocatable          ::  tqmetric(:,:,:,:)
 
 ! local variables
 
-  integer          ::  nl, nq
+  integer             ::  nl, nq
+  character(len=10)   ::  cident
 
 ! constants
 
@@ -72,6 +74,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 
   integer    ::  i, j, n, k, m, jrepeat
   integer    ::  nk, mk
+
 
 
   allocate(tbcurv(mxddeg,mxddeg,3,3))
@@ -118,22 +121,31 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
     write(6,*)
     write(6,*) '  Which quantity you want to print'
     write(6,*)
-    write(6,*) '  Berry curvature             enter 1'
-    write(6,*) '  Quantum metric              enter 2'
-    write(6,*) '  Orbital magnetization       enter 3'
-    write(6,*) '  Effective mass tensor       enter 4'
+    write(6,*) '  All quantities              enter 1'
+    write(6,*)
+    write(6,*) '  Berry curvature             enter 2'
+    write(6,*) '  Quantum metric              enter 3'
+    write(6,*) '  Orbital magnetization       enter 4'
+    write(6,*) '  Effective mass tensor       enter 5'
+    write(6,*) '  Interband contrib to mass   enter 6'
     write(6,*)
 
     read(5,*) nq
     write(ioreplay,*) nq, '         chosen quantity'
 
-    if(nq == 1) then
+    if(nq < 1 .or. nq > 6) then
+      write(6,*)
+      write(6,*) '  Wrong value, try again'
+      write(6,*)
+    endif
+
+    if(nq == 1 .or. nq == 2) then
 
       do nk = 1,levdeg(nl)
       do mk = 1,levdeg(nl)
       do i = 1,3
       do j = 1,3
-        tbcurv(nk,mk,i,j) = -2*dimag(tfqg(i,j,nk,mk,nl))
+        tbcurv(nk,mk,i,j) = -2*dimag(tquageom(i,j,nk,mk,nl))
       enddo
       enddo
       enddo
@@ -144,15 +156,20 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
 
-      call berry_tensor_print(levdeg(nl), adot, tbcurv, 'A', mxddeg)
+      cident = 'berry_curv'
 
-    elseif(nq == 2) then
+      call berry_tensor_print(levdeg(nl), adot, tbcurv, 'A', cident, nl, &
+          mxddeg)
+
+    endif
+
+    if(nq == 1 .or. nq == 3) then
 
       do nk = 1,levdeg(nl)
       do mk = 1,levdeg(nl)
       do i = 1,3
       do j = 1,3
-        tqmetric(nk,mk,i,j) = real(tfqg(i,j,nk,mk,nl),REAL64)
+        tqmetric(nk,mk,i,j) = real(tquageom(i,j,nk,mk,nl),REAL64)
       enddo
       enddo
       enddo
@@ -163,9 +180,14 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
 
-      call berry_tensor_print(levdeg(nl), adot, tqmetric, 'S', mxddeg)
+      cident = 'qua_metric'
 
-    elseif(nq == 3) then
+      call berry_tensor_print(levdeg(nl), adot, tqmetric, 'S', cident, nl,     &
+          mxddeg)
+
+    endif
+
+    if(nq == 1 .or. nq == 4) then
 
       do nk = 1,levdeg(nl)
       do mk = 1,levdeg(nl)
@@ -173,28 +195,33 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       m = leveigs(nl,mk)
       do i = 1,3
       do j = 1,3
-        tmag(nk,mk,i,j) = dimag(tgammamf(i,j,nk,mk,nl))
+        tmag(nk,mk,i,j) = dimag(tgamma(i,j,nk,mk,nl))
       enddo
       enddo
       enddo
       enddo
 
       write(6,*)
-      write(6,'("Orbital magnetization for level with energy ",          &
+      write(6,'("Orbital magnetic moment for level with energy ",        &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
 
-      call berry_tensor_print(levdeg(nl), adot, tmag, 'A', mxddeg)
+      cident = 'orb_magnet'
 
-    elseif(nq == 4) then
+      call berry_tensor_print(levdeg(nl), adot, tmag, 'A', cident, nl,   &
+          mxddeg)
+
+    endif
+
+    if(nq == 1 .or. nq == 5) then
 
       do nk = 1,levdeg(nl)
       do mk = 1,levdeg(nl)
       do i = 1,3
       do j = 1,3
-        tmass(nk,mk,i,j) =                                                   &
-                - tgammamf(i,j,nk,mk,nl) - conjg(tgammamf(i,j,mk,nk,nl))     &
-                + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
+        tmass(nk,mk,i,j) =                                               &
+            - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))         &
+            + (td2hdk2(i,j,nk,mk,nl) + conjg(td2hdk2(i,j,mk,nk,nl))) / 2
       enddo
       enddo
       enddo
@@ -203,22 +230,72 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
       rtmass(:,:,:,:) = real(tmass(:,:,:,:), REAL64)
 
       write(6,*)
-      write(6,'("Real part mass tensor for level with energy ",          &
+      write(6,'("Real part inverse mass tensor for level with energy ",  &
            &   f13.3)') ei(leveigs(nl,1))*HARTREE
       write(6,*)
 
-      call berry_tensor_print(levdeg(nl), adot, rtmass, 'S', mxddeg)
+      cident = 'real_mass '
+
+      call berry_tensor_print(levdeg(nl), adot, rtmass, 'S', cident, nl, &
+          mxddeg)
+
+      if(levdeg(nl) > 1) then
+
+        rtmass(:,:,:,:) = aimag(tmass(:,:,:,:))
+
+        write(6,*)
+        write(6,'("Imaginary part of that inverse mass tensor")')
+        write(6,*)
+
+        cident = 'imag_mass '
+
+        call berry_tensor_print(levdeg(nl), adot, rtmass, 'A', cident, nl,     &
+          mxddeg)
+
+      endif
+
+    endif
+
+    if(nq == 1 .or. nq == 6) then
+
+      do nk = 1,levdeg(nl)
+      do mk = 1,levdeg(nl)
+      do i = 1,3
+      do j = 1,3
+        tmass(nk,mk,i,j) =                                               &
+            - tgamma(i,j,nk,mk,nl) - conjg(tgamma(i,j,mk,nk,nl))
+      enddo
+      enddo
+      enddo
+      enddo
+
+      rtmass(:,:,:,:) = real(tmass(:,:,:,:), REAL64)
 
       write(6,*)
-      write(6,'("Imaginary part of that mass tensor")')
+      write(6,'("Real part of interband contribution  to inverse mass",  &
+           &   " tensor for level with energy ", f13.3)')                &
+                     ei(leveigs(nl,1))*HARTREE
       write(6,*)
-      do n = 1,levdeg(nl)
-        do j = 1,3
-          write(6,'(8(3f10.3,4x))') ((aimag(tmass(n,m,k,j)), k = 1,3), m = 1,levdeg(nl))
-        enddo
+
+      cident = 'r_contmass'
+
+      call berry_tensor_print(levdeg(nl), adot, rtmass, 'S', cident, nl, &
+          mxddeg)
+
+      if(levdeg(nl) > 1) then
+
+        rtmass(:,:,:,:) = aimag(tmass(:,:,:,:))
+
         write(6,*)
-      enddo
-      write(6,*)
+        write(6,'("Imaginary part of that contribution")')
+        write(6,*)
+
+        cident = 'i_contmass'
+
+        call berry_tensor_print(levdeg(nl), adot, rtmass, 'A', cident, nl,     &
+          mxddeg)
+
+      endif
 
     endif
 
