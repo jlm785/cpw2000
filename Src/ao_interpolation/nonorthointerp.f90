@@ -106,7 +106,7 @@ module NonOrthoInterp
 
     call fi_hamiltonian_setup(this%fiData,nband,nk1,nk2,nk3,ws_n1,ws_n2,ws_n3,adot)
 
-    if (loptical==1) then
+    if (this%loptical == 1) then
       write(6,*) 'allocating space for optical properties computation'
 
       allocate( this%fiData%dh0drk_GridK(nband,nband,3,this %fiData %num_kpts))

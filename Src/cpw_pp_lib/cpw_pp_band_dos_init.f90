@@ -16,8 +16,8 @@
 !>  the effective potential and charge density.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.07
-!>  \date         February 2020, 15 September 2023.
+!>  \version      5.11
+!>  \date         February 2020, 20 February 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_init( filename, iotape,                       &
@@ -31,6 +31,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
 ! Modified, efermi, 29 November 2021. JLM
 ! Deallocation, 15 September 2023. JLM
 ! size of author, 13 January 2024. JLM
+! Modified, ititle -> psdtitle. 20 February 2025. JLM
 
   use cpw_variables
 
@@ -73,11 +74,11 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
 
 ! Pseudopotential variables not used elsewhere
 
-  character(len=3), allocatable      ::  irel(:)                        !  type of calculation relativistic/spin
-  character(len=4), allocatable      ::  icore(:)                       !  type of partial core correction
+  character(len=3), allocatable      ::  irel(:)                         !  type of calculation relativistic/spin
+  character(len=4), allocatable      ::  icore(:)                        !  type of partial core correction
   character(len=2), allocatable      ::  icorr(:)
-  character(len=60), allocatable     ::  iray(:)                        !  information about pseudopotential
-  character(len=70), allocatable     ::  ititle(:)                      !  further information about pseudopotential
+  character(len=60), allocatable     ::  iray(:)                         !  information about pseudopotential
+  character(len=10), allocatable     ::  psdtitle(:,:)                   !  further information about pseudopotential
 
 ! other variables
 
@@ -127,7 +128,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
   allocate(icore(dims_%mxdtyp))
   allocate(icorr(dims_%mxdtyp))
   allocate(iray(dims_%mxdtyp))
-  allocate(ititle(dims_%mxdtyp))
+  allocate(psdtitle(20,dims_%mxdtyp))
 
   ipr = 1
 
@@ -144,7 +145,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
          recip_in_%phase, recip_in_%conj, recip_in_%ns,                  &
          recip_in_%mstar,                                                &
          vcompin_%veff, chdensin_%den, chdensin_%dend,                   &
-         irel, icore, icorr, iray, ititle,                               &
+         irel, icore, icorr, iray, psdtitle,                             &
          pseudo_%ealraw, pseudo_%zv, pseudo_%ztot,                       &
          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,             &
          pseudo_%vloc, pseudo_%dcor, pseudo_%dval,                       &
@@ -165,7 +166,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
   deallocate(icore)
   deallocate(icorr)
   deallocate(iray)
-  deallocate(ititle)
+  deallocate(psdtitle)
 
   return
 

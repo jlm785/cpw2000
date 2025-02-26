@@ -1,20 +1,32 @@
-!>  writes the abinit.in file
+!------------------------------------------------------------!
+! This file is distributed as part of the cpw2000 code and   !
+! under the terms of the GNU General Public License. See the !
+! file `LICENSE' in the root directory of the cpw2000        !
+! distribution, or http://www.gnu.org/copyleft/gpl.txt       !
+!                                                            !
+! The webpage of the cpw2000 code is not yet written         !
+!                                                            !
+! The cpw2000 code is hosted on GitHub:                      !
+!                                                            !
+! https://github.com/jlm785/cpw2000                          !
+!------------------------------------------------------------!
 
-subroutine write_abinit_in(adot, ntype, natom, nameat, rat, alatt,       &
+!>  writes an abinit.in file consistent with the data on PW_RHO_V.DAT
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.11
+!>  \date         30 October 2018. 25 February 2025
+!>  \copyright    GNU Public License v2
+
+subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
     emax, nx,ny,nz,                                                      &
     mxdtyp, mxdatm)
 
-! subroutine write_abinit_in(meta_pwdat,                                   &
-!   adot,ntype,natom,nameat,rat,alatt,                                     &
-!   emax,nbandin,nx,ny,nz,sx,sy,sz,                                        &
-!   mxdtyp,mxdatm)
 
 ! Written 30 October 2018.
 ! Documentation, 12 february 2021. JLM
 ! Removed unused variables, 14 November 2024. JLM
-! copyright  J.L.Martins, INESC-MN.
-
-! version 5.11
+! Cleanup, change of name, 25 February 2025. JLM
 
   implicit none
 
@@ -25,8 +37,6 @@ subroutine write_abinit_in(adot, ntype, natom, nameat, rat, alatt,       &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of types of atoms
 
-!  character(len=250), intent(in)     ::  meta_pwdat                      !<  metadata from cpw_in or PW.DAT
-
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -36,18 +46,14 @@ subroutine write_abinit_in(adot, ntype, natom, nameat, rat, alatt,       &
   real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
 
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
-!  integer, intent(in)                ::  nbandin                         !<  target for number of bands
 
   integer, intent(in)                ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-!  real(REAL64), intent(in)           ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
 
 ! local:
 
   real(REAL64)          ::  avec(3,3),bvec(3,3)
   integer               ::  nat
   integer               ::  io                                           !  tape number
-!  real(REAL64)          ::  atmass
-!  character(len=80)     ::  pseudofile
 
   integer, allocatable  ::  iznuc(:)
 
@@ -134,5 +140,6 @@ subroutine write_abinit_in(adot, ntype, natom, nameat, rat, alatt,       &
   deallocate(iznuc)
 
   return
-end subroutine write_abinit_in
+
+end subroutine pw2o_abinit_in
 

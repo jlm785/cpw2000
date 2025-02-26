@@ -15,8 +15,8 @@
 !>  data from a self-consistent calculation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         May 16, 2014, 29 November 2021. JLM
+!>  \version      5.11
+!>  \date         May 16, 2014, 20 February 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
@@ -27,7 +27,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
          veff, den, denbond,                                             &
-         irel, icore, icorr, iray, ititle,                               &
+         irel, icore, icorr, iray, psdtitle,                             &
          ealraw, zv, ztot,                                               &
          nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                    &
          norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
@@ -42,6 +42,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Modified, documentation, February 4 2020. JLM
 ! Modified, efermi order of ntrans, mtrx, tnp, 29 November 2021. JLM
 ! Modified, size of author, 13 January 2024.
+! Modified, ititle -> psdtitle. 20 February 2025. JLM
 
 
   implicit none
@@ -106,7 +107,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   character(len=4), intent(out)      ::  icore(mxdtyp)                   !<  type of partial core correction
   character(len=2), intent(out)      ::  icorr(mxdtyp)                   !<  type of correlation
   character(len=60), intent(out)     ::  iray(mxdtyp)                    !<  information about pseudopotential
-  character(len=70), intent(out)     ::  ititle(mxdtyp)                  !<  further information about pseudopotential
+  character(len=10), intent(out)     ::  psdtitle(20,mxdtyp)             !<  further information about pseudopotential
 
   real(REAL64), intent(out)          ::  ealraw                          !<  G=0 contrib. to the total energy. (non norm. to vcell,hartree)
   integer, intent(out)               ::  nqnl(mxdtyp)                    !<  number of points for pseudo interpolation for atom k
@@ -159,7 +160,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! reads the pseudopotentials
 
   call pw_rho_v_in_pseudo(io, ipr, ealraw, author,                       &
-         irel, icore, icorr, iray, ititle,                               &
+         irel, icore, icorr, iray, psdtitle,                             &
          nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                    &
          norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
          ntype, natom, nameat, zv, ztot,                                 &

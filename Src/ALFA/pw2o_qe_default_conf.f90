@@ -1,8 +1,26 @@
+!------------------------------------------------------------!
+! This file is distributed as part of the cpw2000 code and   !
+! under the terms of the GNU General Public License. See the !
+! file `LICENSE' in the root directory of the cpw2000        !
+! distribution, or http://www.gnu.org/copyleft/gpl.txt       !
+!                                                            !
+! The webpage of the cpw2000 code is not yet written         !
+!                                                            !
+! The cpw2000 code is hosted on GitHub:                      !
+!                                                            !
+! https://github.com/jlm785/cpw2000                          !
+!------------------------------------------------------------!
+
 !>  subroutine provides a default electronic configuration for each atom.
+!>
+!>  \author       Nikolas Garofil
+!>  \version      5.11
+!>  \date         12 February 2021.
+!>  \copyright    GNU Public License v2
 
-subroutine default_conf(ized,config)
+subroutine pw2o_qe_default_conf(ized,config)
 
-! Stolen from Nikolas Garofil, Quantum espresso, 12 february 2021. JLM
+! Stolen from Nikolas Garofil, Quantum espresso, 12 February 2021. JLM
 
   implicit none
 
@@ -118,4 +136,5 @@ subroutine default_conf(ized,config)
   if (ized==103) config='[Rn] 7s2.0 7p1.0 5f14.0'
 
   return
-end subroutine default_conf
+
+end subroutine pw2o_qe_default_conf

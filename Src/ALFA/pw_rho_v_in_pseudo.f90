@@ -11,16 +11,16 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  reads the fourier pseudo potentials and atomic orbitals
+!>  Reads the fourier pseudo potentials and atomic orbitals
 !>  atomic core and valence charge densities tape io.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         1980s, 29 November 2021.
+!>  \date         1980s, 20 February 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
-     irel, icore, icorr, iray, ititle,                                   &
+     irel, icore, icorr, iray, psdtitle,                                 &
      nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                        &
      norbat, nqwf, delqwf, wvfao, lorb, latorb,                          &
      ntype, natom, nameat, zv, ztot,                                     &
@@ -45,6 +45,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
 ! Modified, size of author, 13 January 2024. JLM
 ! Modified, avoid bug in ifx compiler. 25 February 2024. JLM
+! Modified, ititle -> psdtitle. 20 February 2025. JLM
 
 
   implicit none
@@ -88,7 +89,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   character(len=4), intent(out)      ::  icore (mxdtyp)                  !<  type of partial core correction
   character(len=2), intent(out)      ::  icorr(mxdtyp)                   !<  type of correlation
   character(len=60), intent(out)     ::  iray(mxdtyp)                    !<  information about pseudopotential
-  character(len=70), intent(out)     ::  ititle(mxdtyp)                  !<  further information about pseudopotential
+  character(len=10), intent(out)     ::  psdtitle(20,mxdtyp)             !<  further information about pseudopotential
 
 ! vloc,dcor,dval contains the fourier transform for q=i*delq
 ! vkbraw contains (1/q**l) * the fourier transform for q=i*delq
@@ -104,13 +105,15 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
   integer                  :: nskip
 
+  integer                  :: ioerror
+
 ! constants
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
 ! counters
 
-  integer                  :: nt,n,j,m,l,mmax,nc
+  integer                  :: nt, n, j, m, l, mmax, nc
 
 
 ! write heading
@@ -126,20 +129,27 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
   do nt=1,ntype
 
+    psdtitle(1:20,nt) = '          '
 
-    read(io) namel,icorrt,irel(nt),icore(nt),iray(nt),ititle(nt)
+    read(io,iostat=ioerror)  namel, icorrt, irel, icore, iray, psdtitle(:,nt)
+
+    if(ioerror /= 0) then
+      backspace(io)
+      read(io) namel, icorrt, irel, icore, iray, psdtitle(1:7,nt)
+    endif
+
     read(io) izv,nql,delql,vql0
     zv(nt) = izv*UM
     delqnl(nt) =delql
 
     if (ipr == 1) write(6,'(/,1x,a2,2x,a2,2x,a3,2x,a4,/,1x,a60,/,        &
-      &    1x,a70,/," nql=",i4," delql=",f9.4)')                         &
-           namel,icorrt,irel(nt),icore(nt),iray(nt),ititle(nt),          &
-           nql,delql
+      &    1x,20a10,/," nql=",i4," delql=",f9.4)')                       &
+           namel, icorrt, irel(nt), icore(nt), iray(nt), psdtitle(:,nt), &
+           nql, delql
 
     if (nql > mxdlqp) then
       write(6,'("  Stopped in pw_rho_v_in_pseudo,  atom: ",a2,           &
-        &    "  increase mxdlqp (potential) to ",i7)') nameat(nt),nql
+        &    "  increase mxdlqp (potential) to ",i7)') nameat(nt), nql
 
       stop
 

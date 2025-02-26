@@ -18,8 +18,8 @@
 !>   All the input is recorded in a file so that calculations can be reproduced
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
-!>  \date         18 january 2022. 1 April 2023. 8 November 2023.
+!>  \version      5.11
+!>  \date         18 january 2022. 1 April 2023. 25 February 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,7 +28,8 @@ program cpw_post_process
 ! Written August 2, 2014. JLM
 ! Modified documentation, details, 3 January 2019. JLM
 ! Added radiative recombination, plot of wave-functions. January 2021. JLM
-! minor details.  8 November 2023. JLM
+! Minor details.  8 November 2023. JLM
+! Interface to pwrhov2other. 25 February 2025. JLM
 
   implicit none
 
@@ -63,37 +64,39 @@ program cpw_post_process
     write(6,*)
     write(6,*) '  0)  Exit program'
     write(6,*)
-    write(6,*) '  1) Generate band structures,'
-    write(6,*) '              density-of-states,'
-    write(6,*) '              oscillator strengths,'
-    write(6,*) '              k.p files,'
-    write(6,*) '              optical response,'
-    write(6,*) '              effective masses,'
-    write(6,*) '              quantum geometric quantities.'
+    write(6,*) '  1)  Generate band structures,'
+    write(6,*) '               density-of-states,'
+    write(6,*) '               oscillator strengths,'
+    write(6,*) '               k.p files,'
+    write(6,*) '               optical response,'
+    write(6,*) '               effective masses,'
+    write(6,*) '               quantum geometric quantities.'
     write(6,*)
-    write(6,*) '  2) Use the TB interpolation to generate band '
-    write(6,*) '     structures and density-of-states'
+    write(6,*) '  2)  Use the TB interpolation to generate band '
+    write(6,*) '      structures and density-of-states'
     write(6,*)
-    write(6,*) '  3) Plot charge densities and potentials'
+    write(6,*) '  3)  Plot charge densities and potentials'
     write(6,*)
-    write(6,*) '  4) Make density of states plots from previously'
-    write(6,*) '     generated data'
+    write(6,*) '  4)  Make density of states plots from previously'
+    write(6,*) '      generated data'
     write(6,*)
-    write(6,*) '  5) Make band structure plots from previously'
-    write(6,*) '     generated k.p data'
+    write(6,*) '  5)  Make band structure plots from previously'
+    write(6,*) '      generated k.p data'
     write(6,*)
-    write(6,*) '  6) Make dielectric function plots from previously'
-    write(6,*) '     generated data'
+    write(6,*) '  6)  Make dielectric function plots from previously'
+    write(6,*) '      generated data'
     write(6,*)
-    write(6,*) '  7) Estimate the radiative recombination rate'
-    write(6,*) '     from previously generated data'
+    write(6,*) '  7)  Estimate the radiative recombination rate'
+    write(6,*) '      from previously generated data'
     write(6,*)
-    write(6,*) '  8) Plot wave-functions'
+    write(6,*) '  8)  Plot wave-functions'
     write(6,*)
-    write(6,*) '  9) Check crystal structure: lattice,'
-    write(6,*) '     symmetry, atom neighbors, write CIF file'
+    write(6,*) '  9)  Check crystal structure: lattice,'
+    write(6,*) '      symmetry, atom neighbors, write CIF file'
     write(6,*)
-    write(6,*) '  Enter your choice (0,1,2,...,9)'
+    write(6,*) '  10) Write input files to Quantum Espresso,'
+    write(6,*)
+    write(6,*) '  Enter your choice (0,1,2,...,10)'
     write(6,*)
 
     read(5,*) ichoice
@@ -139,7 +142,11 @@ program cpw_post_process
 
       call voronoi_sub(ioreplay)
 
-   endif
+    elseif(ichoice == 10) then
+
+      call pw2o_pwrhov2other(ioreplay)
+
+    endif
 
   enddo
 

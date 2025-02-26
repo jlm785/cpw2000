@@ -1,20 +1,34 @@
-!> writes the Xy_nc_upf.in pseudopotential file for Quantum Espresso
+!------------------------------------------------------------!
+! This file is distributed as part of the cpw2000 code and   !
+! under the terms of the GNU General Public License. See the !
+! file `LICENSE' in the root directory of the cpw2000        !
+! distribution, or http://www.gnu.org/copyleft/gpl.txt       !
+!                                                            !
+! The webpage of the cpw2000 code is not yet written         !
+!                                                            !
+! The cpw2000 code is hosted on GitHub:                      !
+!                                                            !
+! https://github.com/jlm785/cpw2000                          !
+!------------------------------------------------------------!
 
-subroutine write_pwscf_upf_in(nameat,                                    &
-    irel, iray, ititle,                                                  &
+!>  Writes the Xy_nc_upf.in pseudopotential file for Quantum Espresso.
+!>  May not work if it includes spin-orbit.  Use the pseudopotential
+!>  generation code instead.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.11
+!>  \date         15 October 2018. 25 February 2025.
+!>  \copyright    GNU Public License v2
+
+subroutine pw2o_qe_pwscf_upf_in(nameat,                                  &
+    irel, iray, psdtitle,                                                &
     nkb)
 
-! subroutine write_pwscf_upf_in(nameat, zv,                                &
-!     irel, icore, icorr, iray, ititle,                                    &
-!     nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                         &
-!     mxdlqp)
 
 ! Written 15 October 2018.
 ! Documentation, 12 february 2021. JLM
-! case llocal is not avaulable, 13 November 2023. JLM
-! copyright  J.L.Martins, INESC-MN.
-
-! version 5.11
+! Case llocal is not available, 13 November 2023. JLM
+!
 
   implicit none
 
@@ -22,24 +36,12 @@ subroutine write_pwscf_upf_in(nameat,                                    &
 
 ! input:
 
-!  integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
-
   character(len=3), intent(in)       ::  irel                            !<  type of calculation relativistic/spin
-!  character(len=4), intent(in)       ::  icore                           !<  type of partial core correction
-!  character(len=2), intent(in)       ::  icorr                           !<  type of correlation
   character(len=60), intent(in)      ::  iray                            !<  information about pseudopotential
-  character(len=70), intent(in)      ::  ititle                          !<  further information about pseudopotential
+  character(len=10), intent(in)      ::  psdtitle(20)                    !<  further information about pseudopotential
 
   character(len=2), intent(in)       ::  nameat                          !<  chemical symbol for the type i
-!  real(REAL64), intent(in)           ::  zv                              !<  valence of atom with type i
-
-!  integer, intent(in)                ::  nqnl                            !<  number of points for pseudo interpolation for atom k
-!  real(REAL64), intent(in)           ::  delqnl                          !<  step used in the pseudo interpolation for atom k
-!  real(REAL64), intent(in)       :: vkbraw(-2:mxdlqp,0:3,-1:1)           !<  (1/q**l) * kb nonlocal pseudo. for atom k, ang. mom. l. (non normalized to vcell, hartree)
   integer, intent(in)                ::  nkb(0:3,-1:1)                   !<   kb pseudo.  normalization for atom k, ang. mom. l
-!  real(REAL64), intent(in)           ::  vloc(-1:mxdlqp)                 !<  local pseudopotential for atom k (hartree)
-!  real(REAL64), intent(in)           ::  dcor(-1:mxdlqp)                 !<  core charge density for atom k
-!  real(REAL64), intent(in)           ::  dval(-1:mxdlqp)                 !<  valence charge density for atom k
 
 ! local:
 
@@ -57,6 +59,8 @@ subroutine write_pwscf_upf_in(nameat,                                    &
   character(len=80)     ::  fmt
   character(len=80)     ::  pseudofile
 
+  character(len=10)     ::  tmptitle
+
   integer               ::  ioerror
 
 ! constants
@@ -69,7 +73,7 @@ subroutine write_pwscf_upf_in(nameat,                                    &
 
 
   call p_tbl_charge(nameat,iz)
-  call default_conf(iz,config)
+  call pw2o_qe_default_conf(iz,config)
 
   io = 10
 
@@ -150,13 +154,14 @@ subroutine write_pwscf_upf_in(nameat,                                    &
   if(irel == 'rel') then
     write(io,'(i3)') 2*lmax+1
     do l=0,lmax
-      read(ititle(l*20+1:l*20+2),*) nl
+      tmptitle = psdtitle(2*l+1)
+      read(tmptitle(1:2),*) nl
       if(nl(2:2) == 's') nl(2:2) = 'S'
       if(nl(2:2) == 'p') nl(2:2) = 'P'
       if(nl(2:2) == 'd') nl(2:2) = 'D'
       if(nl(2:2) == 'f') nl(2:2) = 'F'
       if(nl(2:2) == 'g') nl(2:2) = 'G'
-      read(ititle(l*20+4:l*20+9),*) occup
+      read(tmptitle(4:9),*) occup
       if(occup < 0.001) then
         write(6,*)
         write(6,*) '   WARNING    WARNING    WARNING'
@@ -165,7 +170,8 @@ subroutine write_pwscf_upf_in(nameat,                                    &
         write(6,*) '   and atom ',nameat
         write(6,*)
       endif
-      read(ititle(l*20+16:l*20+20),*) rc
+      tmptitle = psdtitle(2*l+2)
+      read(tmptitle(6:10),*) rc
       write(io,'(a2,2i3,4f6.2)') nl,l+1,l,occup,ZERO,rc,rc
       if(l /=0) then
         write(io,'(a2,2i3,4f6.2)') nl,l+1,l,occup,ZERO,rc,rc
@@ -174,17 +180,22 @@ subroutine write_pwscf_upf_in(nameat,                                    &
   else
     write(io,'(i3)') lmax+1
     do l=0,lmax
-      read(ititle(l*20+1:l*20+2),*) nl
+      tmptitle = psdtitle(2*l+1)
+      read(tmptitle(1:2),*) nl
       if(nl(2:2) == 's') nl(2:2) = 'S'
       if(nl(2:2) == 'p') nl(2:2) = 'P'
       if(nl(2:2) == 'd') nl(2:2) = 'D'
       if(nl(2:2) == 'f') nl(2:2) = 'F'
       if(nl(2:2) == 'g') nl(2:2) = 'G'
-      read(ititle(l*20+4:l*20+9),*) occup
-      read(ititle(l*20+16:l*20+20),*) rc
+      read(tmptitle(4:9),*) occup
+      tmptitle = psdtitle(2*l+2)
+      read(psdtitle(6:10),*) rc
       write(io,'(a2,2i3,4f6.2)') nl,l+1,l,occup,ZERO,rc,rc
     enddo
   endif
 
+  close(unit=io)
+
   return
-end subroutine write_pwscf_upf_in
+
+end subroutine pw2o_qe_pwscf_upf_in

@@ -18,8 +18,8 @@
 !>  g-vectors.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         1980s, 29 November 2021.
+!>  \version      5.11
+!>  \date         1980s, 20 February 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine read_pseudo(ipr, author, ealraw,                              &
@@ -40,6 +40,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 ! Modified, eorbwv, 29 November 2021. JLM
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
 ! Modified, Perdew-Wang (1992) not flagged as unsupported. 12 January 2024. JLM
+! Modified, ititle -> psdtitle, useless but for consistency. 20 February 2025. JLM
 
 
   implicit none
@@ -89,13 +90,15 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   character(len=3)         :: irel
   character(len=4)         :: icore
   character(len=60)        :: iray
-  character(len=70)        :: ititle
+  character(len=10)        :: psdtitle(20)
   integer                  :: izv,nql,norb(-1:1),lo(4,-1:1)
   real(REAL64)             :: ealpha,delql,vql0,fac
   real(REAL64)             :: eorb(0:3,-1:1)
   real(REAL64)             :: eorbwv(0:mxdlao)
 
   integer                  :: nskip
+
+  integer                  :: ioerror
 
 ! constants
 
@@ -138,15 +141,24 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 
 !   read heading
 
-    read(it,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,a70)')                   &
-         namel,icorrt,irel,icore,iray,ititle
+    psdtitle(1:20) = '          '
+
+    read(it,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,20a10)',iostat=ioerror)  &
+         namel, icorrt, irel, icore, iray, psdtitle
+
+    if(ioerror /= 0) then
+      backspace(it)
+      read(it,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,7a10)')                &
+           namel, icorrt, irel, icore, iray, psdtitle(1:7)
+    endif
+
     read(it,*) izv,nql,delql,vql0
     zv(nt) = izv*UM
     delqnl(nt) =delql
 
     if (ipr == 1) write(6,'(/,1x,a2,2x,a2,2x,a3,2x,a4,/,1x,a60,/,        &
-      &     1x,a70,/," nql=",i4," delql=",f9.4)')                        &
-            namel,icorrt,irel,icore,iray,ititle,nql,delql
+      &     1x,20a10,/," nql=",i4," delql=",f9.4)')                      &
+            namel, icorrt, irel, icore, iray, psdtitle, nql, delql
 
     if (nql > mxdlqp) then
       write(6,'("  Stopped in read_pseudo  reading data for ",a2,        &
