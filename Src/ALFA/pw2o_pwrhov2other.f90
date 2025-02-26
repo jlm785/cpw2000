@@ -19,7 +19,7 @@
 !>  \date         12 October 2018. 25 February 2025
 !>  \copyright    GNU Public License v2
 
-subroutine p2o_pwrhov2other(ioreplay)
+subroutine pw2o_pwrhov2other(ioreplay)
 
 ! Written October 12, 2018 from in_rho_v.f90. JLM
 ! Modernized, February 12, 2021. JLM
@@ -332,5 +332,5 @@ subroutine p2o_pwrhov2other(ioreplay)
 
   return
 
-end subroutine p2o_pwrhov2other
+end subroutine pw2o_pwrhov2other
 
