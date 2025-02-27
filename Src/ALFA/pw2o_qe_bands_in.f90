@@ -239,6 +239,9 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
     endif
     write(io,'(3x,3f16.6,2x,i6)')  (rkend(j,nlines),j=1,3), 1
 
+    deallocate(rkbegin,rkend)
+    deallocate(nkstep)
+
   endif
 
   close(unit = io)
@@ -253,8 +256,6 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
   close(unit = io)
 
   deallocate(rat_qe)
-  deallocate(rkbegin,rkend)
-  deallocate(nkstep)
 
   return
 

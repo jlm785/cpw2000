@@ -189,7 +189,7 @@ subroutine pw2o_qe_pwscf_upf_in(nameat,                                  &
       if(nl(2:2) == 'g') nl(2:2) = 'G'
       read(tmptitle(4:9),*) occup
       tmptitle = psdtitle(2*l+2)
-      read(psdtitle(6:10),*) rc
+      read(tmptitle(6:10),*) rc
       write(io,'(a2,2i3,4f6.2)') nl,l+1,l,occup,ZERO,rc,rc
     enddo
   endif
