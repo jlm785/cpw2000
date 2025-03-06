@@ -79,6 +79,8 @@ subroutine read_esdf_crystal(ipr,                                        &
   logical           ::  lperm                      !  for checking permutations
   integer           ::  ioerr
 
+  integer           ::  nat_1, nat_2               !  total number of atoms
+
 ! parameters
 
   real(REAL64), parameter  :: AMU = 1822.888485_REAL64
@@ -349,8 +351,9 @@ subroutine read_esdf_crystal(ipr,                                        &
 
     if(nlines /= ntype) then
       write(6,*)
-      write(6,*) '  read_esdf_crystal:  Wrong Number of Lines'
-      write(6,*) '  in Chemical_Species_Label!'
+      write(6,*) '  Stopped in read_esdf_crystal.'
+      write(6,*) '  Wrong Number of Linesin Chemical_Species_Label!'
+      write(6,*) '  '
 
       stop
 
@@ -363,8 +366,8 @@ subroutine read_esdf_crystal(ipr,                                        &
 
       if(ioerr /= 0) then
         write(6,*)
-        write(6,*) '    Stopped in read_esdf_crystal'
-        write(6,*) '    error reading Chemical_Species_Label'
+        write(6,*) '    Stopped in read_esdf_crystal,'
+        write(6,*) '    error reading Chemical_Species_Label.'
 
         stop
 
@@ -378,8 +381,8 @@ subroutine read_esdf_crystal(ipr,                                        &
 
     if(.NOT. lperm) then
       write(6,*)
-      write(6,*) '  read_esdf_crystal:  Wrong species index'
-      write(6,*) '  in Chemical_Species_Label!'
+      write(6,*) '  Stopped in read_esdf_crystal.'
+      write(6,*) '  Wrong species indexin Chemical_Species_Label!'
 
       stop
 
@@ -463,6 +466,37 @@ subroutine read_esdf_crystal(ipr,                                        &
 
   else
     lgeom = .FALSE.
+  endif
+
+! checks consistency
+
+  if(esdf_defined('NumberOfAtoms')) then
+    nat_1 = esdf_integer('NumberOfAtoms',1)
+  endif
+
+  nat_2 = 0
+  do nt = 1,ntype
+    if(natom(nt) == 0) then
+      write(6,*)
+      write(6,*) '    Stopped in read_esdf_crystal.'
+      write(6,*) '    Could not find coordinates for atom type ', nameat(nt)
+      write(6,*)
+
+      stop
+
+    endif
+    nat_2 = nat_2 + natom(nt)
+  enddo
+
+  if(nat_1 /= nat_2) then
+    write(6,*)
+    write(6,*) '    Stopped in read_esdf_crystal.'
+    write(6,*) '    Number of atoms found: ', nat_2
+    write(6,*) '    Expected nymber of atoms: ',nat_1
+    write(6,*)
+
+    stop
+
   endif
 
 

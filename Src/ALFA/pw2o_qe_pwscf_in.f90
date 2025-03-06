@@ -102,7 +102,7 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
   write(io,'("&CONTROL")')
   write(io,'("  calculation = ''scf'',")')
   write(io,'("   pseudo_dir = ''.'',")')
-  write(io,'("       prefix = ''cpw'',")')
+  write(io,'("       prefix = ''cpw2qe'',")')
   write(io,'("        title = ''",a50,"'' ,")') meta_pwdat(1:50)
   write(io,'("/")')
 

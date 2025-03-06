@@ -69,6 +69,8 @@ subroutine pw2o_atom_dat(nameat,                                         &
   integer               ::  lcan
   real(REAL64)          ::  rcan
 
+  character(len=2)      ::  icorrtmp
+
 ! constants
 
   real(REAL64), parameter    ::  UM = 1.0_REAL64, ZERO = 0.0_REAL64
@@ -202,7 +204,9 @@ subroutine pw2o_atom_dat(nameat,                                         &
 
   write(io,'(3x,a2,10x,a60)') pcc,iray
   write(io,'(8x,a3)') 'tm2'
-  write(io,'(" n=",a2," c=",a2,a1)') nameat,icorr,ispp
+  icorrtmp = icorr
+  call string_to_lower(icorrtmp)
+  write(io,'(" n=",a2," c=",a2,a1)') nameat, icorrtmp, ispp
 
 
   write(io,'(6f10.1)') UM*iz, ZERO, ZERO, rmax, aa, bb

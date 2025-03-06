@@ -74,6 +74,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
   logical               ::  lband
 
   integer               ::  nlines
+  integer               ::  nband_qe
   integer               ::  npt_qe
 
   real(REAL64)          ::  dist
@@ -102,6 +103,24 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
 
   allocate(rat_qe(3,mxdnat))
 
+! check if the file with information exists
+
+  inquire(file = trim(adjustl(fileband)), exist = lband)
+
+  if(lband) then
+
+    ioband = 13
+    open(unit = ioband, file = trim(adjustl(fileband)), status='OLD', form='FORMATTED')
+
+    read(ioband,*) nlines, nband_qe
+
+  else
+
+    nband_qe = nbandin
+
+  endif
+
+  if(lso) nband_qe = 2*nband_qe
 
 ! open file
 
@@ -116,7 +135,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
   write(io,'("&CONTROL")')
   write(io,'("  calculation = ''bands'',")')
   write(io,'("   pseudo_dir = ''.'',")')
-  write(io,'("       prefix = ''cpw'',")')
+  write(io,'("       prefix = ''cpw2qe'',")')
   write(io,'("        title = ''",a50,"'' ,")') meta_pwdat(1:50)
   write(io,'("/")')
 
@@ -147,7 +166,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
 
   write(io,'("        nat = ",i5," ,")') nat
   write(io,'("       ntyp = ",i5," ,")') ntype
-  write(io,'("       nbnd = ",i5," ,")') nbandin
+  write(io,'("       nbnd = ",i5," ,")') nband_qe
   write(io,'("    ecutwfc = ",f14.3," ,")') 2*emax
   if(lso) then
     write(io,'("   lspinorb = .TRUE.,")')
@@ -190,14 +209,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
 
   write(io,'("K_POINTS {crystal_b}")')
 
-  inquire(file = trim(adjustl(fileband)), exist = lband)
-
   if(lband) then
-
-    ioband = 13
-    open(unit = ioband, file = trim(adjustl(fileband)), status='OLD', form='FORMATTED')
-
-    read(ioband,*) nlines
 
     allocate(rkbegin(3,nlines),rkend(3,nlines))
     allocate(nkstep(nlines))
