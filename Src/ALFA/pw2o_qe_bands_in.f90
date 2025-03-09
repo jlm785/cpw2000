@@ -178,8 +178,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
   write(io,'("  diagonalization = ''david'',")')
   write(io,'("/")')
 
-  write(io,'("&IONS")')
-  write(io,'("/")')
+  write(io,*)
 
 
   if(iqe == 0) then
@@ -262,7 +261,7 @@ subroutine pw2o_qe_bands_in(meta_pwdat, lso, fileband,                   &
 
   write(io,'("&BANDS")')
   write(io,'("      filband = ''QE_bands.dat'',")')
-  write(io,'("       prefix = ''cpw'',")')
+  write(io,'("       prefix = ''cpw2qe'',")')
   write(io,'("/")')
 
   close(unit = io)

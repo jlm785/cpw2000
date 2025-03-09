@@ -141,8 +141,7 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
   write(io,'("  diagonalization = ''david'',")')
   write(io,'("/")')
 
-  write(io,'("&IONS")')
-  write(io,'("/")')
+  write(io,*)
 
 
   if(iqe == 0) then

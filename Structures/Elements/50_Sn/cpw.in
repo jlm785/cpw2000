@@ -11,7 +11,7 @@ SystemLabel                   alpha-tin (gray)
 # Crystal structure
 #------------------------------------------------
 
-LatticeConstant             11.2666     bohr
+LatticeConstant             12.2666     bohr
 
 %block LatticeVectors
          0.00000000         0.50000000         0.50000000

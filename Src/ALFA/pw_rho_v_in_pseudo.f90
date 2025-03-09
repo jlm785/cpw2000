@@ -106,6 +106,8 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   integer                  :: nskip
 
   integer                  :: ioerror
+  character(len=10)        ::  psd20(20)
+  character(len=10)        ::  psd7(7)
 
 ! constants
 
@@ -131,11 +133,15 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
     psdtitle(1:20,nt) = '          '
 
-    read(io,iostat=ioerror)  namel, icorrt, irel, icore, iray, psdtitle(:,nt)
+    read(io,iostat=ioerror)  namel, icorrt, irel(nt), icore(nt),         &
+                             iray(nt), psd20
 
     if(ioerror /= 0) then
       backspace(io)
-      read(io) namel, icorrt, irel, icore, iray, psdtitle(1:7,nt)
+      read(io) namel, icorrt, irel(nt), icore(nt), iray(nt), psd7
+      psdtitle(1:7,nt) = psd7(1:7)
+    else
+      psdtitle(1:20,nt) = psd20(1:20)
     endif
 
     read(io) izv,nql,delql,vql0
