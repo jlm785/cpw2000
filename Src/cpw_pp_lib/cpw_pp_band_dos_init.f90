@@ -17,21 +17,21 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         February 2020, 20 February 2025.
+!>  \date         February 2020, 12 March 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine cpw_pp_band_dos_init( filename, iotape,                       &
-       dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,       &
-       pwexp_, chdensin_, vcompin_, atorb_,                              &
-       emaxin, efermi, flgdalin, author,                                 &
+subroutine cpw_pp_band_dos_init(filename, iotape,                        &
+       dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
+       atorb_, efermi,  author,                                          &
        pwline, title, subtitle ,meta_cpw2000,                            &
-       mxdgvein, mxdnstin)
+       dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
 ! written February 1, 2020 from previous code. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Deallocation, 15 September 2023. JLM
 ! size of author, 13 January 2024. JLM
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
+! Modified, order of input variables, dims_in_. 12 March 2025. JLM
 
   use cpw_variables
 
@@ -50,13 +50,18 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
   type(flags_t)                      ::  flags_                          !<  computational flags
   type(spaceg_t)                     ::  spaceg_                         !<  space group information
   type(crys_t)                       ::  crys_                           !<  crystal structure
-  type(recip_t)                      ::  recip_in_                       !<  reciprocal space information
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
   type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
-  type(chdens_t)                     ::  chdensin_                       !<  input charge densities
-  type(vcomp_t)                      ::  vcompin_                        !<  local potential contributions
+
+
+  type(dims_t)                       ::  dims_in_                        !<  input array dimensions
+  type(recip_t)                      ::  recip_in_                       !<  input reciprocal space information
+  type(chdens_t)                     ::  chdens_in_                      !<  input charge densities
+  type(vcomp_t)                      ::  vcomp_in_                       !<  input local potential contributions
+
+
 
   character(len=4), intent(out)      ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
 
@@ -65,12 +70,9 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
   character(len=140), intent(out)    ::  subtitle                        !<  title for plots
   character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata from cpw2000
 
-  real(REAL64), intent(out)          ::  emaxin                          !<  kinetic energy cutoff of plane wave expansion (hartree).
-  character(len=4), intent(out)      ::  flgdalin                        !<  whether the dual approximation is used
+  real(REAL64), intent(out)          ::  emax_in                         !<  kinetic energy cutoff of plane wave expansion (hartree).
+  character(len=4), intent(out)      ::  flgdal_in                       !<  whether the dual approximation is used
   real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-
-  integer, intent(out)               ::  mxdgvein                        !<  array dimension for input g-space vectors
-  integer, intent(out)               ::  mxdnstin                        !<  array dimension for input g-space stars
 
 ! Pseudopotential variables not used elsewhere
 
@@ -94,20 +96,20 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
 ! open file and reads data
 
   call pw_rho_v_in_size(filename, iotape,                                &
-     dims_%mxdtyp, dims_%mxdatm, mxdgvein, mxdnstin, dims_%mxdlqp,       &
-     dims_%mxdlao)
+     dims_%mxdtyp, dims_%mxdatm, dims_in_%mxdgve, dims_in_%mxdnst,       &
+     dims_%mxdlqp, dims_%mxdlao)
 
   allocate(crys_%natom(dims_%mxdtyp))
   allocate(crys_%nameat(dims_%mxdtyp))
   allocate(crys_%rat(3,dims_%mxdatm,dims_%mxdtyp))
 
-  allocate(recip_in_%kgv(3,mxdgvein))
-  allocate(recip_in_%phase(mxdgvein))
-  allocate(recip_in_%conj(mxdgvein))
-  allocate(recip_in_%mstar(mxdnstin))
-  allocate(chdensin_%den(mxdnstin))
-  allocate(chdensin_%dend(mxdnstin))
-  allocate(vcompin_%veff(mxdnstin))
+  allocate(recip_in_%kgv(3,dims_in_%mxdgve))
+  allocate(recip_in_%phase(dims_in_%mxdgve))
+  allocate(recip_in_%conj(dims_in_%mxdgve))
+  allocate(recip_in_%mstar(dims_in_%mxdnst))
+  allocate(chdens_in_%den(dims_in_%mxdnst))
+  allocate(chdens_in_%dend(dims_in_%mxdnst))
+  allocate(vcomp_in_%veff(dims_in_%mxdnst))
 
 
   allocate(pseudo_%nq(dims_%mxdtyp))
@@ -134,7 +136,7 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
 
   call pw_rho_v_in(filename, iotape, ipr,                                &
          pwline, title, subtitle, meta_cpw2000,                          &
-         author, flags_%flgscf, flgdalin, emaxin, pwexp_%teleck,         &
+         author, flags_%flgscf, flgdal_in, emax_in, pwexp_%teleck,       &
          kpoint_%nx, kpoint_%ny, kpoint_%nz,                             &
          kpoint_%sx, kpoint_%sy, kpoint_%sz, pwexp_%nbandin,             &
          crys_%alatt, efermi,                                            &
@@ -144,14 +146,14 @@ subroutine cpw_pp_band_dos_init( filename, iotape,                       &
          recip_in_%ng, recip_in_%kmax, recip_in_%kgv,                    &
          recip_in_%phase, recip_in_%conj, recip_in_%ns,                  &
          recip_in_%mstar,                                                &
-         vcompin_%veff, chdensin_%den, chdensin_%dend,                   &
+         vcomp_in_%veff, chdens_in_%den, chdens_in_%dend,                &
          irel, icore, icorr, iray, psdtitle,                             &
          pseudo_%ealraw, pseudo_%zv, pseudo_%ztot,                       &
          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,             &
          pseudo_%vloc, pseudo_%dcor, pseudo_%dval,                       &
          atorb_%norbat, atorb_%nqwf, atorb_%delqwf, atorb_%wvfao,        &
          atorb_%lorb, atorb_%latorb,                                     &
-         dims_%mxdtyp, dims_%mxdatm, mxdgvein, mxdnstin,                 &
+         dims_%mxdtyp, dims_%mxdatm, dims_in_%mxdgve, dims_in_%mxdnst,   &
          dims_%mxdlqp, dims_%mxdlao)
 
 ! processes crystal structure

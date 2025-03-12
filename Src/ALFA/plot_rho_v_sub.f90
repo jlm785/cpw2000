@@ -53,8 +53,7 @@ subroutine plot_rho_v_sub(ioreplay)
 !  integer                            ::  mxdlqp                          !  array dimension for local potential
 !  integer                            ::  mxdlao                          !  array dimension of orbital per atom type
 
-  integer                            ::  mxdgvein                        !  array dimension for input g-space vectors
-  integer                            ::  mxdnstin                        !  array dimension for input g-space stars
+  type(dims_t)                       ::  dims_in_                        !  input array dimensions
 
 ! flags
 
@@ -64,7 +63,7 @@ subroutine plot_rho_v_sub(ioreplay)
 !  character(len=4)                   ::  flgdal                          !  dual approximation if equal to 'DUAL'
 !  character(len=6)                   ::  flgscf                          !  type of self consistent field and diagonalizatioN
 
-  character(len=4)                   ::  flgdalin                        !  whether the dual approximation is used
+  character(len=4)                   ::  flgdal_in                       !  whether the dual approximation is used
 
 ! atomic structure variables
 
@@ -94,7 +93,7 @@ subroutine plot_rho_v_sub(ioreplay)
 !  real(REAL64), allocatable          ::  ek(:)                           !  kinetic energy (Hartree) of g-vectors in star j
 !  integer, allocatable               ::  izstar(:)                       !  is 0 if the phase=0
 
-  type(recip_t)                      ::  recip_in_                       !  reciprocal space information
+  type(recip_t)                      ::  recip_in_                       !  input reciprocal space information
 
 !  integer                            ::  ngin                            !  input value of ng
 !  integer, allocatable               ::  kgvin(:,:)                      !  input values of kgv
@@ -158,7 +157,7 @@ subroutine plot_rho_v_sub(ioreplay)
 
 !  integer                            ::  nbandin                         !  target for number of bands
 
-  type(chdens_t)                     ::  chdensin_                       !  input charge densities
+  type(chdens_t)                     ::  chdens_in_                      !  charge densities
 
 !  complex(REAL64), allocatable       ::  den(:)                          !  total charge density for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  denc(:)                         !  core charge density for the prototype G-vector in star j
@@ -166,25 +165,23 @@ subroutine plot_rho_v_sub(ioreplay)
 !  complex(REAL64), allocatable       ::  dend(:)                         !  bonding charge density from previous md step
 !  complex(REAL64), allocatable       ::  dend1(:)                        !  bonding charge density from second previous md step
 
-  type(vcomp_t)                      ::  vcompin_                        !  local potential contributions
+  type(chdens_t)                     ::  chdens_                         !  charge densities
+
+  type(vcomp_t)                      ::  vcomp_in_                       !  input local potential contributions
 
 !  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  vhar(:)                         !  Hartree potential for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  vxc(:)                          !  Hartree+exchange+correlation potential for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  veff(:)                         !  Effective potential for the prototype G-vector in star j
 
-  type(vcomp_t)                      ::  vcomp_                          !<  local potential contributions
-
-!  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vhar(:)                         !  Hartree potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vxc(:)                          !  Hartree+exchange+correlation potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  veff(:)                         !  Effective potential for the prototype G-vector in star j
-
-  real(REAL64)                       ::  emaxin                          !  kinetic energy cutoff of plane wave expansion (hartree).
-  real(REAL64)                       ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-
+  type(vcomp_t)                      ::  vcomp_                          !  local potential contributions
 
   type(strfac_t)                     ::  strfac_                         !  structure factors
+
+
+  real(REAL64)                       ::  emax_in                          !  kinetic energy cutoff of plane wave expansion (hartree).
+  real(REAL64)                       ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+
 
 !  integer                            ::  icmplx                          !  indicates if the structure factor is complex
 !  complex(REAL64), allocatable       ::  strfac_%sfact(:,:)              !  structure factor for atom k and star i
@@ -217,6 +214,7 @@ subroutine plot_rho_v_sub(ioreplay)
 ! constants
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
+  complex(REAL64), parameter :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counter
 
@@ -234,17 +232,33 @@ subroutine plot_rho_v_sub(ioreplay)
   iotape = 21
 
   call cpw_pp_band_dos_init(filename, iotape,                            &
-     dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,         &
-     pwexp_, chdensin_, vcompin_, atorb_,                                &
-     emaxin, efermi, flgdalin, author,                                   &
-     pwline, title, subtitle ,meta_cpw2000,                              &
-     mxdgvein, mxdnstin)
+       dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
+       atorb_, efermi,  author,                                          &
+       pwline, title, subtitle ,meta_cpw2000,                            &
+       dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
 
   call cpw_pp_band_prepare(ioreplay,                                     &
-    dims_, crys_, spaceg_, recip_, recip_in_, pwexp_, strfac_,           &
-    vcomp_, vcompin_,                                                    &
-    emaxin)
+       dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
+       dims_in_, recip_in_, vcomp_in_, emax_in)
+
+
+  allocate(chdens_%den(dims_%mxdnst))
+  allocate(chdens_%dend(dims_%mxdnst))
+
+  call cpw_pp_convert(chdens_%den, recip_%kmax, chdens_in_%den,          &
+      recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
+      recip_%mstar,                                                      &
+      recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
+      recip_in_%mstar,                                                   &
+      dims_%mxdgve, dims_%mxdnst, dims_in_%mxdgve, dims_in_%mxdnst)
+
+  call cpw_pp_convert(chdens_%dend, recip_%kmax, chdens_in_%dend,        &
+      recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
+      recip_%mstar,                                                      &
+      recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
+      recip_in_%mstar,                                                   &
+      dims_%mxdgve, dims_%mxdnst, dims_in_%mxdgve, dims_in_%mxdnst)
 
 
   allocate(qplot(dims_%mxdnst))
@@ -287,7 +301,7 @@ subroutine plot_rho_v_sub(ioreplay)
       crys_%adot, crys_%ntype, crys_%natom,                              &
       crys_%nameat, crys_%rat, pseudo_%zv,                               &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
-      recip_%ns, recip_%mstar, chdensin_%den,                            &
+      recip_%ns, recip_%mstar, chdens_%den,                              &
       dims_%mxdtyp,dims_%mxdatm,dims_%mxdgve,dims_%mxdnst)
 
     else
@@ -298,14 +312,15 @@ subroutine plot_rho_v_sub(ioreplay)
       write(6,*) '  1)  Charge density'
       write(6,*) '  2)  Bonding charge density'
       write(6,*) '  3)  Effective potential V_H + V_xc + V_ion'
-      write(6,*) '  4)  Hartree potential V_H'
-      write(6,*) '  5)  Exchange correlation potential V_xc'
-      write(6,*) '  6)  Ionic potential V_ion'
+!       write(6,*) '  4)  Hartree potential V_H'
+!       write(6,*) '  5)  Exchange correlation potential V_xc'
+!       write(6,*) '  6)  Ionic potential V_ion'
 
       read(5,*) ifunc
       write(ioreplay,'(2x,i8,"   function to plot")') ifunc
 
-      if(ifunc < 0 .or. ifunc > 6) then
+!      if(ifunc < 0 .or. ifunc > 6) then
+      if(ifunc < 0 .or. ifunc > 3) then
 
         ifunc = 0
         write(6,*)
@@ -320,28 +335,28 @@ subroutine plot_rho_v_sub(ioreplay)
 
       elseif(ifunc == 1) then
         do j = 1,recip_%ns
-          qplot(j) = chdensin_%den(j)
+          qplot(j) = chdens_%den(j)
         enddo
       elseif(ifunc == 2) then
         do j = 1,recip_%ns
-          qplot(j) = chdensin_%dend(j)
+          qplot(j) = chdens_%dend(j)
         enddo
       elseif(ifunc == 3) then
         do j = 1,recip_%ns
-          qplot(j) = vcompin_%veff(j)
+          qplot(j) = vcomp_%veff(j)
         enddo
-      elseif(ifunc == 4) then
-        do j = 1,recip_%ns
-          qplot(j) = vcompin_%vhar(j)
-        enddo
-      elseif(ifunc == 5) then
-        do j = 1,recip_%ns
-          qplot(j) = vcompin_%vxc(j)
-        enddo
-      elseif(ifunc == 6) then
-        do j = 1,recip_%ns
-          qplot(j) = vcompin_%vion(j)
-        enddo
+!       elseif(ifunc == 4) then
+!         do j = 1,recip_%ns
+!           qplot(j) = vcomp_in_%vhar(j)
+!         enddo
+!       elseif(ifunc == 5) then
+!         do j = 1,recip_%ns
+!           qplot(j) = vcomp_in_%vxc(j)
+!         enddo
+!       elseif(ifunc == 6) then
+!         do j = 1,recip_%ns
+!           qplot(j) = vcomp_in_%vion(j)
+!         enddo
       endif
 
 
@@ -386,11 +401,13 @@ subroutine plot_rho_v_sub(ioreplay)
 ! deallocates the stuff
 
   call cpw_pp_band_dos_clean(crys_, recip_in_, pseudo_,                  &
-        chdensin_, vcompin_, atorb_)
+        chdens_in_, vcomp_in_, atorb_)
 
   deallocate(qplot)
   deallocate(qunsym)
 
+  deallocate(chdens_%den)
+  deallocate(chdens_%dend)
 
   return
 

@@ -17,8 +17,8 @@
 !>  For the double average see  PRL 61, 734 (1988).
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         September 5, 2012. 2 April 2023.
+!>  \version      5.11
+!>  \date         September 5, 2012. 10 March 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -33,6 +33,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 ! Modified, split code, complex variables, 26 May 2014. JLM
 ! Documentation, merge psi_plot, 5 February 2021. JLM
 ! Double average by material.  March-April 2023. JLM
+! double average for nmat/=nwidth. 10 March 2025. JLM
 
 
   implicit none
@@ -78,7 +79,6 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   real(REAL64), allocatable   ::  ave(:)                                 !  layer average of charge density in the 3d direction of fft grid
   real(REAL64), allocatable   ::  dave(:,:)                              !  double average of charge density in the 3d direction of fft grid
   real(REAL64), allocatable   ::  gave(:)                                !  average of the nuclear "gaussian" charge density in the 3d direction of fft grid
-  real(REAL64), allocatable   ::  conv(:)                                !  repeated average of charge density by convolution in the 3d direction of fft grid
 
   real(REAL64), allocatable   ::  autocorr(:)                            !  autocorrelation functiom
 
@@ -281,6 +281,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   do i=1,ns
     istar = istop+1
     istop = istar+mstar(i)-1
+
     do j=istar,istop
       rho(j) = den(i)*conjg(phase(j))
       if(conj(j) < ZERO) rho(j) = conjg(rho(j))
@@ -422,17 +423,28 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   deallocate(dave)
   allocate(dave(nn,nwidth))
 
-  allocate(conv(nn))
-
 ! Electron density
 
-  do k = 1,nwidth
+  if(nwidth == nmat) then
 
-    xave = width(k)/height
-    call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
-         nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
+    do k = 1,nwidth
 
-  enddo
+      xave = width(k)/height
+      call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
+           nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
+
+    enddo
+
+  else
+
+    do k = 1,nwidth
+
+      xave = width(k)/height
+      call plot_convol(n3, xave, ave, dave(:,k))
+
+    enddo
+
+  endif
 
   if(linter) then
     call plot_z1D_gnuplot(ioreplay, iotape, ave, dave, nwidth,           &
@@ -481,13 +493,26 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 ! each width convoluted separately
 ! uses convolution for the double average
 
-  do k=1,nwidth
+  if(nwidth == nmat) then
+
+    do k=1,nwidth
 
     xave = width(k)/height
     call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
          nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
 
-  enddo
+    enddo
+
+  else
+
+    do k = 1,nwidth
+
+      xave = width(k)/height
+      call plot_convol(n3, xave, ave, dave(:,k))
+
+    enddo
+
+  endif
 
 
   if(linter) then
@@ -542,16 +567,29 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 ! each width convoluted separately
 ! uses convolution for the double average
 
-  lfoundall = .TRUE.
-  do k=1,nwidth
 
-    xave = width(k)/height
-    call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
-         nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
+  if(nwidth == nmat) then
 
-    if(.not. lfound) lfoundall = .FALSE.
+    lfoundall = .TRUE.
+    do k=1,nwidth
 
-  enddo
+      xave = width(k)/height
+      call plot_convol_opt(n3, xave, ave, dave(:,k), yave(k), lfound, lopt,  &
+           nrepeat(k), rbottom(k), rbottom(mod(k,nmat)+1))
+      if(.not. lfound) lfoundall = .FALSE.
+
+    enddo
+
+  else
+
+    do k = 1,nwidth
+
+      xave = width(k)/height
+      call plot_convol(n3, xave, ave, dave(:,k))
+
+    enddo
+
+  endif
 
   do i=1,n3
     ave(i) = ave(i) * HARTREE
@@ -571,7 +609,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 ! prints the information for use in band alignments
 
-  if(nmat > 1) then
+  if(nmat > 1 .and. nmat == nwidth) then
 
     write(6,*)
     write(6,*) '   Electrostatic potential steps in eV'
@@ -582,10 +620,17 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
     do j = 1,nmat-1
     do k = j+1,nmat
+
       write(6,'("    Step between material ",i3," and ",i3," is ",       &
           &  f12.3)')   k,j,(yave(k)-yave(j))*HARTREE
     enddo
     enddo
+
+  else
+
+    write(6,*)
+    write(6,*) '   Did not calculate electrostatic potential steps'
+    write(6,*)
 
   endif
 
@@ -608,10 +653,10 @@ subroutine plot_rho_v_average(ioreplay,                                  &
   deallocate(izval)
   deallocate(width)
   deallocate(widthgeom)
+  deallocate(widthrho)
   deallocate(xpeak)
 
   deallocate(autocorr)
-  deallocate(conv)
 
   return
 

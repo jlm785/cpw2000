@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.11
-!>  \date         December 18, 2013, 4 April 2024.
+!>  \date         December 18, 2013, 12 March 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -42,6 +42,8 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Removed efermi cpw_pp_opt. 12 November 2023. JLM
 ! size of author, 13 January 2024. JLM
 ! Added calculation of quantum geometric quantities. 4 April 2024. JLM
+! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
+
 
   use cpw_variables
 
@@ -65,8 +67,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 !  integer                            ::  mxdlqp                          !  array dimension for local potential
 !  integer                            ::  mxdlao                          !  array dimension of orbital per atom type
 
-  integer                            ::  mxdgvein                        !  array dimension for input g-space vectors
-  integer                            ::  mxdnstin                        !  array dimension for input g-space stars
+  type(dims_t)                       ::  dims_in_                        !<  array dimensions
 
 ! flags
 
@@ -76,7 +77,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 !  character(len=4)                   ::  flgdal                          !  dual approximation if equal to 'DUAL'
 !  character(len=6)                   ::  flgscf                          !  type of self consistent field and diagonalizatioN
 
-  character(len=4)                   ::  flgdalin                        !  whether the dual approximation is used
+  character(len=4)                   ::  flgdal_in                        !  whether the dual approximation is used
 
 ! atomic structure variables
 
@@ -170,7 +171,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
 !  integer                            ::  nbandin                         !  target for number of bands
 
-  type(chdens_t)                     ::  chdensin_                       !<  input charge densities
+  type(chdens_t)                     ::  chdens_in_                       !<  input charge densities
 
 !  complex(REAL64), allocatable       ::  den(:)                          !  total charge density for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  denc(:)                         !  core charge density for the prototype G-vector in star j
@@ -178,7 +179,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 !  complex(REAL64), allocatable       ::  dend(:)                         !  bonding charge density from previous md step
 !  complex(REAL64), allocatable       ::  dend1(:)                        !  bonding charge density from second previous md step
 
-  type(vcomp_t)                      ::  vcompin_                        !<  local potential contributions
+  type(vcomp_t)                      ::  vcomp_in_                       !<  local potential contributions
 
 !  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
 !  complex(REAL64), allocatable       ::  vhar(:)                         !  Hartree potential for the prototype G-vector in star j
@@ -208,7 +209,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
 ! other variables
 
-  real(REAL64)                       ::  emaxin                          !  kinetic energy cutoff of plane wave expansion (hartree).
+  real(REAL64)                       ::  emax_in                         !  initial kinetic energy cutoff of plane wave expansion (hartree).
   real(REAL64)                       ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   integer            ::  iotape
@@ -255,21 +256,15 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
   iotape = 21
 
   call cpw_pp_band_dos_init(filename, iotape,                            &
-      dims_, spaceg_, flags_, crys_, recip_in_, pseudo_, kpoint_,        &
-      pwexp_, chdensin_, vcompin_, atorb_,                               &
-      emaxin, efermi, flgdalin, author,                                  &
-      pwline, title, subtitle ,meta_cpw2000,                             &
-      mxdgvein, mxdnstin)
-
-
-
-
+       dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
+       atorb_, efermi,  author,                                          &
+       pwline, title, subtitle ,meta_cpw2000,                            &
+       dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
 
   call cpw_pp_band_prepare(ioreplay,                                     &
-      dims_, crys_, spaceg_, recip_, recip_in_, pwexp_, strfac_,         &
-      vcomp_, vcompin_,                                                  &
-      emaxin)
+      dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,           &
+      dims_in_, recip_in_, vcomp_in_, emax_in)
 
 
   write(6,*)
