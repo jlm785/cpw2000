@@ -322,51 +322,57 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
     izval(nt) = nint(zv(nt))
 
-    call plot_gauss(sigma, rhogau,                                       &
-         adot, ntype, natom, rat, izval,                                 &
-         ng, kgv,                                                        &
-         mxdtyp, mxdatm, mxdgve)
+!   special ZZ atoms may have zero charge
+
+    if(izval(nt) /= 0) then
+
+      call plot_gauss(sigma, rhogau,                                     &
+           adot, ntype, natom, rat, izval,                               &
+           ng, kgv,                                                      &
+           mxdtyp, mxdatm, mxdgve)
 
 
-    call plot_zave1D(gave, rhogau, nptot, id, n1,n2,n3, ng, kgv)
+      call plot_zave1D(gave, rhogau, nptot, id, n1,n2,n3, ng, kgv)
 
-    if(linter) then
-      filename = 'rho_gauss_' // adjustl(trim(nameat(nt)))//'.gp'
-      call plot_z1D_gnuplot(ioreplay, iotape, gave, dave, 0, n3, height, &
-            adjustl(trim(filename)),                                     &
-            'Broadened Nuclear Density '//nameat(nt),                    &
-            '{/Symbol r} (1/cell)',linter)
-    else
-      filename = 'rho_gauss_'// adjustl(trim(nameat(nt)))//'.agr'
-      call plot_z1D_xmgr(iotape, gave, dave, 0, n3, height,              &
-            adjustl(trim(filename)),                                     &
-           'Broadened Nuclear Density '//nameat(nt),                     &
-           '\f{Symbol} r\f{} (1/cell)')
-    endif
+      if(linter) then
+        filename = 'rho_gauss_' // adjustl(trim(nameat(nt)))//'.gp'
+        call plot_z1D_gnuplot(ioreplay, iotape, gave, dave, 0, n3, height, &
+              adjustl(trim(filename)),                                     &
+              'Broadened Nuclear Density '//nameat(nt),                    &
+              '{/Symbol r} (1/cell)',linter)
+      else
+        filename = 'rho_gauss_'// adjustl(trim(nameat(nt)))//'.agr'
+        call plot_z1D_xmgr(iotape, gave, dave, 0, n3, height,            &
+              adjustl(trim(filename)),                                   &
+             'Broadened Nuclear Density '//nameat(nt),                   &
+             '\f{Symbol} r\f{} (1/cell)')
+      endif
 
-!   auto-correlation function.
+! !   auto-correlation function.
 
-    call plot_z1D_auto_corr(nn, gave, nn/nptot, autocorr, xpeak(nt), lfound)
+      call plot_z1D_auto_corr(nn, gave, nn/nptot, autocorr, xpeak(nt), lfound)
 
-    if(.not. lfound) then
-      write(6,*)
-      write(6,*) '  peak for atom ',nameat(nt),' may not be accurate'
-      write(6,*)
-    endif
+      if(.not. lfound) then
+        write(6,*)
+        write(6,*) '  peak for atom ',nameat(nt),' may not be accurate'
+        write(6,*)
+      endif
 
-    if(linter) then
-      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
-                     '_auto_corr.gp'
-      call plot_z1D_gnuplot(ioreplay, iotape, autocorr,dave,             &
-            0, n3/2, height/2,  adjustl(trim(filename)),                 &
-            nameat(nt)//' Nuclear Density Auto-correlation',             &
-            '  ',linter)
-    else
-      filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
-                     '_auto_corr.agr'
-      call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2,      &
-            adjustl(trim(filename)),                                     &
-            nameat(nt)//' Nuclear Density Auto-correlation', '  ')
+      if(linter) then
+        filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
+                       '_auto_corr.gp'
+        call plot_z1D_gnuplot(ioreplay, iotape, autocorr,dave,             &
+              0, n3/2, height/2,  adjustl(trim(filename)),                 &
+              nameat(nt)//' Nuclear Density Auto-correlation',             &
+              '  ',linter)
+      else
+        filename = 'rho_nucl_' // adjustl(trim(nameat(nt))) //             &
+                       '_auto_corr.agr'
+        call plot_z1D_xmgr(iotape, autocorr, dave, 0, n3/2, height/2,      &
+              adjustl(trim(filename)),                                     &
+              nameat(nt)//' Nuclear Density Auto-correlation', '  ')
+      endif
+
     endif
 
   enddo

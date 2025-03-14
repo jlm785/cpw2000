@@ -14,9 +14,9 @@
 !>  This subroutine calculates the layer average and double average of
 !>  the charge density, or any other scalar periodic quantity.
 !>
-!>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         September 5, 2012, 29 November 2021.
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.11
+!>  \date         September 5, 2012, 14 March 2025.
 !>  \copyright    GNU Public License v2
 
 ! For the double average see  PRL 61, 734 (1988).
@@ -25,7 +25,7 @@
 ! Modified, mxdlao, December 1, 2015. JLM
 ! Modified, May 2020, cpw_variables. CLR
 ! Modified, efermi, 29 November 2021. JLM
-! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
+! Modified, cpw_pp_plot_prepare (bitrot vxc,etc...), 14 March 2025. JLM
 
 subroutine plot_rho_v_sub(ioreplay)
 
@@ -242,23 +242,9 @@ subroutine plot_rho_v_sub(ioreplay)
        dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
        dims_in_, recip_in_, vcomp_in_, emax_in)
 
-
-  allocate(chdens_%den(dims_%mxdnst))
-  allocate(chdens_%dend(dims_%mxdnst))
-
-  call cpw_pp_convert(chdens_%den, recip_%kmax, chdens_in_%den,          &
-      recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
-      recip_%mstar,                                                      &
-      recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
-      recip_in_%mstar,                                                   &
-      dims_%mxdgve, dims_%mxdnst, dims_in_%mxdgve, dims_in_%mxdnst)
-
-  call cpw_pp_convert(chdens_%dend, recip_%kmax, chdens_in_%dend,        &
-      recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
-      recip_%mstar,                                                      &
-      recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
-      recip_in_%mstar,                                                   &
-      dims_%mxdgve, dims_%mxdnst, dims_in_%mxdgve, dims_in_%mxdnst)
+  call cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,               &
+       crys_, strfac_,  pseudo_,                                         &
+       dims_in_, recip_in_, vcomp_in_, chdens_in_)
 
 
   allocate(qplot(dims_%mxdnst))
@@ -312,15 +298,14 @@ subroutine plot_rho_v_sub(ioreplay)
       write(6,*) '  1)  Charge density'
       write(6,*) '  2)  Bonding charge density'
       write(6,*) '  3)  Effective potential V_H + V_xc + V_ion'
-!       write(6,*) '  4)  Hartree potential V_H'
-!       write(6,*) '  5)  Exchange correlation potential V_xc'
-!       write(6,*) '  6)  Ionic potential V_ion'
+      write(6,*) '  4)  Hartree potential V_H'
+      write(6,*) '  5)  Exchange correlation potential V_xc'
+      write(6,*) '  6)  Ionic potential V_ion'
 
       read(5,*) ifunc
       write(ioreplay,'(2x,i8,"   function to plot")') ifunc
 
-!      if(ifunc < 0 .or. ifunc > 6) then
-      if(ifunc < 0 .or. ifunc > 3) then
+      if(ifunc < 0 .or. ifunc > 6) then
 
         ifunc = 0
         write(6,*)
@@ -345,18 +330,18 @@ subroutine plot_rho_v_sub(ioreplay)
         do j = 1,recip_%ns
           qplot(j) = vcomp_%veff(j)
         enddo
-!       elseif(ifunc == 4) then
-!         do j = 1,recip_%ns
-!           qplot(j) = vcomp_in_%vhar(j)
-!         enddo
-!       elseif(ifunc == 5) then
-!         do j = 1,recip_%ns
-!           qplot(j) = vcomp_in_%vxc(j)
-!         enddo
-!       elseif(ifunc == 6) then
-!         do j = 1,recip_%ns
-!           qplot(j) = vcomp_in_%vion(j)
-!         enddo
+      elseif(ifunc == 4) then
+        do j = 1,recip_%ns
+          qplot(j) = vcomp_%vhar(j)
+        enddo
+      elseif(ifunc == 5) then
+        do j = 1,recip_%ns
+          qplot(j) = vcomp_%veff(j) - vcomp_%vhar(j) - vcomp_%vion(j)
+        enddo
+      elseif(ifunc == 6) then
+        do j = 1,recip_%ns
+          qplot(j) = vcomp_%vion(j)
+        enddo
       endif
 
 
