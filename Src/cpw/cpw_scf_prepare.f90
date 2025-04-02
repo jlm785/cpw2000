@@ -15,8 +15,8 @@
      &    nsave, chdsave,                                                &
      &    exc,strxc,rhovxc,                                              &
      &    dims_,crys_,recip_,strfac_,pseudo_,chdens_,vcomp_,flags_,      &
-     &    ewald_,xc_)      
-      
+     &    ewald_,xc_)
+
        use cpw_variables
 
        implicit none
@@ -26,7 +26,7 @@
        type(flags_t)                      ::  flags_                     !<  computational flags
        type(recip_t)                      ::  recip_                     !<  reciprocal space information
        type(strfac_t)                     ::  strfac_                    !<  structure factors
-       type(chdens_t)                     ::  chdens_                    !<  charge densities    
+       type(chdens_t)                     ::  chdens_                    !<  charge densities
        type(vcomp_t)                      ::  vcomp_                     !<  Componemts of local potential
        type(pseudo_t)                     ::  pseudo_                    !<  pseudo-potential (Kleinman-Bylander)
        type(enfrst_t)                     ::  ewald_                     !<  Ewald energy force stress
@@ -45,7 +45,7 @@
        real(REAL64), intent(out)          ::  strxc(3,3)                 !<  d exc / d adot,  exchange and correlatio contribution to stress tensor (contravariant components)
 
        integer      ::  ipr
-       
+
        complex(REAL64), allocatable        ::  rholap(:)                 !  Laplacian of charge density
        complex(REAL64), allocatable        ::  tau(:)                    !  Kinetic energy density (whatever that means)
 
@@ -60,8 +60,8 @@
      & recip_%ng,recip_%kgv,recip_%phase,recip_%conj,recip_%inds,        &
      & crys_%ntype,crys_%natom,crys_%rat,                                &
      & dims_%mxdtyp,dims_%mxdatm,dims_%mxdgve,dims_%mxdnst)
-     
-       
+
+
 !      Starting quantities on G-vectors
 
 
@@ -80,17 +80,16 @@
        call ewald_sum(ewald_%energy,ewald_%force,ewald_%stress,          &
      & crys_%adot,crys_%ntype,crys_%natom,crys_%rat,pseudo_%zv,          &
      & dims_%mxdtyp,dims_%mxdatm)
-     
+
 
        ipr = 0
        if(iprglob > 2) ipr = 1
-       if(ipr /= 0) write(6,*) '   EWALD'
 
        call print_energy(ipr,'Ewald',ewald_%energy,ewald_%force,         &
      & ewald_%stress,                                                    &
      & crys_%adot,crys_%ntype,crys_%natom,crys_%nameat,                  &
      & dims_%mxdtyp,dims_%mxdatm)
-     
+
 
 !      density extrapolation
 
@@ -100,8 +99,8 @@
      & recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                 &
      & recip_%ns, recip_%mstar,                                          &
      & dims_%mxdgve,dims_%mxdnst)
-       
-       
+
+
        allocate(rholap(dims_%mxdnst))
        allocate(tau(dims_%mxdnst))
 
@@ -119,10 +118,10 @@
      &   recip_%ng,recip_%kgv,recip_%phase,recip_%conj,recip_%ns,        &
      &   recip_%inds,recip_%kmax,recip_%mstar,recip_%ek,                 &
      &   dims_%mxdgve,dims_%mxdnst)
-     
+
        deallocate(rholap)
        deallocate(tau)
-     
+
 
        return
 
