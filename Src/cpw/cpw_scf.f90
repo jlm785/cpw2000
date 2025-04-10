@@ -44,7 +44,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
 ! Modified, h_kb_diag_all, 7 June 2020. JLM
 ! Modified, new test of mixer failure. 28 November 2020. JLM
 ! Modified, Warning for exceeded iterations. 14 December 2021. JLM
-! Modified, indentation, avoid infinite loop on mixer failure. 2 April 2025. JLM
+! Modified, indentation, avoid infinite loop on mixer failure. 2 and 9 April 2025. JLM
 
   use cpw_variables
 
@@ -278,6 +278,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
   real(REAL64)           ::  eharrfou                                    !  total energy of the Harris-Weinert-Foulkes functional
 
   integer                ::  itmix                                       !  iteration number for mixer, itmix = 1 resets.
+  integer                ::  itlow                                       !  iteration number with lower energy
 
   real(REAL64)           ::  tin, tout
 
@@ -368,6 +369,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
 
   lsafescf = .FALSE.
   itmix = 1
+  itlow = 0
 
   do iter = 1,acc_%itmax
 
@@ -396,7 +398,8 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
 !   checks if there is a problem, restart the convergence procedure
 
     if(itmix > 2) then
-      if(abs(vmin-vminold) > DELTA .or. abs(vmax-vmaxold) > DELTA) then
+      if((abs(vmin-vminold) > DELTA .or. abs(vmax-vmaxold) > DELTA)      &
+              .and. itmix /= itlow+1) then
 
         if(nfailmix < maxnfailmix) then
 
@@ -723,6 +726,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
     if(itmix == 1) then
 
       enerlow = total_%energy
+      itlow = itmix
       do i = 1,recip_%ns
         vhxclow(i) = vhxc(i)
       enddo
@@ -735,6 +739,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
       if(total_%energy < enerlow) then
 
         enerlow = total_%energy
+        itlow = itmix
         do i = 1,recip_%ns
           vhxclow(i) = vhxc(i)
         enddo

@@ -131,6 +131,8 @@ subroutine out_qgeom(ioreplay,                                           &
   real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
   complex(REAL64), allocatable       ::  vecall_so(:,:)                  !  wave-functions
 
+  complex(REAL64), allocatable       ::  pauli(:,:)                      !  <psi|sigma_xyz|psi>
+
 ! local variables
 
   integer           ::  mxdscr                                           !  array dimension for screening potential
@@ -180,7 +182,7 @@ subroutine out_qgeom(ioreplay,                                           &
 
 ! counters
 
-  integer    ::  j, n
+  integer    ::  j, n, k
 
 
 ! hard coded values
@@ -411,6 +413,13 @@ subroutine out_qgeom(ioreplay,                                           &
     call psi_orient_spin(mtxd, 2*neig, psi_sp, ei_sp,                    &
         mxddim, mxdbnd)
 
+!   calculates the spin polarization
+
+    allocate(pauli(3, 2*mxdbnd))
+
+    call psi_pauli_psi(mtxd, 2*neig, psi_sp, pauli,                      &
+        mxddim, mxdbnd)
+
 !   now finds degeneracies
 
     allocate(levdeg(1))
@@ -440,15 +449,21 @@ subroutine out_qgeom(ioreplay,                                           &
 
     write(6,*)
     write(6,'("   The system has ",i5," levels")') nlevel
+    write(6,*)
+    write(6,'(25x," -<sigma_x>/2        -<sigma_y>/2        -<sigma_z>/2")')
+    write(6,*)
     do n = 1,nlevel
       write(6,*)
       write(6,'("  Level ",i5," has degeneracy ",i3)') n, levdeg(n)
       write(6,*)
       do j = 1,levdeg(n)
-        write(6,'(f12.6)') ei_sp(leveigs(n,j))*HARTREE
+        write(6,'(f12.6,5x,3(5x,2f8.3))') ei_sp(leveigs(n,j))*HARTREE,    &
+              (-pauli(k,leveigs(n,j))/2,k=1,3)
       enddo
     enddo
     write(6,*)
+
+    deallocate(pauli)
 
 !   get berry quantities.  starts with allocations.
 
