@@ -296,7 +296,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
-  real(REAL64), parameter :: DELTA = 0.2_REAL64
+  real(REAL64), parameter :: DELTA = 1.0_REAL64                          !  criterium for divergence  HARD CODED HARD CODED
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! You can reduce mxdupd,mxdscf in the unlikey case this takes too much
