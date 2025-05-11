@@ -2,7 +2,13 @@ Orbital Information User Interface
 
 version 0.1
 
-copyright Carlos Loia Reis, José Luís Martins, INESC-MN
+copyright Carlos Loia Reis, INESC-MN
+
+This user interface is based on xmgrace.  Development seems to have stopped in 2015.
+As you will see from the instructions below, you may have to rcompile it.
+A new interface QtBandViewer has been developed.  Use this interface only if you run
+into trouble with the newer code.
+
 
 Instructions
 
@@ -17,13 +23,14 @@ Instructions
    and the path to libgrace_np.a, which can be /usr/lib or /usr/lib64 or /opt/local/lib.
    Use the find command to find them.
 
-   If in step 4 you get an error related to "-fPIC" (position independent code) you
-   will have to compile libgrace_np.a from source.  In the Makefile of the grace_np directory add
-   that option to CFLAGS:
+   If you cannot find libgrace_np.a or if in step 4 you get an error
+   related to "-fPIC" (position independent code) you
+   will have to compile libgrace_np.a from source.
+   In the Makefile of the grace_np directory add that option to CFLAGS:
 
    CFLAGS=$(CFLAGS0) -I$(TOP) -I. $(CPPFLAGS) -fPIC
 
-   then in the grace top level run .configure (you may have to install motif and other stuff)
+   then in the grace top level run ./configure (you may have to install motif and other stuff)
    and in the grace_np directory just run make with the altered Makefile.  You do not need (and maybe
    shouldn't) install it if you already have grace from your distribution.
 
@@ -31,7 +38,7 @@ Instructions
 
    ifort BandInfo.f90 out_band_fold_xmgrace.f90 -o BandInfo.exe
 
-   You can find out_band_fold_xmgrace.f90 in ../../_source/out_band_dos_opt.  Just link here.
+   You can find out_band_fold_xmgrace.f90 in ../../Src/ALFA.  Just link here.
 
 4. Compile the dynamic library (adapt paths for your system)
 
@@ -41,7 +48,9 @@ Instructions
 
    gcc -I /usr/include/ -shared gracedyn.c -o gracedyn.so path_to_grace/grace_np/libgrace_np.a
 
-   where path_to_grace is where you have installed
+   where path_to_grace is where you have installed.
+
+   If you get a message "grace_np.h: No such file or directory" replace  -I /usr/include/ by -I path_to_grace/grace_np
 
 5.  Run the user interface
 

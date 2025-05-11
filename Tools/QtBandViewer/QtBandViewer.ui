@@ -1,0 +1,3601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>448</width>
+    <height>740</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>QtBandViewer</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_6">
+    <item row="0" column="0" colspan="2">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QGroupBox" name="groupBoxL">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Angular momentum</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="pushButtonS">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(252, 1, 7)</string>
+           </property>
+           <property name="text">
+            <string>S</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButtonP">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(0, 0, 255)</string>
+           </property>
+           <property name="text">
+            <string>P</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButtonD">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(86, 215, 43)</string>
+           </property>
+           <property name="text">
+            <string>D</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QPushButton" name="pushButtonF">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>40</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>13</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(252, 2, 128)</string>
+           </property>
+           <property name="text">
+            <string>F</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBoxSO">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Spin-Orbit</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="1" column="0">
+          <widget class="QPushButton" name="pushButtonSpinDown">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <italic>true</italic>
+             <bold>true</bold>
+             <kerning>true</kerning>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(128, 64, 2)</string>
+           </property>
+           <property name="text">
+            <string>l-1/2</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="pushButtonSpinUp">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <italic>true</italic>
+             <bold>true</bold>
+             <kerning>true</kerning>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(253, 128, 8)</string>
+           </property>
+           <property name="text">
+            <string>l+1/2</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>View</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QPushButton" name="pushButtonToggle">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Proj. Bands</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonFullRange">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>FullRange</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QGroupBox" name="groupBoxM">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="title">
+       <string>Magnetic quantum number m</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_7">
+       <item row="0" column="0" colspan="2">
+        <widget class="QPushButton" name="pushButtonS0">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 1, 7)</string>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2" colspan="10">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>281</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="pushButtonP_1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(0, 0, 255)</string>
+         </property>
+         <property name="text">
+          <string>y</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButtonP0">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(0, 0, 255)</string>
+         </property>
+         <property name="text">
+          <string>z</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3" colspan="2">
+        <widget class="QPushButton" name="pushButtonP1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(0, 0, 255)</string>
+         </property>
+         <property name="text">
+          <string>x</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="5" colspan="7">
+        <spacer name="horizontalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>160</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="pushButtonD_2">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(86, 215, 43)</string>
+         </property>
+         <property name="text">
+          <string>xy</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButtonD_1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(86, 215, 43)</string>
+         </property>
+         <property name="text">
+          <string>zy</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3" colspan="3">
+        <widget class="QPushButton" name="pushButtonD0">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(86, 215, 43)</string>
+         </property>
+         <property name="text">
+          <string>z^2</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="6" colspan="2">
+        <widget class="QPushButton" name="pushButtonD1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(86, 215, 43)</string>
+         </property>
+         <property name="text">
+          <string>zx</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="8" colspan="3">
+        <widget class="QPushButton" name="pushButtonD2">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(86, 215, 43)</string>
+         </property>
+         <property name="text">
+          <string>x^2-y^2</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="11">
+        <spacer name="horizontalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>111</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="3" column="0">
+        <widget class="QPushButton" name="pushButtonF_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>-3</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButtonF_2">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>-2</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QPushButton" name="pushButtonF_1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>-1</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4" colspan="3">
+        <widget class="QPushButton" name="pushButtonF0">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>0</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="7" colspan="2">
+        <widget class="QPushButton" name="pushButtonF1">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>1</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="9">
+        <widget class="QPushButton" name="pushButtonF2">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>2</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="10">
+        <widget class="QPushButton" name="pushButtonF3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>40</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>13</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color:rgb(252, 2, 128)</string>
+         </property>
+         <property name="text">
+          <string>3</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="11">
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>111</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="2">
+     <widget class="QGroupBox" name="groupBoxKPanel">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>71</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>K Panel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="2">
+     <widget class="QGroupBox" name="groupBoxAtoms">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="title">
+       <string>Atoms</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_5">
+       <item row="7" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom75">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom1">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom4">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom34">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom80">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom47">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom39">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom30">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom77">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom22">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom35">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom73">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom65">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom78">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom37">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom28">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom20">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom11">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom24">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom71">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom16">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom63">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom54">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom13">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom67">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom59">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom26">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom18">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom9">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom69">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom14">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom61">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom52">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom44">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom57">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom48">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom40">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom7">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom3">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom50">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom42">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom33">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom46">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom38">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom76">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom2">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom5">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom72">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom64">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom31">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom23">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom36">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="3">
+        <widget class="QCheckBox" name="checkBoxAtom74">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom27">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom66">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom19">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom79">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom70">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom62">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom29">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom21">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom12">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom25">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="6">
+        <widget class="QCheckBox" name="checkBoxAtom17">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom8">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom55">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom68">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom60">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom51">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom43">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="9">
+        <widget class="QCheckBox" name="checkBoxAtom10">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom56">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom15">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="5">
+        <widget class="QCheckBox" name="checkBoxAtom6">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="2">
+        <widget class="QCheckBox" name="checkBoxAtom53">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="4">
+        <widget class="QCheckBox" name="checkBoxAtom45">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="7">
+        <widget class="QCheckBox" name="checkBoxAtom58">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="8">
+        <widget class="QCheckBox" name="checkBoxAtom49">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QCheckBox" name="checkBoxAtom41">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QCheckBox" name="checkBoxAtom32">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QGroupBox" name="groupBoxSpecies">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="title">
+       <string>Species</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="checkBoxSpec6">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="4">
+        <widget class="QLineEdit" name="lineEditSpecies">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Courier New</family>
+           <pointsize>14</pointsize>
+          </font>
+         </property>
+         <property name="toolTip">
+          <string>list of atomic species (ex: 1, 2, 3)</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="checkBoxSpec2">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="checkBoxSpec5">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QCheckBox" name="checkBoxSpec7">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QCheckBox" name="checkBoxSpec3">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QCheckBox" name="checkBoxSpec4">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QCheckBox" name="checkBoxSpec8">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="checkBoxSpec1">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QGroupBox" name="groupBox_4">
+      <property name="title">
+       <string>Control</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="0">
+        <widget class="QPushButton" name="pushButtonRun_2">
+         <property name="text">
+          <string>Load</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="pushButtonRun">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Update</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QPushButton" name="pushButtonQuit">
+         <property name="text">
+          <string>Quit</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="spinBoxPointSize">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>60</number>
+         </property>
+         <property name="value">
+          <number>12</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>448</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pushButtonS0</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>S0_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>206</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>268</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonP_1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>P_1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>192</x>
+     <y>84</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonP0</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>P0_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>98</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>272</x>
+     <y>142</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonP1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>P1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>329</x>
+     <y>183</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD_2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D_2_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>234</x>
+     <y>112</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD_1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D_1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>98</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>218</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD0</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D0_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>225</x>
+     <y>157</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>198</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>278</x>
+     <y>227</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D2_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>293</x>
+     <y>282</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>293</x>
+     <y>189</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF_3</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F_3_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>370</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF_2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F_2_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>98</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>150</x>
+     <y>32</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF_1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F_1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>376</x>
+     <y>42</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF0</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F0_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>352</x>
+     <y>71</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F1_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>354</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F2_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>255</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>335</x>
+     <y>91</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF3</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F3_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>293</x>
+     <y>320</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>328</x>
+     <y>251</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonRun</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>326</x>
+     <y>583</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>22</x>
+     <y>84</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonQuit</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>417</x>
+     <y>619</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>357</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonSpinUp</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SpinUp_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>82</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>362</x>
+     <y>469</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonSpinDown</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SpinDown_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>116</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>332</x>
+     <y>481</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonRun_2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Load()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>326</x>
+     <y>619</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>387</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>569</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>7</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>114</x>
+     <y>569</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>8</x>
+     <y>624</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec3</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>569</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>6</x>
+     <y>572</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec4</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>205</x>
+     <y>569</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>213</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec5</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>588</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>216</x>
+     <y>652</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec6</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>114</x>
+     <y>588</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>144</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec7</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>588</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>393</x>
+     <y>613</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxSpec8</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>genLineEditSpecies()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>205</x>
+     <y>588</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>392</x>
+     <y>650</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonToggle</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>toggleBands()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>416</x>
+     <y>94</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>392</x>
+     <y>668</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom1</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>390</x>
+     <y>551</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>511</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom3</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom4</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom5</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom6</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom7</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom8</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom9</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom10</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>376</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom11</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom12</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom13</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom14</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom15</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom16</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom17</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom18</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom19</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom20</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom21</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom22</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom23</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom24</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom25</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom26</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom27</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom28</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom29</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom30</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>414</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom31</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom32</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom33</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom34</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom35</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom36</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom37</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom38</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom39</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom40</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>433</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom41</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom42</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom43</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom44</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom45</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom46</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom47</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom48</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom49</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom50</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>452</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom51</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom52</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom53</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom54</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom55</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom56</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom57</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom58</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom59</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom60</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom61</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom62</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom63</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom64</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom65</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom66</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom67</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom68</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom69</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom70</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>490</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom71</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>63</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom72</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>102</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom73</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>142</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom74</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom75</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>221</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom76</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>261</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom77</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom78</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>341</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom79</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBoxAtom80</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Run()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>509</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinBoxPointSize</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>plt_update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>411</x>
+     <y>576</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>301</x>
+     <y>0</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonFullRange</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>FullRange()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>339</x>
+     <y>119</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>389</x>
+     <y>146</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonS</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>S_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>83</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>198</x>
+     <y>419</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonP</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>P_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>67</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>150</x>
+     <y>0</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonD</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>D_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>106</x>
+     <y>81</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>123</x>
+     <y>0</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButtonF</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>F_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>175</x>
+     <y>115</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>206</x>
+     <y>0</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>S_clicked()</slot>
+  <slot>P_clicked()</slot>
+  <slot>D_clicked()</slot>
+  <slot>F_clicked()</slot>
+  <slot>G_clicked()</slot>
+  <slot>S0_clicked()</slot>
+  <slot>P_1_clicked()</slot>
+  <slot>P0_clicked()</slot>
+  <slot>P1_clicked()</slot>
+  <slot>D_2_clicked()</slot>
+  <slot>D_1_clicked()</slot>
+  <slot>D0_clicked()</slot>
+  <slot>D1_clicked()</slot>
+  <slot>D2_clicked()</slot>
+  <slot>F3_clicked()</slot>
+  <slot>F2_clicked()</slot>
+  <slot>F1_clicked()</slot>
+  <slot>F0_clicked()</slot>
+  <slot>F_3_clicked()</slot>
+  <slot>F_2_clicked()</slot>
+  <slot>F_1_clicked()</slot>
+  <slot>Run()</slot>
+  <slot>Quit()</slot>
+  <slot>CheckAtoms(int)</slot>
+  <slot>CheckSpecies(int)</slot>
+  <slot>InitList()</slot>
+  <slot>SpinUp_clicked()</slot>
+  <slot>SpinDown_clicked()</slot>
+  <slot>Load()</slot>
+  <slot>genLineEditSpecies()</slot>
+  <slot>toggleBands()</slot>
+  <slot>plt_update()</slot>
+  <slot>FullRange()</slot>
+ </slots>
+</ui>
