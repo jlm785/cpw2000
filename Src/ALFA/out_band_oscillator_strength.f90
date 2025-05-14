@@ -15,15 +15,17 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         2 July 2014.  16 May 2024.
+!>  \date         2 July 2014.  14 May 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    &
+subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
+               lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,  &
                mxdbnd)
 
 ! Written July 2, 2014. JLM
 ! Modified, 4 March 2020, documentation. JLM
 ! Modified, name, indentation, new grouping of excitation levels. 16 May 2024. JLM
+! Modified to be more flexible. 14 May 2025. JLM
 
 
   implicit none
@@ -38,8 +40,10 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
   real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalues (Hartree) for rk0
   complex(REAL64), intent(in)        ::  dh0drk(mxdbnd,mxdbnd,3)         !<  d <Psi|H|Psi> d k
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
-  real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
-  logical, intent(in)                ::  lpair                           !<  prints the oscllator strengths for pairs of bands
+  logical, intent(in)                ::  lpair                           !<  prints the oscillator strengths for pairs of bands
+  logical, intent(in)                ::  lexcit                          !<  prints the oscillator strengths by excitation energies
+  integer, intent(in)                ::  ninitbeg, ninitend              !<  begin and end of initial state index
+  integer, intent(in)                ::  nfinalbeg, nfinalend            !<  begin and end of final state index
 
 ! local allocatable arrays
 
@@ -54,9 +58,11 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
   integer, allocatable               ::  invindx(:)                      !  inverse of index for sorting
   real(REAL64), allocatable          ::  efmeisort(:)                    !  sorted E_f - E_i in increasing order
 
+  logical, allocatable               ::  lnodup(:)                       !  allows skipping duplicate pairs
+
 ! local variables
 
-  integer           ::  ncond,nval
+  integer           ::  nfinal, ninit                                    !  number of initial and final states
   real(REAL64)      ::  avec(3,3)                  !  primitive lattice vectors that generate adot in canonical orientation
   real(REAL64)      ::  bvec(3,3)                  !  reciprocal lattice vectors
 
@@ -81,7 +87,41 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
 
 ! counters
 
-  integer    ::  i, j, k, ij, n, m
+  integer    ::  i, j, k, n, m
+  integer    ::  ij, ji, ii, jj
+
+
+! checks input variables
+
+  if(neig > mxdbnd) then
+    write(6,*)
+    write(6,*) '   Stopped in out_band_oscillator_strength'
+    write(6,*) '   Number of bands', neig,' greater than dimensions', mxdbnd
+    write(6,*)
+
+    stop
+
+  endif
+
+  if(ninitbeg < 1 .or. ninitend > neig .or. ninitbeg > ninitend) then
+    write(6,*)
+    write(6,*) '   Stopped in out_band_oscillator_strength'
+    write(6,*) '   Inconsistent ninitbeg, ninitend, neig', ninitbeg, ninitend, neig
+    write(6,*)
+
+    stop
+
+  endif
+
+  if(nfinalbeg < 1 .or. nfinalend > neig .or. nfinalbeg > nfinalend) then
+    write(6,*)
+    write(6,*) '   Stopped in out_band_oscillator_strength'
+    write(6,*) '   Inconsistent nfinalbeg, nfinalend, neig', nfinalbeg, nfinalend, neig
+    write(6,*)
+
+    stop
+
+  endif
 
 
   call adot_to_avec_sym(adot,avec,bvec)
@@ -100,23 +140,25 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
   write(6,'("       (",f9.4,")         (",f9.4,")         (",f9.4,")")') &
                  (avec(3,k),k=1,3)
 
-! nval doen't work for metals
+  ninit = ninitend - ninitbeg + 1
+  nfinal = nfinalend - nfinalbeg + 1
 
-  nval = nint(0.5*ztot)
-  ncond = neig - nval
+  allocate(efmei(ninit*nfinal))
+  allocate(ematif(ninit*nfinal))
+  allocate(ematcar(ninit*nfinal,3))
+  allocate(lnodup(ninit*nfinal))
 
-  allocate(efmei(nval*ncond))
-  allocate(ematif(nval*ncond))
-  allocate(ematcar(nval*ncond,3))
-
-  do i = 1,nval
-  do j = 1,ncond
-    ij = (i-1)*ncond + j
-    efmei(ij) = ei(nval+j) - ei(i)
+  do i = 1,ninit
+  do j = 1,nfinal
+    ij = (i-1)*nfinal + j
+    ii = ninitbeg + i - 1
+    jj = nfinalbeg + j - 1
+    efmei(ij) = ei(jj) - ei(ii)
     ematif(ij) = C_ZERO
+    lnodup(ij) = .TRUE.
     do n = 1,3
     do m = 1,3
-      ematif(ij) = ematif(ij) + dh0drk(nval+j,i,n)*adot(n,m)*dh0drk(i,nval+j,m)
+      ematif(ij) = ematif(ij) + dh0drk(jj,ii,n)*adot(n,m)*dh0drk(ii,jj,m)
     enddo
     enddo
     ematif(ij) = ematif(ij) / (4*PI*PI)
@@ -125,7 +167,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
     enddo
     do n = 1,3
     do k = 1,3
-      ematcar(ij,k) = ematcar(ij,k) + avec(k,n)*dh0drk(nval+j,i,n)
+      ematcar(ij,k) = ematcar(ij,k) + avec(k,n)*dh0drk(jj,ii,n)
     enddo
     enddo
     do k = 1,3
@@ -146,13 +188,22 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
           &   "|M_y|**2",4x,"|M_z|**2")')
     write(6,*)
 
-    do i = 1,nval
-    do j = 1,ncond
-      ij = (i-1)*ncond + j
-      write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')         &
-            i,ei(i)*HARTREE,nval+j,ei(nval+j)*HARTREE,real(ematif(ij)),  &
-            (2.0/3.0)*real(ematif(ij))/efmei(ij),                        &
-            (abs(ematcar(ij,k))**2,k=1,3)
+    do i = 1,ninit
+    do j = 1,nfinal
+      ij = (i-1)*nfinal + j
+      ji = (j-1)*nfinal + i
+      if(lnodup(ij)) then
+        ii = ninitbeg + i - 1
+        jj = nfinalbeg + j - 1
+        lnodup(ji) = .FALSE.
+        if(abs(efmei(ij)) > TOL) then
+          write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')     &
+              ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                    &
+              real(ematif(ij)),                                          &
+              (2.0/3.0)*real(ematif(ij))/efmei(ij),                      &
+              (abs(ematcar(ij,k))**2,k=1,3)
+        endif
+      endif
     enddo
     write(6,*)
     enddo
@@ -162,109 +213,119 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, lpair,    
 
 ! now finds degeneracies but first sorts the excitation levels
 
-  allocate(indx(nval*ncond))
-  allocate(invindx(nval*ncond))
-  allocate(efmeisort(nval*ncond))
+  if(lexcit) then
+    allocate(indx(ninit*nfinal))
+    allocate(invindx(ninit*nfinal))
+    allocate(efmeisort(ninit*nfinal))
 
-  call sort(nval*ncond, efmei, indx)
+    call sort(ninit*nfinal, efmei, indx)
 
-  do ij = 1,nval*ncond
-    efmeisort(ij) = efmei(indx(ij))
-  enddo
-  do ij = 1,nval*ncond
-    invindx(indx(ij)) = ij
-  enddo
-
-  neigin = nval*ncond
-
-! number of levels that we know there no other levels with smaller excitations
-
-  nlevpr = 1
-
-  do i = 1,neigin
-    if( efmeisort(i) > ei(neig) - ei(nval) ) exit
-    nlevpr = i
-  enddo
-
-  allocate(levdeg(1))
-  allocate(leveigs(1,1))
-
-  call berry_degeneracy(.TRUE., neigin, nlevpr, efmeisort, TOL,          &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         nval*ncond, 1, 1)
-
-  mxdlev = nlevel
-  mxddeg = maxdeg
-
-  deallocate(levdeg)
-  deallocate(leveigs)
-
-  allocate(levdeg(mxdlev))
-  allocate(leveigs(mxdlev,mxddeg))
-
-! fills the information
-
-  call berry_degeneracy(.FALSE., neigin, nlevpr, efmeisort, TOL,         &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         nval*ncond, mxdlev, mxddeg)
-
-  write(6,*)
-  write(6,*) '  Oscillator strengths by excitation energies'
-  write(6,*)
-
-  do n = 1,nlevel
-
-    write(6,*)
-    write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')   &
-          n, levdeg(n), efmei(indx(leveigs(n,1)))*HARTREE
-    write(6,*)
-    write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,      &
-        &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                    &
-        &   "|M_x|**2",4x,"|M_y|**2",4x,"|M_z|**2",9x,                          &
-        &   "|Fij_x|**2",2x,"|Fij_y|**2",2x,"|Fij_z|**2")')
-    write(6,*)
-    do k = 1,3
-      sm(k) = ZERO
+    do ij = 1,ninit*nfinal
+      efmeisort(ij) = efmei(indx(ij))
     enddo
-    so = ZERO
+    do ij = 1,ninit*nfinal
+      invindx(indx(ij)) = ij
+    enddo
 
-    do m = 1,levdeg(n)
+    neigin = ninit*nfinal
 
-      ij = indx(leveigs(n,m))
-      i = (ij-1) / ncond + 1
-      j = ij - (i-1)*ncond + nval
-      do k = 1,3
-        sm(k) = sm(k) + abs(ematcar(ij,k))**2
-      enddo
-      so = so + (2.0/3.0)*real(ematif(ij))/efmei(ij)
+!   number of levels that we know there no other levels with smaller excitations
 
-      write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,3f12.5,4x,  &
-            &   3f12.5)')                                                &
-          efmei(ij)*HARTREE, i, ei(i)*HARTREE, j, ei(j)*HARTREE,         &
-          real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),        &
-          (abs(ematcar(ij,k))**2,k=1,3),                                 &
-          (abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
+    nlevpr = 1
+
+    do i = 1,neigin
+      if( efmeisort(i) > ei(neig) - ei(ninit) ) exit
+      nlevpr = i
+    enddo
+
+    allocate(levdeg(1))
+    allocate(leveigs(1,1))
+
+    call berry_degeneracy(.TRUE., neigin, nlevpr, efmeisort, TOL,          &
+           nlevel, maxdeg, levdeg, leveigs,                                &
+           ninit*nfinal, 1, 1)
+
+    mxdlev = nlevel
+    mxddeg = maxdeg
+
+    deallocate(levdeg)
+    deallocate(leveigs)
+
+    allocate(levdeg(mxdlev))
+    allocate(leveigs(mxdlev,mxddeg))
+
+!   fills the information
+
+    call berry_degeneracy(.FALSE., neigin, nlevpr, efmeisort, TOL,         &
+           nlevel, maxdeg, levdeg, leveigs,                                &
+           ninit*nfinal, mxdlev, mxddeg)
+
+    write(6,*)
+    write(6,*) '  Oscillator strengths by excitation energies'
+    write(6,*)
+
+    do n = 1,nlevel
+
+     if(abs(efmei(indx(leveigs(n,1)))) > TOL) then
+
+        write(6,*)
+        write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')   &
+              n, levdeg(n), efmei(indx(leveigs(n,1)))*HARTREE
+        write(6,*)
+        write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,      &
+            &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                    &
+            &   "|M_x|**2",4x,"|M_y|**2",4x,"|M_z|**2",9x,                          &
+            &   "|Fij_x|**2",2x,"|Fij_y|**2",2x,"|Fij_z|**2")')
+        write(6,*)
+        do k = 1,3
+          sm(k) = ZERO
+        enddo
+        so = ZERO
+
+        do m = 1,levdeg(n)
+
+          ij = indx(leveigs(n,m))
+          i = (ij-1) / nfinal + 1
+          j = ij - (i-1)*nfinal
+          ii = ninitbeg + i - 1
+          jj = nfinalbeg + j - 1
+          do k = 1,3
+            sm(k) = sm(k) + abs(ematcar(ij,k))**2
+          enddo
+          so = so + (2.0/3.0)*real(ematif(ij))/efmei(ij)
+
+          write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
+                &   3f12.5,4x,3f12.5)')                                  &
+              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE, &
+              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),    &
+              (abs(ematcar(ij,k))**2,k=1,3),                             &
+              (abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
+
+        enddo
+        write(6,*)
+        write(6,'(52x,"sum = ",f12.5,4x,3f12.5,4x,3f12.5)')              &
+              so, (sm(k),k=1,3), (sm(k)/efmei(ij),k=1,3)
+        write(6,*)
+        write(6,*)
+
+      endif
 
     enddo
-    write(6,*)
-    write(6,'(52x,"sum = ",f12.5,4x,3f12.5,4x,3f12.5)')                  &
-          so, (sm(k),k=1,3), (sm(k)/efmei(ij),k=1,3)
-    write(6,*)
-    write(6,*)
 
-  enddo
 
+    deallocate(levdeg)
+    deallocate(leveigs)
+
+    deallocate(indx)
+    deallocate(invindx)
+    deallocate(efmeisort)
+
+  endif
 
   deallocate(efmei)
   deallocate(ematif)
   deallocate(ematcar)
-
-  deallocate(levdeg)
-  deallocate(leveigs)
-
-  deallocate(indx)
-  deallocate(invindx)
-  deallocate(efmeisort)
+  deallocate(lnodup)
 
   return
 

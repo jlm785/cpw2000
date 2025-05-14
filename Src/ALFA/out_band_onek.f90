@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         8 May 2004.  16 May 2024.
+!>  \date         8 May 2004.  14 May 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -42,6 +42,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, qmod-->ekpg in hk_psi, psi_h_psi. 13 February 2021. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, name oscillator_strength. 16 May 2024. JLM
+! Modified, more flexibility in oscillator strength. 14 May 2025. JLM
 
   implicit none
 
@@ -170,6 +171,11 @@ subroutine out_band_onek(ioreplay,                                       &
 
   integer           ::  info
   integer           ::  nocc
+
+  integer           ::  ninitbeg, ninitend                               !  begin and end of initial state index for oscillator strength
+  integer           ::  nfinalbeg, nfinalend                             !  begin and end of final state index
+
+  logical           ::  lpair, lexcit                                    !  display format of oscillator strength
 
 ! constants
 
@@ -438,7 +444,13 @@ subroutine out_band_onek(ioreplay,                                       &
       deallocate(h0)
       deallocate(d2h0drk2)
 
-      call out_band_oscillator_strength(neig, ei, dh0drk, adot, ztot, .FALSE.,  &
+      call out_band_oscillator_range(ioreplay, .FALSE.,                  &
+            neig, ei, ztot,                                              &
+            ninitbeg, ninitend, nfinalbeg, nfinalend, lpair, lexcit,     &
+            mxdbnd)
+
+      call out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
+          lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,       &
           mxdbnd)
 
       deallocate(dh0drk)
@@ -610,7 +622,18 @@ subroutine out_band_onek(ioreplay,                                       &
 
       enddo
 
-      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot, 2*ztot, .FALSE.,   &
+!       ninitbeg = 1
+!       ninitend = nint(ztot)
+!       nfinalbeg = ninitend + 1
+!       nfinalend = 2*neig
+
+      call out_band_oscillator_range(ioreplay, .TRUE.,                   &
+            2*neig, ei_so, ztot,                                         &
+            ninitbeg, ninitend, nfinalbeg, nfinalend, lpair, lexcit,     &
+            2*mxdbnd)
+
+      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,      &
+          lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,       &
           2*mxdbnd)
 
       deallocate(vec_so)
