@@ -20,7 +20,7 @@
 !>  \date         October 1993, 2 April 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
+subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
@@ -108,6 +108,7 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
   type(acc_t)                        ::  acc_                            !<  accuracy parameters
 
 !  integer, intent(in)                ::  itmax                           !<  maximum number of iterations
+!  integer                            ::  icdiagmax                       !<  maximum number of diagonalization  outer iterations
 !  real(REAL64), intent(in)           ::  epscv                           !<  convergence criteria for PW calculations
 !  real(REAL64), intent(in)           ::  epscvao                         !<  convergence criteria for AO calculations
 !  real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
@@ -181,8 +182,6 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
 
   real(REAL64), intent(in)           ::  ealpha                          !<  alpha term. (G=0)
 
-
-  integer, intent(in)                ::  icmax                           !<  maximum value of outer iteration
   integer, intent(in)                ::  iprglob                         !<  Global printing level
 
   character(len=2), intent(in)       ::  flgaopw                         !<  type of calculation 'AO' or 'PW
@@ -473,7 +472,8 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
         nocc = neig
 
         call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,      &
-            flags_%flgpsd, ipr, ifail, icmax, iguess, acc_%epspsi,       &
+            flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                   &
+            iguess, acc_%epspsi,                                         &
             recip_%ng, recip_%kgv, recip_%phase, recip_%conj,            &
             recip_%ns, recip_%inds, recip_%kmax,                         &
             recip_%indv, recip_%ek,                                      &
@@ -511,7 +511,8 @@ subroutine cpw_scf(flgaopw, iprglob, icmax, iguess, kmscr,               &
         if(flags_%flgscf == 'AO    ') diag_type = 'ao  '
 
         call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,      &
-            flags_%flgpsd, ipr, ifail, icmax, iguess, acc_%epspsi,       &
+            flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                   &
+            iguess, acc_%epspsi,                                         &
             recip_%ng, recip_%kgv, recip_%phase, recip_%conj,            &
             recip_%ns, recip_%inds, recip_%kmax,                         &
             recip_%indv, recip_%ek,                                      &

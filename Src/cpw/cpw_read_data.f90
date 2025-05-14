@@ -11,173 +11,174 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     reads data for the calculation
+!>  Reads data for the calculation.
+!>  Interfaces between variables in modules and real ones.
+!>
+!>  \author       Jose Luis Martins and Carlos Loia Reis
+!>  \version      5.11
+!>  \date         November 2019, 14 May 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine cpw_read_data(fcpwin,fpwdat,iopw,vdriv,                &
-     &    iprglob,meta_cpw2000,meta_pwdat,symkip,symtol,                 &
-     &    flags_,crys_,pwexp_,kpoint_,xc_,acc_,moldyn_,vcsdyn_,dims_,    &
-     &    total_,ewald_)
+subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
+     iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
+     flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_, dims_, &
+     total_, ewald_)
 
-!      Adapted November 2019 from cpw.f90. JLM
-!      Modified, metadata bug, May 2020. JLM, CLR
-!      Modified, close unit, 11 June 2020. JLM
-!      copyright inesc-mn/Jose Luis Martins/CLR/etc...
+! Adapted November 2019 from cpw.f90. JLM
+! Modified, metadata bug, May 2020. JLM, CLR
+! Modified, close unit, 11 June 2020. JLM
+! Modified, icdiagmax, indentation, 14 May 2025. JLM
 
+  use cpw_variables
 
-!      version 4.98
- 
-       use cpw_variables
+  implicit none
 
-       implicit none
+  type(flags_t)                      ::  flags_                          !<  computational flags
+  type(crys_t)                       ::  crys_                           !<  crystal structure
+  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
+  type(kpoint_t)                     ::  kpoint_                         !<  k-point data
+  type(xc_t)                         ::  xc_                             !<  exchange and correlation choice
+  type(acc_t)                        ::  acc_                            !<  accuracy parameters
+  type(moldyn_t)                     ::  moldyn_                         !<  molecular dynamics variables
+  type(vcsdyn_t)                     ::  vcsdyn_                         !<  variational cell shape molecular dynamics variables
+  type(dims_t)                       ::  dims_                           !<  array dimensions
+  type(enfrst_t)                     ::  total_                          !<  Total energy force stress
+  type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
 
-       type(flags_t)                      ::  flags_                     !<  computational flags
-       type(crys_t)                       ::  crys_                      !<  crystal structure
-       type(pwexp_t)                      ::  pwexp_                     !<  plane-wave expansion choices
-       type(kpoint_t)                     ::  kpoint_                    !<  k-point data
-       type(xc_t)                         ::  xc_                        !<  exchange and correlation choice
-       type(acc_t)                        ::  acc_                       !<  accuracy parameters
-       type(moldyn_t)                     ::  moldyn_                    !<  molecular dynamics variables
-       type(vcsdyn_t)                     ::  vcsdyn_                    !<  variational cell shape molecular dynamics variables
-       type(dims_t)                       ::  dims_                      !<  array dimensions
-       type(enfrst_t)                     ::  total_                     !<  Total energy force stress
-       type(enfrst_t)                     ::  ewald_                     !<  Ewald energy force stress
+  character(len=*), intent(in)       ::  fcpwin                          !<  filename with input data (new style)
+  character(len=*), intent(in)       ::  fpwdat                          !<  filename with input data (old style)
 
-       character(len=*), intent(in)       ::  fcpwin                     !<  filename with input data (new style)
-       character(len=*), intent(in)       ::  fpwdat                     !<  filename with input data (old style)
+  character(len=4), intent(in)       ::  vdriv                           !<  version of the calling program
+  integer, intent(in)                ::  iopw                            !<  tape number
 
-       character(len=4), intent(in)       ::  vdriv                      !<  version of the calling program
-       integer, intent(in)                ::  iopw                       !<  tape number 
+  integer, intent(out)               ::  iprglob                         !<  controls the amount of printing by subroutines
 
-       integer, intent(out)               ::  iprglob                    !<  controls the amount of printing by subroutines
+  character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata coded in cpw2000
+  character(len=250), intent(out)    ::  meta_pwdat                      !<  metadata from pw.dat
 
-       character(len=250), intent(out)    ::  meta_cpw2000               !<  metadata coded in cpw2000
-       character(len=250), intent(out)    ::  meta_pwdat                 !<  metadata from pw.dat
-       
-       logical, intent(out)               ::  symkip                     !<  whether symmetry should be conserved
-       real(REAL64), intent(out)          ::  symtol                     !<  tolerance for symmetry recognition subroutines
+  logical, intent(out)               ::  symkip                          !<  whether symmetry should be conserved
+  real(REAL64), intent(out)          ::  symtol                          !<  tolerance for symmetry recognition subroutines
 
-       integer      ::  ioerr
-       logical               ::  lgeom                                   !  indicates if geometry was successfully read.
-       logical               ::  lbz                                     !  indicates if Brillouin Zone data was successfully read.
-       integer      ::  ipr
-       
-       integer    ::    i
+  integer      ::  ioerr
+  logical               ::  lgeom                                        !  indicates if geometry was successfully read.
+  logical               ::  lbz                                          !  indicates if Brillouin Zone data was successfully read.
+  integer      ::  ipr
 
-       ipr = 3
-       call size_mxdtyp_mxdatm_esdf(ipr,fcpwin,lgeom,                    &
-     &         dims_%mxdtyp,dims_%mxdatm)
-     
-       do i = 1,250
-         meta_pwdat(i:i) = ' '
-         meta_cpw2000(i:i) = ' '
-       enddo
+  integer    ::    i
 
-       if(.NOT. lgeom) then
-         call size_mxdtyp_mxdatm(fpwdat,iopw,dims_%mxdtyp,dims_%mxdatm)
-       endif
+  ipr = 3
+  call size_mxdtyp_mxdatm_esdf(ipr, fcpwin, lgeom,                       &
+          dims_%mxdtyp, dims_%mxdatm)
 
-       allocate(crys_%natom(dims_%mxdtyp))
-       allocate(crys_%rat(3,dims_%mxdatm,dims_%mxdtyp))
-       allocate(crys_%atmass(dims_%mxdtyp))
-       allocate(crys_%nameat(dims_%mxdtyp))
+  do i = 1,250
+    meta_pwdat(i:i) = ' '
+    meta_cpw2000(i:i) = ' '
+  enddo
 
-       allocate(moldyn_%vat(3,dims_%mxdatm,dims_%mxdtyp))
-       allocate(moldyn_%rat1(3,dims_%mxdatm,dims_%mxdtyp))
-       allocate(moldyn_%frc1(3,dims_%mxdatm,dims_%mxdtyp))
+  if(.NOT. lgeom) then
+    call size_mxdtyp_mxdatm(fpwdat,iopw,dims_%mxdtyp,dims_%mxdatm)
+  endif
 
-       allocate(total_%force(3,dims_%mxdatm,dims_%mxdtyp))
-       allocate(ewald_%force(3,dims_%mxdatm,dims_%mxdtyp))
+  allocate(crys_%natom(dims_%mxdtyp))
+  allocate(crys_%rat(3,dims_%mxdatm,dims_%mxdtyp))
+  allocate(crys_%atmass(dims_%mxdtyp))
+  allocate(crys_%nameat(dims_%mxdtyp))
 
+  allocate(moldyn_%vat(3,dims_%mxdatm,dims_%mxdtyp))
+  allocate(moldyn_%rat1(3,dims_%mxdatm,dims_%mxdtyp))
+  allocate(moldyn_%frc1(3,dims_%mxdatm,dims_%mxdtyp))
 
-       call read_esdf(fcpwin,vdriv,                                      &
-     & flags_%flgcal,flags_%flgkeat,flags_%flgpsd,flags_%flgscf,         &
-     &     flags_%flgdal,flags_%flgmix,                                  &
-     & crys_%adot,crys_%ntype,crys_%natom,crys_%nameat,crys_%rat,        &
-     &     crys_%atmass,crys_%alatt,                                     &
-     & lgeom,                                                            &
-     & pwexp_%emax,pwexp_%nbandin,                                       &
-     & kpoint_%nx,kpoint_%ny,kpoint_%nz,kpoint_%sx,kpoint_%sy,           &
-     &     kpoint_%sz,                                                   &
-     &     lbz,                                                          &
-     & meta_cpw2000,                                                     &
-     & symkip,symtol,                                                    &
-     & xc_%author,xc_%tblaha,                                            &
-     & iprglob,                                                          &
-     & acc_%itmax,acc_%epscv,acc_%epscvao,acc_%epspsi,                   &
-     & moldyn_%tempk,                                                    &
-     & pwexp_%teleck,                                                    &
-     & moldyn_%tempinik,moldyn_%nstep,moldyn_%tstep,moldyn_%beta,        &
-     & moldyn_%iseed,                                                    &
-     & moldyn_%pgtol,moldyn_%dxmax,                                      &
-     & vcsdyn_%press,vcsdyn_%strext,vcsdyn_%celmas,                      &
-     & pwexp_%lkplusg,pwexp_%epskplusg,                                  &
-     & dims_%mxdtyp,dims_%mxdatm)
+  allocate(total_%force(3,dims_%mxdatm,dims_%mxdtyp))
+  allocate(ewald_%force(3,dims_%mxdatm,dims_%mxdtyp))
 
 
-       meta_pwdat = meta_cpw2000
+  call read_esdf(fcpwin, vdriv,                                          &
+      flags_%flgcal, flags_%flgkeat, flags_%flgpsd, flags_%flgscf,       &
+          flags_%flgdal, flags_%flgmix,                                  &
+      crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,     &
+          crys_%atmass, crys_%alatt,                                     &
+      lgeom,                                                             &
+      pwexp_%emax, pwexp_%nbandin,                                       &
+      kpoint_%nx, kpoint_%ny, kpoint_%nz, kpoint_%sx, kpoint_%sy,        &
+          kpoint_%sz,                                                    &
+          lbz,                                                           &
+      meta_cpw2000,                                                      &
+      symkip, symtol,                                                    &
+      xc_%author, xc_%tblaha,                                            &
+      iprglob,                                                           &
+      acc_%itmax, acc_%icdiagmax, acc_%epscv, acc_%epscvao, acc_%epspsi, &
+      moldyn_%tempk,                                                     &
+      pwexp_%teleck,                                                     &
+      moldyn_%tempinik, moldyn_%nstep, moldyn_%tstep, moldyn_%beta,      &
+      moldyn_%iseed,                                                     &
+      moldyn_%pgtol, moldyn_%dxmax,                                      &
+      vcsdyn_%press, vcsdyn_%strext, vcsdyn_%celmas,                     &
+      pwexp_%lkplusg, pwexp_%epskplusg,                                  &
+      dims_%mxdtyp, dims_%mxdatm)
 
 
-!      prints type of calculation near the top of output file
+  meta_pwdat = meta_cpw2000
 
-       call tpage_calc(flags_%flgcal)
 
-       if(.NOT. lgeom) then
+! prints type of calculation near the top of output file
 
-!        compatibility with some old versions
+  call tpage_calc(flags_%flgcal)
 
-         write(6,*)
-         write(6,*) ' WARNING '
-         write(6,*) ' Using ',fpwdat,' file'
-         write(6,*)
+  if(.NOT. lgeom) then
 
-         open(UNIT=iopw,FILE=fpwdat,STATUS='OLD',FORM='FORMATTED',       &
-     &       IOSTAT=ioerr)
-!        open(UNIT=6,FILE='PW.OUT',STATUS='NEW',FORM='FORMATTED')
+!   compatibility with some old versions
 
-         if(ioerr /= 0) then
-           write(6,*)
-           write(6,*)
-           write(6,*) '  cpw:   Unable to open PW.DAT file'
+    write(6,*)
+    write(6,*) ' WARNING '
+    write(6,*) ' Using ',fpwdat,' file'
+    write(6,*)
 
-           stop
+    open(UNIT=iopw, FILE=fpwdat, STATUS='OLD', FORM='FORMATTED', IOSTAT=ioerr)
 
-         endif
+    if(ioerr /= 0) then
+      write(6,*)
+      write(6,*)
+      write(6,*) '  cpw:   Unable to open PW.DAT file ',fpwdat
 
-         read(iopw,'(a250)',iostat=ioerr) meta_pwdat
-         if(ioerr == 0) then
-           write(6,*) meta_pwdat(1:60)
-           write(6,*) meta_pwdat(61:110)
-           write(6,*) meta_pwdat(111:250)
-         else
-           write(6,*) '  cpw:   Unable to read titles'
-         endif
-         write(6,*)
-         write(6,*)
+      stop
 
-!        gets crystal data
+    endif
 
-         call read_data(crys_%adot,crys_%ntype,crys_%natom,              &
-     &      crys_%nameat,crys_%rat,crys_%atmass,crys_%alatt,             &
-     &      dims_%mxdtyp,dims_%mxdatm)
+    read(iopw,'(a250)', iostat=ioerr) meta_pwdat
+    if(ioerr == 0) then
+      write(6,*) meta_pwdat(1:60)
+      write(6,*) meta_pwdat(61:110)
+      write(6,*) meta_pwdat(111:250)
+    else
+      write(6,*) '  cpw:   Unable to read titles'
+    endif
+    write(6,*)
+    write(6,*)
 
-         if(.NOT. lbz) then
-           read(iopw,'(1x,f9.4)') pwexp_%emax
+!   gets crystal data
 
-           read(iopw,'(i5,15x,3i5,5x,3f5.2)') pwexp_%nbandin,            &
-    &        kpoint_%nx,kpoint_%ny,kpoint_%nz,                           &
-    &        kpoint_%sx,kpoint_%sy,kpoint_%sz
+    call read_data(crys_%adot, crys_%ntype, crys_%natom,                 &
+       crys_%nameat, crys_%rat, crys_%atmass, crys_%alatt,               &
+       dims_%mxdtyp, dims_%mxdatm)
 
-         endif
+    if(.NOT. lbz) then
+      read(iopw,'(1x,f9.4)') pwexp_%emax
 
-         close(UNIT=iopw)
+      read(iopw, '(i5, 15x, 3i5, 5x, 3f5.2)') pwexp_%nbandin,            &
+        kpoint_%nx, kpoint_%ny, kpoint_%nz,                              &
+        kpoint_%sx, kpoint_%sy, kpoint_%sz
 
-!        copies meta_pwdat to meta_cpw2000 
+    endif
 
-         meta_cpw2000 = meta_pwdat
+    close(UNIT=iopw)
 
-         
-       endif
+!   copies meta_pwdat to meta_cpw2000
 
-       return
+    meta_cpw2000 = meta_pwdat
 
-       end subroutine cpw_read_data
+
+  endif
+
+  return
+
+end subroutine cpw_read_data

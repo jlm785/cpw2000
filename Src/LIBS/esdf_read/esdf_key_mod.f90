@@ -8,13 +8,14 @@
 
 !     Modified for f90. Jose Luis Martins, December 2016.
 !     Keywords added in June 2017.
+!     Keywords added in May 2025.
 
 ! Module to hold keyword list. This must be updated as
 ! new keywords are brought into existence.
 !
 ! The 'label' is the label as used in calling the esdf routines
 ! 'typ' defines the type, with the following syntax. It is 3 characters
-! long. 
+! long.
 ! The first indicates:
 !  I - integer
 !  S - single
@@ -32,7 +33,7 @@
 !  D - Dummy
 !
 ! 'dscrpt' is a description of the variable. It should contain a (short) title
-! enclosed between *! ... !*, and then a more detailed description of the 
+! enclosed between *! ... !*, and then a more detailed description of the
 ! variable.
 
 Module esdf_key
@@ -47,10 +48,10 @@ Module esdf_key
 
   Integer, Parameter :: numkw=88
   Type(kw_type) :: kw(numkw)
- 
+
 ! Now define the keywords
-     
-      
+
+
 !     FLGCAL     TYPE OF CALCULATION (MD,...)
       data kw(1)%label     /'MD.TypeOfRun'/
       data kw(1)%typ       /'T:B' /
@@ -79,7 +80,7 @@ Module esdf_key
       data kw(5)%label     /'TypeOfPseudoMixing'/
       data kw(5)%typ       /'T:B' /
       data kw(5)%dscrpt    /'FLGMIX (BROYD1,BFGS)'/
- 
+
 !      FLGRHO     WRITES FINAL CHARGE DENSITY TO A FILE
       data kw(6)%label     /'WriteChargeDensity'/
       data kw(6)%typ       /'L:B' /
@@ -123,14 +124,14 @@ Module esdf_key
 !      ITMAX      MAXIMUM NUMBER OF SELF CONSISTENCY CYCLES
       data kw(14)%label     /'MaxSCFIterations'/
       data kw(14)%typ       /'I:B' /
-      data kw(14)%dscrpt    /'ITMAX (20)'/
+      data kw(14)%dscrpt    /'ITMAX (30)'/
 
 !      EPSCV      CONVERGENCE CRITERIA FOR SELF CONSISTENCY
       data kw(15)%label     /'ScfTolerance'/
       data kw(15)%typ       /'D:B' /
       data kw(15)%dscrpt    /'EPSCV (0.00005)'/
-     
-     
+
+
 !      EPSPSI     CONVERGENCE CRITERIA FOR DIAGONALIZATION
       data kw(16)%label     /'DiagTolerance'/
       data kw(16)%typ       /'D:B' /
@@ -172,13 +173,13 @@ Module esdf_key
       data kw(23)%typ       /'P:B' /
       data kw(23)%dscrpt                                                 &
      & /'PGTOL (1.0D-4) TOLERANCE FOR L-BFGS OPTIMIZATION'/
-     
+
 !      DXMAX       MAXIMUM STEP SIZE IN FORCES AND STRESSES
       data kw(24)%label     /'MD.CG.StepMax'/
       data kw(24)%typ       /'P:B' /
       data kw(24)%dscrpt                                                 &
      & /'DXMAX (0.1D0) MAXIMUM STEP FOR L-BFGS OPTIMIZATION'/
-     
+
 !      PRESS      EXTERNAL PRESSURE
       data kw(25)%label     /'MD.TargetPressure'/
       data kw(25)%typ       /'P:B' /
@@ -200,43 +201,43 @@ Module esdf_key
       data kw(28)%typ       /'P:B' /
       data kw(28)%dscrpt                                                 &
      &   /'EMAX    PLANE WAVE KINETIC ENERGY CUTOFF (HARTREE)  '/
-     
+
       data kw(30)%label     /'KPointGrid'/
       data kw(30)%typ       /'B:B' /
       data kw(30)%dscrpt    /'     '/
-          
+
       data kw(31)%label     /'LatticeConstant'/
       data kw(31)%typ       /'P:B' /
       data kw(31)%dscrpt    /'LATTICE CONSTANT     '/
-     
+
       data kw(32)%label     /'LatticeVectors'/
       data kw(32)%typ       /'B:B' /
       data kw(32)%dscrpt                                                 &
      &     /'LATTICE VECTORS IN UNITS OF LATTICE CONSTANT'/
-     
+
       data kw(33)%label     /'NumberOfSpecies'/
       data kw(33)%typ       /'I:B' /
       data kw(33)%dscrpt    /'NUMBER OF DIFFERENT ATOMIC SPECIES'/
-     
+
       data kw(34)%label     /'NumberOfAtoms'/
       data kw(34)%typ       /'I:B' /
       data kw(34)%dscrpt    /'TOTAL NUMBER OF ATOMS'/
-     
+
       data kw(35)%label     /'Chemical_Species_Label'/
       data kw(35)%typ       /'B:B' /
       data kw(35)%dscrpt                                                 &
      & /'INDEX OF CHEMICAL SPECIES, ATOMIC NUMBER, CHEMICAL SYMBOL'/
-     
+
       data kw(36)%label     /'AtomicCoordinatesAndAtomicSpecies'/
       data kw(36)%typ       /'B:B' /
       data kw(36)%dscrpt                                                 &
      & /'Coordinates of the atoms and index of species'/
-          
+
       data kw(37)%label     /'Read.PW.DAT'/
       data kw(37)%typ       /'L:B' /
-      data kw(37)%dscrpt                                                 &    
+      data kw(37)%dscrpt                                                 &
      & /'READS FILE COMPATIBLE WITH BERKELEY/SVERRE DATA FILES'/
-     
+
       data kw(38)%label     /'SystemName'/
       data kw(38)%typ       /'T:B' /
       data kw(38)%dscrpt    /'     '/
@@ -252,95 +253,100 @@ Module esdf_key
       data kw(41)%label     /'NumberOfBands'/
       data kw(41)%typ       /'I:B' /
       data kw(41)%dscrpt    /'     '/
-     
+
       data kw(42)%label     /'AtomSpecies'/
       data kw(42)%typ       /'B:B' /
       data kw(42)%dscrpt    /'     '/
-     
+
       data kw(43)%label     /'PWEnergyCutoff'/
       data kw(43)%typ       /'P:B' /
       data kw(43)%dscrpt    /'Plane-wave energy cutoff     '/
-     
+
       data kw(44)%label     /'NumberOfEigenStates'/
       data kw(44)%typ       /'I:B' /
       data kw(44)%dscrpt    /'Number of desired eigenstates     '/
-     
+
       data kw(45)%label     /'kgrid_Monkhorst_Pack'/
       data kw(45)%typ       /'B:B' /
       data kw(45)%dscrpt                                                 &
      &       /'Grid for Brillouin Zone Gauss-Fourier integration  '/
-     
+
       data kw(46)%label     /'Rede.NumberOfLatticePlanes'/
       data kw(46)%typ       /'I:I' /
       data kw(46)%dscrpt                                                 &
      & /'Number of lattice planes in the superlattice (rede.f90)'/
-     
+
       data kw(47)%label     /'Rede.Version'/
       data kw(47)%typ       /'T:I' /
       data kw(47)%dscrpt    /'Version of rede.f90 that generated SL'/
-     
+
       data kw(48)%label     /'Rede.Title'/
       data kw(48)%typ       /'T:I' /
       data kw(48)%dscrpt    /'Title for the calculation (rede.f90)'/
-     
+
       data kw(49)%label     /'Rede.Date'/
       data kw(49)%typ       /'T:I' /
       data kw(49)%dscrpt    /'Day when rede.f90 was run'/
-     
+
       data kw(50)%label     /'Rede.Time'/
       data kw(50)%typ       /'T:I' /
       data kw(50)%dscrpt    /'Time when rede.f90 was run'/
-     
+
       data kw(51)%label     /'Rede.Name'/
       data kw(51)%typ       /'T:I' /
       data kw(51)%dscrpt    /'Name generated by rede.f90 from input'/
-     
+
       data kw(52)%label     /'Rede.Superlattice'/
       data kw(52)%typ       /'B:I' /
       data kw(52)%dscrpt                                                 &
      &    /'Information about the SL vectors (rede.f90)'/
-     
+
       data kw(53)%label     /'MD.FrictionFracInvTimeStep'/
       data kw(53)%typ       /'D:I' /
       data kw(53)%dscrpt                                                 &
      &    /'Friction coefficient as a function of time step,    beta =   &
      &    (1/ Delta t)/coeff. Recommended:  coeff = 20.0'/
-     
+
       data kw(54)%label     /'SystemLabel'/
       data kw(54)%typ       /'T:B' /
       data kw(54)%dscrpt    /'Label that can be used to open files'/
-      
+
 !      LKPLUSG     FINISH CELL MINIMIZATION WITH FIXED k+G
       data kw(55)%label     /'MD.CG.UseFixedkplusG'/
       data kw(55)%typ       /'L:I' /
       data kw(55)%dscrpt                                                 &
      & /'LKPLUSG  (.FALSE.)  FINISH VCS/EPI L-BFGS OPT. WITH FIXED k+G'/
-     
+
 !      EPSKPLUSG     CRITERIA FOR SWITCHING TO FIXED k+G
       data kw(56)%label     /'MD.CG.FixedkplusGTol'/
       data kw(56)%typ       /'P:I' /
       data kw(56)%dscrpt                                                 &
      & /'EPSKPLUSG  (1.0D-2)   CRITERIA FOR SWITCHING TO FIXED k+G'/
-     
+
 !     FLGMOD     TYPE OF EMPIRICAL POTENTIAL MODEL
       data kw(57)%label     /'MD.PotentialModel'/
       data kw(57)%typ       /'T:B' /
       data kw(57)%dscrpt                                                  &
      & /'FLGMOD (LENJON,LJCLST,KEATNG)'/
 
+!      ITDIAGMAX      MAXIMUM NUMBER OF SELF CONSISTENCY CYCLES
+      data kw(58)%label     /'MaxDiagIterations'/
+      data kw(58)%typ       /'I:B' /
+      data kw(58)%dscrpt    /'ITMAX (40)'/
+
 
 !      EPSCVAO    CONVERGENCE CRITERIA FOR SELF CONSISTENCY OF ATOMIC ORBITALS
 !      data kw%label(16)     /'ScfToleranceAO'/
 !      data kw%typ(16)       /'D:B' /
-!      data kw%dscrpt(16)    
+!      data kw%dscrpt(16)
 !     & /'EPSCVAO ()'/
 
 !      BETA       FRICTION COEFFICIENT/MASS (IN A.U.)
 !      data kw%label(21)     /'MD.FrictionCoef'/
 !      data kw%typ(21)       /'P:B' /
-!      data kw%dscrpt(21)    
+!      data kw%dscrpt(21)
 !     & /'BETA () '
 
-     
-    
+
+
       end module esdf_key

@@ -76,7 +76,6 @@ program cpw2000
 
   real(REAL64)                       ::  ealpha                          !<  G=0 contribution to the total energy (Hartree)
 
-  integer                            ::  icmax                           !<  maximum value of outer iteration
   logical                            ::  lsafescf                        !<  is true if self-consistency was reached.
 
   real(REAL64)                       ::  exc                             !<  Exchange and correlation energy (Hartree)
@@ -264,14 +263,11 @@ program cpw2000
 
 !   Self-Consistency
 
-
     if(newcalc .or. newcel) then
       iguess = 0
     else
       iguess = 1
     endif
-
-    icmax = 40
 
 
     if((flags_%flgscf == 'AO    ' .or.                                   &
@@ -279,7 +275,7 @@ program cpw2000
         flags_%flgscf == 'AOJCPW') .and. atorb_%latorb) then
 
 
-      call cpw_scf('AO', iprglob, icmax, iguess, kmscr,                  &
+      call cpw_scf('AO', iprglob, iguess, kmscr,                         &
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
@@ -292,7 +288,7 @@ program cpw2000
 
     if(flags_%flgscf == '    PW' .or. flags_%flgscf == 'AOJCPW') then
 
-      call cpw_scf('PW', iprglob, icmax, iguess, kmscr,                  &
+      call cpw_scf('PW', iprglob, iguess, kmscr,                         &
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
