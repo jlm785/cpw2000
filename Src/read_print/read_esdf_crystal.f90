@@ -15,8 +15,8 @@
 !>  opened by a previous edsf_init
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.00
-!>  \date         2017-2021
+!>  \version      5.12
+!>  \date         2017-2021, 8 July 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf_crystal(ipr,                                        &
@@ -28,7 +28,7 @@ subroutine read_esdf_crystal(ipr,                                        &
 ! Modified 6 June 2019, bug in atomic mass. JLM
 ! Modified, documentation, August 10 2019. JLM
 ! Modified, prints reciprocal lattice vectors, 16 April 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
+! Modified to allow "negative" volumes. 8 July 2025. JLM
 
 
   use esdf
@@ -86,6 +86,7 @@ subroutine read_esdf_crystal(ipr,                                        &
   real(REAL64), parameter  :: AMU = 1822.888485_REAL64
 
   real(REAL64), parameter  ::  UM = 1.0_REAL64
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
   real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
 
   real(REAL64), parameter  ::  EPS = 2.0E-6_REAL64                       !  Criteria for rounding the values (depends on the f12.6 in input)
@@ -233,12 +234,20 @@ subroutine read_esdf_crystal(ipr,                                        &
     vcell = bvec(1,1)*avec(1,1) + bvec(2,1)*avec(2,1) +                  &
             bvec(3,1)*avec(3,1)
 
-    if(vcell < EPSMALL) then
+    if(abs(vcell) < EPSMALL) then
+      write(6,*)
       write(6,'("    STOPPED in read_esdf_crystal.    Cell volume ",     &
         & "squared= ",e12.4)') vcell
 
       stop
 
+    endif
+
+    if(vcell < ZERO) then
+      write(6,*)
+      write(6,'("    WARNING in read_esdf_crystal.    Negatively ",      &
+        & "oriented lattice vectors ",e12.4)') vcell
+      write(6,*)
     endif
 
     do j=1,3

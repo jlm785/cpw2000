@@ -20,8 +20,8 @@
 !>  It is a driver subroutine for each task.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.11
-!>  \date         December 18, 2013, 12 March 2025.
+!>  \version      5.12
+!>  \date         December 18, 2013, 7 July 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -43,6 +43,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! size of author, 13 January 2024. JLM
 ! Added calculation of quantum geometric quantities. 4 April 2024. JLM
 ! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
+! Allows entering better value of Fermi level. 7 July 2025. JLM
 
 
   use cpw_variables
@@ -210,7 +211,8 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! other variables
 
   real(REAL64)                       ::  emax_in                         !  initial kinetic energy cutoff of plane wave expansion (hartree).
-  real(REAL64)                       ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  real(REAL64)                       ::  efermi                          !  eigenvalue (may not be accurate) of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  real(REAL64)                       ::  efermi_in                       !  Input guess of eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   integer            ::  iotape
   integer            ::  ios
@@ -223,7 +225,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
   character(len=60)  ::  filename
 
-  character(len=1)   ::  yesno
+  character(len=1)   ::  yesno, yesno2
 
   real(real64)       ::  xprec
 
@@ -257,7 +259,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
   call cpw_pp_band_dos_init(filename, iotape,                            &
        dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
-       atorb_, efermi,  author,                                          &
+       atorb_, efermi_in,  author,                                       &
        pwline, title, subtitle ,meta_cpw2000,                            &
        dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
@@ -286,31 +288,72 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
 
   write(6,*)
-  write(6,*) '  Do you want to modify precision of reference ',          &
-          &    'eigenvalues (y/n)?'
+  write(6,*) '  Do you want to modify other parameters (y/n)?'
+  write(6,*) '  eigenvalue precision, fermi energy estimate'
   read(5,*) yesno
-  write(ioreplay,*) yesno,'   modify precision'
+  write(ioreplay,*) yesno,'   modify parameters'
+
+! default values
 
   epspsi = 0.0005
+  efermi = efermi_in
+
   if(yesno == 'y' .or. yesno == 'Y') then
+
     write(6,*)
-    write(6,*) '  Enter number of decimals for eigenvalue precision (eV)'
-    read(5,*) xprec
-    write(ioreplay,*) xprec,'   decimals in precision (eV)'
-    if(xprec < 3.0) then
-      xprec = 3*UM
+    write(6,*) '  Do you want to modify eigenvalue precision (y/n)?'
+    write(6,'("  Current value of epspsi is: ",g14.5)') epspsi
+
+    read(5,*) yesno2
+    write(ioreplay,*) yesno2,'   modify eigenvalue precision'
+
+    if(yesno2 == 'y' .or. yesno2 == 'Y') then
       write(6,*)
-      write(6,*) '  low number, will use three decimals'
-      write(6,*)
+      write(6,*) '  Enter number of decimals for eigenvalue precision (eV)'
+      read(5,*) xprec
+      write(ioreplay,*) xprec,'   decimals in precision (eV)'
+      if(xprec < 3.0) then
+        xprec = 3*UM
+        write(6,*)
+        write(6,*) '  low number, will use three decimals'
+        write(6,*)
+      endif
+      if(xprec > 8.0) then
+        xprec = 8*UM
+        write(6,*)
+        write(6,*) '  high number, will use eight decimals'
+        write(6,*)
+      endif
+      epspsi = UM / ((10*UM)**xprec)
+      epspsi = epspsi / HARTREE
     endif
-    if(xprec > 8.0) then
-      xprec = 8*UM
+
+    write(6,*)
+    write(6,*) '  Do you want to enter a precise Fermi energy'
+    write(6,*) '  or top of the valence band value (y/n)?'
+    write(6,*)
+    write(6,'("   Current estimate is: ",g14.5)') efermi*HARTREE
+    write(6,*) '  It is an estimate from the SCF, may be improved'
+    write(6,*) '  if you have a value from a band structure or DOS.'
+
+    read(5,*) yesno2
+    write(ioreplay,*) yesno2,'   modify Fermi energy'
+
+    if(yesno2 == 'y' .or. yesno2 == 'Y') then
       write(6,*)
-      write(6,*) '  high number, will use eight decimals'
-      write(6,*)
+      write(6,*) '  Enter your better value (eV)'
+      read(5,*) efermi
+      write(ioreplay,*) efermi,'   new Fermi energy (eV)'
+      if(abs(efermi_in*HARTREE - efermi) > 2.0) then
+        write(6,*)
+        write(6,*) '  WARNING  WARNING  WARNING:  value looks suspicious'
+        write(6,*) '  eigenvalues may not be what you expect'
+        write(6,*) '  but all other quantities are unaffected'
+        write(6,*)
+      endif
+      efermi = efermi / HARTREE
     endif
-    epspsi = UM / ((10*UM)**xprec)
-    epspsi = epspsi / HARTREE
+
   endif
 
 

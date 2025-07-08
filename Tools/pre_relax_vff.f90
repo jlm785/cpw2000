@@ -16,14 +16,15 @@
 !>  Must be compiled with the libpw library (and LAPACK)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         15 january 1999, 14 May 2024.
+!>  \version      5.12
+!>  \date         15 january 1999, 9 June 2025.
 !>  \copyright    GNU Public License v2
 
        program pre_relax_vff
 
 !      written 15 january 1999. jlm
 !      Modified, f90, new subroutines 3 June 2019. JLM
+!      Add writing of cif file. 9 June 2025. JLM
 !      Specialized for VFF relaxation
 
        implicit none
@@ -255,6 +256,12 @@
        call plot_xsf_crys(iotape, .TRUE.,                                &
      &     adot, ntype, natom, nameat, rat,                              &
      &     mxdtyp, mxdatm)
+
+
+       call write_cif('pre-relax.cif',                                   &
+     &     adot, ntype, natom, nameat, rat,                              &
+     &     mxdtyp, mxdatm)
+
 
        close(unit = iotape)
 

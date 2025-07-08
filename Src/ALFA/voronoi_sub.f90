@@ -15,13 +15,14 @@
 !>  from the cpw.in file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
+!>  \version      5.12
 !>  \date         22 April 2021. 23 January 2022.
 !>  \copyright    GNU Public License v2
 
 subroutine voronoi_sub(ioreplay)
 
 ! Added call to sym_space_group_name. 23 January 2022. JLM
+! Added filenme to call write_cif. 9 June 2025. JLM
 
   use esdf
 
@@ -262,7 +263,7 @@ subroutine voronoi_sub(ioreplay)
    write(6,*) '  (https://pypi.org/project/cif2cell/)'
    write(6,*)
 
-   call write_cif(adot, ntype, natom, nameat, rat,                       &
+   call write_cif('cpw2000.cif', adot, ntype, natom, nameat, rat,        &
                        mxdtyp, mxdatm)
 
   endif

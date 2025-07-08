@@ -321,6 +321,16 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("PrintingLevel",15x,i3,13x,"# 1, 2, 3")') idet
   write(io,*)
 
+  if(callcode == 'pre_relax_vff') then
+    write(io,'("MaxSCFIterations            1000              #")')
+    write(io,*)
+    write(io,'("MaxDiagIterations            200              #")')
+    write(io,*)
+    write(io,'("ElectronicTemperature        300 K          #")')
+    write(io,*)
+  endif
+
+
   write(io,*)
   write(io,'("#------------------------------------------------")')
   write(io,'("# MD Inactive options")')
@@ -354,12 +364,15 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("#------------------------------------------------")')
   write(io,*)
 
-  write(io,'("#MaxSCFIterations             20              #")')
-  write(io,*)
-  write(io,'("#MaxSCFIterations             20              #")')
+  if(callcode /= 'pre_relax_vff') then
+    write(io,'("#MaxSCFIterations             20              #")')
+    write(io,'("#MaxDiagIterations             20             #")')
+    write(io,*)
+    write(io,'("#ElectronicTemperature        1000 K          #")')
+    write(io,*)
+  endif
   write(io,'("#TypeOfPseudoMixing           BROYD1          # BROYD1, BFGS#")')
   write(io,*)
-  write(io,'("#ElectronicTemperature        1000 K          #")')
   write(io,'("#TypeOfPseudopotential        PSEUKB          # PSEUKB")')
   write(io,*)
   write(io,'("#ScfTolerance                 0.00005         #")')
