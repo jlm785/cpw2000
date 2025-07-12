@@ -12,9 +12,10 @@ Installation:
 
   It is recommended (but not required) to first crete a virtual environment for python
 
-  my-dir$ virtualenv QtBandViwer
+  my-dir$ virtualenv QtBV
 
-  creating a directory named QtBandViwe.
+  creating a directory named QtBV.  Here "my-dir$" is whatever prompt you have in your command line
+  and "QtBV" is whatever you want to name that directory.
 
   If it doesn't work install virtualenv
 
@@ -22,10 +23,17 @@ Installation:
 
   and repeat the command to create the virtual environment.
 
-  Then the  BandDat.py orbinfo.ui QtBandViewer.py QtBandViewer.ui files to the newly created
-  QtBandViewer directory.
+  Then copy BandDat.py orbinfo.ui QtBandViewer.py QtBandViewer.ui files to the newly created
+  QtBandViewer directory, and move to that directory.
 
-  Inside that virtual environment (cd QtBandViewer) install the packages you need
+  my-dir$ cd QtBV
+
+  Check if the matplotlib is installed
+
+  my-dir$ pip3 list | grep matplotlib
+
+  In case it is not already available (nothing appears on the output of the previous command),
+  install it inside your environment.
 
   QtBandViewer$ pip3 install matplotlib
 
