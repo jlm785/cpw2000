@@ -27,6 +27,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 ! major reworking, April 2024. JLM
 ! Removed double double counting in orbital magnetization. 23 November 2024. JLM
 ! Improved printing, 13 January 2025. JLM
+! Typo corrected, 15 July 2025. JLM
 
   implicit none
 
@@ -125,7 +126,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
     write(6,*)
     write(6,*) '  Berry curvature             enter 2'
     write(6,*) '  Quantum metric              enter 3'
-    write(6,*) '  Orbital magnetization       enter 4'
+    write(6,*) '  Orbital magnetic moment     enter 4'
     write(6,*) '  Effective mass tensor       enter 5'
     write(6,*) '  Interband contrib to mass   enter 6'
     write(6,*)
