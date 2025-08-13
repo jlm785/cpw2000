@@ -18,7 +18,7 @@
 !>  \date         September 4, 201, 29 November 2021.
 !>  \copyright    GNU Public License v2
 
-       subroutine out_band_eref(neig,nrk,ztot,efermi,ispin,ivc,e_of_k,   &
+       subroutine out_band_eref(neig,nrk,rk,ztot,efermi,ispin,ivc,e_of_k,   &
      &                          eref,nocc)
 
 !      Written September 4, 2014. JLM
@@ -36,6 +36,8 @@
 
        integer, intent(in)                ::  neig                       !<  number of eigenvectors (without spin)
        integer, intent(in)                ::  nrk                        !<  number of k-points in path
+
+       real(REAL64), intent(in)          ::  rk(3,nrk)                       !<  k-point to be plotted in lattice coordinates
        real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
        real(REAL64), intent(in)           ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
        integer, intent(in)                ::  ispin                      !<  spin degeneracy (must be 1 or 2)

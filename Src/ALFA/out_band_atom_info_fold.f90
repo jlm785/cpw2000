@@ -11,11 +11,11 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!> Provides orbital information to post-processing companion program
+!>  Provides orbital information to post-processing companion program
 !>
 !>  \author       Carlos, Loia Reis, Jose Luis Martins
-!>  \version      5.11
-!>  \date         8 may 2004, 26 July 2024.
+!>  \version      5.12
+!>  \date         8 may 2004, 13 August 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
@@ -42,6 +42,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 !  Modified annoying warning pkn, iguess. 10 November 2023. JLM
 !  Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 !  Modified, ao_int_, improved indentation. 8 October 2024. JLM
+!  Modified, rk in out_band_eref, 13 August 2025. JLM
 
   implicit none
 
@@ -679,7 +680,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   iotape = 15
   nstyle = 2
 
-  call out_band_eref(neig,nrk2,ztot,efermi,2,1,e_of_k,eref,nocc)
+  call out_band_eref(neig, nrk2, rk, ztot, efermi, 2, 1, e_of_k, eref, nocc)
 
 !-----------------------------------------------------------------------
   call out_band_fold_xmgrace('band_fld_ref.agr', iotape,                 &
@@ -694,7 +695,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
       nbaslcao, infolcao, basxpsi, pkn,                                  &
       nvert, xcvert, nlines, ljump, nkstep, label, xklab, ntype, nameat)
 
-  call out_band_eref(neig, nrk2, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
+  call out_band_eref(neig, nrk2, rk, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
 
   n = min(nint(ztot + 0.01),2*neig)
   eref = e_of_k_so(n,1)

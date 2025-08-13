@@ -14,8 +14,8 @@
 !>  Tests the kdotp output file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         May 3, 2014, 26 July 2024.
+!>  \version      5.12
+!>  \date         May 3, 2014, 13 August 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,6 +26,7 @@
 ! Modified, last question, 30 September 2020. JLM
 ! Modified, neigso, new API kdotp_in. 8 September 2022. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+! Modified, rk in out_band_eref, 13 August 2025. JLM
 
   implicit none
 
@@ -87,7 +88,7 @@
 
   integer           ::  neigso              !  number of eigenvalues with spin-orbit
 
-  character(len=1)  ::  yesno
+!  character(len=1)  ::  yesno
 
 ! counters
 
@@ -193,7 +194,7 @@
 
   nstyle = 2
 
-  call out_band_eref(neig, nrk2, ztot, efermi, ispin, 1, e_of_k, eref, nocc)
+  call out_band_eref(neig, nrk2, rk, ztot, efermi, ispin, 1, e_of_k, eref, nocc)
 
   call out_band_gnuplot('band_kp.gp', iotape,                            &
          neigso, nrk2, xk, e_of_k, eref,                                 &

@@ -19,8 +19,8 @@
 !>  It also writes kdotp_matrix.dat and kdotp_matrix_so.dat for further processing
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         8 may 2004, 26 July 2024.
+!>  \version      5.12
+!>  \date         8 may 2004, 13 August 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_kdotp_2nd(title, subtitle,                           &
@@ -48,6 +48,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, iguess, indentation, 11 November 2023. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+! Modified, rk in out_band_eref, 13 August 2025. JLM
 
   implicit none
 
@@ -502,7 +503,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
   iotape = 15
   nstyle = 2
 
-  call out_band_eref(neig, nrk2, ztot, efermi, 2, 1, e_of_k, eref, nocc)
+  call out_band_eref(neig, nrk2, rk, ztot, efermi, 2, 1, e_of_k, eref, nocc)
 
   call out_band_gnuplot('band_kp.gp', iotape,                            &
          neig, nrk2, xk, e_of_k, eref,                                   &
@@ -513,7 +514,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
          neig, nrk2, xk, e_of_k, eref, nocc,                             &
          nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-  call out_band_eref(neig, nrk2, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
+  call out_band_eref(neig, nrk2, rk, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
 
   call out_band_gnuplot('band_so_kp.gp', iotape,                         &
       2*neig, nrk2, xk, e_of_k_so, eref,                                 &
