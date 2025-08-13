@@ -11,194 +11,240 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     This subroutine suggests a reference energy for a band structure plot
+!>  This subroutine suggests a reference energy for a band structure plot
+!>  based on the information from the k-point path.
+!>  Another path may give a different value...
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         September 4, 201, 29 November 2021.
+!>  \version      5.12
+!>  \date         September 4, 201, 13 August 2025.
 !>  \copyright    GNU Public License v2
 
-       subroutine out_band_eref(neig,nrk,rk,ztot,efermi,ispin,ivc,e_of_k,   &
-     &                          eref,nocc)
+subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
+             e_of_k, eref,nocc)
 
-!      Written September 4, 2014. JLM
-!      Modified, writes information, 7 November 2018. JLM
-!      Modified, documentation, August 1, 2019. JLM
-!      copyright  Jose Luis Martins/INESC-MN
-!      Modified, efermi, 29 November 2021. JLM
+! Written September 4, 2014. JLM
+! Modified, writes information, 7 November 2018. JLM
+! Modified, documentation, August 1, 2019. JLM
+! copyright  Jose Luis Martins/INESC-MN
+! Modified, efermi, 29 November 2021. JLM
+! Modified, extra information about local of CBM and VBM, 13 August 2025. JLM
 
-       implicit none
+  implicit none
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
 
-!      input
+! input
 
-       integer, intent(in)                ::  neig                       !<  number of eigenvectors (without spin)
-       integer, intent(in)                ::  nrk                        !<  number of k-points in path
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors (without spin)
+  integer, intent(in)                ::  nrk                             !<  number of k-points in path
 
-       real(REAL64), intent(in)          ::  rk(3,nrk)                       !<  k-point to be plotted in lattice coordinates
-       real(REAL64), intent(in)           ::  ztot                       !<  total charge density (electrons/cell)
-       real(REAL64), intent(in)           ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-       integer, intent(in)                ::  ispin                      !<  spin degeneracy (must be 1 or 2)
-       integer, intent(in)                ::  ivc                        !<  1=CBM, 2=VBM, 3=midgap=(CBM+VBM)/2
+  real(REAL64), intent(in)           ::  rk(3,nrk)                            !<  k-point to be plotted in lattice coordinates
+  real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  integer, intent(in)                ::  ispin                           !<  spin degeneracy (must be 1 or 2)
+  integer, intent(in)                ::  ivc                             !<  1=CBM, 2=VBM, 3=midgap=(CBM+VBM)/2
 
-       real(REAL64), intent(in)           ::  e_of_k(2*neig/ispin,nrk)   !<  band energies of k-point in plot
+  real(REAL64), intent(in)           ::  e_of_k(2*neig/ispin,nrk)        !<  band energies of k-point in plot
 
-!      output
+! output
 
-       real(REAL64), intent(out)          ::  eref                       !<  reference energy for plot
-       integer, intent(out)               ::  nocc                       !<  number of occupied bands (in semiconductors)
+  real(REAL64), intent(out)          ::  eref                            !<  reference energy for plot
+  integer, intent(out)               ::  nocc                            !<  number of occupied bands (in semiconductors)
 
-!      allocatable arrays
+! allocatable arrays
 
-       integer, allocatable               ::  indx(:)                    !  sorting index
+  integer, allocatable               ::  indx(:)                         !  sorting index
 
 
-!      local variables
+! local variables
 
-       real(REAL64)          ::  evbm           !  energy of valence band maximum
-       real(REAL64)          ::  ecbm           !  energy of conduction band minimum
-       logical               ::  lmetal         !  metallic case
-       character(len=16)     ::  cso            !  for spin-orbit
+  real(REAL64)          ::  evbm           !  energy of valence band maximum
+  real(REAL64)          ::  ecbm           !  energy of conduction band minimum
+  logical               ::  lmetal         !  metallic case
+  character(len=16)     ::  cso            !  for spin-orbit
+  real(REAL64)          ::  rk_vbm(3)      !  k-point of valence band maximum
+  real(REAL64)          ::  rk_cbm(3)      !  k-point of conduction band minimum
+  real(REAL64)          ::  gam_vb, gam_cb !  eigenvalues at gamma
 
-!      constants
 
-       real(REAL64), parameter  :: ZERO = 0.0_REAL64
-       real(REAL64), parameter ::  EV = 27.2116_REAL64
+! constants
 
-!      counters
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter  ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter  ::  EPS = 1.0E-6_REAL64
 
-       integer    ::  j, n, k, irk
+! counters
 
+  integer    ::  j, n, k, irk
 
-       if(ispin /=1 .and. ispin /= 2) then
 
-         eref = ZERO
-         nocc = 0
+  if(ispin /=1 .and. ispin /= 2) then
 
-       else
+!   inconsistent input, returns zero
 
-         if(ispin == 2) then
-           cso = ' no spin-orbit  '
-         else
-           cso = ' with spin-orbit'
-         endif
+    eref = ZERO
+    nocc = 0
 
-         lmetal = .FALSE.
-         if(ispin == 2 .and. mod(nint(ztot),2) == 1) lmetal = .TRUE.
+  else
 
-         if(.not. lmetal) then
+    if(ispin == 2) then
+      cso = ' no spin-orbit  '
+    else
+      cso = ' with spin-orbit'
+    endif
 
-           n = min(nint(ztot/ispin + 0.01),2*neig/ispin-1)
+    lmetal = .FALSE.
+    if(ispin == 2 .and. mod(nint(ztot),2) == 1) lmetal = .TRUE.
 
-           if(n == 0) then
+    if(.not. lmetal) then
 
-             evbm = e_of_k(1,1)
+!     could be metal or insulator
 
-             if(nrk > 1) then
+      n = min(nint(ztot/ispin + 0.01),2*neig/ispin-1)
 
-               do irk = 2,nrk
+      if(n == 0) then
 
-                 evbm = max(e_of_k(1,irk),evbm)
+!       Exceptional case ztot = 0 or just one band...
 
-               enddo
+        evbm = e_of_k(1,1)
 
-             endif
+        if(nrk > 1) then
 
-             ecbm = evbm
+          do irk = 2,nrk
 
-           else
+            evbm = max(e_of_k(1,irk),evbm)
 
-             allocate(indx(2*neig/ispin))
+          enddo
 
-             call sort(2*neig/ispin,e_of_k(1,1),indx)
+        endif
 
-             evbm = e_of_k(indx(n),1)
-             ecbm = e_of_k(indx(n+1),1)
+        ecbm = evbm
 
-             if(nrk > 1) then
+      else
 
-               do irk = 2,nrk
+        allocate(indx(2*neig/ispin))
 
-                 call sort(2*neig/ispin,e_of_k(1,irk),indx)
+        call sort(2*neig/ispin, e_of_k(:,1), indx)
 
-                 evbm = max(e_of_k(indx(n),irk),evbm)
-                 ecbm = min(e_of_k(indx(n+1),irk),ecbm)
+        evbm = e_of_k(indx(n),1)
+        ecbm = e_of_k(indx(n+1),1)
 
-               enddo
+        rk_vbm(:) = rk(:,1)
+        rk_cbm(:) = rk(:,1)
 
-             endif
+        if(nrk > 1) then
 
-             deallocate(indx)
+          do irk = 2,nrk
 
-           endif
+            call sort(2*neig/ispin, e_of_k(1,irk), indx)
 
-           if(ecbm > evbm) then
+!            evbm = max(e_of_k(indx(n),irk),evbm)
+!            ecbm = min(e_of_k(indx(n+1),irk),ecbm)
 
-             if(ivc == 1) then
-               eref = evbm
-             elseif(ivc == 2) then
-               eref = ecbm
-             else
-               eref = (evbm+ecbm)/2
-             endif
-             nocc = n
+            if(e_of_k(indx(n),irk) > evbm) then
+              evbm = e_of_k(indx(n),irk)
+              rk_vbm(:) = rk(:,irk)
+            endif
 
-             write(6,*)
-             write(6,'(i8,"   Occupied bands in apparent ",              &
-     &         "semiconductor/insulator",a16)') nocc,cso
-             write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
-     &             -eref*EV,cso
-             write(6,'(2f12.6,"   valence band maximum and conduction",  &
-     &         " band minimum (eV) ",a16)') evbm*EV,ecbm*EV,cso
-             write(6,*)
+            if(e_of_k(indx(n+1),irk) < ecbm) then
+              ecbm = e_of_k(indx(n+1),irk)
+              rk_cbm(:) = rk(:,irk)
+            endif
 
-           else
+!           gets information for Gamma point
 
-             lmetal = .TRUE.
+            if(abs(rk(1,irk)) < EPS .and. abs(rk(2,irk)) < EPS .and.     &
+               abs(rk(3,irk)) < EPS) then
+              gam_vb = e_of_k(indx(n),irk)
+              gam_cb = e_of_k(indx(n+1),irk)
+            endif
 
-           endif
-         endif
+          enddo
 
-         if(lmetal) then
+        endif
 
-           n = min(nint((nrk*ztot)/ispin + 0.01),2*neig*nrk/ispin)
+        deallocate(indx)
 
-           allocate(indx(2*neig*nrk/ispin))
+      endif
 
-           call sort(2*neig*nrk/ispin,e_of_k,indx)
+      if(ecbm > evbm) then
 
-           k = (indx(n)-1)/(2*neig/ispin) + 1
-           j = mod((indx(n)-1),(2*neig/ispin)) + 1
-           eref = e_of_k(j,k)
-           nocc = 0
+        if(ivc == 1) then
+          eref = evbm
+        elseif(ivc == 2) then
+          eref = ecbm
+        else
+          eref = (evbm+ecbm)/2
+        endif
+        nocc = n
 
-!          uses efermi if not too different from the current estimate
+        write(6,*)
+        write(6,'(i8,"   Occupied bands in apparent ",                   &
+           &     "semiconductor/insulator",a16)') nocc,cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')         &
+              -eref*EV,cso
+        write(6,'(2f12.6,"   valence band maximum and conduction",       &
+           &     " band minimum (eV) ",a16)') evbm*EV,ecbm*EV,cso
+        write(6,'(3f8.3,8x,3f8.3,"   at these k-points")') rk_vbm(:), rk_cbm(:)
+        write(6,*)
+        write(6,'(2f12.6,"   energies at gamma for bands ",2i5 )')       &
+            gam_vb*EV, gam_cb*EV, n, n+1
+        write(6,*)
 
-           if(abs(eref - efermi) < 2/EV) then
-             eref = efermi
-             write(6,*)
-             write(6,'(f12.6,"   E_F, from self-consistent calculation", &
-     &         a16)') eref*EV,cso
-             write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
-     &             -eref*EV,cso
-             write(6,*)
-           else
-             write(6,*)
-             write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ",   &
-     &         a16)') eref*EV,cso
-             write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
-     &             -eref*EV,cso
-             write(6,*)
-           endif
+      else
 
-           deallocate(indx)
+        lmetal = .TRUE.
 
-         endif
+        write(6,*)
+        write(6,'(i8,"   Average occupied bands in a metal ",            &
+           &     "or semimetal",a16)') n,cso
+        write(6,'(f12.6,"   Maximum energy in band ",i5)') evbm*EV, n
+        write(6,'(f12.6,"   Minimum energy in band ",i5)') ecbm*EV, n+1
+        write(6,*)
 
-       endif
+      endif
+    endif
 
-       return
+    if(lmetal) then
 
-       end subroutine out_band_eref
+      n = min(nint((nrk*ztot)/ispin + 0.01),2*neig*nrk/ispin)
+
+      allocate(indx(2*neig*nrk/ispin))
+
+      call sort(2*neig*nrk/ispin, e_of_k, indx)
+
+      k = (indx(n)-1)/(2*neig/ispin) + 1
+      j = mod((indx(n)-1),(2*neig/ispin)) + 1
+      eref = e_of_k(j,k)
+      nocc = 0
+
+!     uses efermi if not too different from the current estimate
+
+      if(abs(eref - efermi) < 2/EV) then
+        eref = efermi
+        write(6,*)
+        write(6,'(f12.6,"   E_F, from self-consistent calculation", &
+          a16)') eref*EV,cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
+              -eref*EV,cso
+        write(6,*)
+      else
+        write(6,*)
+        write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ",   &
+          a16)') eref*EV,cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
+              -eref*EV,cso
+        write(6,*)
+      endif
+
+      deallocate(indx)
+
+    endif
+
+  endif
+
+  return
+
+  end subroutine out_band_eref
