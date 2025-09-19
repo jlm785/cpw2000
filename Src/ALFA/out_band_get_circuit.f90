@@ -15,8 +15,8 @@
 !>  dat on filename (default BAND_LINES.DAT) or invents default.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         April 10, 2014. 26 July 2024.
+!>  \version      5.12
+!>  \date         April 10, 2014. 17 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
@@ -28,6 +28,7 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
 ! Modified, dx < EPS, 19 August 2020. JLM
 ! Modified trim(adjustl, 19 February 2022. JLM
 ! Modified, inconsistent number of bands. 26 July 2024. JLM
+! Increase dimension of label. 17 September 2025. JLM
 
   implicit none
 
@@ -54,7 +55,7 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
   real(REAL64), intent(out)          ::  xcvert(nvert)                   !<  x coordinate of vertical line
   logical, intent(out)               ::  ljump(nlines)                   !<  indicates if the new line contains a jump from the preceeding
   integer, intent(out)               ::  nkstep(nlines)                  !<  number of steps in line
-  character(len=6), intent(out)      ::  label(nvert+nlines)             !<  label of symmetry k-points
+  character(len=10), intent(out)     ::  label(nvert+nlines)             !<  label of symmetry k-points
   real(REAL64), intent(out)          ::  xklab(nvert+nlines)             !<  x coordinate of label
 
 ! local allocatable arrays
@@ -63,9 +64,9 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
   real(REAL64), allocatable          ::  rkend(:,:)                      !  end of line in reciprocal space (lattice coordinates)
   real(REAL64), allocatable          ::  rkdist(:)                       !  length of line in reciprocal space (lattice coordinates)
 
-  character(len=6), allocatable      ::  labbeg(:)                       !  label of symmetry k-points begin of line
-  character(len=6), allocatable      ::  labend(:)                       !  label of symmetry k-points end of line
-  character(len=6), allocatable      ::  lablines(:)                     !  label of symmetry lines
+  character(len=10), allocatable      ::  labbeg(:)                       !  label of symmetry k-points begin of line
+  character(len=10), allocatable      ::  labend(:)                       !  label of symmetry k-points end of line
+  character(len=10), allocatable      ::  lablines(:)                     !  label of symmetry lines
 
 ! local variables
 

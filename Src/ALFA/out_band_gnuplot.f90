@@ -11,155 +11,155 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     writes the file for later use with gnuplot.
-!>     Usage: gnuplot "filename"
+!>  Writes the file for later use with gnuplot.
+!>  Usage: gnuplot "filename"
+!>
+!>  \author       Carlos Loia Reis, Jose Luis Martins
+!>  \version      5.12
+!>  \date         19 October 2013,  17 September 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine out_band_gnuplot(filename,io,neig,nrk,xk,e_of_k,       &
-     &        eref,nvert,xcvert,nlines,ljump,nkstep,label,xklab)
+subroutine out_band_gnuplot(filename, io, neig, nrk, xk, e_of_k,         &
+         eref, nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-!      version 4.53. 19 October 2013. jlm
-!      modified (eref) 5 February 2014. jlm
-!      Modified, documentation, 4 February 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+! version 4.53. 19 October 2013. jlm
+! modified (eref) 5 February 2014. jlm
+! Modified, documentation, 4 February 2020. JLM
+! Modified, indentation, increase dimension of label. 17 September 2025. JLM
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  implicit none
 
-!      input
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-       character(len=*), intent(in)       ::  filename                   !<  file to be written
-       integer, intent(in)                ::  io                         !<  tape number 
-       integer, intent(in)                ::  neig                       !<  number of bands
-       integer, intent(in)                ::  nrk                        !<  number of k-vectors
-       real(REAL64), intent(in)           ::  xk(nrk)                    !<  x coordinate of k-point in plot
-       real(REAL64), intent(in)           ::  e_of_k(neig,nrk)           !<  band energies of k-point in plot
-       real(REAL64), intent(in)           ::  eref                       !<  reference energy for plot
+! input
 
-       integer, intent(in)                ::  nvert                      !<  number of vertical lines in plot
-       real(REAL64), intent(in)           ::  xcvert(nvert)              !<  x coordinate of vertical line
-       integer, intent(in)                ::  nlines                     !<  number of lines in reciprocal space
-       logical, intent(in)                ::  ljump(nlines)              !<  indicates if the new line contains a jump from the preceeding
-       integer, intent(in)                ::  nkstep(nlines)             !<  number of steps in line
-       character(len=6), intent(in)       ::  label(nvert+nlines)        !<  label of symmetry k-points
-       real(REAL64), intent(in)           ::  xklab(nvert+nlines)        !<  x coordinate of label
+  character(len=*), intent(in)       ::  filename                        !<  file to be written
+  integer, intent(in)                ::  io                              !<  tape number
+  integer, intent(in)                ::  neig                            !<  number of bands
+  integer, intent(in)                ::  nrk                             !<  number of k-vectors
+  real(REAL64), intent(in)           ::  xk(nrk)                         !<  x coordinate of k-point in plot
+  real(REAL64), intent(in)           ::  e_of_k(neig,nrk)                !<  band energies of k-point in plot
+  real(REAL64), intent(in)           ::  eref                            !<  reference energy for plot
 
-!      local
+  integer, intent(in)                ::  nvert                           !<  number of vertical lines in plot
+  real(REAL64), intent(in)           ::  xcvert(nvert)                   !<  x coordinate of vertical line
+  integer, intent(in)                ::  nlines                          !<  number of lines in reciprocal space
+  logical, intent(in)                ::  ljump(nlines)                   !<  indicates if the new line contains a jump from the preceeding
+  integer, intent(in)                ::  nkstep(nlines)                  !<  number of steps in line
+  character(len=10), intent(in)      ::  label(nvert+nlines)             !<  label of symmetry k-points
+  real(REAL64), intent(in)           ::  xklab(nvert+nlines)             !<  x coordinate of label
 
-       real(REAL64)      ::  ymax, ymin, ymtmp
-       character(len=3)  ::  cadd
+! local
 
-!      counters
+  real(REAL64)      ::  ymax, ymin, ymtmp
+  character(len=3)  ::  cadd
 
-       integer      ::   irk, jrk, n, i, j, l, istart
+! counters
 
-!      constants
+  integer      ::   irk, jrk, n, i, j, l, istart
 
-       real(REAL64), parameter ::  EV = 27.21138505_REAL64
-       real(REAL64), parameter  :: UM = 1.0_REAL64
+! constants
 
-!      finds the energy range for the bands
+  real(REAL64), parameter ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter  :: UM = 1.0_REAL64
 
-       ymin = e_of_k(1,1) - eref
-       do irk=1,nrk
-         ymtmp = e_of_k(neig,irk) - eref
-         do n=1,neig
-           if(ymin > e_of_k(n,irk)-eref) ymin = e_of_k(n,irk)-eref
-           if(ymtmp < e_of_k(n,irk)-eref) ymtmp = e_of_k(n,irk)-eref
-         enddo
-         if(irk == 1) then
-           ymax = ymtmp
-         else
-           if(ymax > ymtmp) ymax = ymtmp
-         endif
-       enddo
-       ymin = real(nint(ymin*27.212)) - UM
-       ymax = real(nint(ymax*27.212)) + UM
+! finds the energy range for the bands
 
-       open(unit=io,file=filename,form='formatted')
+  ymin = e_of_k(1,1) - eref
+  do irk=1,nrk
+    ymtmp = e_of_k(neig,irk) - eref
+    do n=1,neig
+      if(ymin > e_of_k(n,irk)-eref) ymin = e_of_k(n,irk)-eref
+      if(ymtmp < e_of_k(n,irk)-eref) ymtmp = e_of_k(n,irk)-eref
+    enddo
+    if(irk == 1) then
+      ymax = ymtmp
+    else
+      if(ymax > ymtmp) ymax = ymtmp
+    endif
+  enddo
+  ymin = real(nint(ymin*27.212)) - UM
+  ymax = real(nint(ymax*27.212)) + UM
 
-       write(io,'("set terminal wxt enhanced")')
-       write(io,*)
-       write(io,'("set ylabel ''Energy (eV)'' ",                        &
-     &       " font ''Helvetica-Bold , 16'' ")')
-       write(io,'("set xrange [ ",f12.6," : ",f12.6," ]")')             &
-     &                                  xcvert(1),xcvert(nvert)
-       write(io,'("set yrange [ ",f12.6," : ",f12.6," ]")')             &
-     &                                  ymin,ymax
-       write(io,'("set border lw 3 ")')
-       write(io,'("set xtics scale 0")')
-       write(io,'("set xtics font ''Helvetica-Bold'' ")')
+  open(unit=io,file=filename,form='formatted')
 
-       do n = 1,nvert+nlines
-         if(n == 1) then
-           cadd = '   '
-         else
-           cadd = 'add'
-         endif
-         if(adjustl(trim(label(n))) == 'Gamma' .or.                     &
-     &      adjustl(trim(label(n))) == 'gamma' .or.                     &
-     &      adjustl(trim(label(n))) == 'GAMMA') then
-           write(io,'("set xtics ",a3," (''{/Symbol G}'' ",             &
-     &       f12.6," ) ")') cadd,xklab(n)
-         elseif(adjustl(trim(label(n))) == 'Lambda' .or.                &
-     &      adjustl(trim(label(n))) == 'lambda' .or.                    &
-     &      adjustl(trim(label(n))) == 'LAMBDA') then
-           write(io,'("set xtics ",a3," (''{/Symbol L}'' ",             &
-     &       f12.6," ) ")') cadd,xklab(n)
-         elseif(adjustl(trim(label(n))) == 'Sigma' .or.                 &
-     &      adjustl(trim(label(n))) == 'sigma' .or.                     &
-     &      adjustl(trim(label(n))) == 'SIGMA') then
-           write(io,'("set xtics ",a3," (''{/Symbol S}'' ",             &
-     &       f12.6," ) ")') cadd,xklab(n)
-         elseif(adjustl(trim(label(n))) == 'Delta' .or.                 &
-     &      adjustl(trim(label(n))) == 'delta' .or.                     &
-     &      adjustl(trim(label(n))) == 'Delta') then
-           write(io,'("set xtics ",a3," (''{/Symbol D}'' ",             &
-     &       f12.6," ) ")') cadd,xklab(n)
-         else
-           l = len(adjustl(trim(label(n))))
-           if(l == 1) then
-             write(io,'("set xtics ",a3," (''",a1,"'' ",f12.6," ) ")')   &
-     &                      cadd,adjustl(trim(label(n))),xklab(n)
-           elseif(l == 2) then
-             write(io,'("set xtics ",a3," (''",a2,"'' ",f12.6," ) ")')   &
-     &                      cadd,adjustl(trim(label(n))),xklab(n)
-           elseif(l == 3) then
-             write(io,'("set xtics ",a3," (''",a3,"'' ",f12.6," ) ")')   &
-     &                      cadd,adjustl(trim(label(n))),xklab(n)
-           else
-             write(io,'("set xtics ",a3," (''",a6,"'' ",f12.6," ) ")')   &
-     &                      cadd,adjustl(trim(label(n))),xklab(n)
-           endif
-         endif
-       enddo
+  write(io,'("set terminal wxt enhanced")')
+  write(io,*)
+  write(io,'("set ylabel ''Energy (eV)''  font ''Helvetica-Bold , 16'' ")')
+  write(io,'("set xrange [ ",f12.6," : ",f12.6," ]")') xcvert(1),xcvert(nvert)
+  write(io,'("set yrange [ ",f12.6," : ",f12.6," ]")') ymin,ymax
+  write(io,'("set border lw 3 ")')
+  write(io,'("set xtics scale 0")')
+  write(io,'("set xtics font ''Helvetica-Bold'' ")')
 
-       write(io,'("set ytics font ''Helvetica-Bold'' ")')
-       write(io,'("plot ''-'' w lines notitle ; pause -1")')
-       
-       do j=1,neig
-         write(io,*)
-         irk = 0
-         do n=1,nlines
-           if(ljump(n)) then
-             write(io,*)
-             istart = 0
-           else
-             istart = 1
-           endif
-           do i=istart,nkstep(n)
-             irk = irk + 1
-             write(io,'(2f16.6)') xk(irk),(e_of_k(j,irk)-eref)*EV
-           enddo
-         enddo
-       enddo
+  do n = 1,nvert+nlines
+    if(n == 1) then
+      cadd = '   '
+    else
+      cadd = 'add'
+    endif
+    if(adjustl(trim(label(n))) == 'Gamma' .or.                           &
+       adjustl(trim(label(n))) == 'gamma' .or.                           &
+       adjustl(trim(label(n))) == 'GAMMA') then
+      write(io,'("set xtics ",a3," (''{/Symbol G}'' ",f12.6," ) ")') cadd,xklab(n)
+    elseif(adjustl(trim(label(n))) == 'Lambda' .or.                      &
+       adjustl(trim(label(n))) == 'lambda' .or.                          &
+       adjustl(trim(label(n))) == 'LAMBDA') then
+      write(io,'("set xtics ",a3," (''{/Symbol L}'' ",f12.6," ) ")') cadd,xklab(n)
+    elseif(adjustl(trim(label(n))) == 'Sigma' .or.                       &
+       adjustl(trim(label(n))) == 'sigma' .or.                           &
+       adjustl(trim(label(n))) == 'SIGMA') then
+      write(io,'("set xtics ",a3," (''{/Symbol S}'' ",f12.6," ) ")') cadd,xklab(n)
+    elseif(adjustl(trim(label(n))) == 'Delta' .or.                       &
+       adjustl(trim(label(n))) == 'delta' .or.                           &
+       adjustl(trim(label(n))) == 'Delta') then
+      write(io,'("set xtics ",a3," (''{/Symbol D}'' ",f12.6," ) ")') cadd,xklab(n)
+    else
+      l = len(adjustl(trim(label(n))))
+      if(l == 1) then
+        write(io,'("set xtics ",a3," (''",a1,"'' ",f12.6," ) ")')        &
+                       cadd,adjustl(trim(label(n))),xklab(n)
+      elseif(l == 2) then
+        write(io,'("set xtics ",a3," (''",a2,"'' ",f12.6," ) ")')        &
+                       cadd,adjustl(trim(label(n))),xklab(n)
+      elseif(l == 3) then
+        write(io,'("set xtics ",a3," (''",a3,"'' ",f12.6," ) ")')        &
+                       cadd,adjustl(trim(label(n))),xklab(n)
+      else
+        write(io,'("set xtics ",a3," (''",a10,"'' ",f12.6," ) ")')       &
+                       cadd,adjustl(trim(label(n))),xklab(n)
+      endif
+    endif
+  enddo
 
-       do jrk = 1,nvert
-         write(io,*)
-         write(io,'(2f16.6)') xcvert(jrk),ymin
-         write(io,'(2f16.6)') xcvert(jrk),ymax
-       enddo
+  write(io,'("set ytics font ''Helvetica-Bold'' ")')
+  write(io,'("plot ''-'' w lines notitle ; pause -1")')
 
-       close(unit=io)
+  do j=1,neig
+    write(io,*)
+    irk = 0
+    do n=1,nlines
+      if(ljump(n)) then
+        write(io,*)
+        istart = 0
+      else
+        istart = 1
+      endif
+      do i=istart,nkstep(n)
+        irk = irk + 1
+        write(io,'(2f16.6)') xk(irk),(e_of_k(j,irk)-eref)*EV
+      enddo
+    enddo
+  enddo
 
-       return
-       end subroutine out_band_gnuplot
+  do jrk = 1,nvert
+    write(io,*)
+    write(io,'(2f16.6)') xcvert(jrk),ymin
+    write(io,'(2f16.6)') xcvert(jrk),ymax
+  enddo
+
+  close(unit=io)
+
+  return
+
+end subroutine out_band_gnuplot

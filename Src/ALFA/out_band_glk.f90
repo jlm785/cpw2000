@@ -19,7 +19,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         8 may 2004, 13 August 2025.
+!>  \date         8 may 2004, 17 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_glk(title, subtitle,                                 &
@@ -53,6 +53,7 @@ subroutine out_band_glk(title, subtitle,                                 &
 ! Modified, iguess, indentation, out_glk_interpolation name, 11 November 2023. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 ! Modified, rk in out_band_eref, 13 August 2025. JLM
+! Increase dimension of label. 17 September 2025. JLM
 
 
 
@@ -129,7 +130,7 @@ subroutine out_band_glk(title, subtitle,                                 &
   real(REAL64), allocatable          ::  xcvert(:)                       !  x coordinate of vertical line
   real(REAL64), allocatable          ::  xk(:)                           !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  rk(:,:)                         !  k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !  band energies of k-point in plot

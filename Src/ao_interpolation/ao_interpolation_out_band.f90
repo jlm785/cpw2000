@@ -15,8 +15,8 @@
 !>  using atomic orbital interpolation
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         before 2017. 1 November 2024
+!>  \version      5.12
+!>  \date         before 2017. 17 September 2025.
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -26,6 +26,7 @@
 ! Modified, documentation, May 2020. JLM
 ! Modified, ztot in out_band_circuit_size, indentation. 26 July 2024. JLM
 ! Bug when neig greater than nband. 1 November 2024. JLM
+! Increase dimension of label. 17 September 2025. JLM
 
 
   use NonOrthoInterp
@@ -55,7 +56,7 @@
   real(REAL64), allocatable          ::  rk(:,:)                         !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !  band energies of k-point in plot
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !  spin-orbit band energies of k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
 ! local variables
