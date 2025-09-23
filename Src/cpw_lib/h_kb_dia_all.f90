@@ -172,7 +172,6 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
       ng, kgv, adot, kmscr,                                              &
       mxdgve, mxddim)
 
-  rk_tmp(:) = rkpt(:)
   if(lkshift) then
     write(6,*)
     write(6,'("   WARNING    in h_kb_dia_all.  k-point ", 3f10.3,        &
@@ -183,6 +182,11 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
     do i = 1,3
       kgshift(i) = nint(rkpt(i))
       rk_tmp(i) = rkpt(i) - UM*kgshift(i)
+    enddo
+  else
+    do i = 1,3
+      kgshift(i) = 0
+      rk_tmp(i) = rkpt(i)
     enddo
   endif
 
@@ -288,11 +292,16 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
   endif
 
-  if(lkshift) then
+  if(lkshift .and. .not. lkpg) then
+
     call psi_translate(neig, kgshift,                                    &
         mtxd, isort, psi, mtxd_tr, isort_tr,                             &
         kgv,                                                             &
         mxddim, mxdbnd, mxdgve)
+
+    mtxd = mtxd_tr
+    isort(1:mtxd) = isort_tr(1:mtxd)
+
   endif
 
   deallocate(isort_tr)
