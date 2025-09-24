@@ -64,7 +64,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !  integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
 !  integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
 !  integer, intent(in)                ::  mxdnrk                          !<  size of k-points
-!  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+!  integer, intent(in)                Text[expr,coords]::  mxdbnd                          !<  array dimension for number of bands
 !  integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
   type(crys_t)                       ::  crys_                           !<  crystal structure
@@ -495,7 +495,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         if(ifail < -3) then
           write(6,*)
           write(6,'("   Stopped in cpw_scf:  cycle is diverging",        &
-             " negative number of accuracy digits",i5)') ifail
+             &    " negative number of accuracy digits",i5)') ifail
 
           stop
 

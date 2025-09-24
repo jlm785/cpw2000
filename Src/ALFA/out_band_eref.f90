@@ -225,17 +225,13 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
       if(abs(eref - efermi) < 2/EV) then
         eref = efermi
         write(6,*)
-        write(6,'(f12.6,"   E_F, from self-consistent calculation", &
-          a16)') eref*EV,cso
-        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
-              -eref*EV,cso
+        write(6,'(f12.6,"   E_F, from self-consistent calculation", a16)') eref*EV, cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*EV, cso
         write(6,*)
       else
         write(6,*)
-        write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ",   &
-          a16)') eref*EV,cso
-        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')    &
-              -eref*EV,cso
+        write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ", a16)') eref*EV, cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*EV, cso
         write(6,*)
       endif
 
