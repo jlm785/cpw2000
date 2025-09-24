@@ -16,8 +16,8 @@
 !>  using a Berry topological tools.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11.
-!>  \date         9 November 2023.  11 April 2024.
+!>  \version      5.12
+!>  \date         9 November 2023. 24 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -35,6 +35,7 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! Modified, API berry_effective_mass. March 5 2024. JLM
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
 ! Complex tensors. 11 April 2024. JLM
+! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 
 
   implicit none
@@ -248,15 +249,6 @@ subroutine out_mass_berry(ioreplay,                                      &
   typeofk = 'reference k-point'
 
   call cpw_pp_get_k_vector(rkpt, rkcar, adot, typeofk, ioreplay)
-
-  write(6,*)
-  write(6,*) '  coordinates of the chosen k-point:'
-  write(6,*) '      lattice coord.                  cartesian coord.'
-  write(6,*)
-  write(6,'(4x,3f9.4,5x,3f9.4)') (rkpt(j),j=1,3), (rkcar(j),j=1,3)
-  write(6,*)
-
-! Tries to get good suggestions for the k.p model
 
 
   call size_mtxd(emax, rkpt, adot, ng, kgv, mxddim)

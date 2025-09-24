@@ -16,8 +16,8 @@
 !>  using a finite difference interpolation.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         8 November 2023. 25 March 2024
+!>  \version      5.12
+!>  \date         8 November 2023. 24 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd(ioreplay,                                         &
@@ -34,6 +34,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
 ! Adapted from old out_effective_mass and out_psi_test.  8 November 2023. JLM
 ! imethod, 25 March 2025. JLM
+! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 
   implicit none
 
@@ -230,15 +231,6 @@ subroutine out_mass_fd(ioreplay,                                         &
 
   call cpw_pp_get_k_vector(rk0, rkcar, adot, typeofk, ioreplay)
 
-  write(6,*)
-  write(6,*) '  coordinates of the chosen k-point:'
-  write(6,*) '      lattice coord.                  cartesian coord.'
-  write(6,*)
-  write(6,'(4x,3f9.4,5x,3f9.4)') (rk0(j),j=1,3), (rkcar(j),j=1,3)
-  write(6,*)
-
-! Tries to get good suggestions for the k.p model
-
 
   call size_mtxd(emax, rk0, adot, ng, kgv, mxddim)
 
@@ -377,7 +369,7 @@ subroutine out_mass_fd(ioreplay,                                         &
     endif
 
     write(6,*)
-    write(6,'("   using delta = ",e12.3,"  and order ",i5)') delta, 2*npt+1
+    write(6,'("   using delta = ",e12.3,"  and number of points ",i5)') delta, 2*npt+1
     write(6,*)
 
     lso = .FALSE.

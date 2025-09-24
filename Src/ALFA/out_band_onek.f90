@@ -15,8 +15,8 @@
 !>  oscillator strengths, for a given k-vector
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         8 May 2004.  14 May 2025.
+!>  \version      5.12
+!>  \date         8 May 2004. 24 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -43,6 +43,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, name oscillator_strength. 16 May 2024. JLM
 ! Modified, more flexibility in oscillator strength. 14 May 2025. JLM
+! Modified, input of desired k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 
   implicit none
 
@@ -160,7 +161,9 @@ subroutine out_band_onek(ioreplay,                                       &
   character(len=5)  ::  labelk
   integer           ::  ipr
   integer           ::  nsfft(3)
-  real(REAL64)      ::  rk0(3)
+
+  real(REAL64)      ::  rk0(3), rkcar0(3)                                !  k-point of interest
+  character(len=20) ::  typeofk                                          !  label for type of k-point
 
   integer           ::  natot                                            !  total number of atoms
   integer           ::  neltot                                           !  total number of electrons
@@ -222,15 +225,12 @@ subroutine out_band_onek(ioreplay,                                       &
 
   mxdbnd = neig
 
-  write(6,*)
-  write(6,*) ' enter k-point '
+! gets k-vector
 
-  read(5,*) rk0(1),rk0(2),rk0(3)
-  write(ioreplay,'(5x,3f20.10,5x,"k-point")') rk0(1),rk0(2),rk0(3)
+  typeofk = 'reference k-point   '
 
-!  rk0(1) = 0.0
-!  rk0(2) = 0.0
-!  rk0(3) = 0.0
+  call cpw_pp_get_k_vector(rk0, rkcar0, adot, typeofk, ioreplay)
+
 
   call size_mtxd(emax, rk0, adot, ng, kgv, mxddim)
 

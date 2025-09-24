@@ -16,8 +16,8 @@
 !>  using a k.p method.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.08
-!>  \date         18 january 2022. 8 November 2023.
+!>  \version      5.12
+!>  \date         18 january 2022. 24 September 2025
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_kdotp(ioreplay,                                      &
@@ -36,6 +36,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! Adapted from out_band_onek plus old "Silvaco" subroutines. 18 january 2022. JLM
 ! Better user interface, 1 April 2023. JLM
 ! calls out_mass_kdotp_xk instead of local code.  8 November 2023. JLM
+! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 
   implicit none
 
@@ -224,13 +225,6 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   typeofk = 'reference k-point'
 
   call cpw_pp_get_k_vector(rk0, rkcar, adot, typeofk, ioreplay)
-
-  write(6,*)
-  write(6,*) '  coordinates of the chosen k-point:'
-  write(6,*) '      lattice coord.                  cartesian coord.'
-  write(6,*)
-  write(6,'(4x,3f9.4,5x,3f9.4)') (rk0(j),j=1,3), (rkcar(j),j=1,3)
-  write(6,*)
 
 ! Tries to get good suggestions for the k.p model
 

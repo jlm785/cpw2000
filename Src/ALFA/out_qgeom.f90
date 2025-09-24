@@ -14,8 +14,8 @@
 !>  Calculates the quantum geometric properties for a given k-vector
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11.
-!>  \date         4 April 2024.
+!>  \version      5.12
+!>  \date         4 April 2024. 24 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom(ioreplay,                                           &
@@ -33,6 +33,7 @@ subroutine out_qgeom(ioreplay,                                           &
 
 ! Adapted 4 April 2024 from out_mass_berry. JLM
 ! Orientation. 11 April 2024. JLM
+! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 
 
   implicit none
@@ -231,15 +232,6 @@ subroutine out_qgeom(ioreplay,                                           &
   typeofk = 'reference k-point'
 
   call cpw_pp_get_k_vector(rkpt, rkcar, adot, typeofk, ioreplay)
-
-  write(6,*)
-  write(6,*) '  coordinates of the chosen k-point:'
-  write(6,*) '      lattice coord.                  cartesian coord.'
-  write(6,*)
-  write(6,'(4x,3f9.4,5x,3f9.4)') (rkpt(j),j=1,3), (rkcar(j),j=1,3)
-  write(6,*)
-
-! Tries to get good suggestions for the k.p model
 
 
   call size_mtxd(emax, rkpt, adot, ng, kgv, mxddim)
