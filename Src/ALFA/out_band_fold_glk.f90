@@ -50,6 +50,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 ! Modified, iguess, annoying pkn warning and presentation. 10 November 2023. JLM
 ! Modified, out_glk_interpolation. 13 November 2023. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+! Modified, length of labels, 24 September 2025. JLM
 
 
   implicit none
@@ -128,7 +129,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
   real(REAL64), allocatable          ::  rk_fld(:,:)                     !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !  band energies of k-point in plot
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !  spin-orbit band energies of k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
   real(REAL64), allocatable          :: pkn(:,:)
@@ -230,6 +231,10 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
   real(REAL64)              ::  rkpt_all(3,2)
 
+! constants
+
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64
+
 ! counters
 
   integer    ::  i, j, n
@@ -320,7 +325,6 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
   call out_band_circuit_size('BAND_LINES.DAT', iotape, 1, adot_pc, ztot, &      ! note call with adot_pc
        neig, nrk2, nlines, nvert)
 
-
   allocate(xk(nrk2))
   allocate(rk(3,nrk2))
   allocate(rk_fld(3,nrk2))
@@ -374,6 +378,11 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
   allocate(psi(mxddim,mxdbnd))
   allocate(hpsi(mxddim,mxdbnd))
 
+! initialization avoids valgrind "errors"
+
+  psi(:,:) = ZERO
+  isort(:) = 0
+
   allocate(ekpsi(mxdbnd))
 
   allocate(isort_all(mxddim,2))
@@ -398,13 +407,13 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
   enddo
 
-     irk_map(nvert) = nrk2
+  irk_map(nvert) = nrk2
 
 
-     write(6,*) 'irk_map'
-     do i=1, nvert
-       write(6,'(2i5,3f8.5)') i, irk_map(i), rk(:,irk_map(i))
-     enddo
+  write(6,*) 'irk_map'
+  do i=1, nvert
+    write(6,'(2i5,3f8.5)') i, irk_map(i), rk(:,irk_map(i))
+  enddo
 
 
 ! ratory calculation
@@ -432,29 +441,29 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
     rkpt(:) = rk_fld(:,irk_map(irk))
 
 
-    call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,            &
-    flgpsd, ipr, ifail, icmax, iguess, epspsi,                      &
-    ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                 &
-    sfact, veff, icmplx,                                            &
-    nqnl, delqnl, vkb, nkb,                                         &
-    ntype, natom, rat, adot,                                        &
-    mtxd, hdiag, isort, qmod, ekpg, lkpg,                           &
-    psi, hpsi, ei,                                                  &
-    vscr, kmscr,                                                    &
-    latorb, norbat, nqwf, delqwf, wvfao, lorb,                      &
-    mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,         &
-    mxdbnd, mxdscr, mxdlao)
+    call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,                 &
+        flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
+        ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
+        sfact, veff, icmplx,                                             &
+        nqnl, delqnl, vkb, nkb,                                          &
+        ntype, natom, rat, adot,                                         &
+        mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
+        psi, hpsi, ei,                                                   &
+        vscr, kmscr,                                                     &
+        latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
+        mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
+        mxdbnd, mxdscr, mxdlao)
 
 
-    call kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,                   &
-    mxddim,mxdbnd)
+    call kinetic_energy(neig, mtxd, ekpg, psi, ekpsi,                    &
+        mxddim,mxdbnd)
 
     ipr = 1
     nrka = -1
-    call print_eig(ipr,irk,labelk,nrka,rkpt,                        &
-    mtxd,icmplx,neig,psi,                                           &
-    adot,ei,ekpsi,isort,kgv,                                        &
-    mxddim,mxdbnd,mxdgve)
+    call print_eig(ipr, irk, labelk, nrka, rkpt,                         &
+        mtxd, icmplx, neig, psi,                                         &
+        adot, ei, ekpsi, isort, kgv,                                     &
+        mxddim, mxdbnd, mxdgve)
 
     write(io65,rec=irk)  irk, rkpt, psi(:,:), mtxd, isort(:)
 
@@ -475,9 +484,9 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
   endif
 
   irk=1
-  inquire(iolength = ir_size) irk_rd, e_of_k(:,irk),                &
-  pkn_tmp(:), e_of_k_so(:,irk),                                     &
-  pkn_tmp_so(:)
+  inquire(iolength = ir_size) irk_rd, e_of_k(:,irk),                     &
+      pkn_tmp(:), e_of_k_so(:,irk),                                      &
+      pkn_tmp_so(:)
 
 ! if run by a human do not restart
 
@@ -487,7 +496,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
     call execute_command_line("rm  band_fold_rec.dat 2> /dev/null ")
   endif
 
-  open(unit = io64, file ="band_fold_rec.dat", access="direct",     &
+  open(unit = io64, file ="band_fold_rec.dat", access="direct",          &
   recl=ir_size)
 
   irk_start=1

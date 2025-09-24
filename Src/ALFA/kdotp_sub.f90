@@ -27,6 +27,7 @@
 ! Modified, neigso, new API kdotp_in. 8 September 2022. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 ! Modified, rk in out_band_eref, 13 August 2025. JLM
+! Modified, length of label, 24 September 2025. JLM
 
   implicit none
 
@@ -69,7 +70,7 @@
   real(REAL64), allocatable          ::  xk(:)                           !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  rk(:,:)                         !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !  band energies of k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
 ! local variables

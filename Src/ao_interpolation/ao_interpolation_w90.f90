@@ -30,6 +30,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! ao_interpolation_out_band_fold.
 ! Modified, documentation, May 2020. JLM
 ! Modified, indentation, ao_int_.., * October 2024. JLM
+! Modified, length of labels, 24 September 2025. JLM
 
 
   use NonOrthoInterp
@@ -154,7 +155,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
   integer ndum
   real(REAL64) k_start(3), k_end(3)
-  character(len=6) label_start, label_mid, label_end
+  character(len=10) label_start, label_mid, label_end
 
   character(len=80) sys_str
   integer, parameter            :: num_nnmax = 12
@@ -240,9 +241,9 @@ subroutine ao_interpolation_w90(mtb,                                     &
   write(22,*)
 
 
-  label_start='      '
-  label_mid  ='      '
-  label_end  ='      '
+  label_start='          '
+  label_mid  ='          '
+  label_end  ='          '
 
 ! band lines
   open(unit=44, file="BAND_LINES.DAT", form="formatted")
@@ -252,7 +253,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   write(22,'("begin kpoint_path")')
   do i=1, nlines
     read(44,*) k_start(1),k_start(2),k_start(3), k_end(1),k_end(2),k_end(3), ndum, label_start, label_mid, label_end
-    write(22,'(a6,2x,3f14.8,2x,a6,2x, 3f14.8)') label_start, k_start, label_end, k_end
+    write(22,'(a10,2x,3f14.8,2x,a10,2x, 3f14.8)') label_start, k_start, label_end, k_end
   enddo
   write(22,'("end kpoint_path")')
 

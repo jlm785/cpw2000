@@ -48,6 +48,7 @@ subroutine out_band_fold(diag_type, lworkers,                            &
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, iguess, annoying pkn warning and presentation. 10 November 2023. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
+! Modified, length of labels, 24 September 2025. JLM
 
   implicit none
 
@@ -123,7 +124,7 @@ subroutine out_band_fold(diag_type, lworkers,                            &
   real(REAL64), allocatable          ::  rk_fld(:,:)                     !   x coordinate of k-point in plot
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !   band energies of k-point in plot
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !   spin-orbit band energies of k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !   label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !   label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !   x coordinate of label
 
 ! allocatable arrays with larger scope

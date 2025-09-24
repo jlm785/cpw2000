@@ -26,6 +26,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 
 ! Written by Carlos Lois Reis at an unknown date.
 ! Documentation, indentation, 7 October 2024. JLM
+! Modified, length of label. 24 September 2025. JLM
 
   use NonOrthoInterp
 
@@ -69,7 +70,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 
   integer              ::  nlines,ndum
   real(REAL64)         ::  k_start(3), k_end(3)
-  character(len=6)     ::  label_start, label_mid, label_end
+  character(len=10)     ::  label_start, label_mid, label_end
 
 ! constants
 
@@ -170,9 +171,9 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   enddo
 
 
-  label_start='      '
-  label_mid  ='      '
-  label_end  ='      '
+  label_start='          '
+  label_mid  ='          '
+  label_end  ='          '
 
 ! band lines
   open(unit=44, file="BAND_LINES.DAT", form="formatted")
@@ -184,7 +185,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 
   do iline=1, nlines
     read(44,*) k_start(1),k_start(2),k_start(3), k_end(1),k_end(2),k_end(3), ndum, label_start, label_mid, label_end
-    write(22,'(a6,2x,3f14.8,2x,a6,2x, 3f14.8)') label_start, k_start, label_end, k_end
+    write(22,'(a10,2x,3f14.8,2x,a10,2x, 3f14.8)') label_start, k_start, label_end, k_end
   enddo
 
   close(unit=44)

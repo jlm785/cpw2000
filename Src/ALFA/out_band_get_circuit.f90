@@ -29,6 +29,7 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
 ! Modified trim(adjustl, 19 February 2022. JLM
 ! Modified, inconsistent number of bands. 26 July 2024. JLM
 ! Increase dimension of label. 17 September 2025. JLM
+! Modified, length of labels, 24 September 2025. JLM
 
   implicit none
 
@@ -179,10 +180,10 @@ subroutine out_band_get_circuit(filename, iotape, ninterp, adot,         &
 
 ! initialize labels
 
-  do n=1,nlines
-    labbeg(n) = '      '
-    labend(n) = '      '
-    lablines(n) = '      '
+  do n = 1,nlines
+    labbeg(n) = '          '
+    labend(n) = '          '
+    lablines(n) = '         '
   enddo
 
   nrkloc = 0

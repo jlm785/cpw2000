@@ -34,6 +34,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 ! Modified, projection on atomic orbitals, July 2021. CLR
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 ! Modified, ao_int, indentation improved. 8 october 2024. JLM
+! Modified, dimension labels, 24 September 2025. JLM
 
 
 
@@ -105,7 +106,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
   real(REAL64), allocatable          ::  rk_fld(:,:)                     !  x coordinate of k-point in plot
   real(REAL64), allocatable          ::  e_of_k(:,:)                     !  band energies of k-point in plot
   real(REAL64), allocatable          ::  e_of_k_so(:,:)                  !  spin-orbit band energies of k-point in plot
-  character(len=6), allocatable      ::  label(:)                        !  label of symmetry k-points
+  character(len=10), allocatable     ::  label(:)                        !  label of symmetry k-points
   real(REAL64), allocatable          ::  xklab(:)                        !  x coordinate of label
 
   real(REAL64),allocatable           ::  pkn(:,:)                        !  weight of unfolded band
