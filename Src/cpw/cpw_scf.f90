@@ -16,8 +16,8 @@
 !>  or plane wave basis set.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         October 1993, 2 April 2025.
+!>  \version      5.12
+!>  \date         October 1993, 29 September 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -45,6 +45,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, new test of mixer failure. 28 November 2020. JLM
 ! Modified, Warning for exceeded iterations. 14 December 2021. JLM
 ! Modified, indentation, avoid infinite loop on mixer failure. 2 and 9 April 2025. JLM
+! reintroduced Broyden miximng. 29 September 2025. JLM
 
   use cpw_variables
 
@@ -78,7 +79,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !  character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
 !  character(len=6), intent(in)       ::  flgscf                          !<  type of self consistent calculation '    PW','AO    ','AOJC  ','AOJCPW'
-!NOT USED       character(len=6), intent(in)       ::  flgmix                     !<  type of scf mixing.  Unused at the moment
+!  character(len=6), intent(in)       ::  flgmix                          !<  type of scf mixing.
 
   type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
 
@@ -792,17 +793,24 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     ipr = 0
     if(iprglob == 4) ipr = 1
 
-!    init = 0
-!    if(iter == 1) init = 2
+    if(flags_%flgmix == 'BROYD1') then
 
-!   call mixer_broyden1(iter,adot,ztot,
+      call mixer_broyden1_c16(itmix, crys_%adot, pseudo_%ztot,           &
+          recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
+          recip_%mstar, recip_%ek,                                       &
+          vhxc, vhxcout, delvhxc,                                        &
+          dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
 
-    call mixer_bfgs_c16(itmix, crys_%adot, pseudo_%ztot,                 &
-        bandwid, penngap, total_%energy,                                 &
-        recip_%ng, recip_%phase, recip_%conj, recip_%ns,                 &
-        recip_%mstar, recip_%ek,                                         &
-        vhxc, vhxcout, delvhxc,                                          &
-        dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+    else
+
+      call mixer_bfgs_c16(itmix, crys_%adot, pseudo_%ztot,               &
+          bandwid, penngap, total_%energy,                               &
+          recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
+          recip_%mstar, recip_%ek,                                       &
+          vhxc, vhxcout, delvhxc,                                        &
+          dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+
+    endif
 
     do i = 2,recip_%ns
       vhxc(i) = vhxc(i) + delvhxc(i)
