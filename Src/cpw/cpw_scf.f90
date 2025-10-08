@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 29 September 2025.
+!>  \date         October 1993, 2 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -45,7 +45,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, new test of mixer failure. 28 November 2020. JLM
 ! Modified, Warning for exceeded iterations. 14 December 2021. JLM
 ! Modified, indentation, avoid infinite loop on mixer failure. 2 and 9 April 2025. JLM
-! reintroduced Broyden miximng. 29 September 2025. JLM
+! Modified, reintroduced Broyden miximng. 29 September 2025. JLM
+! Modified, itmix=-1 indicates restarting. 2 October 2025. JLM
 
   use cpw_variables
 
@@ -90,16 +91,16 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   type(recip_t)                      ::  recip_                          !<  reciprocal space information
 
 !  integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
-!  integer, intent(in)                ::  kgv(3,dims_%mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
-!  complex(REAL64), intent(in)        ::  phase(dims_%mxdgve)                   !<  real part of the phase factor of G-vector n
-!  real(REAL64), intent(in)           ::  conj(dims_%mxdgve)                    !<  is -1 if one must take the complex conjugate of x*phase
+!  integer, intent(in)                ::  kgv(3,dims_%mxdgve)             !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
+!  complex(REAL64), intent(in)        ::  phase(dims_%mxdgve)             !<  real part of the phase factor of G-vector n
+!  real(REAL64), intent(in)           ::  conj(dims_%mxdgve)              !<  is -1 if one must take the complex conjugate of x*phase
 
 !  integer, intent(in)                ::  ns                              !<  number os stars with length less than gmax
-!  integer, intent(in)                ::  inds(dims_%mxdgve)                    !<  star to which g-vector n belongs
+!  integer, intent(in)                ::  inds(dims_%mxdgve)              !<  star to which g-vector n belongs
 !  integer, intent(in)                ::  kmax(3)                         !<  max value of kgv(i,n)
-!  integer, intent(in)                ::  indv(dims_%mxdcub)                    !<  kgv(i,indv(jadd)) is the g-vector associated with jadd. jadd is defined by the g-vector components and kmax
-!  integer, intent(in)                ::  mstar(dims_%mxdnst)                   !<  number of G-vectors in the j-th star
-!  real(REAL64), intent(in)           ::  ek(dims_%mxdnst)                      !<  kinetic energy (hartree) of g-vectors in star j
+!  integer, intent(in)                ::  indv(dims_%mxdcub)              !<  kgv(i,indv(jadd)) is the g-vector associated with jadd. jadd is defined by the g-vector components and kmax
+!  integer, intent(in)                ::  mstar(dims_%mxdnst)             !<  number of G-vectors in the j-th star
+!  real(REAL64), intent(in)           ::  ek(dims_%mxdnst)                !<  kinetic energy (hartree) of g-vectors in star j
 
   type(xc_t)                         ::  xc_                             !<  exchange and correlation choice
 
@@ -277,8 +278,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   real(REAL64)           ::  enerlow                                     !  lowest energy in previous scf iterations
   real(REAL64)           ::  eharrfou                                    !  total energy of the Harris-Weinert-Foulkes functional
 
-  integer                ::  itmix                                       !  iteration number for mixer, itmix = 1 resets.
+  integer                ::  itmix                                       !  iteration number for mixer, itmix = -1 indicates a reset.
   integer                ::  itlow                                       !  iteration number with lower energy
+  integer                ::  itmixabs                                    !  abs(itmix)
 
   real(REAL64)           ::  tin, tout
 
@@ -301,10 +303,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 ! You can reduce mxdupd,mxdscf in the unlikey case this takes too much
 ! memory (linear in number of atoms, only relevant for very old machines)
-! mxdupd = max(dims_%mxdnst/10,min(dims_%mxdnst,100))
 
-  mxdupd = dims_%mxdnst
-  mxdscf = acc_%itmax
+  mxdupd = max(dims_%mxdnst/10,min(dims_%mxdnst,100))
+
+!  mxdupd = dims_%mxdnst
+
+  mxdscf = min(acc_%itmax,20)
 
 ! mixing maybe restarted if problems are detected, but not too many times
 
@@ -407,7 +411,10 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
           write(6,'("   Restarted in cpw_scf:  cycle is diverging",      &
              &      " local potential jumped by",g14.6)')                &
                     max(abs(vmin-vminold),abs(vmax-vmaxold))
-          itmix = 1
+
+!         negative itmix indicates restarting
+
+          itmix = -1
           pmix = 0.5*(UM*nfailmix) / (UM*maxnfailmix)
           nfailmix = nfailmix + 1
 
@@ -596,13 +603,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !  calculates the Harris-Foulkes functional energy
 
-   if(itmix /= 1) then
-     call harris_weinert_foulkes(eharrfou, eband, exc, ewald_%energy,    &
-         recip_%ns, recip_%mstar, recip_%ek,                             &
-         vhxc, chdens_%den,                                              &
-         crys_%adot,                                                     &
-         dims_%mxdnst)
-   endif
+    if(abs(itmix) /= 1) then
+      call harris_weinert_foulkes(eharrfou, eband, exc, ewald_%energy,   &
+          recip_%ns, recip_%mstar, recip_%ek,                            &
+          vhxc, chdens_%den,                                             &
+          crys_%adot,                                                    &
+          dims_%mxdnst)
+    endif
 
 !   initializes charge density
 
@@ -717,7 +724,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     if(iter /= 1) oldenergy = total_%energy
 
-    call total_ks_energy(ipr, strfac_%icmplx, iter, itmix, eharrfou,     &
+    itmixabs = abs(itmix)
+    call total_ks_energy(ipr, strfac_%icmplx, iter, itmixabs, eharrfou,  &
         iconv, errvhxc, epsconv,                                         &
         total_%energy, eband, ektot, exc, ealpha, ewald_%energy,         &
         recip_%ng, recip_%kgv, recip_%ns, recip_%mstar, recip_%ek,       &
@@ -725,7 +733,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         pseudo_%ztot, crys_%adot,                                        &
         dims_%mxdgve, dims_%mxdnst)
 
-    if(itmix == 1) then
+    if(abs(itmix) == 1) then
 
       enerlow = total_%energy
       itlow = itmix
@@ -759,7 +767,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
             write(6,'("   Restarted in cpw_scf:  cycle is diverging",    &
                &      " energy increased by",g14.6)') total_%energy - oldenergy
 
-            itmix = 1
+            itmix = -1
             pmix = 0.05*(UM*nfailmix) / (UM*maxnfailmix)
             nfailmix = nfailmix + 1
 
@@ -833,7 +841,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !   end of self consistent loop
 
-    itmix = itmix + 1
+    itmix = abs(itmix) + 1
 
   enddo
 

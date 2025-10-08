@@ -212,7 +212,7 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
       if(iter == 1) then
         write(6,'(11x,"Iteration number",i3," :")') iter
       else
-        write(6,'(11x,"Iteration number",i3," , mixer iteration, i3")') iter, itmix
+        write(6,'(11x,"Iteration number",i3," , mixer iteration", i3)') iter, itmix
       endif
       write(6,'(11x,"---------------------")')
       write(6,*)

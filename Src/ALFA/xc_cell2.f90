@@ -355,6 +355,8 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
       else
 
+!       low density unstable region
+
         if(twotau/rho > 2.0) twotau = 2.0*rho
         if(grho/rho > 2.5) grho = 2.5*rho
 
@@ -365,6 +367,9 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
         cprop = (UM + COS(PI*rho/(RHOEPS*rhomax)))/2
         vxc(i1,i2,i3) = (UM-cprop)*(vx + vc) + cprop*(vx_lda+vc_lda)
+
+        if(vxc(i1,i2,i3) >  20.0) vxc(i1,i2,i3) = 20.0
+        if(vxc(i1,i2,i3) < -20.0) vxc(i1,i2,i3) =-20.0
 
       endif
 

@@ -11,12 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Computes the new exchange correlation potential
-!>     from the input and the output potential.
+!>   Computes the new exchange correlation potential
+!>   from the input and the output potential.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.01
-!>  \date         May 20,1999. Modified
+!>  \version      5.12
+!>  \date         May 20,1999. 8 October 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -39,9 +39,8 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
 ! Modified mxdupd,mxdscf, February 2020. JLM
 ! Modified, dgrfi, vout inconsistent if not set to zero. 20 June 2021. JLM
 ! Modernized. 20 June 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
-
-! Version 5.01
+! Modified, itmix = -1 indicates restart. 2 October 2025. JLM
+! Modified, logic of xmix_max_min, 8 October 2025. JLM
 
   implicit none
 
@@ -55,7 +54,7 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   integer, intent(in)                ::  mxdupd                          !<  array dimension for Jacobian update of scf potential
   integer, intent(in)                ::  mxdscf                          !<  array dimension of old scf-iteration information
 
-  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial efault is iter in cpw_scf. itmix = 1 restarts.
+  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial value is iter in cpw_scf. itmix = -1 indicates a restart.
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
   real(REAL64), intent(in)           ::  bandwid                         !<  occupied band width estimate (Hartree)
@@ -92,8 +91,12 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   integer             ::  icount, ic
   integer             ::  nj
   real(REAL64)        ::  vcell,bdot(3,3)
-  real(REAL64)        ::  xmix, xmix0, xmixmin
-  real(REAL64), save  ::  xmixmax = 1.0_REAL64
+  real(REAL64)        ::  xmix                                           !  mixing coefficient
+  real(REAL64)        ::  xmix_penn                                      !  mixing coefficient from penn gap diepectric constant
+  real(REAL64), save  ::  xmix_jac_max                                   !  mixing coefficient for jacobian setup
+  real(REAL64), save  ::  xmix_simple_max                                !  maximum value of simple mixing
+  real(REAL64), save  ::  xmix_simple_min                                !  minimum value of simple mixing
+  real(REAL64), save  ::  xmix_penn_scale                                !  scaling of xmix_penn
   real(REAL64), save  ::  oldener
   real(REAL64)        ::  xsum
   real(REAL64)        ::  vnorm1,vnorm2
@@ -110,25 +113,19 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
-! hard coded parameters, could be input parameters
 
-!  mxdupd = max(min(mxdnst/10,1000),min(mxdnst,100))
-!  mxdupd = max(mxdnst/2,min(mxdnst,100))
-!  mxdupd = mxdnst
-!  mxdscf = 15
 
 
 ! paranoid check, stops complaint about unused ng...
 
   if(ng > mxdgve) stop
 
-  icount = itmix - 1
+! first time mixer stepper is called
 
-  if(icount == 0) oldener = energy
+  if(itmix == 1) then
 
-! allocations on first iteration
+!   allocations on first iteration
 
-  if(icount == 0) then
     if(allocated(hessd)) deallocate(hessd)
     allocate(hessd(mxdupd))
     if(allocated(vold)) deallocate(vold)
@@ -141,9 +138,30 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
     allocate(pvec(mxdupd,mxdscf))
     if(allocated(uvec)) deallocate(uvec)
     allocate(uvec(mxdupd,mxdscf))
+
+!   this values seem to work
+
+    xmix_simple_max = UM
+    xmix_simple_min = 0.3
+    xmix_jac_max = 0.6
+    xmix_penn_scale = UM
+
   endif
 
-  if(icount == 0) xmixmax = UM
+! case of restarting
+
+  if(itmix ==-1) then
+    xmix_simple_max = 0.8*xmix_simple_max
+    xmix_simple_min = 0.8*xmix_simple_min
+    xmix_jac_max = 0.8*xmix_jac_max
+    xmix_penn_scale = 0.9*xmix_penn_scale
+  endif
+
+! initial stuff
+
+  icount = abs(itmix) - 1
+
+  if(icount == 0) oldener = energy
 
   call adot_to_bdot(adot, vcell, bdot)
 
@@ -154,17 +172,15 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
 
 ! estimate of xmix limits with some "empirical" parameters
 
-  xmixmin = penngap*penngap / (penngap*penngap + bandwid*bandwid)
-  if(xmixmin > 0.3) xmixmin = 0.3
-  xmix0 = 0.3
+  xmix_penn = penngap*penngap / (penngap*penngap + bandwid*bandwid)
 
-! reduces xmixmax
+! reduces xmix_simple_max
 
   if(icount > 0) then
     if(energy > oldener) then
-      xmixmax = 0.8*xmixmax
-      if(xmixmax < 2.0*xmixmin) xmixmax = 2.0*xmixmin
-      if(xmixmax < 0.1) xmixmax = 0.1
+      xmix_simple_max = 0.8*xmix_simple_max
+      if(xmix_simple_max < 2.0*xmix_simple_min) xmix_simple_max = 2.0*xmix_simple_min
+      if(xmix_simple_max < 0.1) xmix_simple_max = 0.1
     endif
   endif
 
@@ -208,13 +224,19 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
 !   initialize diagonal of inverse jacobian matrix hess
 
     if (icount == 0) then
+
       hessd(1) = ZERO
       do i=2,nj
+
         call mixer_screening(xmix, .FALSE., ek(i), ztot, vcell)
-        if(xmix < xmixmin) xmix = xmixmin
-        if(xmix > xmix0) xmix = xmix0
+
+        if(xmix < xmix_penn*xmix_penn_scale) xmix = xmix_penn*xmix_penn_scale
+        if(xmix > xmix_jac_max) xmix = xmix_jac_max
+
         hessd(i) = - xmix
+
       enddo
+
     endif
 
 
@@ -370,10 +392,13 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   delvhxc(1) = C_ZERO
   if (ns > nj) then
     do i=nj+1,ns
+
       call mixer_screening(xmix, .FALSE., ek(i), ztot, vcell)
-      if(xmix < xmixmin) xmix = xmixmin
-      if(xmix > xmixmax) xmix = xmixmax
+      if(xmix < xmix_simple_min) xmix = xmix_simple_min
+      if(xmix > xmix_simple_max) xmix = xmix_simple_max
+
       delvhxc(i) = xmix*(vhxcout(i)-vhxc(i))
+
     enddo
   endif
 
@@ -391,4 +416,5 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   oldener = energy
 
   return
+
 end subroutine mixer_bfgs_c16

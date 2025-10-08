@@ -15,8 +15,8 @@
 !>  Should be checked when time allows...
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         22 September 2015, March 5 2025.
+!>  \version      5.12
+!>  \date         22 September 2015, 8 October 2025.
 !>  \copyright    GNU Public License v2
 
   subroutine mixer_screening(xmix, linit, ek, ztot, vcell)
@@ -24,6 +24,7 @@
 ! Written 22 September 2015, extracted from mixer_bfgs. JLM
 ! Modified, documentation, January 2020. JLM
 ! Modified, indentation, ztot=0. JLM
+! Modified, unphysical values of xmix. 8 October 2025. JLM
 
 
   implicit none
@@ -77,6 +78,9 @@
         gx = (UM-(UM-x*x/(4*x)) * xl) / 2
       endif
       xmix = UM / (UM + (fac + qtf2/(2*ek)) * gx)
+
+      xmix = abs(xmix)
+      if(xmix > UM) xmix = UM
 
     endif
 
