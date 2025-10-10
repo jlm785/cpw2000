@@ -15,8 +15,8 @@
 !>  Total Energy Plane Wave Calculation
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.10
-!>  \date         24 January 2024
+!>  \version      5.12
+!>  \date         10 October 2025
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -68,6 +68,8 @@ program cpw2000
   type(hamallk_t)                    ::  hamallk_                        !<  hamiltonian size and indexation for all k-points
 
   type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
+
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
   character(len=4)                   ::  vdriv                           !<  version of this program
   character(len=250)                 ::  meta_cpw2000                    !<  metadata from cpw.in
@@ -124,7 +126,7 @@ program cpw2000
 
 ! Driver program version
 
-  vdriv = '5.11'
+  vdriv = '5.12'
 
 ! timing
 
@@ -142,7 +144,7 @@ program cpw2000
   call cpw_read_data('cpw.in', 'PW.DAT', 5, vdriv,                       &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
      flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
-     dims_, total_, ewald_)
+     total_, ewald_, filename_, dims_)
 
 
 ! reads the pseudopotential data
@@ -150,7 +152,7 @@ program cpw2000
   icorr = xc_%author(1:2)
 
   call cpw_read_pseudo(iprglob, xc_%author,                              &
-       crys_, pseudo_, atorb_, dims_)
+       crys_, pseudo_, atorb_, filename_, dims_)
 
   call cpw_reset_nbandin(6, crys_%ntype, pseudo_%zv, pwexp_%nbandin,     &
      dims_%mxdtyp)
@@ -405,7 +407,7 @@ program cpw2000
     call cpw_finish('PW_RHO_V.DAT', 21, meta_pwdat, meta_cpw2000,        &
       efermi,                                                            &
       dims_, crys_, spaceg_, xc_, flags_, pwexp_, kpoint_, recip_,       &
-      vcomp_, chdens_)
+      vcomp_, chdens_, filename_)
 
   endif
 

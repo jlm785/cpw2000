@@ -15,8 +15,8 @@
 !>  Define main variables and types for main cpw program
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.11
-!>  \date         November   2019, 14 May 2025
+!>  \version      5.12
+!>  \date         November   2019, 10 October 2025
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
@@ -316,6 +316,18 @@ module cpw_variables
     real(REAL64)                       ::  stress(3,3)                   !<  d energy / d adot,  stress tensor (contravariant)
 
   end type enfrst_t
+
+! filenames
+
+  type  ::  filename_t
+
+    character(len=200)                 ::  pseudo_path                   !<  path to pseudopotentials
+    character(len=50)                  ::  pseudo_suffix                 !<  suffix for the pseudopotentials
+    integer                            ::  itape_pseudo                  !<  tape number to read pseudo
+    character(len=200)                 ::  save_psi_path                 !<  path to save psi files to disk
+    integer                            ::  itape_save_psi                !<  tape number to read and write psi.  If < 10 (default 0) do not use.
+
+  end type filename_t
 
 
 end module cpw_variables

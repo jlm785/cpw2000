@@ -14,8 +14,8 @@
 !>  Reads the parameters of the calculation
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
-!>  \version      5.11
-!>  \date         5 August 2002. 14 May 2025.
+!>  \version      5.12
+!>  \date         5 August 2002. 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
@@ -27,6 +27,8 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     author, tblaha, iprglob, itmax, icdiagmax, epscv, epscvao, epspsi,   &
     tempk, teleck, tempinik, nstep, tstep, beta, iseed, pgtol, dxmax,    &
     press, strext, celmas, flgkplusg, epskplusg,                         &
+    pseudo_path, pseudo_suffix, itape_pseudo,                            &
+    save_psi_path, itape_save_psi,                                       &
     mxdtyp, mxdatm)
 
 ! Written August 5, 2002. jlm
@@ -38,6 +40,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! modified (iargc) 27 June 2017.  JLM
 ! Modified, documentation, kplusg,August 10 2019. JLM
 ! Modified, icdiagmax, indentation. 14 May 2025. JLM
+! Modified, filenames for pseudo and saving psi to disk. 10 October 2025. JLM
 
 
   use esdf
@@ -113,6 +116,13 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
   logical, intent(out)               ::  flgkplusg                       !<  finish cell minimization with fixed k+G
   real(REAL64), intent(out)          ::  epskplusg                       !<  criteria for switching to fixed k+G
+
+  character(len=200), intent(out)    ::  pseudo_path                     !<  path to pseudopotentials
+  character(len=50), intent(out)     ::  pseudo_suffix                   !<  suffix for the pseudopotentials
+  integer, intent(out)               ::  itape_pseudo                    !<  tape number to read pseudo
+
+  character(len=200), intent(out)    ::  save_psi_path                   !<  path to save psi files to disk
+  integer, intent(out)               ::  itape_save_psi                  !<  tape number to read and write psi.  If < 10 (default 0) do not use.
 
 ! local variables
 
@@ -278,6 +288,10 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   call read_esdf_options(flgcal, ipr,                                    &
       flgscf, flgdal, flgmix, teleck,                                    &
       itmax, icdiagmax, epscv, epscvao, epspsi, symkip, symtol)
+
+  call read_esdf_filenames(ipr,                                          &
+      pseudo_path, pseudo_suffix, itape_pseudo,                          &
+      save_psi_path, itape_save_psi)
 
 
 ! deallocates the esdf arrays

@@ -17,11 +17,12 @@
 !>  After writes it to iotape which must be opened.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         January 30 2008, 20 February 2025.
+!>  \version      5.12
+!>  \date         January 30 2008, 10 October 2025.
 !>  \copyright    GNU Public License v2
 
   subroutine read_write_pseudo(iotape, ntype, nameat,                 &
+       pseudo_path, pseudo_suffix, itape_pseudo,                      &
        mxdtyp)
 
 ! Written April 16, 2014. jlm
@@ -34,6 +35,7 @@
 ! modified, so pseudos for non-so file. April 12 2014. JLM
 ! modified, documentation, August 2019.
 ! Modified, ititle -> psdtitle, indentation. 20 February 2025. JLM
+! Modified, filenames for pseudos. 10 October 2025. JLM
 
 
 
@@ -50,6 +52,9 @@
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
 
+  character(len=200), intent(in)     ::  pseudo_path                     !<  path to pseudopotentials
+  character(len=50), intent(in)      ::  pseudo_suffix                   !<  suffix for the pseudopotentials
+  integer, intent(in)                ::  itape_pseudo                    !<  tape number to read pseudo
 
 ! local allocatable arrays
 
@@ -61,8 +66,7 @@
 
 ! local variables
 
-  character(len=12)        ::  tfile
-  character(len=14)        ::  fnam
+  character(len=255)       ::  fnam
   integer                  ::  it                                        !  tape number
   character(len=2)         ::  namel, icorrt
   character(len=3)         ::  irel
@@ -90,19 +94,12 @@
 
   do nt = 1,ntype
 
-    it = 40 + nt
+    it = itape_pseudo + nt
     if(it == iotape) it = 50 + nt
-    tfile = '_POTKB_F.DAT'
 
 !   open file
 
-    if(nameat(nt)(1:1) /= ' ' .and. nameat(nt)(2:2) /= ' ') then
-      fnam = nameat(nt)//tfile
-    else if(nameat(nt)(1:1) == ' ') then
-      fnam = nameat(nt)(2:2)//tfile
-    else
-      fnam = nameat(nt)(1:1)//tfile
-    endif
+    call read_pseudo_get_path(nameat(nt), fnam, pseudo_path, pseudo_suffix)
 
     open(unit=it,file=fnam,status='old',form='formatted')
 

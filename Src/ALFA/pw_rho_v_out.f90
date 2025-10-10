@@ -16,8 +16,8 @@
 !>  by cpw_post_process
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         22 April 2021, 21November 2021.
+!>  \version      5.12
+!>  \date         22 April 2021, 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
@@ -27,6 +27,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
          veff, den, dens,                                                &
+         pseudo_path, pseudo_suffix, itape_pseudo,                       &
          mxdtyp, mxdatm, mxdgve, mxdnst)
 
 ! Written December 18-22, 2013. jlm
@@ -40,9 +41,10 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 ! Modified, documentation, August 2019. JLM
 ! Modified, mxdlao, ntrans, 13 September 2021. JLM
 ! Modified, efermi, 29 November 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Modified, filenames for pseudos. 10 October 2025. JLM
 
   implicit none
+
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
 ! input
@@ -93,6 +95,10 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  valence charge density for the prototype g-vector in star j
   complex(REAL64), intent(in)        ::  dens(mxdnst)                    !<  spherical atomic valence charge density for the prototype g-vector in star j
 
+  character(len=200), intent(in)     ::  pseudo_path                     !<  path to pseudopotentials
+  character(len=50), intent(in)      ::  pseudo_suffix                   !<  suffix for the pseudopotentials
+  integer, intent(in)                ::  itape_pseudo                    !<  tape number to read pseudo
+
 ! local variables
 
   character(len=9 )   ::  bdate
@@ -105,6 +111,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 
 
   call size_mxdlqp_lao(ntype, nameat,                                    &
+         pseudo_path, pseudo_suffix, itape_pseudo,                       &
          mxdtyp, mxdl, mxdlao)
 
   open(unit=io, file=filename, status='UNKNOWN', form='UNFORMATTED')
@@ -150,6 +157,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   write(io) (veff(i),i=1,ns)
 
   call read_write_pseudo(io, ntype, nameat,                              &
+      pseudo_path, pseudo_suffix, itape_pseudo,                          &
       mxdtyp)
 
   close(unit = io)

@@ -15,14 +15,15 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.10
-!>  \date         19 November 2019. 13 January 2024.
+!>  \date         19 November 2019. 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
-       crys_, pseudo_, atorb_, dims_)
+       crys_, pseudo_, atorb_, filename_, dims_)
 
 ! Written 19 November 2019. JLM
-! Modifierd indentation, author, 13 January 2024. JLM
+! Modified, indentation, author, 13 January 2024. JLM
+! Modified, filenames for pseudos.  10 October 2025. JLM
 
   use cpw_variables
 
@@ -32,6 +33,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   type(crys_t)                       ::  crys_                           !<  crystal structure
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
   integer,intent(in)                 ::  iprglob                         !<  level of detail of printout
   character(len=*),intent(in)        ::  author                          !<  eXchange-Correlation choice
@@ -46,7 +48,9 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   if(iprglob > 0) ipr = 1
 
   call size_mxdlqp_lao(crys_%ntype, crys_%nameat,                        &
-         dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
+       filename_%pseudo_path, filename_%pseudo_suffix,                   &
+       filename_%itape_pseudo,                                           &
+       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
 
 ! this is for compatibility between old and new version
 
@@ -75,6 +79,8 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
        atorb_%lorb, atorb_%latorb,                                       &
        crys_%ntype, crys_%natom, crys_%nameat,                           &
        pseudo_%zv, pseudo_%ztot,                                         &
+       filename_%pseudo_path, filename_%pseudo_suffix,                   &
+       filename_%itape_pseudo,                                           &
        dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
 
 

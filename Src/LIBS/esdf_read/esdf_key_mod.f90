@@ -334,6 +334,32 @@ Module esdf_key
       data kw(58)%typ       /'I:B' /
       data kw(58)%dscrpt    /'ITMAX (40)'/
 
+!     PSEUDO_PATH    PATH TO PSEUDOPOTENTIAL FILES
+      data kw(59)%label     /'PathToPseudos'/
+      data kw(59)%typ       /'T:I' /
+      data kw(59)%dscrpt    /'PSEUDO_PATH  (empty) '/
+
+!     PSEUDO_SUFFIX    SUFFIX OF THE PSEUDO FILES (ADDED TO CHEMICAL SYMBOL
+      data kw(60)%label     /'PseudoSuffix'/
+      data kw(60)%typ       /'T:I' /
+      data kw(60)%dscrpt    /'PSEUDO_SUFFIX   _POTKB_F.DAT'/
+
+!     ITAPE_PSEUDO     TAPE NUMBER FOR READING PSEUDOPOTENTIAL FILES
+      data kw(61)%label     /'TapeToReadPseudo'/
+      data kw(61)%typ       /'I:I' /
+      data kw(61)%dscrpt    /'ITAPE_PSEUDO     40'/
+
+!     ITAPE_SAVE_PSI     TAPE NUMBER FOR SAVING WAVE-FUNCTIONS TO DISK (IF > 10)
+      data kw(62)%label     /'TapeToSavePsi'/
+      data kw(62)%typ       /'I:I' /
+      data kw(62)%dscrpt    /'ITAPE_SAVE_PSI     0'/
+
+!     SAVE_PSI_PATH     PATH FOR EVENTUAL SAVING WAVE-FUNCTIONS TO DISK
+      data kw(63)%label     /'PathToSavePsi'/
+      data kw(63)%typ       /'T:I' /
+      data kw(63)%dscrpt    /'SAVE_PSI_PATH  (empty) '/
+
+
 
 !      EPSCVAO    CONVERGENCE CRITERIA FOR SELF CONSISTENCY OF ATOMIC ORBITALS
 !      data kw%label(16)     /'ScfToleranceAO'/

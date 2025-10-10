@@ -15,19 +15,20 @@
 !>  Interfaces between variables in modules and real ones.
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
-!>  \version      5.11
-!>  \date         November 2019, 14 May 2025.
+!>  \version      5.12
+!>  \date         November 2019, 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
-     flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_, dims_, &
-     total_, ewald_)
+     flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
+     total_, ewald_, filename_, dims_)
 
 ! Adapted November 2019 from cpw.f90. JLM
 ! Modified, metadata bug, May 2020. JLM, CLR
 ! Modified, close unit, 11 June 2020. JLM
 ! Modified, icdiagmax, indentation, 14 May 2025. JLM
+! Modified, filenames for pseudos and psi to disk. 10 October 2025. JLM
 
   use cpw_variables
 
@@ -44,6 +45,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
   type(dims_t)                       ::  dims_                           !<  array dimensions
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
   character(len=*), intent(in)       ::  fcpwin                          !<  filename with input data (new style)
   character(len=*), intent(in)       ::  fpwdat                          !<  filename with input data (old style)
@@ -114,6 +116,9 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
       moldyn_%pgtol, moldyn_%dxmax,                                      &
       vcsdyn_%press, vcsdyn_%strext, vcsdyn_%celmas,                     &
       pwexp_%lkplusg, pwexp_%epskplusg,                                  &
+      filename_%pseudo_path, filename_%pseudo_suffix,                    &
+      filename_%itape_pseudo,                                            &
+      filename_%save_psi_path, filename_%itape_save_psi,                 &
       dims_%mxdtyp, dims_%mxdatm)
 
 

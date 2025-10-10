@@ -15,16 +15,17 @@
 !>  post processing
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         201x, 29 November 2021.
+!>  \version      5.12
+!>  \date         201x, 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
       efermi,                                                            &
       dims_, crys_, spaceg_, xc_, flags_, pwexp_, kpoint_,               &
-      recip_, vcomp_, chdens_)
+      recip_, vcomp_, chdens_, filename_)
 
 ! added efermi 29 November 2021. JLM
+! added filename for pseudo and psi to disk. 10 October 2025. JLM
 
 
   use cpw_variables
@@ -41,6 +42,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
   type(recip_t)                      ::  recip_                          !<  reciprocal space information
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(chdens_t)                     ::  chdens_                         !<  charge densities
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
 
   character(len=*),intent(in)        ::  fname                           !<  file name, default PW_RHO_V.DAT
@@ -67,6 +69,8 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      recip_%ng, recip_%kmax, recip_%kgv, recip_%phase,                   &
      recip_%conj, recip_%ns, recip_%mstar,                               &
      vcomp_%veff, chdens_%den, chdens_%dens,                             &
+     filename_%pseudo_path, filename_%pseudo_suffix,                     &
+     filename_%itape_pseudo,                                             &
      dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst)
 
   io = 10
@@ -81,5 +85,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
      .FALSE., .TRUE.,                                                    &
      dims_%mxdtyp, dims_%mxdatm)
+
+  return
 
 end subroutine cpw_finish

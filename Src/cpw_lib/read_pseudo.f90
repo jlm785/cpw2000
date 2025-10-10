@@ -18,14 +18,15 @@
 !>  g-vectors.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         1980s, 20 February 2025.
+!>  \version      5.12
+!>  \date         1980s, 10 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine read_pseudo(ipr, author, ealraw,                              &
       nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                       &
       norbat, nqwf, delqwf, wvfao, lorb, latorb,                         &
       ntype, natom, nameat, zv, ztot,                                    &
+      pseudo_path, pseudo_suffix, itape_pseudo,                          &
       mxdtyp, mxdlqp, mxdlao)
 
 ! adapted from Sverre Froyen plane wave program
@@ -41,6 +42,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 ! Modified, polarization orbitals of f not processed. 2 December 2021. JLM
 ! Modified, Perdew-Wang (1992) not flagged as unsupported. 12 January 2024. JLM
 ! Modified, ititle -> psdtitle, useless but for consistency. 20 February 2025. JLM
+! Modified, filenames for pseudos. 10 October 2025. JLM
 
 
   implicit none
@@ -57,6 +59,11 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
+
+  character(len=200), intent(in)     ::  pseudo_path                     !<  path to pseudopotentials
+  character(len=50), intent(in)      ::  pseudo_suffix                   !<  suffix for the pseudopotentials
+  integer, intent(in)                ::  itape_pseudo                    !<  tape number to read pseudo
+
 
 ! output
 
@@ -83,8 +90,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 
 ! local variables
 
-  character(len=12)        :: tfile
-  character(len=14)        :: fnam
+  character(len=255)       :: fnam
   integer                  :: it                !  tape number
   character(len=2)         :: namel, icorr, icorrt
   character(len=3)         :: irel
@@ -122,20 +128,13 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   ztot = ZERO
   ealpha = ZERO
 
-  do nt=1,ntype
+  do nt = 1,ntype
 
-    it = 40 + nt
-    tfile = '_POTKB_F.DAT'
+    it = itape_pseudo + nt
 
 !   open file
 
-    if(nameat(nt)(1:1) /= ' ' .and. nameat(nt)(2:2) /= ' ') then
-      fnam = nameat(nt)//tfile
-    else if(nameat(nt)(1:1) == ' ') then
-      fnam = nameat(nt)(2:2)//tfile
-    else
-      fnam = nameat(nt)(1:1)//tfile
-    endif
+    call read_pseudo_get_path(nameat(nt), fnam, pseudo_path, pseudo_suffix)
 
     open(unit=it,file=fnam,status='old',form='formatted')
 
