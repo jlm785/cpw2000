@@ -77,9 +77,9 @@ Module esdf_key
       data kw(4)%dscrpt    /'FLGDAL (true, false)'/
 
 !      FLGMIX     CHOICE OF POTENTIAL MIXING
-      data kw(5)%label     /'TypeOfPseudoMixing'/
+      data kw(5)%label     /'TypeOfPotentialMixing'/
       data kw(5)%typ       /'T:B' /
-      data kw(5)%dscrpt    /'FLGMIX (BROYD1,BFGS)'/
+      data kw(5)%dscrpt    /'FLGMIX (BFGS,BROYD1)'/
 
 !      FLGRHO     WRITES FINAL CHARGE DENSITY TO A FILE
       data kw(6)%label     /'WriteChargeDensity'/

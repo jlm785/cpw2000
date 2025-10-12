@@ -371,7 +371,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
     write(io,'("#ElectronicTemperature        1000 K          #")')
     write(io,*)
   endif
-  write(io,'("#TypeOfPseudoMixing           BROYD1          # BROYD1, BFGS#")')
+  write(io,'("#TypeOfPotentialMixing        BFGS            # BFGS, BROYD1")')
   write(io,*)
   write(io,'("#TypeOfPseudopotential        PSEUKB          # PSEUKB")')
   write(io,*)

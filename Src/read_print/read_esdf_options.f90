@@ -99,12 +99,11 @@ subroutine read_esdf_options(flgcal, ipr,                                &
 
 
 ! chooses between the type of mixing. which is best may depend
-! on system, but bfgs is usually better, and is the only currently implemented.
+! on system, but bfgs is usually better.
 
-!  flgmix = 'BROYD1'
   flgmix = 'BFGS  '
 
-  flgmix=esdf_string('TypeOfPseudoMixing',flgmix)
+  flgmix=esdf_string('TypeOfPotentialMixing',flgmix)
   call chrcap(flgmix,6)
 
 
