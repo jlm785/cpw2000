@@ -1,0 +1,2238 @@
+% Manual for the cpw2000 program
+%
+% To generate the printed version:
+%
+% pdflatex manual
+%
+%
+\documentclass[11pt]{article}
+
+\tolerance 10000
+\textheight 24cm
+\textwidth 16cm
+\oddsidemargin 1mm
+\topmargin -20mm
+
+\parindent=0cm
+\baselineskip=12pt
+\parskip 5pt
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+
+% \NewDocumentEnvironment{fdfentry}{ }
+% {   %
+%     % Create correct box-setups
+%     \bgroup
+%     \list{%
+%     }{ %
+%         % Define list
+%         \topsep=4pt
+%         \partopsep=0pt
+%         \leftmargin=2em\itemindent-\leftmargin %
+%         \listparindent=0pt
+%         \itemsep=4pt
+%         %\def\makelabel##1{\hss##1} %
+%     }%
+%     % Create entry line of the argument
+%     \fdfentryline %
+% }
+% {%
+%     \endlist%
+%     \egroup
+% }
+
+
+
+\begin{document}
+
+% TITLE PAGE
+% --------------------------------------------------------------
+
+\begin{titlepage}
+
+\begin{center}
+~
+\vfill
+\vspace{1cm}
+{\Huge {\bf cpw2000 User Guide}}
+\par\vspace{3cm}
+\hrulefill
+\par\vspace{3cm}
+{\Large {\bf Version 5.12, Draft \today}}
+\par\vspace{2cm}
+\hrulefill
+
+{\Large Jos\'e Lu\'{\i}s Martins \\
+Departamento de F\'{\i}sica, Instituto Superior T\'ecnico, Lisboa, Portugal (Retired)
+
+INESC MN, Lisboa, Portugal
+
+\texttt{jlmartins@inesc-mn.pt}
+
+\texttt{jose.l.martins@tecnico.ulisboa.pt}
+}
+\vfill
+\end{center}
+
+\end{titlepage}
+% END TITLE PAGE
+% --------------------------------------------------------------
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+\label{sec:intro}
+
+This is the current version of a old code that calcultes the electronic structure of crystals
+within the pseudopotential approximation with a plane-wave basis.
+
+The very original code was written by Sverre Froyen at the University of California Berkeley.
+I do not know what was the first time his version of the code, as there was already an earlier
+pseudopotential code at Berkeley, I would guess that
+Physical Review B, 26, 3258 (1983) https://journals.aps.org/prb/abstract/10.1103/PhysRevB.28.3258
+already used that version.
+
+After a long conversation with Roberto Car about the seminal Car-Parrinello work, I wrote at Berkeley
+in Marvin Cohen's group the
+code for the iterative diagonalization of the plane-wave matrices
+Physical Review B 37, 6134 (1988).
+
+Since then many people contributed to the code.   At Minnesota Norm Troullier
+and the group of Jim Chelikowsky contributed to the development.
+Renata Wentzcovitch implemented the original molecular dynamics and the variational
+cell shape molecular dynamis.  Nadia Binggeli implemented the Langevin molecular dynamics.
+At Lisbon the largest contribution was from Carlos Loia Reis.
+
+\section{Installation}
+\label{sec:install}
+
+\subsection{Step 1: Downloading and extracting the archive}
+\label{sec:step1}
+
+The code is available from GitHub
+
+\noindent\texttt{https://github.com/jlm785/cpw2000}
+
+If you downloaded the \texttt{cpw2000-5.x.y.tar.gz} file (where \texttt{x} and \texttt{y}
+are the minor version numbers) just extract it,
+
+\noindent\texttt{\$ tar xzf cpw2000-5.x.y.tar.gz}
+
+and you will have a \texttt{cpw2000-5.x.y} directory
+
+If you cloned the git you already have the relevant code in the main directory.
+
+\subsection{Step 2: Generating the documentation}
+\label{sec:step2}
+
+The documentation is in the \texttt{cpw2000-5.x.y/Doc} directory.  It include this file, and the means to generate a detailed
+description of the code for developers.
+
+For that detailed description you need doxygen (\texttt{https://www.doxygen.nl}) and
+graphviz (\texttt{https://graphviz.org/}), both are
+available on most distributions.  To check that your computer has doxygen and graphviz installed
+run the commands
+
+\noindent\texttt{cpw2000-5.x.y/Doc\$ dpkg -s doxygen}
+
+\noindent\texttt{cpw2000-5.x.y/Doc\$ dpkg -s graphviz}
+
+on a Debian based distribution (Ubuntu et al), or use equivalent tools (yum, rpm, dnf zypper,...) or the relevant GUI.
+
+If they are not available just install them
+
+\noindent\texttt{cpw2000-5.x.y/Doc\$ sudo apt install doxygen}
+
+\noindent\texttt{cpw2000-5.x.y/Doc\$ sudo apt install graphviz}
+
+again for Debian based distros, or use equivalent tools (yum, rpm, dnf zypper,...) or the relevant GUI.
+
+Finally run doxyfile in the doxy directory
+
+\noindent\texttt{cpw2000-5.x.y/Doc/doxy\$ doxygen Doxyfile}
+
+If you know what you are doing you can edit \texttt{cpw2000-5.x.y/Doc/doxy/Doxyfile}.
+
+Finally it is useful to create a link to the file \texttt{cpw2000-5.x.y/Doc/html/index.html}
+
+\noindent\texttt{cpw2000-5.x.y/Doc\$ ln -s html/index.html documentation.html}
+
+Opening that link in your browser will allow you to see the documentation for (almost) every file in the code.
+
+\subsection{Step 3: Compiling the code}
+\label{sec:step3}
+
+The code has been tested with several Fortran compilers, \texttt{ifort} (from Intel oneAPI),
+\texttt{gfortran} (from gnu),
+\texttt{pgfortran} (from Portland), and even LLVM (experimental Intel compiler).
+
+The choice of compiler is in the \texttt{cpw2000-5.x.y/Src/make.inc} file.  You may edit it for your convenience,
+but in principle you have to make just two choices.  The first is to identify which CPU you are using,
+as it narrows the choice of possible compilers.  This is done by commenting/uncommenting
+the lines below \texttt{\#   compiler for the job}.
+
+The second is the compiler you want, and is the key decision.  Again comment/uncomment the lines below
+\texttt{\#   Suggestions for compilers}.
+
+
+For any other modification of the \texttt{make.inc} file it is assumed you know what you are doing...
+The \texttt{make.inc} file was adapted from the {\sc Wannier90} code
+\texttt{https://wannier.org/}.
+As compilers may evolve with time, if you run into problems check
+the documentation and corresponding texttt{make.inc} file from that distribution.
+Another code that uses a \texttt{make.inc} file is {\sc elk}
+\texttt{https://elk.sourceforge.io/}.  There you can find suggestions for
+compiler options.
+
+To compile just go to \texttt{cpw2000-5.x.y/Src} and type make
+
+\noindent\texttt{cpw2000-5.x.y\$ cd Src}
+
+\noindent\texttt{cpw2000-5.x.y/Src\$ make}
+
+You should get the main library \texttt{libcpw{\_}}\textit{compiler}\texttt{.a}
+and a few executables \texttt{cpw{\_}}\textit{compiler}\texttt{.exe}, etc...
+where \textit{compiler} is the name of the chosen compiler.
+As you probably are not interested in comparing compilers,
+it is advisable to create links without the compiler name.
+For example, after compiling with \texttt{ifort}, I usually create the links
+
+\noindent\texttt{cpw2000-5.x.y\$ ln -s Src/cpw\_ifort.exe cpw.exe}
+
+\noindent\texttt{cpw2000-5.x.y\$ ln -s Src/cpw\_post\_process\_ifort.exe cpw\_post\_process.exe}
+
+\noindent\texttt{cpw2000-5.x.y\$ ln -s Src/libpw\_ifort.a libpw.a}
+
+In the examples it will be assumed that those links are created, but obviously
+the links could be anywhere (in a \texttt{bin} folder for example).
+
+
+
+
+\section{First time run of the code}
+\label{sec:run}
+
+I assume you have a working directory separate from the source.  In the following I will call it
+\texttt{cpw2000-5.x.y/WORK}
+
+
+\subsubsection{Files required to run the code}
+
+
+You will need a file with the crystal description and a pseudopotential file for each type of atom
+in the crystal.
+
+The file with the crystal description is called \texttt{cpw.in}.  You must have such a file
+in your working directory.  You can find such a file for almost all elements in
+\texttt{cpw2000-5.x.y/Structures/Elements}
+and files for other structures in the other subdirectories of texttt{cpw2000-5.x.y/Structures}.
+The format of the crystal description is the same as in the {\sc siesta} code,
+texttt{https://siesta-project.org/siesta/index.html} so you may find descriptions
+for other crystals in the ``net''.  {\bf Beware} that presently the code only accepts
+{\bf fractional} lattice coordinates.
+
+For back-compatibility, a file \texttt{PW.DAT} can be used to read the crystal structure,
+k-point sampling and energy cutoff.  But other parameters cannot be set by that file.
+
+There is also a tool, \texttt{Tools/gen{\_}PW.f90},  to obtain a \texttt{cpw.in} file by answering a few questions.
+
+
+You will have to generate the pseudopotentials for each atom, or find someone who has done that
+for you and have a file in the relevant format.  The name of the file is \texttt{Xy{\_}POTKB{\_}F.DAT} where
+\texttt{Xy} is the one or two character chemical symbol.  This file should be (or at least a link) on
+your working directory, or an explicit path should be specified in \texttt{cpw.in}.
+
+The good news is that the code to generate pseudopotentials is available from GitHub
+
+\noindent\texttt{https://github.com/jlm785/pseudopotential}
+
+and if you run the test on \texttt{Validation} after you followed the relevant instructions
+to install the code you will get pseudopotential files for all elements.
+
+The bad news is that some of those pseudopotentials where not extensively tested, and even those
+that are reported as tested may not be what you want.  Just test them in a simple case
+before you proceed.  As pseudopotentials calculations should reproduce first principles
+calculations in \texttt{cpw2000-5.x.y/Structures/Elements} you can find
+\texttt{elk.in} files that you can use to run LAPW all-electron calculations with the {\sc elk} code,
+\texttt{https://elk.sourceforge.io/}.  Testing the pseudopotential will spare you a lot of grief
+later.
+
+If you want just a ``quick and dirty'' calculation than you can use the pseudopotentials
+from \texttt{Validation} of the pseudopotential code.
+
+
+\subsection{Running the code}
+\label{sec:run-code}
+
+Once you have the required files you run the code with
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../cpw.exe}
+
+if you created the appropriate links, or
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../Src/cpw{\_}}\textit{compiler}\texttt{.exe}
+
+otherwise.   The code will write to default output, so redirect it with
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../cpw.exe > output.dat}
+
+or
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../cpw.exe | tee output.dat}.
+
+You will get a \texttt{PW{\_}RHO{\_}V.DAT} file with the self-consistent potential.  By running
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../cpw{\_}post{\_}process.exe}
+
+you will start an interactive analysis of the results.
+
+If both executables ran without errors you are set.
+
+\section{The \texttt{cpw.in} file}
+
+The \texttt{cpw.in} syntax is similar to the input file from the SIESTA code.
+The parser is different, \texttt{esdf} instead of \texttt{fdf}.  The keywords
+are even the same when possible.  Therefore part of the text of this section
+was pilfered from the SIESTA documentation.
+
+The \texttt{cpw.in}
+contains all the physical data of the system and the parameters of
+the simulation to be performed.
+
+This file is written in a special format called {\sc esdf}, developed by
+Chris J. Pickard. This format allows data to be
+given in any order, or to be omitted in favor of default values.
+It is used in other electronic structure codes such as {\sc casino} and
+{\sc parsec}.   However to be consistent with {\sc siesta} (which uses the fdf format) the special character
+indicating a block structure has been changed.
+
+Here we offer a glimpse of the rules:
+
+\begin{itemize}
+
+\item[$\bullet$] The syntax is a 'data label' followed by its value.
+Values that are not specified in the datafile are assigned
+a default value.
+
+\item[$\bullet$] The labels are case insensitive, and characters - \_ .
+in a data label are ignored. Thus, LatticeConstant and
+lattice{\_}constant represent the same label.
+
+\item[$\bullet$] All text following the \# character is taken as comment.
+
+\item[$\bullet$] Logical values can be specified as T, true, .true.,
+yes, F, false, .false., no.
+
+\item[$\bullet$] Character strings should \textbf{not} be in apostrophes.
+
+\item[$\bullet$] Real values which represent a physical magnitude must be
+followed by its units.
+It is important to include a decimal point in a real number to distinguish
+it from an integer, in order to prevent ambiguities when mixing the types
+on the same input line.
+
+\item[$\bullet$] Complex data structures are called blocks and are
+placed between `\%block label' and a `\%endblock label'
+(without the quotes).
+
+\item[$\bullet$] If the same label is specified twice, the first one takes precedence.
+
+\item[$\bullet$] If a label is misspelled it will not be recognized (there is no
+  internal list of ``accepted'' tags in the program). You can check
+  the actual value used by {\sc cpw2000} by looking for the label in the
+  output (by default standard output).
+
+\end{itemize}
+
+\noindent
+This is an example for silicon:
+
+\begin{verbatim}
+          LatticeConstant             10.2629     bohr
+
+          %block LatticeVectors
+                   0.00000000         0.50000000         0.50000000
+                   0.50000000         0.00000000         0.50000000
+                   0.50000000         0.50000000         0.00000000
+          %endblock LatticeVectors
+
+          NumberOfSpecies                1
+
+          NumberOfAtoms                2
+
+          %block Chemical_Species_Label
+                         1       14   Si
+          %endblock Chemical_Species_Label
+
+          AtomicCoordinatesFormat     Fractional
+
+          %block AtomicCoordinatesAndAtomicSpecies
+                   0.12500000      0.12500000      0.12500000      1     #  Si       1
+                  -0.12500000     -0.12500000     -0.12500000      1     #  Si       1
+          %endblock AtomicCoordinatesAndAtomicSpecies
+
+          StructureSource               Experiment
+
+          #------------------------------------------------
+          # Energy cutoff, bands,  and Brillouin mesh
+          #------------------------------------------------
+
+          PWEnergyCutoff                  12.0000      hartree
+
+          NumberOfEigenStates                  10
+
+          %block kgrid_Monkhorst_Pack
+                         4       0       0       0.500000
+                         0       4       0       0.500000
+                         0       0       4       0.500000
+          %endblock kgrid_Monkhorst_Pack
+\end{verbatim}
+
+
+
+
+\subsection{General stuff}
+
+\begin{itemize}
+
+%\begin{fdfentry}{SystemLabel}[string]<siesta>
+\item{\bf SystemLabel}
+
+  A \emph{single} word (max. 20 characters \emph{without blanks})
+  containing a nickname of the system. Reserved to be used to name output files in the future.
+
+%\end{fdfentry}
+
+\item{\bf PrintingLevel} (integer)
+
+   Defines the detail of the printout.  May take the values 1,2, or 3.
+
+  \textit{Default value:}  1 (for molecular dynamics) or 3 (single geometry).
+
+   The higher the value the more details will be printed.
+   Remember that too much information is noise.  1 is recommended for molecular
+   dynamics.  3 for single calculation, or when things seem to go wrong.
+
+\item{\bf MD.TypeOfRun} (string)
+
+   Choice on how the atoms move.  Molecular dynamics or geometry optimization.
+
+  \textit{Default value:}  ONE
+
+  With the default it will run a single geometry.
+  See below for the other options to run molecular dynamics calculations.
+
+  The value in \texttt{cpw.in} may be overridden by the first argument
+  of the executable.
+
+  \noindent\texttt{cpw2000-5.x.y/WORK\$ ../cpw.exe MICRO > output.dat}
+
+  will perform a microcanonic molecular dynamics calculation irrespective
+  of the value in \texttt{cpw.in}.
+
+\end{itemize}
+
+
+\subsection{Crystal descriptors}
+
+These are the lines that describe the crytal structure.
+
+\begin{itemize}
+
+%\begin{fdfentry}{LatticeConstant}[length]
+\item{\bf LatticeConstant} (length)
+
+  A physical value, requiring a real number followed by the units.
+  Accepted units are: \texttt{bohr, ang, nm, m}.
+  This is just to define the scale of the lattice vectors.
+
+  \textit{Default value:} 1.0 bohr.
+
+  The code stops if the units are not present or not recognized.
+  Internally the code uses atomic units (bohr).
+
+%\begin{fdfentry}{LatticeVectors}[block]
+\item{\bf LatticeVectors} (block)
+
+  The cell vectors are read in units of the lattice constant defined
+  above.  They are read as a matrix, each
+  vector being one line.
+
+  \textit{Default value:}  Unit matrix.
+
+  The internal representation of the lattice vectors in the code is
+  by their metric tensor.  So the original orientation is space is lost!
+  When the code needs to read or print information with
+  orientation content it will use some {\it canonic} vectors
+  based on the lattice symmetry.   Those are printed
+  at the start of the SCF code, and before questions to the user
+  in the post-processing code.  Just pay attention,
+  they may be {\bf different} from what is written in \texttt{cpw.in}!
+  See the section on output for more details.
+
+  The code checks if the entered value is near a rational number or
+  the square root of a rational number (with low denominators).
+  If it is the case it will use that modified value and print a warning.
+  This allows to have an exact symmetry, and the modifications are always
+  small.
+
+
+%\begin{fdfentry}{NumberOfSpecies}[integer]<\nonvalue{lines in \fdf{ChemicalSpeciesLabel}}>
+\item{\bf NumberOfSpecies} (integer)
+
+  Number of different atomic species in the simulation.  It must be
+  the number of lines in the {\bf ChemicalSpeciesLabel} block.
+
+  \textit{Default value:}  1
+
+  If not present or nin positive it will use the number of lines in
+  {\bf ChemicalSpeciesLabel}.
+
+  In case of inconsistency the execution terminates.
+
+%\begin{fdfentry}{NumberOfAtoms}[integer]<\nonvalue{lines in \fdf{AtomicCoordinatesAndAtomicSpecies}}>
+\item{\bf NumberOfAtoms} (integer)
+
+  Number of atoms in the simulation.  It is the number of lines in the block
+  {\bf AtomicCoordinatesAndAtomicSpecies}.
+
+  \textit{Default value:}  1
+
+  In case of inconsistency the execution terminates.
+
+
+%\begin{fdfentry}{ChemicalSpeciesLabel}[block]
+\item{\bf ChemicalSpeciesLabel} (block)
+
+  It specifies the different chemical species that are
+  present, assigning them a number for further identification.
+  cpw2000 recognizes the different atoms by the given atomic number.
+
+  One line for each species.
+  The first number in a line is the species number, it is followed by
+  the atomic number, and then by the chemical symbol.  From H to Og
+  all chemical symbols are recognized.  There is an extra chemical
+  symbol, ZZ with a number of protons (atomic number) that can be zero
+  to allow adding special pseudopotentials to the crystal.
+
+  In case of inconsistency the execution terminates.
+
+
+%\begin{fdfentry}{AtomicCoordinatesFormat}[string]<Bohr>
+\item{\bf AtomicCoordinatesFormat} (string)
+
+  Character string to specify the format of the atomic positions in
+  input.  {\bf It is not used!!!}  It is here for future use and
+  compatibility with {\sc siesta}.
+
+%These can be expressed in four forms:
+
+%   \begin{fdfoptions}
+%     \option[Bohr|NotScaledCartesianBohr]%
+%     \fdfindex*{AtomicCoordinatesFormat:Bohr}%
+%     \fdfindex*{AtomicCoordinatesFormat:NotScaledCartesianBohr}%
+%
+%     atomic positions are given directly in Bohr, in Cartesian
+%     coordinates
+%
+%     \option[Ang|NotScaledCartesianAng]%
+%     \fdfindex*{AtomicCoordinatesFormat:Ang}%
+%     \fdfindex*{AtomicCoordinatesFormat:NotScaledCartesianAng}%
+%
+%     atomic positions are given directly in \AA ngstr\"om, in Cartesian
+%     coordinates
+%
+%     \option[ScaledCartesian]%
+%     \fdfindex*{AtomicCoordinatesFormat:ScaledCartesian}%
+%
+%     atomic positions are given in Cartesian coordinates, in units of
+%     the lattice constant
+%     \begin{itemize}
+%
+%        \item{Fractional}
+%
+%        Atomic positions are given referred to the lattice vectors
+%     \end{itemize}
+
+%\begin{fdfentry}{AtomicCoordinatesAndAtomicSpecies}[block]
+\item{\bf AtomicCoordinatesAndAtomicSpecies} (block)
+
+  Block specifying the position and species of each atom.  One line
+  per atom, with three reals followed by one integer.
+  In total the number of lines indicated by {\bf NumberOfAtoms}
+  must be present.
+
+  The three reals indicate the atomic positions in
+  {\bf FRACTIONAL lattice coordinates} followed by the
+  species of atom on that position,
+  as identified in the {\bf Chemical\_Species\_Label} block.
+
+  In case of inconsistency the execution terminates.
+
+\item{\bf StructureSource} (string)
+
+  Information on the source of the crytal structure.
+  Not used by the code,
+
+
+\end{itemize}
+
+
+
+\subsection{Major Self Consistent Field parameters}
+
+This are the parameters whose values you would mention in a paper to allow reproducibility.
+
+\begin{itemize}
+
+\item{\bf PWEnergyCutoff} (energy)
+
+  Energy cutoff of the plane wave basis set expansion.  Real value followed
+  by the energy unit.
+  Accepted units are: \texttt{eV, Ry, Hartree}, and a few other.
+
+  \textit{Default value:}  5 Hartree
+
+  Internally the code uses Hartrees.
+
+
+% \begin{fdfentry}{NumberOfEigenStates}[integer]<\nonvalue{all orbitals}>
+%  \fdfdepend{Diag!Algorithm}
+\item{\bf NumberOfEigenStates} (integer)
+
+  This parameter indicates the number of eigenstates
+  to be calculated.
+
+  \textit{Default value:}  10
+
+  In some future the default should be slightly larger than half the number of electrons.
+
+  By choosing a low value the cost of the diagonalization
+  may be reduced by finding fewer eigenstates.
+  However choosing a slightly larger number of active eigenstates
+  than the bare minimum may help converge faster the occupied
+  eigenstates and therefore the overall calculation.
+  Note, that if the electronic temperature is greater than zero then
+  the number of partially occupied states increases, depending on the band gap.
+  The value specified must be greater than the number of occupied states
+  (at least the number of electrons divided by two for
+  a non-spin-polarized calculation) and
+  less than the number of basis functions (which is extremly large for plane waves).
+
+%\begin{fdfentry}{kgrid!MonkhorstPack}[block]<$\Gamma$-point>
+\item{\bf kgridMonkhorstPack} (block)
+
+  Specifies the Fourier integration grid, known in the literature as the Monkhorst-Pack
+  grid, for the Brillouin zone integration.  It is just the good old Gauss quadrature method
+  with sine/cosine functions chosen for periodic functions.
+
+  \textit{Default value:}  The $4\times4\times4$ sampling with $1/2$ shift.
+  \begin{equation*}
+      \begin{matrix}
+        4  &  0  &  0  & \quad  0.5 \\
+        0  &  4  &  0  & \quad  0.5 \\
+        0  &  0  &  4  & \quad  0.5 \\
+      \end{matrix}
+  \end{equation*}
+
+  Specified as an integer $3 \times 3$ matrix and a real vector.  At present only the diagonal
+  elements of the matrix are relevant, but this format will alow an extension of
+  the method in the future and better compatibility with {\sc siesta}.
+
+  It has three lines, each with three integers and a real.
+  \begin{equation*}
+      \begin{matrix}
+        m_{11}  &   m_{12}  &   m_{13}  & \quad  d_1 \\
+        m_{21}  &   m_{22}  &   m_{23}  & \quad  d_2 \\
+        m_{31}  &   m_{32}  &   m_{33}  & \quad  d_3 \\
+      \end{matrix}
+  \end{equation*}
+  In the direction $j$ the Brillouin zone will be divided in $m_{jj}$ sections and
+  a point with a shift of $d_j$ will be selected.
+
+  To use only the $\Gamma$ point (molecule in a supercell) use
+  \begin{equation*}
+      \begin{matrix}
+        1  &  0  &  0  & \quad  0.0 \\
+        0  &  1  &  0  & \quad  0.0 \\
+        0  &  0  &  1  & \quad  0.0 \\
+      \end{matrix}
+  \end{equation*}
+
+  It is usual to have $m_{jj}$ an even number and $d_j = 0.5$.  For hexagonal crystals
+  and the conventional axis, it is also usual/convenient to have $m_{11}=m_{22}$ a
+  multiple of three.  These are recipes that minimize the number of irreducible points
+  and avoid breaking symmetry.
+
+  If the diagonal elements are non-positive it will default to $m_{ii}=1$,
+  printing a warning.  It also warns the presence of unused non-zero off-diagonal values.
+
+%\begin{fdfentry}{XC!Authors}[string]<PZ>
+%  \newcommand\xcidx[1]{\index{exchange-correlation!#1}}
+\item{\bf  XC.Authors} (string)
+
+  Particular parametrization of the exchange-correlation
+  functional.
+
+  \textit{Default value:}  CA
+
+  \begin{itemize}
+
+    \item{CA}
+
+    Local density approximation (LDA). Quantum Monte Carlo
+    calculation of the homogeneous
+    electron gas by D. M. Ceperley and B. J. Alder,
+    Phys. Rev. Lett. \textbf{45},566 (1980), as parametrized by
+    J. P. Perdew and A. Zunger, Phys. Rev B \textbf{23}, 5075 (1981)
+
+   \item{PBE}
+
+    GGA of J. P. Perdew, K. Burke and M. Ernzerhof,
+    Phys. Rev. Lett. \textbf{77}, 3865 (1996)
+
+   \item{TBL}
+
+   Meta-GGA of Tran and Blaha.
+   F. Tran and P. Blaha, Phys. Rev. Lett. 102, 226401 (2009)
+
+  \end{itemize}
+
+\item{\bf Xc.TBL.C} (real)
+
+  Sets Tran-Blaha constant if a positive value.  If it is negative,
+  the original constant is used.  A value around 1.09 is usualy a good choice.
+  It can be used to ``fine-tune'' the band gap in simulations
+  (second-priciples calculations).
+
+  \textit{Default value:}  1.0
+
+\item{\bf TypeOfScfDiag} (string)
+
+  Indicates how the SCF was performed.
+
+  \begin{itemize}
+
+    \item{PW}
+
+    The full plane-wave basis set.  It is the ``usual'' or traditional choice.
+
+    \item{AO}
+
+    Uses the atomic orbitals included in the pseudopotential file.  Not available in very
+    old files.  It corresponds to a Linear Combination of Atomic Orbitals (LCAO) calculation.
+    It is very fast, but with limited accuracy.  Use for {\it exploratory} runs
+    on complex structures.
+
+    \item{AOJC}
+
+    Uses the atomic orbitals included in the pseudopotential file, but improves the LCAO
+    wave-functions with a single Jacobian Correction.
+    Slower than the AO option but still quite fast.
+    It is very convenient to explore
+    the Born-Oppenheimer energy surface in optimization and molecular dynamics.
+    However one may want to check the {\it final} results with a full PW calculation.
+
+    \item{AOJCPW}
+
+    Follows an AOJC calculation with a full PW calculation.  Final results are the
+    practically the same as the normal PW calculation, but may be faster.
+    Check if that is the case for your crystals before using..
+
+  \end{itemize}
+
+\item{\bf DualApproximation} (boolean)
+
+   Use the dual approximation.
+
+  \textit{Default value:}  \texttt{.TRUE.}
+
+   It uses a smaller grid for the calculation of the
+   effective potential.  Speeds up the calculations with a compromise on precision.
+   For molecular dynamics it is very safe.  For geometry optimization with small
+   energy cutoffs may not be accurate enough.
+
+\item{\bf ElectronicTemperature} (temperature)
+
+   A real value followed by unit.  The normal unit is the Kelvin, \texttt{k},
+   but will accept other energy units, for example \texttt{meV}
+
+  \textit{Default value:} 0 K
+
+   Occupy orbitals with a Fermi-Dirac distribution with that temperature.
+
+\item{\bf TypeOfPotentialMixing} (string)
+
+  \textit{Default value:}  \texttt{BFGS}
+
+   Type of effective potential mixing used to accelerate convergence.
+   BFGS is Broyden-Fletcher-Goldfarb-Shanno method.  It has some modificatitions
+   for the maximum and minimum values of mixing.
+   BROYD1 is Broyden 1st method.
+   In a few cases it may be faster, but in most cases is slower,
+   and for difficult cases (supercells) it may not converge.
+   It has not been tuned in a long time.
+
+\end{itemize}
+
+
+
+\subsection{Minor Self Consistent Field parameters}
+
+Other parameters of self-consistency that have less impact, unless ``very wrong''
+choices are made.  Probable safe to leave at default values.
+
+\begin{itemize}
+
+\item{\bf MaxSCFIterations} (integer)
+
+   Maximum number of self-consistent iterations.
+
+  \textit{Default value:}  30
+
+   If very large, computing time can be wasted
+   in the cases convergence is not achieved.  If very small the code can terminate without a result, also wasting computer time.
+
+\item{\bf ScfTolerance} (real)
+
+   Convergence parameter (atomic units/Hartree) for self-consistency
+
+  \textit{Default value:}  0.00001
+
+   The SCF iterations are deemed converged if the difference between the input
+   and output values of all the components of the Fourier transform of
+   the effective potential are smaller than this treshold.
+
+   For exploratory runs decrease this parameter.
+
+\item{\bf MaxDiagIterations} (integer)
+
+   Maximum number of Ritz steps in the iterative diagonalization subroutine.
+
+  \textit{Default value:}  40
+
+  Increase if in the last few SCF iterations you still see warnings about
+  noisy diagonalization.  In early SCF iterations, those warnings disappear
+  if you increase this parameter, but computing time will also increase
+  without changing final results.
+
+\item{\bf DiagTolerance} (real)
+
+   Criteria for iterative diagonalization convergence.
+
+   \textit{Default value:}  0.00001
+
+   The iterative diagonalization is deemed converged if the module of the error vector is
+   smaller than that value.
+   For exploratory runs you can use the value of 0.001.
+
+
+\end{itemize}
+
+
+\subsection{Unused Self Consistent Field parameters}
+
+Over the years only one option was left in the code.
+
+
+\begin{itemize}
+
+
+\item{\bf TypeOfPseudopotential}
+
+   Type of pseudopotential that is used.
+
+  \textit{Default value:}  \texttt{PSEUKB}
+
+  Kleinman-Bylander separable pseudos are the only available option.
+  In older versions, the non-separable pseudo was available (PSEUDO), as
+  well as a gaussian integration separable pseudopotential (PSEUGA).
+  Some subroutines and variables still keep the \texttt{ga} characters from those days.
+
+\end{itemize}
+
+
+\subsection{Molecular dynamics parameters}
+
+
+\begin{itemize}
+
+\item{\bf MD.TypeOfRun} (string)
+
+   Choice on how the atoms move.  Molecular dynamics or geometry optimization.
+
+  \textit{Default value:}  ONE
+
+   \begin{itemize}
+
+      \item{ONE}
+
+      Just one SCF calculation.  Atoms do not move.
+
+      \item{RSTRT}
+
+      Restart the molecular dynamics from the last atomic configuration.
+      Use in case it was interrupted by some external reason (power failure).
+      Just keep all the other parameters the same.
+      It will reproduce what a non-interrupted calculation would find
+      in the case of molecular dynamics.  For optimization the minimization restarts,
+      so it will not reproduce a non-interrupted calculation, but probably will converge
+      to the same minimum.
+
+      \item{MICRO}
+
+      Microcanonic molecular dynamics.  The total/free energy is conserved, depending
+      whether the temperature is zero and the system is an insulator or temperature is finite
+      and not too low in the case of a metal.  How low the temperature can go depends on the
+      density of integration k-points.
+
+      \item{LANG}
+
+      Langevin molecular dynamics, in contact with a thermostat with temperature
+      indicated by {\bf MD.TargetTemperature}.
+
+      \item{VCSLNG}
+
+      Langevin molecular dynamics but with a variational cell shape, that is the lattice vectors
+      change with simulation time.
+
+      \item{LBFSYM}
+
+      Minimization of the energy with respect to atomic positions with the LBF algorithm.
+
+      \item{VCSLBF}
+
+      Minimization of the energy with respect to atomic positions and cell shape with the LBF algorithm.
+
+      \item{EPILBF}
+
+      Minimization of the energy with respect to atomic positions and ``vertical'' dimension
+      of the cell with the LBF algorithm.  It models an epitaxial situation.
+      The initial $\vec a_1$ and $\vec a_2$ of {\bf LatticeVectors} define the
+      epitaxial surface.  The cell only contracts and expands in the direction perpendicular
+      to those vectors ($\vec b_3$).
+
+   \end{itemize}
+
+   \item{\bf MD.InitialTemperature} (temperature)
+
+   A real value followed by unit.  The normal unit is the Kelvin, \texttt{k},
+   but will accept other energy units, for example \texttt{meV}
+
+  \textit{Default value:}  1000 K
+
+   The initial kinetic energy is set according to the temperature .
+   If the initial potential energy is high, the temperature of the system may be
+   quite higher.  If unsure, first do a thermalization with Langevin,
+   otherwise the system may break apart.
+   Simulations with {\bf TypeOfScfDiag} as AO or AOJC are great for fast thermalization.
+
+   \item{\bf MD.NumberOfSteps} (integer)
+
+   Number of steps of the molecular dynamics run or maximum number of optimization steps.
+
+   \textit{Default value:}  100
+
+   \item{\bf MD.LengthTimeStep} (time)
+
+   A real value followed by unit.  The usual unit are femtoseconds, \texttt{fs},
+   but will accept other time units \texttt{s, ns, ps, autime}.
+
+  \textit{Default value:}  2.418884 \texttt{fs} = 100.0 \texttt{autime}
+
+   Time step for molecular dynamics.  If ut is too small atoms barely move, if too large
+   the integrator of the molecular dynamics (Verlet) becomes unstable.  Instability
+   appears in the non-conservation of energy.  Few femtoseconds should be OK,
+   but remember that light atoms move faster (square root of mass scaling).
+   Simulations with {\bf TypeOfScfDiag} as AO or AOJC are great for initial checks.
+
+   \item{\bf MD.TargetTemperature} (temperature)
+
+   A real value followed by unit.  The normal unit is the Kelvin, \texttt{k},
+   but will accept other energy units, for example \texttt{meV}
+
+  \textit{Default value:}  300 K
+
+   For molecular dynamics with a Langevin thermostat, it is the temperature of
+   the thermal bath.
+
+   \item{\bf MD.FrictionFracInvTimeStep} (real)
+
+   The friction coefficient for simulations with a Langevin thermostat.
+
+  \textit{Default value:}  20.0
+
+   It is set with respect to the time step.
+   It indicates how many time steps occur until some
+   thermalization is achieved.  If small the thermalization is of bad quality,
+   if large it will take a long time to thermalize.
+
+   \item{\bf MD.TargetPressure} (pressure)
+
+   A physical value, requiring a real value followed by unit.
+   Accepted units are: \texttt{GPa, Pa, atm, Mbar, bar, MPa}.
+
+  \textit{Default value:}  0  \texttt{GPa}
+
+   In a molecular dynamics with variational cell shape, or cell optimiztion,
+   it is the applied pressure.
+
+   \item{\bf MD.TargetStress} (block)
+
+   Real $3 \times 3$ matrix of an applied stress in addition to the applied pressure.
+   The units are in GPa only.
+
+  \textit{Default value:}  0
+
+   The matrix should be symmetric, and is in lattice coordinates, so some effort
+   is needed to understand the orientation of the crystal.
+
+   \item{\bf MD.CellMass} (real)
+
+   Fictitious cell mass for variational cell shape molecular dynamics.  It is in units
+   of electron mass.
+
+  \textit{Default value:}  10.0
+
+   Should be fairly larger than one for the cell dynamics to be slow, but not so
+   large that the cell dynamics is too slow.
+   Simulations with {\bf TypeOfScfDiag} as AO or AOJC are great for initial checks.
+
+   \item{\bf MD.Seed} (integer)
+
+   Seed for the pseudo-random generator for the thermostat and iniial velocity.
+
+   \textit{Default value:} 87697
+
+   Same seed will give the same trajectory.  Different seeds will give
+   different trajectories allowing trivial parallelization of simulations.
+
+   \item{\bf MD.UseKeatingCorrections} (boolean)
+
+   \textit{Default value:}  \texttt{.false.}
+
+   For some tetrahedral semiconductors, it provides a correction to LDA
+   that reproduces experimental bond lengths.  Do not use with heavy elements (Sn).
+   If the structure is not tetrahedral the code stops.
+
+   \item{\bf MD.UseFixedkplusG} (boolean)
+
+  \textit{Default value:} \texttt{.false.}
+
+   Keep a fixed $\vec k + \vec G$ expansion in a variational cell shape
+   simulation to avoid the noise of the basis set changing during the simulation.
+   Should only be used near equilibrium.  abinit has a neater way of dealing with this noise,
+   the code is prepared to use that trick, but it has not been implemented.
+   Use {\bf MD.CG.FixedkplusGTol} to define when it kicks in.
+
+   \item{\bf MD.CG.Tolerance} (force)
+
+   A physical value, requiring a real value followed by unit.
+   The normal and internal unit is \texttt{har/bohr},
+   but will accept \texttt{N, eV/ang, Ry/bohr}.
+
+  \textit{Default value:}  0.0001 \texttt{har/bohr}
+
+   A geometry optimization run stops when the components of the forces on all atoms are smaller
+   than this value.
+
+   \item{\bf MD.CG.StepMax} (length)
+
+   A physical value, requiring a real value followed by unit.
+   Accepted units are: \texttt{bohr, ang, nm, m}.
+
+  \textit{Default value:}  0.01 \texttt{bohr}
+
+   Maximum displacement of atoms to avoid instabilities in the optimization.
+
+   \item{\bf MD.CG.FixedkplusGTol} (force)
+
+   A physical value, requiring a real value followed by unit.
+   The normal and internal unit is \texttt{har/bohr},
+   but will accept \texttt{N, eV/ang, Ry/bohr}.
+
+  \textit{Default value:}  0.01 \texttt{har/bohr}
+
+   The fixed $\vec k + \vec G$ is used {\it after} the components of the forces (har/bohr)
+   on all atoms are smaller than this value.
+
+\end{itemize}
+
+
+\subsection{Symmetry}
+
+Treatment of symmetry during a molecular dynamics or optimization run.
+
+\begin{itemize}
+
+\item{\bf UseSymmetry} (boolean)
+
+  \textit{Default value:} \texttt{.TRUE.} for optimization and single
+  runs, \texttt{.FALSE.} for molecular dynamics runs.
+
+   Try to maintain the initial symmetry of the system.  It is close to 100\% fiable
+   (as close as real number logic allows).
+
+\item{\bf SymmTolerance} (real)
+
+  Tolerance for symmetry identification.
+
+  \textit{Default value:} 0.00001
+
+   If after a symmetry operation the difference between the positions (in lattice coordinates)
+   is smaller than this value, the atoms are considered superposed.
+
+\end{itemize}
+
+
+\subsection{Pseudopotential files}
+
+Where to find the pseudopotential files.  By default they should be on the directory
+where the code is run.
+The default name of the file is \texttt{Xy{\_}POTKB{\_}F.DAT} where
+\texttt{Xy} is the one or two character chemical symbol.
+
+\begin{itemize}
+
+\item{\bf PathToPseudos} (string)
+
+  Directory where the pseudopotentials are found, either full specification,
+  or starting from the running directory
+
+  \textit{Default value:}  null string, indicating running directory.
+
+
+\item{\bf PseudoSuffix} (string)
+
+  Suffix to add to to the chemical symbol to obtain the file name.
+
+  \textit{Default value:}  \texttt{{\_}POTKB{\_}F.DAT}
+
+  It the PathToPseudos is \texttt{tmp} and the PseudoSuffix is \texttt{{\_}POT.DAT}
+  the file used for Si would be \texttt{tmp/Si{\_}POT.DAT}.
+
+\end{itemize}
+
+
+\subsection{Saving wave-functions to disk}
+
+The calculations are more efficiently done keeping the wave-functions in main memory (RAM).
+However if the main memory is too small for the problem, either cache trashing occurs,
+impacting severely the computing efficiency, or the program aborts.
+Saving wave-functions to disk may allow to run the program with just a small penalty,
+if a modern disk (SSD, M.2 preferentially) is used.
+Useless if the number of k-points is just 1.  Works better for large number of k-points.
+Before terminating the calculation the file is deleted.
+
+
+\begin{itemize}
+
+\item{\bf TapeToSavePsi} (integer)
+
+  Tape (I used them!) number for saving the wave-functions.  If it is smaller than 10,
+  wave-functions will be kept in main memory.
+
+  \textit{Default value:}  \texttt{0}
+
+\item{\bf PathToSavePsi} (string)
+
+  Path to save the wave-functions.
+
+  \textit{Default value:}  (empty)
+
+  By default the \texttt{tmp{\_}psi.dat} will be written in the current directory.
+  If PathToSavePsi is \texttt{tmp} then the wave-functions will be saved to
+  \texttt{tmp/tmp{\_}psi.dat}.
+
+
+\end{itemize}
+
+
+\subsection{Unfolding}
+
+If the structure is a supercell of some lattice it may be useful to plot the band structure
+in the ``unfolded'' Brillouin zone of the parent structure.
+The unfolding procedure was developed within an industrial collaboration (rede project),
+it was used in semiconductors with a parent fcc lattice,
+so unfolding was only extensively tested in that lattice.
+
+\begin{itemize}
+
+\item{\bf Rede.Superlattice} (block)
+
+   The block has three lines with three integers.  Each line indicates how each of
+   the supercell lattice vectors relate to the lattice vectors of the parent structure.
+
+   Taking as an example the supercell described in
+   \texttt{Structures/Supercells/cpw\_Si6Ge6\_Si(001).in}, which has 6 Si atomic layers
+   and 6 germanium atomic layers on a (001) surface, the block is
+   \begin{verbatim}
+      %block Rede.Superlattice
+                -1     1     0
+                 0     0     1
+                 3     3    -3
+      %endblock Rede.Superlattice
+   \end{verbatim}
+   the underlying parent fcc structure has lattice vectors $\vec A_1=(0,a/2,a/2)$,
+   $\vec A_2=(a/2,0,a/2)$ and $\vec A_3=(a/2,a/2,0)$.  The supercell vectors
+   are $\vec a_1=-\vec A_1+\vec A_2 = (-a/2,a/2,0)$,
+   $\vec a_2=\vec A_3=(a/2,a/2,0)$ and
+   $\vec a_3=3\vec A_1+3\vec A_2-3\vec A_3 = (0,0,3a)$.
+   Notice that the in-plane vectors have been rotated by 45$^\circ$,
+   their length is $\sqrt{2} a$ as the lattice constant
+   is that of Si, it is consistent with epitaxy on Si $(001)$.
+   The third vector has a length slightly larger than $3a$ because
+   it was allowed to relax in the presence of the larger Ge atoms.
+
+\item{Rede.NumberOfLatticePlanes}
+
+   In a supercell grown on a surface indicates the number of lattice planes.
+   It is used to help in plots to determine band alignments.
+   In the above example you have six lattice planes (but twelve atomic planes).
+   It must be present for unfolding to work.  That is an ``hack'' to deal
+   with back compatibility of some files, but do not influence the
+   unfolding.  This ``requirement'' should be removed in future releases.
+
+\end{itemize}
+
+\section{Default output}
+
+The code writes to the default output, which can be redirected to a file.
+Depending on the choice of {\bf PrintingLevel} the output will be different.
+We will use as a first example  the file {\tt Validation/Output/pw\_ref\_01.out}.
+
+\subsection{Initial information}
+
+On the top of the file we have the information about the version of code, and the date
+and time it was run.
+\begin{verbatim}
+     density-functional pseudopotential plane-wave program version 4.99
+     run on the 19-Mar-21 at 13:30:54
+\end{verbatim}
+notice that care was taken to code back the year 2000 bug in the 1990s.
+
+Continuing with that example we find next some information about how many chemical species,
+and maximum number of atoms per chemical species the code is using.
+\begin{verbatim}
+   The values set by size_mxdtyp_mxdatm_esdf are:
+
+   The value of mxdtyp is:     2
+   The value of mxdatm is:        8
+
+   input read from cpw.in
+\end{verbatim}
+notice that the information about which subroutine printed the
+information is included in this case.
+
+Next information are the lattice vectors,
+\begin{verbatim}
+   Primitive Translation Vectors
+                        in a.u.                            in lattice units
+  a1=  0.125697E+02  0.000000E+00  0.000000E+00         1.225    0.000    0.000
+  a2= -0.418990E+01  0.118508E+02  0.000000E+00        -0.408    1.155    0.000
+  a3=  0.000000E+00  0.000000E+00  0.725711E+01         0.000    0.000    0.707
+\end{verbatim}
+preceded by a warning that they were changed,
+\begin{verbatim}
+   WARNING:   avec(  3,  3)
+   changed from       0.707106780000 to       0.707106781187
+\end{verbatim}
+informing that the code recognized a value very close to $\sqrt{2}/2$ and
+changed it.
+
+The line
+\begin{verbatim}
+      Single geometry calculation
+\end{verbatim}
+informs that {\bf MD.TypeOfRun} was {ONE}.
+
+To be reproducible the information needed to generate the pseudopotentials
+is printed
+\begin{verbatim}
+    potentials :
+    ------------
+
+    Si  ca  nrl  nc
+    19-SEP-18 atom 5.804  Improved Troullier - Martinskb-loc= 2
+    3s(  2.00)  rc= 1.993p(  2.00)  rc= 1.993d(  0.00)  rc= 1.99
+    nql=4000 delql=   0.0100
+\end{verbatim}
+see the user guide of the pseudopotential generation code for details.
+
+Next the other chosen or default parameters are printed
+\begin{verbatim}
+    Local Density Approximation (LDA) using
+ Ceperley and Alder as parametrized by Perdew and Zunger
+
+ dual aproximation is used
+
+    The energy cutoff for wave-function kinetic energy is      10.000 Hartree
+
+    SCF is converged when the difference in potentials is less then     0.00001000
+    Iterative diagonalizationis converged when the error in |h psi - e psi| is less then     0.00001000
+
+    The temperature for electron Fermi distribution is       0.000Kelvin
+
+     Plane-wave basis calculation
+\end{verbatim}
+see previous section for the keywords associated.
+
+\subsection{Crystal data}
+
+In the output the initial crystal data is printed,
+\begin{verbatim}
+       CRYSTAL DATA
+
+
+      1081.02690815      volume
+
+   real-space metric
+
+        157.99703193     -52.66567731       0.00000000      metric  g11,g12,g13
+                         157.99703193       0.00000000      metric      g22,g23
+                                           52.66567731      metric          g33
+
+     12.56968703      12.56968703       7.25711219   length 1,2,3  (a.u.)
+
+    109.47122063      90.00000000      90.00000000   angle 12,13,23 (degrees)
+
+        position (lattice coord.)         position (cartesian coord. a.u.)     no. type
+
+      0.50000    0.50000    0.00000     0.72571E+01  0.00000E+00  0.00000E+00   1   Si    position
+     -0.12500    0.62500    0.00000     0.36286E+01  0.76973E+01  0.00000E+00   2   Si    position
+      0.00000    0.00000    0.00000     0.00000E+00  0.00000E+00  0.00000E+00   3   Si    position
+      0.37500    0.12500    0.00000     0.36286E+01 -0.25658E+01  0.00000E+00   4   Si    position
+      0.00000    0.50000    0.50000     0.36286E+01  0.51316E+01  0.36286E+01   5   Si    position
+      0.50000    0.00000    0.50000     0.36286E+01 -0.51316E+01  0.36286E+01   6   Ge    position
+      0.37500    0.62500    0.50000     0.72571E+01  0.25658E+01  0.36286E+01   7   Ge    position
+     -0.12500    0.12500    0.50000     0.00000E+00  0.25658E+01  0.36286E+01   8   Ge    position
+\end{verbatim}
+in what should be self-explanatory.
+
+Here we encounter a characteristic of the output, in that we have a value {\tt 1081.02690815}
+followed by a ``key'' {\tt volume}.  This allows a quick search for that key in the output.
+For example
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ grep volume ../Validation/Output/pw\_ref\_05.out}
+
+will return the volumes encoutered in Langevin a molecular dynamics
+with variational cell shape
+\begin{verbatim}
+       843.03621271      volume
+       844.20060174      volume
+       847.56015618      volume
+       852.95790991      volume
+       860.21678359      volume
+       869.14551064      volume
+       879.54271598      volume
+       891.20293979      volume
+         ...
+      1092.59744351      volume
+      1091.08256914      volume
+      1089.72581021      volume
+      1088.52562153      volume
+      1087.47977919      volume
+      1086.58556009      volume
+      1085.84052430      volume
+      1085.24216798      volume
+\end{verbatim}
+in a form that would be trivial to plot (for example with {\tt gnuplot}).
+
+\subsection{Crystal symmetry and reciprocal space info}
+
+The code recognizes the space group operations, although does not
+find its conventional name (we will later describe how to find it),
+it lists the symmetry operations, in lattice coordinates,
+first the matrix and than the eventual fractional coordinate.
+\begin{verbatim}
+    rotation matrices and fractional translations in lattice coordinates
+
+    1     1  0  0     0  1  0     0  0  1         0.0000000000     0.0000000000     0.0000000000    symmetry op.
+    2     0 -1  0    -1  0  0     0  0 -1        -0.5000000000    -0.5000000000     0.0000000000    symmetry op.
+    3     0 -1  0    -1  0  0     0  0  1        -0.5000000000    -0.5000000000     0.0000000000    symmetry op.
+    4     1  0  0     0  1  0     0  0 -1         0.0000000000     0.0000000000     0.0000000000    symmetry op.
+\end{verbatim}
+we have 4 symmetry operations, the first is the identity and the last is the reflection with respect
+to the ``z'' axis.  Remember that the code only uses the metric, and therefore the z-axis,
+which in this case is ``obvious'' because angles 13 and 23 are 90 degrees.
+In the general case it may be more complicated.
+
+Next the output informs that there are 13117 G-vectors, but only 1868 are unrelated by spatial or temporal
+symmetry, and some information about the maximum values of $g_i$ encountered in the expansion
+$\vec G = \sum_{i=1,3} g_i \vec b_i$ for the potential and charge densities.
+\begin{verbatim}
+    13117 G-vectors are set up in    1868 stars,  kmax =   17  17  10
+\end{verbatim}
+It also informs that of the $4 \times 4 \times 4$ integration grid in
+reciprocal space, there are 12 unrelated by symmetry, and that it will
+calculate 24 orbitals
+\begin{verbatim}
+    12 k-points generated by program from parameters :
+    n =    4    4    4      s =  0.50  0.50  0.50      nb =   24
+
+
+  Computing time for starting (s):           0.01
+\end{verbatim}
+
+\subsection{The SCF cycle}
+
+The first information about the SCF cycle is the FFT grid size and the maximum and
+minimum values of the local self-consistent potential.
+\begin{verbatim}
+      in fft for local potential n =   24   24   16
+
+  max and min of potential (Hartree)    0.1915   -4.8485    0.0000
+\end{verbatim}
+In the first iterations one may encounter warnings of the type
+\begin{verbatim}
+   WARNING       WARNING:   After h_kb_dia
+   The estimated error in energy has an accuracy
+  of      7.3 digits
+\end{verbatim}
+First, 7 digit accuracy is already quite good.  To be fast the code does not
+try to be very accurate in the early SCF iterations, saving computing time.
+As long as the warnings do not persist into the final iteration, these
+warnings can be ignored, they are here because they can be helpful if
+things go wrong...
+
+The information for iteration 8 is
+\begin{verbatim}
+  in fft for local potential n =   24   24   16
+
+  max and min of potential (Hartree)    0.1819   -4.7630    0.0000
+
+  the fermi level is at     5.9538 [eV]
+
+ total energy =   -31.8310932988
+  computing time for iteration     8          1.890
+\end{verbatim}
+again {\tt grep} may be used to find out what is happening along the SCF iterations.
+
+\subsection{Potential, energies and forces}
+
+Once self-consistency is achieved, the information about the reciprocal space expansion of
+the density and potential are printed,
+
+\begin{verbatim}
+   iteration number  9
+
+
+    i   k-prot         Ek       den     V(out)    V(in)     delta V   Vionic
+
+    1   0  0  0     0.00000  32.00000  -0.33659
+    2  -1  0  0     0.14055   0.01194   0.00052   0.00051   0.00001  -0.01183
+                              0.00024   0.00001   0.00001  -0.00000  -0.00000
+    3  -1  1  0     0.18740   0.01175   0.00039   0.00039   0.00000  -0.01138
+                              0.02455   0.00082   0.00081   0.00001  -0.02276
+    4  -1 -1  0     0.37480   0.00032  -0.00005  -0.00005  -0.00000   0.00971
+                              0.00000   0.00000   0.00000  -0.00000  -0.00000
+    5   0  0  1     0.37480   0.00298   0.00018   0.00018   0.00000  -0.02912
+                              0.00000   0.00000  -0.00000   0.00000   0.00000
+    6  -2  1  0     0.51535   0.01475   0.00007   0.00007   0.00000   0.00858
+                              0.00565   0.00006   0.00005   0.00000   0.00000
+    7   0 -1 -1     0.51535  -0.01402  -0.00007  -0.00007  -0.00000  -0.00858
+                             -0.00344  -0.00003  -0.00003  -0.00000   0.00000
+    8  -2  0  0     0.56220   4.98977   0.03271   0.03271  -0.00000  -0.16014
+                             -5.03324  -0.03301  -0.03301  -0.00000   0.15190
+    9  -1  1  1     0.56220   4.98124   0.03270   0.03270  -0.00000  -0.16014
+                              5.02352   0.03299   0.03299   0.00000  -0.15190
+\end{verbatim}
+after the index, one has the expansion of the G-vector, the kinetic energy associated
+(half the length squared) the Fourier coefficient of the density,
+the Fourier coefficients of the input and output XC potential, followed by the difference {\tt delta V}
+and the coefficients of the ionic pseudopotential.
+The self-consistency is done by potential mixing (many codes do density mixing) and the
+self-consistency condition is on  {\tt delta V}.
+
+Next we have the details of the total energy
+\begin{verbatim}
+           Iteration number  9    Energies (Ha)          Changes
+           ---------------------
+
+           Alpha Term        =         0.917257
+           Kinetic  Energy   =        11.949083         0.000022
+           Local PP Energy   =        -8.515343        -0.000104
+           Nonlocal Energy   =         5.722961         0.000071
+           -------------------------------------
+           Harris-Foulkes    =       -31.831093        -0.000000
+           -------------------------------------
+           Eigenvalue Sum    =         1.020901        -0.000013
+           HXC  Correction   =         8.135799         0.000001
+           Hartree  Energy   =         2.166313         0.000017
+           XC       Energy   =        -9.562418        -0.000005
+           Ewald    Energy   =       -33.591688
+           -------------------------------------
+           Total    Energy   =       -31.831093         0.000000
+\end{verbatim}
+The last column has the change with respect to the previous iteration,
+it is not zero in the contributions, but has six decimals in the variational
+total energy, meaning nice convergence.
+it should be noticed that the Harris-Foulkes energy is identical (within the
+six decimals) with the total energy, another sign of good convergence.
+
+Th total energy is the sum of the five last contributions,
+the Harris-Foulkes energy is the sum of the four first contributions
+plus the Ewald energy.
+
+The stress tensor is given in both lattice and cartesian coordinates
+\begin{verbatim}
+        Contravariant stress tensor  (a.u.)               Cartesian stress (GPa)
+         0.000642    0.000195    0.000000         0.239973E+01    0.929093E-12    0.267779E-13   stress 1               Total
+         0.000195    0.000642    0.000000         0.914063E-12    0.256751E+01   -0.116381E-13   stress 2               Total
+         0.000000    0.000000    0.000836         0.254685E-13   -0.104815E-13    0.119894E+01   stress 3               Total
+
+          0.00006986          2.05539463      pressure (au and GPa)                Total
+\end{verbatim}
+its trace (divided by three) is the pressure.
+
+Final information is the force on the atoms,
+\begin{verbatim}
+          Force (Lattice coord.)            Force (Cartesian coord. a.u)       no. type
+
+      0.00053   -0.00062    0.00000    -0.69115E-03 -0.11838E-01  0.74502E-17   1   Si    force                Total
+     -0.00001    0.00001   -0.00000    -0.80366E-16  0.15823E-03 -0.33131E-15   2   Si    force                Total
+      0.00062   -0.00053   -0.00000     0.69115E-03 -0.11838E-01 -0.30332E-15   3   Si    force                Total
+     -0.00058    0.00058    0.00000    -0.57519E-15  0.11843E-01  0.15964E-15   4   Si    force                Total
+     -0.00053    0.00053    0.00000    -0.14862E-15  0.10863E-01  0.88501E-16   5   Si    force                Total
+     -0.00063    0.00063   -0.00000    -0.51521E-15  0.12831E-01 -0.18928E-15   6   Ge    force                Total
+     -0.00032   -0.00091   -0.00000    -0.89184E-02 -0.60653E-02 -0.27596E-15   7   Ge    force                Total
+      0.00091    0.00032   -0.00000     0.89184E-02 -0.60653E-02 -0.51362E-16   8   Ge    force                Total
+\end{verbatim}
+indicating that we are close but not at equilibrium.
+
+Computing time is given at the very end
+\begin{verbatim}
+  Total computing time (s):        47.74    Elapsed time (s):        12.01
+\end{verbatim}
+with the ratio between computing and elapsed time indicating that the system had four cores.
+
+
+\section{Other files from cpw.exe}
+
+By design the code tries to write the minimum number of files.  With grep one should be able to
+produce relevant information.
+
+For example
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ grep "4   Si    position" ../Validation/Output/pw\_ref\_04.out}
+
+will produce the trajectory of the 4th atom in the simulation cell
+\begin{verbatim}
+      0.37456    0.12804    0.00365     0.36474E+01 -0.25300E+01  0.26210E-01   4   Si    position
+      0.37435    0.13059    0.01401     0.36644E+01 -0.25017E+01  0.10068E+00   4   Si    position
+      0.37460    0.13249    0.02300     0.36800E+01 -0.24848E+01  0.16520E+00   4   Si    position
+      0.37504    0.13449    0.02959     0.36977E+01 -0.24688E+01  0.21256E+00   4   Si    position
+      0.37525    0.13653    0.03398     0.37141E+01 -0.24500E+01  0.24414E+00   4   Si    position
+      0.37561    0.13857    0.03628     0.37314E+01 -0.24328E+01  0.26066E+00   4   Si    position
+      ....
+      0.37419    0.12132   -0.02379     0.35960E+01 -0.25952E+01 -0.17094E+00   4   Si    position
+      0.37595    0.11977   -0.02458     0.35975E+01 -0.26292E+01 -0.17655E+00   4   Si    position
+      0.37730    0.11958   -0.02441     0.36060E+01 -0.26451E+01 -0.17536E+00   4   Si    position
+      0.37842    0.11900   -0.02299     0.36098E+01 -0.26624E+01 -0.16519E+00   4   Si    position
+      0.37909    0.11856   -0.02009     0.36116E+01 -0.26738E+01 -0.14429E+00   4   Si    position
+      0.37946    0.11954   -0.01604     0.36213E+01 -0.26676E+01 -0.11524E+00   4   Si    position
+\end{verbatim}
+allowing the user to plot it.
+
+If the atoms move a {\tt cpw.out} file will be written.  With eventual modifications it can be used
+to continue the calculations with the final geometry.  Notice that the default choices are different.
+
+If the atoms move a {\tt RESTART.DAT} file will be present.  It may be used to continue the
+simulation for more steps, or restart if the calculation was interrupted by a power failure.
+
+The most important file will be {\tt PW\_RHO\_V.DAT}.  It is a binary file, so it cannot be modified by accident
+but that may not allow portability between different operating systems.
+It contains the information about the crystal structure, charge density and potential.
+
+
+\section{Post processing}
+
+Once the self-consistent potential for some structure has been saved to the {\tt PW\_RHO\_V.DAT} file,
+one can proceed to calculate many properties witn a post-processing code,
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$  ../cpw\_post\_process.exe}
+
+it is mainly an interactive code, asking questions and proceeding according to the answers.
+All the answers are printed back to a file \texttt{replay\_post.dat}.
+This way the user will have a record of the answers, and more important,
+may rerun the post processing, with eventually slight changes.
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$  cp replay\_post.dat replay.dat}
+
+and then, with optional minor editing of the file,
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$  ../cpw\_post\_process.exe < replay.dat}
+
+The post processing code is in fact several independent subroutines (sub-programs) called from the
+same top level program.
+
+That program loops at most 100 times (just edit if you want more!)
+asking what the user wants and reads an integer entered by the user.
+
+If the integer is zero, the program stops.  At lower levels of the program a choice of
+zero would return the execution to the calling level.
+
+If the integer is not in the allowed range, the question is repeated.
+In lower levels of the program an out of range choice gives the user a second chance.
+If the user gives again a wrong choice the code returns to the calling level.
+
+Looking at the examples
+
+
+\subsection{Band structures, density of states, optical response, quantum geometric,$\ldots$}
+
+This is the part of the post-processing that has the most options.
+The code gives a summary of the main parameters of the SCF calculation (geometry, pseudopotentials, etc,$\ldots$)
+and then informs the user what cutoff was used for the plane-wave expansion
+in the SCF calcualtion and asks the user what cutoff (s)he wants to use.
+Choosing the same cutoff is a safe option.  In this case only Hartree units are allowed.
+The code then asks if it can use the dual approximation, again answering ``yes'' is safe.
+It then asks if the user wants to modify other parameters.
+those are
+\begin{itemize}
+
+   \item{Eigenvalue precision}
+
+   You can change the eigenvalue precision of the iterative diagonalization
+   if you are not confortable with the default.  You can manage with a low
+   precision in most cases.
+
+   \item{Fermi energy}
+
+   The code will read from the file a reasonable guess of the Fermi energy.
+   In several cases it will shift the calculated eigenvalues by that value.
+   The estimate is not precise, and if you have a better
+   estimate you can enter it.
+
+\end{itemize}
+In most cases you can answer `no' to the question.
+
+The code then gives a choice of several types of calculations.
+
+\subsubsection{Band structure}
+
+The first option is to plot a band structure.  For that you need a path in the
+Brillouin zone.  That information must in a file called \texttt{BAND\_LINES.DAT}
+in the working directory.
+In the \texttt{Doc} folder the user can find information
+from {\sc Quantum Espresso} and  {\sc elk} that can help write or modify
+the \texttt{BAND\_LINES.DAT} file.
+In \texttt{Structures/Band\_Lines} the user can find some examples.
+
+An online help to generate a BZ path can be found in \texttt{https://seekpath.materialscloud.io/},
+based on Hinuma et. al., Comp. Mat. Sci. {\bf 128}, 140 (2017).
+Go to the Crystallography section of this document to find how to get a \texttt{.cif}
+or {\sc Quantum Espresso} input file that can be uploaded to that site.
+The \texttt{VASP KPOINTS input for LDA/GGA} result can be easily copied/pasted/edited
+to the texttt{BAND\_LINES.DAT} format.
+
+An example of a \texttt{BAND\_LINES.DAT} file for an fcc lattice is
+\begin{verbatim}
+  5       11          0.01
+  0.5     0.5     0.5         0.0     0.0     0.0      80       L   Lambda   Gamma
+  0.0     0.0     0.0         0.0     0.5     0.5      80       Gamma  Delta  X
+  0.0     0.5     0.5         0.25    0.625   0.625    20       X       S     K
+  0.25    0.625   0.625       1.0     1.0     1.0      60       K    Sigma   Gamma
+  0.5     0.5     0.5         0.25    0.75    0.5      60       L      Q     W
+\end{verbatim}
+In the first line one must specify the number of lines, 5 in this case, and
+how many bands (without spin) one wants to plot.  A third optional value
+gives the spacing between calcualted points.
+
+Each subsequent line indicates a pannel in the band structure plot.
+The initial and final point are indicated in reciprocal lattice
+coordinates.  In the example the conventional choice of
+primitive lattice vectors was used.  After the coordinates of the final point
+one has the number of points in that pannel, it is {\bf not} used if in the first
+line the spacing between points is specified.  Finally the
+labels of the first point, line and last point are specified.
+The code understands the meaning of the greek letters \texttt{Gamma, Lambda, Delta, Sigma}.
+
+\includegraphics[width=0.8\columnwidth]{band_Ge.pdf}
+
+A band structure for Ge is shown in the figure.  Notice that if the end of one pannel
+is the beginning of the next the pannels are joined.  If not a small space is introduced.
+
+The band structure can be calculted by several methods.
+
+\begin{itemize}
+
+   \item{Full plane wave basis diagonalization}
+
+   This is the ``normal'' case,  slower but most precise.
+   You will produced files with and without spin-orbit,
+   in the {\sc grace} and \texttt{gnuplot} formats.
+
+   The higher quality is the {\sc grace} file, \texttt{band\_so.agr} and \texttt{band.agr}
+   for the case with and without spin-orbit.  But you have to have installed the graphical software,
+   \texttt{https://plasma-gate.weizmann.ac.il/Grace/}, it is available on most linux distributions.
+   However development seems to have stopped.
+   It is a good start for publication quality figures.
+
+   Available in all distributions is gnuplot, just type
+
+   \noindent\texttt{cpw2000-5.x.y/WORK\$ gnuplot band\_so.gp}
+
+   and you will have a window with the band structure.
+
+   \item{Diagonalization in a Luttinger-Kohn basis}
+
+   This is very fast but only accurate around the $\Gamma$ point of the Brillouin zone.
+   It will produce the similar files as the previous case but with an added \texttt{\_lk}
+   in the file name.
+
+   \item{k.p method}
+
+   It is a second order expansion of the hamiltonian in a Luttinger-Kohn basis
+   around the $\Gamma$ point.  So it is very similar to the previous method,
+   but now he files have a \texttt{\_kp} added to the file name.
+
+   \item{2-k-point Luttinger-Kohn interpolation}
+
+   This is a very good compromise between speed and accuracy, but needs some additional
+   information.  It calculates the bands on a few points and then interpolates
+   with the GLK method between them.
+
+   The code first asks how many interpolation points you want between calculated points.
+   Notice that the values in \texttt{BAND\_LINES.DAT} that control the number of k-points
+   is {\it after} interpolation.  Besides the starting and end points on each pannel,
+   you need to calculate a few (1 to 3) intermediate points to have a good interpolation,
+   so the answer to that quaetion depends on how many final points you are going to have.
+   The speedup in computing time is almost the number of intermediate points.
+   Accuracy and computing time are again the compromises you have to take.
+
+   The code than asks if you want to accept the defaults of the calculation.
+   If unsure accept the defaults.  Otherwise read the code and the relevant article.
+
+   This option only produces the \texttt{grace} figures.  They have an added \texttt{\_lk\_int}
+   to the file names.  There is also a \texttt{band\_lk\_ref.agr} file with the reference (fully calculated)
+   bands.  It should have visible straight lines if you are using the method efficiently.
+
+
+\end{itemize}
+
+\subsubsection{Prepare file for density of states}
+
+This option writes files that allow later ploting of the density of states.
+It needs a file \texttt{DOS\_MESH.DAT} to be present in the working directory,
+and it will write a file \texttt{PW\_DOS.DAT} with the information.
+
+An example of a \texttt{DOS\_MESH.DAT} file is
+\begin{verbatim}
+    12  8 8 8   0.0 0.0 0.0
+\end{verbatim}
+it has a single line, the first integer is the desired number of bands, the next three integers are
+the mesh in reciprocal space, and the last three are the shift of the mesh.
+The section about Brillouin zone sampling explains their meaning.
+
+\subsubsection{Properties for single k-vector}
+
+This option allows to analyze in detail the eigenstates for a single k-vector.
+The code asks how many bands the user wants to analyze, followed by
+the lattice coordinates of the k-vector.
+
+\subsubsection{Prepare file for dielectric function calculation}
+
+This is similar to the prepare file for density of states.  Follow the instructions
+on that section.
+
+\subsubsection{Calculate effective band masses}
+
+This section allows the calculation of effective band masses with three different methods.
+
+\begin{itemize}
+
+   \item{Topological tensor}
+
+   This is the most accurate method.
+   It will ask first how many bands (not counting spin) should be calculated.
+   Afterwards the code asks which coordinate system the user wants to use,
+   and then what are the coordinates of the desired k-point.
+
+   The code will ask if the results should include spin-orbit, and, in the
+   affirmative case, which method should be used to diagonalize the Hamiltonian matrix.
+
+   \begin{itemize}
+
+      \item{Full diagonalization}
+
+      Recommended if you can afford a full diagonalize a matrix of the indicated size,
+      as it is the most accurate.
+
+      \item{Iterative diagonalization}
+
+      Much faster than full diagonalization for large matrices, but may be subject to noise.
+
+      \item{First order perturbation in spin-orbit}
+
+      Uses perturbation theory instead of matrix diagonalization.
+
+   \end{itemize}
+
+   The code will provide a list of energy levels, and then ask if the user wants
+   masses in a particular direction.  If the user answers `yes' it will
+   ask what coordinate system the user wants to use and then enter a loop
+   where the user can enter directions in the chosen coordinate system,
+   and the code will print the effective masses in that direction
+   for all bands.
+
+   Once the user indicates that it is done with directions,
+   the code will ask if the user wants a figure of
+   the masses for one band in all directions. If the user answers `yes'
+   the code will ask which band the user wants, and writes a file
+   \texttt{band\_}{\it n}[\texttt{\_so}]\texttt{.dat}, where {\it n}
+   is the band number, with the relevant information.
+   The instructions to produce a figure with Mathematica are printed out.
+
+
+   \item{k.p method}
+
+   This is a fast method, but in the end it will use a finite difference.
+   Read in the next section the dangers of finite differences calculations of masses.
+   It will ask first how many bands (not counting spin) should be included
+   in the exploratory calculation.  It is not the number of bands
+   of the k.p model.
+   The code gives an idea of the recommended {\it order of magnitude} of the answer.
+   Afterwards the code asks which coordinate system the user wants to use,
+   and then what what are the coordinates of the desired k-point.
+   It will then give the suggested values of the size of the k.p method.
+   Choose one of the suggestions, unless you have a strong reason to use another value.
+
+
+
+   \item{Finite differences}
+
+   This is a tricky procedure in the case of band crossings (or near avoided band crossings).
+   Use it with the utmost care.
+
+\end{itemize}
+
+\subsubsection{Calculate quantum geometric quantities}
+
+   This section of the code will calculate the Berry curvature, quantum metric,
+   orbital magnetic moment and effective mass tensors.
+   The analysis will proceed by {\it energy level} not by state.
+
+   The first question asked by the code is how many bands (not counting spin) should be examined.
+   It gives as hint the number of occupied states if the system was an insulator.
+   Enter a somewhat larger number.
+   Afterwards the code asks which coordinate system the user wants to use,
+   and then what what are the coordinates of the desired k-point.
+   It will then ask if spin-orbit should be taken into account, and, in the
+   affirmative case, which method should be used to diagonalize the Hamiltonian matrix.
+   See previous section for the meaning of the choices.
+
+   The code will then print the {\it energy levels} with spin polarization for each
+   state in that level.  It will then enter a loop asking which level
+   should be examined, and which quantity should be printed out.
+   The options are
+   \begin{itemize}
+
+      \item{All quantities}
+
+      All the options below
+
+      \item{Berry curvature}
+
+      An example of output for a non-degenerate level of hexagonal Te is
+      \begin{verbatim}
+         Berry curvature tensor for level with energy         5.480
+
+
+    primitive (reciprocal) lattice coordinates
+
+       0.000    -189.681      -0.000
+     189.681       0.000       0.000
+       0.000      -0.000       0.000
+
+
+    Cartesian lattice coordinates
+
+       0.000    -292.927      -0.000                        berry_curv    1    1   18
+     292.927       0.000       0.000                        berry_curv    1    2   18
+       0.000      -0.000       0.000                        berry_curv    1    3   18
+
+
+
+   Trace over coordinates       0.000
+
+
+
+    Associated pseudo-vector
+
+            0.000       0.000    -292.927                    berry_curvvector   18
+
+    Module:      292.927
+
+      \end{verbatim}
+      The $3\times3$ tensor is given in lattice coordinates and cartesian coordinates.
+      The columns and rows correspond to the $x$, $y$ and $z$ directions.
+      The meaning of those directions are with respect to the conventional orientation
+      indicated at the top of the SCF output.  In this case it is what we ``expect'' from
+      an hexagonal crystal.  The tensor is antisymmetric, only $\Omega_{xy}=-\Omega_{yx}$
+      are non-zero.  The antisymmetric tensor is converted to a pseudo-vector with only
+      the $\Omega_z$ component.  The trace is trivially zero.
+      Notice that some quantities are followed by keywords so that they can be found by a
+      \texttt{grep} command.
+
+      The output for a degenerate level is more complicated,
+      here again an output for hexagonal Te, at another k-point,
+      for a double degenerate energy level.
+      \begin{verbatim}
+   Berry curvature tensor for level with energy         4.464
+
+
+    primitive (reciprocal) lattice coordinates
+
+       0.000       6.017      -0.000          -0.000      -0.000       0.101
+      -6.017       0.000      -0.000          -0.000      -0.000       0.201
+       0.000       0.000       0.000          -0.101      -0.201      -0.000
+
+       0.000       0.000       0.101           0.000      -6.017       0.000
+       0.000       0.000       0.201           6.017       0.000       0.000
+      -0.101      -0.201       0.000          -0.000      -0.000       0.000
+
+
+    Cartesian lattice coordinates
+
+      -0.000       9.292      -0.000          -0.000      -0.000      -0.000                        berry_curv    1    1    9
+      -9.292       0.000      -0.000           0.000      -0.000       0.413                        berry_curv    1    2    9
+       0.000       0.000       0.000          -0.000      -0.413      -0.000                        berry_curv    1    3    9
+
+       0.000      -0.000       0.000           0.000      -9.292       0.000                        berry_curv    2    1    9
+       0.000       0.000       0.413           9.292       0.000       0.000                        berry_curv    2    2    9
+       0.000      -0.413       0.000          -0.000      -0.000       0.000                        berry_curv    2    3    9
+
+
+
+    Trace over coordinates
+
+      -0.000          -0.000
+       0.000           0.000
+
+    Trace over trace of coordinates      -0.000
+
+
+    Trace over energy levels
+
+           -0.000      -0.000      -0.000
+            0.000       0.000      -0.000
+            0.000       0.000       0.000
+
+
+    Pseudo-vector associated with the trace.
+
+           -0.000       0.000      -0.000                    berry_curvvector    9
+
+    Module:        0.000
+      \end{verbatim}
+      Now we have a $2 \times 2$ group of $3 times 3$ matrices.
+      The rows and columns of the $3 times 3$ matrices are the directions $x$, $y$ and $z$,
+      the rows and columns of the $2 \times 2$ grouping are associated
+      with each state within the doubly degenerate level.
+      As care was taken to choose the two states that span the degenerate energy
+      eigenspace, there is a nice apparent structure to this four index tensor.
+
+
+      \item{Quantum metric}
+
+      The quantum metric is a symmetric tensor.
+      An example of output for a non-degenerate level of hexagonal Te is
+      \begin{verbatim}
+Quantum metric tensor for level with energy         5.480
+
+
+    primitive (reciprocal) lattice coordinates
+
+     244.291     122.146      -0.000
+     122.146     244.291      -0.000
+      -0.000      -0.000     163.410
+
+
+    Cartesian lattice coordinates
+
+     326.719      -0.000      -0.000                        qua_metric    1    1   18
+      -0.000     326.719      -0.000                        qua_metric    1    2   18
+      -0.000      -0.000     516.225                        qua_metric    1    3   18
+
+
+
+   Trace over coordinates    1169.664
+
+
+   Trace over trace of levels    1169.664
+
+
+   Eigenvalues:      326.719     326.719     516.225
+        0.551E+08   Determinant qua_metric   18
+      \end{verbatim}
+      The structure of the results is similar to the case of
+      Berry curvature, but as the tensor is symmetric the trace is non-zero.
+      The code calculates a few of the invariants of the tensor.
+
+      An example for the degenerate case is
+      \begin{verbatim}
+Quantum metric tensor for level with energy         5.793
+
+
+    primitive (reciprocal) lattice coordinates
+
+     238.414     119.207      -0.000         -33.231      33.231     -29.478
+     119.207     238.414      -0.000          33.231      66.463      -5.677
+      -0.000      -0.000      58.036          23.800      -5.677       0.000
+
+     -33.231      33.231      23.800         238.414     119.207      -0.000
+      33.231      66.463      -5.677         119.207     238.414      -0.000
+     -29.478      -5.677       0.000          -0.000      -0.000      58.036
+
+
+    Cartesian lattice coordinates
+
+     318.858       0.000       0.000         -88.889       0.000     -63.227                        qua_metric    1    1   13
+       0.000     318.858      -0.000          -0.000      88.889     -11.670                        qua_metric    1    2   13
+       0.000      -0.000     183.341          63.227     -11.670       0.000                        qua_metric    1    3   13
+
+     -88.889      -0.000      63.227         318.858       0.000      -0.000                        qua_metric    2    1   13
+       0.000      88.889     -11.670           0.000     318.858      -0.000                        qua_metric    2    2   13
+     -63.227     -11.670       0.000          -0.000      -0.000     183.341                        qua_metric    2    3   13
+
+
+
+    Trace over coordinates
+
+     821.058          -0.000
+      -0.000         821.058
+
+    Trace over trace of coordinates    1642.116
+
+
+   Eigenvalues:      821.058     821.058
+        0.674E+06   Determinant qua_metric   13
+
+
+    Trace over energy levels
+
+          637.717       0.000      -0.000
+            0.000     637.717      -0.000
+           -0.000      -0.000     366.682
+
+   Trace over trace of levels    1642.116
+
+
+   Eigenvalues:      366.682     637.717     637.717
+        0.149E+09   Determinant qua_metric   13
+      \end{verbatim}
+      Besides the full tensor the code also calculate some traces and determinants.
+
+
+      \item{Orbital magnetic momentum}
+
+      The orbital magnetic momentum is antisymmetric like the Berry curvature.  See that case for details.
+
+      \item{Effective mass tensor}
+
+      The effective mass tensor is symmetric like the quantum metric.  See that case for details.
+
+      \item{Interband contribution to mass tensor}
+
+      The effective mass tensor has two contributions, the interband contribution is the real part
+      of a complex tensor whose imaginary part is the orbital magnetic momentum.
+      Here it is printed separately so the full complex tensor is available.
+
+   \end{itemize}
+
+
+\subsubsection{Reset dual approximation flag}
+
+This option allows to toggle the use of the dual approximation.
+Useful if you want to check its consequences.
+
+
+
+\subsection{Modified tight binding}
+
+For a fast dense sampling of the Brillouin zone, a modified tight-binding scheme
+can be used.  It has many similarities with Wannier interpolation, and in fact
+can be used to write the files required to call {\sc wannier90}.
+
+\subsection{Plot of charge densities and potentials}
+
+Plots or prepares the plots of real functions electron density, $\rho(\vec r)$, effective potential,
+$v_\text{eff}(\vec r)$ and some potential contributions.
+
+It can generate a three dimensional plot in the \texttt{".xsf} format of {\sc XCrysDen}
+compatible with {\sc vesta}, or a two dimensional level plot in a plane chosen by the user.
+
+An interesting capability is to plot along a line these quantities averaged over the
+perpendicular plane.  It is very useful to find band alignments.
+
+\subsection{Plot densities of states}
+
+The data for the calculation of the density of states and respective plot
+can be generated with different approaches.  This section of
+post processing reads the file with the data and generates the plot.
+
+Choices of graphics options are separated from the sometimes very heavy calculations of
+the bands throughout the Brillouin zone.
+
+\subsection{Exploration of a k.p model}
+
+The first option may store a k.p model in a file.
+This section allows the exploration of that model.
+
+\subsection{Plot dielectric function}
+
+Like the case of density of states, the data for the dielectric function
+is first calculated throughout the Brillouin zone,
+the choices of graphics options are chosen in this section of the code.
+
+\subsection{Plot of the wave-functions}
+
+It is similar to the plots of the charge density, but now the function
+to be plotted is complex, adding an extra choice of real part, imaginary part,
+or module, plus obviously the choice of which state to plot.
+Both 2D and 3D options are available.
+
+\subsection{Crystalography}
+
+This section allows a reveryough examination of the crystal structure.
+
+\subsection{Interface to Quantum Espresso}
+
+Quantum Espresso has many more developers than the present code.
+This section writes a QE input file.  The pseudopotential
+code can write the required pseudopotentials,
+including Troullier-Martins pseudopotentials with spin-orbit
+(a feature that is not available in the QE toolchain).
+The consistency between the two codes are at the 4th or 5th decimal
+place in the total energy.
+
+\section{Where to find crystal structures}
+
+Many example of \texttt{cpw.in} files can be found in the \texttt{Structures} directory.
+Besides (almost) all the elements, there are many files collected over the years.
+
+There is an auxiliary program in the toolbox, \texttt{Tools/gen\_PW.f90}
+that can help the user to create a \texttt{cpw.in} file by answering some questions.
+
+As mentioned before, the input file was chosen to be very similar to the
+{\sc siesta} input file, so the user adapt it easily.
+
+Another option is to convert any crystal file in the \texttt{".xyz} format
+which is sufficiently simple to be adapted.
+
+\section{Toolbox}
+
+In \texttt{Tools} directory the user can find a few useful tools.
+
+Most are sufficiently short that the user can easily read and modify the code.
+
+It also has programs that call one of the options of post-processing.
+They were used to develop those options.
+
+\subsection{Equation of state}
+
+From a few values of energy as a function of volume (or lattice constant for cubic systems),
+a least square fit is applied to the Murnaghan or Birch-Murnaghan equations of
+state.  The output is the equilibrium volume, bulk modulus and pressure derivative
+of the Bulk modulus.  If the user has several such data sets,
+the code will find the transition pressures between those structures.
+
+\subsection{Remove gnuplot commands from 2D plot files}
+
+The 2D plot files are in the gnuplot format, with plotting directives.  To remove the
+directives one can run \texttt{Tools/convert\_2Dplot.f90}
+
+\subsection{Crystalography from cpw.in}
+
+Doing a crystalographic analysis after a self-consistent calculation
+may be too late.  With \texttt{Tools/cpwin\_geom.f90}
+the analysis may be done from the \texttt{cpw.in} file.
+Read the crystallography sub-section of the post-processing section
+to see how it works.
+
+\subsection{Coulomb potential}
+
+The Coulomb potential for hydrogen can be generate by \texttt{Tools/h\_pot\_kb.f90}
+
+\subsection{Graphical interface for analysis of band structure}
+
+This is a very useful tool.  From a file with the relevant data
+it generates a very powerful GUI.  There is an earlier version \texttt{BandInfoUi}
+based on the \texttt{grace} plotting package, which is similar to the most recent
+package and therefore there is no need to describe in detail.
+
+The most recent package is the \texttt{QtBandViewer}.  It is a \texttt{python}
+code that uses the \texttt{Qt} user interface framework (\texttt{https://www.qt.io}).
+
+To install follow the instructions on \texttt{Tools/QtBandViewer/AAAREADME}.
+It is strongly recommended to create a python virtual environment under a working directory,
+and copy files there.  By some obscure reasons (the writer of the guide does not
+use python) the python files should be copied.  To use the tool you will need access to
+a \texttt{.bv} file format, by default named \texttt{BAND\_SO.DAT.bv} or
+\texttt{BAND.DAT.bv} with the band energies and the \texttt{BAND\_LINES.DAT} file
+used to generate those files.  Those data files can be huge so avoid copying
+them.
+
+As an example we will use the files generated from the structure
+file \texttt{Structures/Supercells/cpw\_Si6Ge6\_Si(001).in} with
+unfolding.  The \texttt{BAND\_LINES.DAT} was copied from
+\texttt{Structures/Supercells/band\_lines\_Si6Ge6\_Si(001).dat}
+
+
+once the code is installed, run it
+
+\noindent\texttt{cpw2000-5.x.y/WORK/QtBV\$ python3 QtBandViewer.py}
+
+\noindent
+The initial window is shown in the left of the figure.  Press the \texttt{Load} button,
+and a new window shown on the right will display the
+unfolded band structure.   Notice how the bottom of the conduction
+band appear to be in the $\Gamma$--X direction (parallel to the
+surface) and there are flat bands in the epitaxial growth direction
+$\Gamma$--Z.
+
+\begin{minipage}[b]{0.35\columnwidth}
+   \includegraphics[width=\columnwidth]{qtbv_init.png}
+\end{minipage}\hskip 0.03\columnwidth
+\begin{minipage}[b]{0.60\columnwidth}
+    \includegraphics[width=\columnwidth]{qtbv_band_all.png}
+\end{minipage}
+
+If now we deselect Si leaving only the Ge contributions, and select the $s$, $p$ and $d$ angular momenta,
+we see that ``dots'' at the bottom of the band are still dark, but that the flat band almost disappears.
+This indicates that the bottom of the conduction band has a contribution from the Ge layers
+and there is a localized band in the Si layer.
+
+\begin{minipage}[b]{0.35\columnwidth}
+   \includegraphics[width=\columnwidth]{qtbv_sp_ge.png}
+\end{minipage}\hskip 0.03\columnwidth
+\begin{minipage}[b]{0.60\columnwidth}
+    \includegraphics[width=\columnwidth]{qtbv_sp_ge_res.png}
+\end{minipage}
+
+Reselecting Si and deselecting Ge and keeping the $s$, $p$ and $d$ angular momenta,
+we confirm that the flat band is indeed mostly Si, the bottom of the conduction
+band has a Si contribution that is weaker than the Ge contribution.
+It is also apparent that for the valence band at the unfolded $\Gamma$
+there is a band below the top and split-off bands that has a stronger
+Si content.  For larger supercell periodicities it would converge to the band
+alignment between Si and strained Ge.
+
+
+\begin{minipage}[b]{0.35\columnwidth}
+   \includegraphics[width=\columnwidth]{qtbv_sp_si.png}
+\end{minipage}\hskip 0.03\columnwidth
+\begin{minipage}[b]{0.60\columnwidth}
+    \includegraphics[width=\columnwidth]{qtbv_sp_si_res.png}
+\end{minipage}
+
+
+
+
+
+
+\end{document}
