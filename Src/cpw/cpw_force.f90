@@ -15,20 +15,21 @@
 !>  it is an interface to force_stress_kb with the extra functions
 !>  of adding the Keating corrections and printing the result.
 !>
-!>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         20 October 93, 21 February 2024.
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.12
+!>  \date         20 October 93, 12 October 2024.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
-    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_)
+    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_, filename_)
 
 ! Written November 2019. JLM
 ! Modified upstream in January 2010. vff_add_keating. JLM
 ! Modified, error after keating, 18 February 2020. JLM
 ! Modified, indentation, another printing choices, 21 February 2024. JLM
+! Modified, option to read wave-functions from disk
 
 
 
@@ -50,6 +51,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
   type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
   type(vcsdyn_t)                     ::  vcsdyn_                         !<  variational cell shape molecular dynamics variables
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
   integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
   real(REAL64), intent(inout)        ::  strxc(3,3)                      !<  contribution of xc to the stress tensor (contravariant,Hartree)
@@ -65,9 +67,19 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
   integer                ::  minrat                                      !  if =1 minimize with respect to atomic positions
   integer                ::  minstr                                      !  if =1 minimize with respect to all adot variables, if =2 minimize with respect to adot(3,3)
 
-  call force_stress_kb(total_%force, total_%stress, total_%energy,       &
+  integer                ::  mxd_psi_allk                                !  last dimension of psi_allk
+
+
+  if(filename_%itape_save_psi > 9) then
+    mxd_psi_allk = 1
+  else
+    mxd_psi_allk = dims_%mxdnrk
+  endif
+
+
+  call force_stress_kb(total_%force, total_%stress,                      &
       ewald_%force, ewald_%stress, strxc, ealpha, flags_%flgpsd,         &
-      crys_%ntype, crys_%natom, crys_%nameat, crys_%rat, crys_%adot,     &
+      crys_%ntype, crys_%natom, crys_%rat, crys_%adot,                   &
       spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                         &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%mstar, recip_%ek,                                           &
@@ -77,6 +89,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
       psiallk_%psi_allk, psiallk_%occ_allk,                              &
       pseudo_%vql, pseudo_%dnc, pseudo_%dvql, pseudo_%ddc,               &
       kpoint_%nrk, kpoint_%nband, kpoint_%rk, kpoint_%wgk,               &
+      filename_%itape_save_psi, mxd_psi_allk,                            &
       dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp, dims_%mxddim,            &
       dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst, dims_%mxdnrk)
 

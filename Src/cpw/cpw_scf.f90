@@ -17,14 +17,14 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 2 October 2025.
+!>  \date         October 1993, 12 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_)
+      total_, ewald_, chdens_, filename_)
 
 
 ! version 4.0. 19 october 1993. jlm
@@ -47,6 +47,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, indentation, avoid infinite loop on mixer failure. 2 and 9 April 2025. JLM
 ! Modified, reintroduced Broyden miximng. 29 September 2025. JLM
 ! Modified, itmix=-1 indicates restarting. 2 October 2025. JLM
+! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
 
   use cpw_variables
 
@@ -174,12 +175,20 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !  integer, intent(inout)             ::  mtxd_allk(dims_%mxdnrk)         !<  dimension of the hamiltonian for k-point n
 !  integer,  intent(inout)            ::  isort_allk(dims_%mxddim,dims_%mxdnrk)  !<  G-vector associated with k+G vector i of hamiltonian for k-point n
 
-  type(psiallk_t)                    ::  psiallk_                         !<  psi for all k-points
+  type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
 
 !  complex(REAL64), intent(inout)     :: psi_allk(dims_%mxddim,dims_%mxdbnd,dims_%mxdnrk)  !<  eigenvectors for all k-points
 
 !  real(REAL64), intent(out)          ::  eig_allk(dims_%mxdnrk*dims_%mxdbnd)    !<  eigenvalue j, for all the k-points
 !  real(REAL64), intent(out)          ::  occ_allk(dims_%mxdnrk*dims_%mxdbnd)    !<  fractional ocupation of level j, for all the k-points
+
+  type(filename_t)                   ::  filename_                       !<  filenames
+
+!  character(len=200)                 ::  pseudo_path                   !<  path to pseudopotentials
+!  character(len=50)                  ::  pseudo_suffix                 !<  suffix for the pseudopotentials
+!  integer                            ::  itape_pseudo                  !<  tape number to read pseudo
+!  character(len=200)                 ::  save_psi_path                 !<  path to save psi files to disk
+!  integer                            ::  itape_save_psi                !<  tape number to read and write psi.  If < 10 (default 0) do not use.
 
 
   real(REAL64), intent(in)           ::  ealpha                          !<  alpha term. (G=0)
@@ -288,6 +297,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   integer                ::  nocc
 
   real(REAL64)           ::  pmix                                        !  mixing coefficient for diverging calculations
+
+  integer                ::  irkpsi                                      !  used for saving to disk
 
 ! counters
 
@@ -467,7 +478,19 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !     past first iteration one has a guess of the eigenvalues
 
-      if(iter > 1) iguess = 1
+      if(filename_%itape_save_psi > 9) then
+        irkpsi = 1
+      else
+        irkpsi = irk
+      endif
+
+      if(iter > 1) then
+        iguess = 1
+        if(filename_%itape_save_psi > 9) then
+          read(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
+        endif
+      endif
+
 
       mtxd = hamallk_%mtxd_allk(irk)
 
@@ -490,7 +513,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
             crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                &
             mtxd, hdiag, hamallk_%isort_allk(:,irk),                     &
             qmod, ekpg, lkpg,                                            &
-            psiallk_%psi_allk(:,:,irk), hpsi, ei,                        &
+            psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                     &
             vscr, kmscr,                                                 &
             atorb_%latorb, atorb_%norbat, atorb_%nqwf,                   &
             atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                    &
@@ -529,7 +552,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
             crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                &
             mtxd, hdiag, hamallk_%isort_allk(:,irk),                     &
             qmod, ekpg, lkpg,                                            &
-            psiallk_%psi_allk(:,:,irk), hpsi, ei,                        &
+            psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                     &
             vscr, kmscr,                                                 &
             atorb_%latorb, atorb_%norbat, atorb_%nqwf,                   &
             atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                    &
@@ -557,7 +580,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !     calculates the kinetic energy
 
-      call kinetic_energy(neig, mtxd, ekpg, psiallk_%psi_allk(:,:,irk), EKN,  &
+      call kinetic_energy(neig, mtxd, ekpg, psiallk_%psi_allk(:,:,irkpsi), EKN,  &
           dims_%mxddim,dims_%mxdbnd)
 
 !     prints the eigensolutions
@@ -571,7 +594,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       ickin = 1
 
       call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
-          mtxd, ickin, neig, psiallk_%psi_allk(:,:,irk),                 &
+          mtxd, ickin, neig, psiallk_%psi_allk(:,:,irkpsi),              &
           crys_%adot, ei, EKN, hamallk_%isort_allk(:,irk), recip_%kgv,   &
           dims_%mxddim, dims_%mxdbnd, dims_%mxdgve)
 
@@ -582,6 +605,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         psiallk_%eig_allk(iel) = ei(j)
         ekl(iel) = ekn(j)
       enddo
+
+!     stores the wavefunctions
+
+      if(filename_%itape_save_psi > 9) then
+        write(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
+      endif
 
 !     end of loop over k-points
 
@@ -632,6 +661,15 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     iel = 0
     do irk = 1,kpoint_%nrk
 
+!     reads psi if saved to disk
+
+      if(filename_%itape_save_psi > 9) then
+        read(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
+        irkpsi = 1
+      else
+        irkpsi = irk
+      endif
+
       rkpt(1) = kpoint_%rk(1,irk)
       rkpt(2) = kpoint_%rk(2,irk)
       rkpt(3) = kpoint_%rk(3,irk)
@@ -650,10 +688,10 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !     adds to total charge density
 
 
-      call charge_by_fft(mtxd, neig, occp,                               &
-          hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irk), denk,  &
-          recip_%ng, recip_%kgv, recip_%phase , recip_%conj, recip_%ns,  &
-          recip_%inds, recip_%kmax, recip_%mstar,                        &
+      call charge_by_fft(mtxd, neig, occp,                                  &
+          hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi), denk,  &
+          recip_%ng, recip_%kgv, recip_%phase , recip_%conj, recip_%ns,     &
+          recip_%inds, recip_%kmax, recip_%mstar,                           &
           dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
 
       if(xc_%author == "TBL") then
@@ -661,7 +699,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         allocate(tauk(dims_%mxdnst))
 
         call tau_by_fft(tauk, mtxd, neig, occp,                          &
-            hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irk),      &
+            hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),   &
             rkpt, crys_%adot,                                            &
             recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns, &
             recip_%inds, recip_%kmax, recip_%mstar,                      &

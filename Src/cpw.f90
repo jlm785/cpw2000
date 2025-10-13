@@ -191,7 +191,8 @@ program cpw2000
 ! hamiltonian matrix dimensions
 
   call cpw_size_alloc_hampsi(lnewnrk,                                    &
-     dims_, crys_, kpoint_, pwexp_, recip_, atorb_, hamallk_, psiallk_)
+     dims_, crys_, kpoint_, pwexp_, recip_, atorb_,                      &
+     hamallk_, psiallk_, filename_)
 
 
 ! array for saving charge density (unsymmetrized)
@@ -240,9 +241,10 @@ program cpw2000
 
     if(newcel) then
 
-     call cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,     &
-     dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,            &
-     chdens_, vcomp_, flags_, kpoint_, atorb_, hamallk_, psiallk_)
+      call cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
+      dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,           &
+      chdens_, vcomp_, flags_, kpoint_, atorb_,                          &
+      hamallk_, psiallk_, filename_)
 
 
     endif
@@ -281,7 +283,7 @@ program cpw2000
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_)
+      total_, ewald_, chdens_, filename_)
 
 
       iguess = 1
@@ -294,7 +296,7 @@ program cpw2000
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_)
+      total_, ewald_, chdens_, filename_)
 
 
     endif
@@ -307,7 +309,7 @@ program cpw2000
     call cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,             &
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
-    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_)
+    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_, filename_)
 
 
     if(flags_%flgcal /= 'ONE   ') then

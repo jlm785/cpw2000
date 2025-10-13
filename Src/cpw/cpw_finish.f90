@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         201x, 10 October 2025.
+!>  \date         201x, 12 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
@@ -85,6 +85,13 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
      .FALSE., .TRUE.,                                                    &
      dims_%mxdtyp, dims_%mxdatm)
+
+  if(filename_%itape_save_psi > 9) then
+
+    close(unit = filename_%itape_save_psi)
+    call execute_command_line('rm  '//adjustl(trim(filename_%save_psi_path))//'tmp_psi.dat')
+
+  endif
 
   return
 

@@ -15,8 +15,8 @@
 !>  basis for next cpw.in input file with new geometry
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.01
-!>  \date         June 2017
+!>  \version      5.12
+!>  \date         June 2017, 12 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -28,6 +28,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Adapted June 2017. JLM
 ! Bug squashed (metadata not from rede) September 2017.
 ! Write ideal volume if superlattice information is available. 21 June 2021. JLM
+! Modified, option to write wave-functions to disk, filename of pseudopotentials. 12 October 2025. JLM
 
 
   implicit none
@@ -374,6 +375,12 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("#TypeOfPotentialMixing        BFGS            # BFGS, BROYD1")')
   write(io,*)
   write(io,'("#TypeOfPseudopotential        PSEUKB          # PSEUKB")')
+  write(io,'("#PathToPseudos                tmp             #")')
+  write(io,'("#PseudoSuffix                 _POTKB_F.DAT    # _POTKB_F.DAT")')
+  write(io,'("#TapeToReadPseudo             40              #")')
+  write(io,*)
+  write(io,'("#TapeToSavePsi                10              #")')
+  write(io,'("#PathToSavePsi                tmp             #")')
   write(io,*)
   write(io,'("#ScfTolerance                 0.00005         #")')
   write(io,'("#DiagTolerance                0.0001          #")')

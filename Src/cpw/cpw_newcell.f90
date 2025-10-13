@@ -13,11 +13,22 @@
 
 !>  Performs required steps when a new primitive cell
 !>  appears in a minimization/molecular dynamics simulation
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.12
+!>  \date         Before February 2020, 12 October 2025
+!>  \copyright    GNU Public License v2
 
-subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    & 
+
+subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
      dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,            &
-     chdens_, vcomp_, flags_, kpoint_, atorb_, hamallk_, psiallk_)
- 
+     chdens_, vcomp_, flags_, kpoint_, atorb_,                           &
+     hamallk_, psiallk_, filename_)
+
+! Written from previous code before February 2020 (November 2019?). JLM
+! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
+
+
   use cpw_variables
 
   implicit none
@@ -28,7 +39,7 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
   type(spaceg_t)                     ::  spaceg_                         !<  space group information
   type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
   type(strfac_t)                     ::  strfac_                         !<  structure factors
-  type(chdens_t)                     ::  chdens_                         !<  charge densities    
+  type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
@@ -36,12 +47,13 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
   type(hamallk_t)                    ::  hamallk_                        !<  hamiltonian size and indexation for all k-points
   type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
   type(flags_t)                      ::  flags_                          !<  computational flags
-  
+  type(filename_t)                   ::  filename_                       !<  filenames
+
   logical, intent(inout)             ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
   integer, intent(inout)             ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
   logical, intent(inout)             ::  lnewnrk                         !<  new number of k-points
 
-  
+
   integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
   logical, intent(in)                ::  symkip                          !<  calculate symmetry
   real(REAL64), intent(in)           ::  symtol                          !<  tolerance for symmetry recognition
@@ -82,7 +94,7 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 
   if(lkpg) then
 
-    call gsp_update_ek(recip_%ns, recip_%mstar, recip_%ek,          & 
+    call gsp_update_ek(recip_%ns, recip_%mstar, recip_%ek,          &
     recip_%kgv, crys_%adot,                                         &
     dims_%mxdgve, dims_%mxdnst)
 
@@ -113,9 +125,9 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 
 !   calculates integration k-points
 
-    call cpw_bzint(iprglob, lnewnrk,                                &           
+    call cpw_bzint(iprglob, lnewnrk,                                &
               dims_, kpoint_, crys_, spaceg_,pwexp_)
- 
+
 
 
 !   hamiltonian matrix dimensions
@@ -123,7 +135,8 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 !    maxdim = 0
 
     call cpw_size_alloc_hampsi(lnewnrk, dims_,                      &
-      crys_, kpoint_, pwexp_, recip_, atorb_, hamallk_, psiallk_)
+      crys_, kpoint_, pwexp_, recip_, atorb_,                       &
+      hamallk_, psiallk_, filename_)
 
 
   endif

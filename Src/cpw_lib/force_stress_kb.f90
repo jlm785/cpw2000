@@ -14,13 +14,13 @@
 !>  Calculates the force and stress
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         20 October 93, 21 February 2024.
+!>  \version      5.12
+!>  \date         20 October 93, 12 October 2025.
 !>  \copyright    GNU Public License v2
 
-  subroutine force_stress_kb(force, stress, energy,                      &
+  subroutine force_stress_kb(force, stress,                              &
       forcew, strew, strxc, ealpha, flgpsd,                              &
-      ntype, natom, nameat, rat, adot,                                   &
+      ntype, natom, rat, adot,                                           &
       ntrans, mtrx, tnp,                                                 &
       ng, kgv, phase, conj, ns, mstar, ek,                               &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -28,6 +28,7 @@
       mtxd_allk, isort_allk, psi_allk, occ_allk,                         &
       vql, dnc, dvql, ddc,                                               &
       nrk, nband, rk, wgk,                                               &
+      itape_save_psi, mxd_psi_allk,                                      &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdnst, mxdnrk)
 
 ! Version 4.0. 20 october 93. jlm
@@ -36,6 +37,7 @@
 ! Modified f90, January 2017.  JLM
 ! Modified, documentation, January 2020. JLM
 ! Modified, indentation, remove print, 21 February 2024. JLM
+! Modified, option to read wave-functions from disk. 12 October 2025. JLM
 
 
   implicit none
@@ -53,7 +55,8 @@
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
   integer, intent(in)                ::  mxdnrk                          !<  array dimension of k-points
 
-  real(REAL64), intent(in)           ::  energy                          !<  Total electronic energy (Hartree)
+  integer, intent(in)                ::  mxd_psi_allk                    !<  last dimension of psi_allk
+
   real(REAL64), intent(in)           ::  forcew(3,mxdatm,mxdtyp)         !<  d enerew / d rat,  Ewald contribution to force (contravariant components)
   real(REAL64), intent(in)           ::  strew(3,3)                      !<  d enerew / d adot,  Ewald contribution to stress tensor (contravariant components)
   real(REAL64), intent(in)           ::  ealpha                          !<  G=0 contribution to the total energy (Hartree)
@@ -61,7 +64,6 @@
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
-  character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  lattice coordinates of atom j of type i
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
@@ -89,7 +91,6 @@
 
   integer, intent(in)                ::  mtxd_allk(mxdnrk)               !<  dimension of the hamiltonian for k-point n
   integer, intent(in)                ::  isort_allk(mxddim,mxdnrk)       !<  G-vector associated with k+G vector i of hamiltonian for k-point n
-  complex(REAL64), intent(in)        ::  psi_allk(mxddim,mxdbnd,mxdnrk)  !<  eigenvectors for all k-points
   real(REAL64), intent(in)           ::  occ_allk(mxdnrk*mxdbnd)         !<  fractional ocupation of level j, for all the k-points
 
   real(REAL64), intent(in)           ::  vql(mxdtyp,mxdnst)              !<  local pseudopotential for atom type i and prototype g-vector in star j       real*8 floc(3,mxdatm,mxdtyp)
@@ -102,9 +103,12 @@
   real(REAL64), intent(in)           ::  rk(3,mxdnrk)                    !<  component in lattice coordinates of the k-point in the mesh
   real(REAL64), intent(in)           ::  wgk(mxdnrk)                     !<  weight in the integration of k-point
 
+  integer                            ::  itape_save_psi                  !<  tape number to read and write psi.  If < 10 (default 0) do not use.
+
 ! input and output
 
   real(REAL64), intent(inout)        ::  strxc(3,3)                      !<  contribution of xc to the stress tensor (contravariant,Hartree).  It is only symmetrized here.
+  complex(REAL64), intent(inout)     ::  psi_allk(mxddim,mxdbnd,mxd_psi_allk)  !<  eigenvectors for all k-points
 
 ! output
 
@@ -117,7 +121,9 @@
   real(REAL64)         ::  rkpt(3)
   real(REAL64)         ::  sunsym(3,3), ssym(3,3)
   real(REAL64)         ::  strhl(3,3), strnlkb(3,3), strkin(3,3)
-  integer              ::  iel, neig, ipr, mtxd
+  integer              ::  iel, neig, mtxd
+
+  integer              ::  irkpsi                                        !  used for saving to disk
 
 ! allocatable variables
 
@@ -237,6 +243,16 @@
   iel = 0
   do irk = 1,nrk
 
+!   reads psi if saved to disk
+
+    irkpsi = irk
+    if(itape_save_psi > 9) then
+        read(itape_save_psi,rec = irk) psi_allk
+        irkpsi = 1
+    else
+      irkpsi = irk
+    endif
+
 !   loop over k-points
 
     rkpt(1) = rk(1,irk)
@@ -253,7 +269,7 @@
 !
     call for_str_kinetic_stress(strkin,                                  &
         mtxd, rkpt, neig, occp,                                          &
-        isort_allk(:,irk) ,psi_allk(:,:,irk),                            &
+        isort_allk(:,irk) ,psi_allk(:,:,irkpsi),                         &
         kgv,                                                             &
         mxdgve, mxddim, mxdbnd)
 
@@ -265,7 +281,7 @@
 
     call for_str_nl_kb(fnlkb, strnlkb,                                   &
         mtxd, rkpt, neig, occp,                                          &
-        isort_allk(:,irk), psi_allk(:,:,irk),                            &
+        isort_allk(:,irk), psi_allk(:,:,irkpsi),                         &
         kgv,                                                             &
         nqnl, delqnl, vkb, nkb,                                          &
         ntype, natom, rat, adot,                                         &
