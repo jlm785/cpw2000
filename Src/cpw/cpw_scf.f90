@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 12 October 2025.
+!>  \date         October 1993, 14 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -48,6 +48,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, reintroduced Broyden miximng. 29 September 2025. JLM
 ! Modified, itmix=-1 indicates restarting. 2 October 2025. JLM
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
+! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 
   use cpw_variables
 
@@ -300,6 +301,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   integer                ::  irkpsi                                      !  used for saving to disk
 
+  logical                ::  lexccalc                                    !  exchange energy calculated.  False in Tran-Blaha, etc...
+
 ! counters
 
   integer       ::  i, j
@@ -307,10 +310,11 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 ! parameters
 
-  real(REAL64), parameter :: ZERO = 0.0_REAL64
-  real(REAL64), parameter :: UM = 1.0_REAL64
-  real(REAL64), parameter :: DELTA = 1.0_REAL64                          !  criterium for divergence  HARD CODED HARD CODED
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter     ::  UM = 1.0_REAL64
+  real(REAL64), parameter     ::  DELTA = 1.0_REAL64                     !  criterium for divergence  HARD CODED HARD CODED
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  real(REAL64), parameter     ::  EPS = 1.0E-10_REAL64
 
 ! You can reduce mxdupd,mxdscf in the unlikey case this takes too much
 ! memory (linear in number of atoms, only relevant for very old machines)
@@ -648,13 +652,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     allocate(tau(dims_%mxdnst))
 
-   if(xc_%author == "TBL") then
-     do i = 1,recip_%ns
-       tau(i) = C_ZERO
-     enddo
-   endif
+    if(xc_%author == "TBL") then
+      do i = 1,recip_%ns
+        tau(i) = C_ZERO
+      enddo
+    endif
 
-!  second loop over k-points
+!   second loop over k-points
 
 
     ektot = zero
@@ -771,6 +775,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         pseudo_%ztot, crys_%adot,                                        &
         dims_%mxdgve, dims_%mxdnst)
 
+!   traps the case where E_xc is not calculated.
+
+    lexccalc = .TRUE.
+    if(abs(exc) < EPS) lexccalc = .FALSE.
+
+!   detects problems in convergence
+
     if(abs(itmix) == 1) then
 
       enerlow = total_%energy
@@ -784,7 +795,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     else
 
-      if(total_%energy < enerlow) then
+      if(total_%energy < enerlow .and. lexccalc) then
 
         enerlow = total_%energy
         itlow = itmix
@@ -795,9 +806,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
           vhxcoutlow(i) = vhxcout(i)
         enddo
 
-      else
-
-        if(oldenergy < total_%energy - 1.0) then
+        if(oldenergy < total_%energy - 0.01*abs(oldenergy) .and. itmix > 2) then
 
           if(nfailmix < maxnfailmix) then
 
@@ -830,6 +839,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
           endif
 
         endif
+
       endif
 
     endif
@@ -849,7 +859,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     else
 
-      call mixer_bfgs_c16(itmix, crys_%adot, pseudo_%ztot,               &
+      call mixer_bfgs_c16(itmix, lexccalc, crys_%adot, pseudo_%ztot,     &
           bandwid, penngap, total_%energy,                               &
           recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
           recip_%mstar, recip_%ek,                                       &

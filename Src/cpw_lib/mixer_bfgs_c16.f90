@@ -16,14 +16,15 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         May 20,1999. 8 October 2025.
+!>  \date         May 20,1999. 14 October 2025.
 !>  \copyright    GNU Public License v2
 
 
-subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
-  ng, phase, conj, ns, mstar, ek,                                        &
-  vhxc, vhxcout, delvhxc,                                                &
-  mxdgve, mxdnst, mxdupd, mxdscf)
+subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
+    bandwid, penngap, energy,                                            &
+    ng, phase, conj, ns, mstar, ek,                                      &
+    vhxc, vhxcout, delvhxc,                                              &
+    mxdgve, mxdnst, mxdupd, mxdscf)
 
 ! Uses the Broyden-Fletcher-Goldfarb-Shanno method
 ! Numerical Recipes (2nd ed), Eq. 10.7.8.
@@ -41,6 +42,7 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
 ! Modernized. 20 June 2021. JLM
 ! Modified, itmix = -1 indicates restart. 2 October 2025. JLM
 ! Modified, logic of xmix_max_min, 8 October 2025. JLM
+! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 
   implicit none
 
@@ -55,6 +57,9 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
   integer, intent(in)                ::  mxdscf                          !<  array dimension of old scf-iteration information
 
   integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial value is iter in cpw_scf. itmix = -1 indicates a restart.
+  logical, intent(in)                ::  lexccalc                        !<  exchange energy calculated.  False in Tran-Blaha, etc...
+
+
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
   real(REAL64), intent(in)           ::  bandwid                         !<  occupied band width estimate (Hartree)
@@ -177,7 +182,7 @@ subroutine mixer_bfgs_c16(itmix, adot, ztot, bandwid, penngap, energy,   &
 ! reduces xmix_simple_max
 
   if(icount > 0) then
-    if(energy > oldener) then
+    if(energy > oldener .and. lexccalc) then
       xmix_simple_max = 0.8*xmix_simple_max
       if(xmix_simple_max < 2.0*xmix_simple_min) xmix_simple_max = 2.0*xmix_simple_min
       if(xmix_simple_max < 0.1) xmix_simple_max = 0.1
