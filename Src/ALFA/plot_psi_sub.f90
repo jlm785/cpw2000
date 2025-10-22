@@ -16,8 +16,8 @@
 !>  k-point and makes 1D, 2D, and 3D plots.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.03
-!>  \date         16 February 2018, 29 November 2021.
+!>  \version      5.12
+!>  \date         16 February 2018, 22 October 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modernized, documentation, APIs, 2 February 2021. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, size of author, 13 January 2024.
+! Modified, enter method for k-point. 22 October 2025. JLM
 
 
   use cpw_variables
@@ -245,6 +246,9 @@ subroutine plot_psi_sub(ioreplay)
 
   real(REAL64)           ::  rk0(3)
 
+  real(REAL64)           ::  rkcar(3)
+  character(len=20)      ::  typeofk
+
   integer                ::  iotape
   character(len=60)      ::  filename
 
@@ -291,33 +295,11 @@ subroutine plot_psi_sub(ioreplay)
 
   epspsi = 0.0005
 
-!   write(6,*)
-!   write(6,*) '  Do you want to use the dual approximation (y/n)?'
-!   write(6,*) '  For wave-function plots the approximation is safe'
-!   read(5,*) yesno
-!   write(ioreplay,'(2x,a1,"   dual")') yesno
-!
-!   flgdal = '    '
-!   if(yesno == 'y' .or. yesno == 'Y') then
     flgdal = 'DUAL'
-!     write(6,*)
-!     write(6,*) '  Will use DUAL approximation'
-!     write(6,*)
-!   else
-!     write(6,*)
-!     write(6,*) '  Will not use dual approximation'
-!     write(6,*)
-!   endif
-!
-!   if(flgdal == 'DUAL') then
+
     kmscr(1) = recip_%kmax(1)/2 + 2
     kmscr(2) = recip_%kmax(2)/2 + 2
     kmscr(3) = recip_%kmax(3)/2 + 2
-!   else
-!     kmscr(1) = kmax(1)
-!     kmscr(2) = kmax(2)
-!     kmscr(3) = kmax(3)
-!   endif
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
@@ -357,13 +339,9 @@ subroutine plot_psi_sub(ioreplay)
 
     mxdbnd = neig
 
-    write(6,*)
-    write(6,*) ' enter k-point '
-    write(6,*)
+    typeofk = 'reference k-point'
 
-    read(5,*) rk0(1),rk0(2),rk0(3)
-    write(ioreplay,'(3(2x,f20.10),"   k-point")') rk0(1),rk0(2),rk0(3)
-
+    call cpw_pp_get_k_vector(rk0, rkcar, crys_%adot, typeofk, ioreplay)
 
     call size_mtxd(pwexp_%emax, rk0, crys_%adot, recip_%ng, recip_%kgv, mtxd)
 
@@ -493,5 +471,6 @@ subroutine plot_psi_sub(ioreplay)
   deallocate(vscr)
 
   return
+
 end subroutine plot_psi_sub
 

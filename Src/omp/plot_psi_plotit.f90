@@ -13,6 +13,11 @@
 
 !>  Plots or prepares the  1D, 2D, or 3D plots of the wave-functions
 !>  for a given k-point.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.12
+!>  \date         20 February 2018. 22 October 2024.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_psi_plotit(ioreplay, nc,                                 &
               adot, ntype, natom, nameat, rat, zv,                       &
@@ -24,10 +29,9 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 ! Written 20 February 2018 based on cpw_analysis_sub, out_band_onek,
 ! and rho_v_plot_sub.
 ! Documentation, merge of with(out) spin-orbit 3 February 2021. JLM
+! Maximum value of iorb with spin-orbit. 22 October 2024.  JLM
 
-! copyright  Jose Luis Martins/INESC-MN
 
-! version 4.99
 
   implicit none
 
@@ -59,8 +63,8 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   integer, intent(in)                ::  neig                            !<  number of eigenvectors
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
-  complex(REAL64), intent(in)        ::  psi(nc*mxddim,nc*mxdbnd)        !<  |psi> 
-  real(REAL64), intent(in)           ::  ei(nc*mxdbnd)                   !<  eigenvalue (hartree)       
+  complex(REAL64), intent(in)        ::  psi(nc*mxddim,nc*mxdbnd)        !<  |psi>
+  real(REAL64), intent(in)           ::  ei(nc*mxdbnd)                   !<  eigenvalue (hartree)
 
 ! local allocatable arrays
 
@@ -85,7 +89,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
   integer         ::  kd1, kd2, kd3
   integer         ::  k1, k2, k3
   integer         ::  ntot, it
- 
+
 ! parameters
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
@@ -168,7 +172,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 
     write(6,*)
     write(6,*) '  Which orbital do you want to plot?'
-    write(6,*) '  1 to ',neig
+    write(6,*) '  1 to ',nc*neig
     write(6,*)
     write(6,*) '  0 ends ploting for this k-point'
     write(6,*)
@@ -176,7 +180,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
     read(5,*) iorb
     write(ioreplay,'(2x,i8,"   orbital choice")') iorb
 
-    if(iorb < 0 .or. iorb > neig) then
+    if(iorb < 0 .or. iorb > nc*neig) then
 
       iorb = 0
       write(6,*)
@@ -197,7 +201,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 
     write(6,'("  The energy of orbital ",i5," is:",f12.3,"eV")')         &
                            iorb,ei(iorb)*EV
- 
+
 !$omp parallel do default(shared) private(i)
     do i = 1,ntot
       rhomsh(i) = ZERO
@@ -245,7 +249,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 !     fourier transform to real space
 
       call cfft_wf_c16(chd1, id, n1,n2,n3, kd1,kd2,kd3, -1, wrkfft, mxdwrk)
-    
+
       call cfft_wf_c16(chd2, id, n1,n2,n3, kd1,kd2,kd3, -1, wrkfft, mxdwrk)
 
     endif
@@ -264,10 +268,10 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
         write(6,*) '  2)  real part of periodic part of psi'
         write(6,*) '  3)  imaginary part of periodic part of psi'
         write(6,*)
-        
+
         read(5,*) ipsi
         write(ioreplay,'(2x,i8,"   choice of component of psi")') ipsi
-        
+
         if(ipsi < 0 .or. ipsi > 3) then
 
           ipsi = 1
@@ -398,7 +402,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
         chd(i) = cmplx(rhomsh(i),ZERO,REAL64)
       enddo
 !$omp end parallel do
-           
+
 
       call rfft_c16(chd, id, n1,n2,n3, 1, wrkfft, mxdwrk)
 
@@ -419,10 +423,10 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
         write(6,*) '  2)  Two dimensional (contour) plot'
         write(6,*) '  3)  Three dimensional plot'
         write(6,*)
-        
+
         read(5,*) iplot
         write(ioreplay,'(2x,i8,"   plot dimensionality")') iplot
-        
+
         if(iplot < 0 .or. iplot > 3) then
 
           iplot = 0
@@ -464,7 +468,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 
     enddo                                  !  loop over possible components
 
-  enddo                                    !  loop over possible orbitals 
+  enddo                                    !  loop over possible orbitals
 
   deallocate(chd)
   if(nc == 2) then
