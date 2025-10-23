@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         8 May 2004. 24 September 2025.
+!>  \date         8 May 2004. 23 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -44,6 +44,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, name oscillator_strength. 16 May 2024. JLM
 ! Modified, more flexibility in oscillator strength. 14 May 2025. JLM
 ! Modified, input of desired k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
+! Modified, oscillator strength on a given direction.
 
   implicit none
 
@@ -170,6 +171,7 @@ subroutine out_band_onek(ioreplay,                                       &
   real(REAL64)      ::  emidgap                                          !  rough estimate of the mid-gap
 
   character(len=1)  ::  yesno
+  character(len=1)  ::  yesno2
   integer           ::  nsmall
 
   integer           ::  info
@@ -178,7 +180,10 @@ subroutine out_band_onek(ioreplay,                                       &
   integer           ::  ninitbeg, ninitend                               !  begin and end of initial state index for oscillator strength
   integer           ::  nfinalbeg, nfinalend                             !  begin and end of final state index
 
-  logical           ::  lpair, lexcit                                    !  display format of oscillator strength
+  logical           ::  lpair, lexcit, lxyz                              !  display format of oscillator strength
+  character(len=20) ::  typeofr                                          !  label for type of r-point                                         !
+  real(REAL64)      ::  rdir(3)                                          !  choice of r-point (lattice coordinates)
+  real(REAL64)      ::  rdircar(3)                                       !  choice of r-point (cartesian coordinates)
 
 ! constants
 
@@ -270,6 +275,8 @@ subroutine out_band_onek(ioreplay,                                       &
 
   read(5,*) yesno
   write(ioreplay,*) yesno,'   without SO'
+
+! Without spin-orbit
 
   if(yesno == 'y' .or. yesno == 'Y') then
 
@@ -449,15 +456,34 @@ subroutine out_band_onek(ioreplay,                                       &
             ninitbeg, ninitend, nfinalbeg, nfinalend, lpair, lexcit,     &
             mxdbnd)
 
+      write(6,*)
+      write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+      write(6,*) '  Otherwise you will be asked for the desired direction.'
+      write(6,*)
+
+      read(5,*) yesno2
+      write(ioreplay,*) yesno2,'   x y z directions'
+
+      if(yesno2 == 'y' .or. yesno2 == 'Y') then
+
+        lxyz = .TRUE.
+
+      else
+
+        lxyz = .FALSE.
+        typeofr = 'direction'
+        call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+      endif
+
       call out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
-          lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,       &
+          lpair, lexcit, lxyz, rdircar,                                  &
+          ninitbeg, ninitend, nfinalbeg, nfinalend,                      &
           mxdbnd)
 
       deallocate(dh0drk)
 
-   endif
-
-
+    endif
 
   endif
 
@@ -622,18 +648,34 @@ subroutine out_band_onek(ioreplay,                                       &
 
       enddo
 
-!       ninitbeg = 1
-!       ninitend = nint(ztot)
-!       nfinalbeg = ninitend + 1
-!       nfinalend = 2*neig
-
       call out_band_oscillator_range(ioreplay, .TRUE.,                   &
             2*neig, ei_so, ztot,                                         &
             ninitbeg, ninitend, nfinalbeg, nfinalend, lpair, lexcit,     &
             2*mxdbnd)
 
+      write(6,*)
+      write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+      write(6,*) '  Otherwise you will be asked for the desired direction.'
+      write(6,*)
+
+      read(5,*) yesno2
+      write(ioreplay,*) yesno2,'   x y z directions'
+
+      if(yesno2 == 'y' .or. yesno2 == 'Y') then
+
+        lxyz = .TRUE.
+
+      else
+
+        lxyz = .FALSE.
+        typeofr = 'direction'
+        call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+      endif
+
       call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,      &
-          lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,       &
+          lpair, lexcit, lxyz, rdircar,                                  &
+          ninitbeg, ninitend, nfinalbeg, nfinalend,                      &
           2*mxdbnd)
 
       deallocate(vec_so)

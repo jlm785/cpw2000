@@ -14,18 +14,20 @@
 !>  calculates and prints the oscillator strengths
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         2 July 2014.  14 May 2025.
+!>  \version      5.12
+!>  \date         2 July 2014.  23 October2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
-               lpair, lexcit, ninitbeg, ninitend, nfinalbeg, nfinalend,  &
+               lpair, lexcit, lxyz, rdircar,                             &
+               ninitbeg, ninitend, nfinalbeg, nfinalend,                 &
                mxdbnd)
 
 ! Written July 2, 2014. JLM
 ! Modified, 4 March 2020, documentation. JLM
 ! Modified, name, indentation, new grouping of excitation levels. 16 May 2024. JLM
 ! Modified to be more flexible. 14 May 2025. JLM
+! Modified to allow values in a giben direction. 23 October2025. JLM
 
 
   implicit none
@@ -40,8 +42,12 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
   real(REAL64), intent(in)           ::  ei(mxdbnd)                      !<  eigenvalues (Hartree) for rk0
   complex(REAL64), intent(in)        ::  dh0drk(mxdbnd,mxdbnd,3)         !<  d <Psi|H|Psi> d k
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
+
   logical, intent(in)                ::  lpair                           !<  prints the oscillator strengths for pairs of bands
   logical, intent(in)                ::  lexcit                          !<  prints the oscillator strengths by excitation energies
+  logical, intent(in)                ::  lxyz                            !<  prints osc. str. in x y z directions.  Otherwise in rdircar direction
+  real(REAL64), intent(in)           ::  rdircar(3)                      !<  choice of direction (cartesian coordinates)
+
   integer, intent(in)                ::  ninitbeg, ninitend              !<  begin and end of initial state index
   integer, intent(in)                ::  nfinalbeg, nfinalend            !<  begin and end of final state index
 
@@ -77,9 +83,13 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
   real(REAL64)      ::  sm(3)                      !  sum of M^2
   real(REAL64)      ::  so                         !  sum of F_if
 
+  real(REAL64)      ::  xsum
+  real(REAL64)      ::  rdirnorm(3)                !  normalized rdircar
+  real(REAL64)      ::  ematdirsq                  !  emat in a given direction squared
+
 ! constants
 
-  real(REAL64), parameter     ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter     ::  PI = 3.14159265358979323846_REAL64
   real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
@@ -121,6 +131,26 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
 
     stop
 
+  endif
+
+  if(.not. lxyz) then
+    xsum = ZERO
+    do i = 1,3
+      xsum = xsum + rdircar(i)*rdircar(i)
+    enddo
+    if(xsum > TOL*TOL*TOL) then
+      do i = 1,3
+        rdirnorm(i) = rdircar(i) / sqrt(xsum)
+      enddo
+    else
+      write(6,*)
+      write(6,*) '   Small or zero direction vector'
+      write(6,*) '   using x-direction'
+      write(6,*)
+      rdirnorm(1) = UM
+      rdirnorm(2) = ZERO
+      rdirnorm(3) = ZERO
+    endif
   endif
 
 
@@ -183,9 +213,14 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
     write(6,*)
 
     write(6,*)
-    write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,                &
-          &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_x|**2",4x,             &
-          &   "|M_y|**2",4x,"|M_z|**2")')
+    if(lxyz) then
+      write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,              &
+            &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_x|**2",4x,           &
+            &   "|M_y|**2",4x,"|M_z|**2")')
+    else
+      write(6,'(4x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",5x,              &
+            &   "|<i|dH/dk|f>|**2",8x,"F_if",9x,"|M_dir|**2")')
+    endif
     write(6,*)
 
     do i = 1,ninit
@@ -197,11 +232,23 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
         jj = nfinalbeg + j - 1
         lnodup(ji) = .FALSE.
         if(abs(efmei(ij)) > TOL) then
-          write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')     &
-              ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                    &
-              real(ematif(ij)),                                          &
-              (2.0/3.0)*real(ematif(ij))/efmei(ij),                      &
-              (abs(ematcar(ij,k))**2,k=1,3)
+          if(lxyz) then
+            write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')   &
+                ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                  &
+                real(ematif(ij)),                                        &
+                (2.0/3.0)*real(ematif(ij))/efmei(ij),                    &
+                (abs(ematcar(ij,k))**2,k=1,3)
+          else
+            ematdirsq = abs(ematcar(ij,1)*rdirnorm(1) +                  &
+                            ematcar(ij,2)*rdirnorm(2) +                  &
+                            ematcar(ij,3)*rdirnorm(3))
+            ematdirsq = ematdirsq*ematdirsq
+            write(6,'(i5,f10.3,i5,f10.3,6x,f12.5,4x,f12.5,4x,3f12.5)')   &
+                ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                  &
+                real(ematif(ij)),                                        &
+                (2.0/3.0)*real(ematif(ij))/efmei(ij),                    &
+                ematdirsq
+          endif
         endif
       endif
     enddo
@@ -272,15 +319,22 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
         write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')   &
               n, levdeg(n), efmei(indx(leveigs(n,1)))*HARTREE
         write(6,*)
-        write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,      &
-            &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                    &
-            &   "|M_x|**2",4x,"|M_y|**2",4x,"|M_z|**2",9x,                          &
-            &   "|Fij_x|**2",2x,"|Fij_y|**2",2x,"|Fij_z|**2")')
+        if(lxyz) then
+          write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,    &
+              &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                  &
+              &   "|M_x|**2",4x,"|M_y|**2",4x,"|M_z|**2",9x,                        &
+              &   "|Fij_x|**2",2x,"|Fij_y|**2",2x,"|Fij_z|**2")')
+        else
+          write(6,'(1x,"E_i-E_f(eV)",2x,"i",3x,"E_i(eV)",4x,"f",3x,"E_f(eV)",3x,    &
+              &   "|<i|dH/dk|f>|**2",6x,"F_if",9x,                                  &
+              &   "|M_dir|**2",6x,"|Fij_dir|**2")')
+        endif
         write(6,*)
         do k = 1,3
           sm(k) = ZERO
         enddo
         so = ZERO
+        xsum = ZERO
 
         do m = 1,levdeg(n)
 
@@ -289,22 +343,43 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
           j = ij - (i-1)*nfinal
           ii = ninitbeg + i - 1
           jj = nfinalbeg + j - 1
-          do k = 1,3
-            sm(k) = sm(k) + abs(ematcar(ij,k))**2
-          enddo
+          if(lxyz) then
+            do k = 1,3
+              sm(k) = sm(k) + abs(ematcar(ij,k))**2
+            enddo
+          else
+            ematdirsq = abs(ematcar(ij,1)*rdirnorm(1) +                    &
+                            ematcar(ij,2)*rdirnorm(2) +                    &
+                            ematcar(ij,3)*rdirnorm(3))
+            ematdirsq = ematdirsq*ematdirsq
+            xsum = xsum + ematdirsq
+          endif
           so = so + (2.0/3.0)*real(ematif(ij))/efmei(ij)
 
-          write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
-                &   3f12.5,4x,3f12.5)')                                  &
-              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE, &
-              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),    &
-              (abs(ematcar(ij,k))**2,k=1,3),                             &
+          if(lxyz) then
+            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
+                &   3f12.5,4x,3f12.5)')                                    &
+              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,   &
+              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),      &
+              (abs(ematcar(ij,k))**2,k=1,3),                               &
               (abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
+          else
+            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
+                &   f12.5,4x,f12.5)')                                      &
+              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,   &
+              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),      &
+              ematdirsq, ematdirsq/efmei(ij)
+          endif
 
         enddo
         write(6,*)
-        write(6,'(52x,"sum = ",f12.5,4x,3f12.5,4x,3f12.5)')              &
-              so, (sm(k),k=1,3), (sm(k)/efmei(ij),k=1,3)
+        if(lxyz) then
+          write(6,'(52x,"sum = ",f12.5,4x,3f12.5,4x,3f12.5)')              &
+                so, (sm(k),k=1,3), (sm(k)/efmei(ij),k=1,3)
+        else
+          write(6,'(52x,"sum = ",f12.5,4x,f12.5,4x,f12.5)')                &
+                so, xsum, xsum/efmei(ij)
+        endif
         write(6,*)
         write(6,*)
 
