@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         8 May 2004. 23 October 2025.
+!>  \date         8 May 2004. 25 October 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -44,7 +44,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, name oscillator_strength. 16 May 2024. JLM
 ! Modified, more flexibility in oscillator strength. 14 May 2025. JLM
 ! Modified, input of desired k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
-! Modified, oscillator strength on a given direction.
+! Modified, oscillator strength on a given direction. 25 October 2025. JLM
 
   implicit none
 
@@ -171,7 +171,7 @@ subroutine out_band_onek(ioreplay,                                       &
   real(REAL64)      ::  emidgap                                          !  rough estimate of the mid-gap
 
   character(len=1)  ::  yesno
-  character(len=1)  ::  yesno2
+  character(len=1)  ::  yesno2, yesno3
   integer           ::  nsmall
 
   integer           ::  info
@@ -468,18 +468,40 @@ subroutine out_band_onek(ioreplay,                                       &
 
         lxyz = .TRUE.
 
+        call out_band_oscillator_strength(neig, ei, dh0drk, adot,        &
+            lpair, lexcit, lxyz, rdircar,                                &
+            ninitbeg, ninitend, nfinalbeg, nfinalend,                    &
+            mxdbnd)
+
       else
 
         lxyz = .FALSE.
         typeofr = 'direction'
-        call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+! loop over directions
+
+        do i = 1,1000
+
+          call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+          call out_band_oscillator_strength(neig, ei, dh0drk, adot,      &
+             lpair, lexcit, lxyz, rdircar,                               &
+             ninitbeg, ninitend, nfinalbeg, nfinalend,                   &
+             mxdbnd)
+
+          write(6,*)
+          write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+          write(6,*)
+
+
+          read(5,*) yesno3
+          write(ioreplay,*) yesno3,'     new direction'
+
+          if(yesno3 /= 'y' .and. yesno3 /= 'Y') exit
+
+        enddo
 
       endif
-
-      call out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
-          lpair, lexcit, lxyz, rdircar,                                  &
-          ninitbeg, ninitend, nfinalbeg, nfinalend,                      &
-          mxdbnd)
 
       deallocate(dh0drk)
 
@@ -665,18 +687,38 @@ subroutine out_band_onek(ioreplay,                                       &
 
         lxyz = .TRUE.
 
+        call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,    &
+            lpair, lexcit, lxyz, rdircar,                                &
+            ninitbeg, ninitend, nfinalbeg, nfinalend,                    &
+            2*mxdbnd)
+
       else
 
         lxyz = .FALSE.
         typeofr = 'direction'
-        call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+        do i = 1,1000
+
+          call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
+
+          call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,  &
+              lpair, lexcit, lxyz, rdircar,                              &
+              ninitbeg, ninitend, nfinalbeg, nfinalend,                  &
+              2*mxdbnd)
+
+          write(6,*)
+          write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+          write(6,*)
+
+
+          read(5,*) yesno3
+          write(ioreplay,*) yesno3,'     new direction'
+
+          if(yesno3 /= 'y' .and. yesno3 /= 'Y') exit
+
+        enddo
 
       endif
-
-      call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,      &
-          lpair, lexcit, lxyz, rdircar,                                  &
-          ninitbeg, ninitend, nfinalbeg, nfinalend,                      &
-          2*mxdbnd)
 
       deallocate(vec_so)
       deallocate(dh_so)
