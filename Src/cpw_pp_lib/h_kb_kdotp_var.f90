@@ -11,12 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  This subroutine calculates the Langreth-Kohn
+!>  This subroutine calculates the Luttinger-Kohn
 !>  variational k.p energies and eigenvectors.
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         7 February 2014. 30 November 2023.
+!>  \version      5.12
+!>  \date         7 February 2014. 2 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
@@ -31,6 +31,7 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
 ! modified, documentation, lkpg, February 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
+! Modified, psi_convert. 2 November 2025. JLM
 
 
   implicit none
@@ -114,7 +115,7 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
   allocate(psi_lk(mxddim,mxdbnd))
   allocate(hpsi_lk(mxddim,mxdbnd))
 
-  call psi_convert(neig, mtxd0, isort0, psi0, mtxd, isort, psi_lk,       &
+  call psi_convert(neig, 1, mtxd0, isort0, psi0, mtxd, isort, psi_lk,    &
       mxddim, mxdbnd)
 
   call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlspin,        &

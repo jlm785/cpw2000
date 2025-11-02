@@ -16,8 +16,8 @@
 !>  are the points used in interpolation
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         23 August 2020. 30 November 2023.
+!>  \version      5.12
+!>  \date         23 August 2020. 2 November 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -34,6 +34,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 ! Based on interpolation_svd and out_band_dos
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
+! Modified, psi_convert. 2 November 2025. JLM
 
 
   implicit none
@@ -219,7 +220,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
     i1 = neig_tot + 1
     i2 = neig_tot + neig_all(k)
 
-    call psi_convert(neig_all(k), mtxd_all(k), isort_all(:,k),           &
+    call psi_convert(neig_all(k), 1, mtxd_all(k), isort_all(:,k),        &
         psi_all(:,:,k), mtxd , isort , psi_svd(:,i1:i2),                 &
         mxddim, mxdbnd)
 

@@ -11,21 +11,23 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Copies the coeficients of one k-point to another k-point.
+!>  Copies the wave-function coeficients from one k-point to another k-point.
 !>  Luttinger-Kohn wavefunction, PR 97, 869 (1954)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         6 February 2014. February 2020.
+!>  \version      5.12
+!>  \date         6 February 2014. 2 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine psi_convert(neig,mtxd0,isort0,psi0,mtxd,isort,psi,            &
-     mxddim,mxdbnd)
+subroutine psi_convert(neig, nspin,                                      &
+     mtxd0, isort0, psi0,   mtxd, isort, psi,                            &
+     mxddim, mxdbnd)
 
 ! Written 6 February 2014. jlm
 ! Cleaned and bug mtxd0, 13 April 2019. JLM
 ! Documentation,February 2020. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Merged with spin-orbit version. 2 November 2025. JLM
+
 
   implicit none
 
@@ -37,17 +39,19 @@ subroutine psi_convert(neig,mtxd0,isort0,psi0,mtxd,isort,psi,            &
   integer, intent(in)                ::  mxddim                          !<  array dimension for the hamiltonian
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for the number of bands
 
+  integer, intent(in)                ::  nspin                           !<  spin components (1:no spin or 2:spin present)
+
   integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   integer, intent(in)                ::  mtxd0                           !<  dimension of the hamiltonian (reference)
-  complex(REAL64), intent(in)        ::  psi0(mxddim,mxdbnd)             !<  component j of eigenvector i (reference)
+  complex(REAL64), intent(in)        ::  psi0(nspin*mxddim,nspin*mxdbnd) !<  component j of eigenvector i (reference)
   integer, intent(in)                ::  isort0(mxddim)                  !<  g-vector associated with row/column i of hamiltonian (reference)
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
 
 
 ! output
 
-  complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i (converted)
+  complex(REAL64), intent(out)       ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  component j of eigenvector i (converted)
 
 ! local variables
 
@@ -66,6 +70,15 @@ subroutine psi_convert(neig,mtxd0,isort0,psi0,mtxd,isort,psi,            &
 
   integer ::  i, n
 
+
+  if(nspin /=1 .and. nspin /= 2) then
+    write(6,*)
+    write(6,*) '    STOPPED in psi_convert, nspin = ', nspin
+    write(6,*)
+
+    STOP
+
+  endif
 
 ! The structure of the basis may not be the same, so it is necessary
 ! to make them compatible.
@@ -87,15 +100,33 @@ subroutine psi_convert(neig,mtxd0,isort0,psi0,mtxd,isort,psi,            &
     ib0(isort0(i)) = i
   enddo
 
-  do n=1,neig
-  do i=1,mtxd
-    if(ib0(isort(i)) < 1 .or. ib0(isort(i)) > mtxd0) then
-      psi(i,n) = C_ZERO
-    else
-      psi(i,n) = psi0(ib0(isort(i)),n)
-    endif
-  enddo
-  enddo
+  if(nspin == 1) then
+
+    do n=1,neig
+    do i=1,mtxd
+      if(ib0(isort(i)) < 1 .or. ib0(isort(i)) > mtxd0) then
+        psi(i,n) = C_ZERO
+      else
+        psi(i,n) = psi0(ib0(isort(i)),n)
+      endif
+    enddo
+    enddo
+
+  else
+
+    do n=1,2*neig
+    do i=1,mtxd
+      if(ib0(isort(i)) < 1 .or. ib0(isort(i)) > mtxd0) then
+        psi(2*i-1,n) = C_ZERO
+        psi(2*i  ,n) = C_ZERO
+      else
+        psi(2*i-1,n) = psi0(2*ib0(isort(i))-1,n)
+        psi(2*i  ,n) = psi0(2*ib0(isort(i))  ,n)
+      endif
+    enddo
+    enddo
+
+  endif
 
   deallocate(ib0)
 

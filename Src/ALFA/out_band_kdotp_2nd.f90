@@ -453,7 +453,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
     write(6,*)
 
 
-    call kdotp_diag(emax, rkpt, neig,                                    &
+    call kdotp_diag(emax, rkpt, neig, 1,                                 &
         rk0, mtxd0, isort0, psi0, h0, dh0drk, d2h0drk2,                  &
         psi, ei, mtxd, isort, qmod, ekpg,                                &
         ng, kgv, adot,                                                   &
@@ -470,7 +470,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
         mxddim, mxdbnd, mxdgve)
 
 
-    call kdotp_diag_so(emax, rkpt, neig,                                 &
+    call kdotp_diag(emax, rkpt, neig, 2,                                 &
         rk0, mtxd0, isort0, psi_so0, hso0, dhso0drk, d2hso0drk2,         &
         psi_so, ei_so, mtxd, isort, qmod, ekpg,                          &
         ng, kgv, adot,                                                   &
