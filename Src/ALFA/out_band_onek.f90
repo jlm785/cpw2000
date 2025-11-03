@@ -11,12 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates bands, hamiltonian components, kdotm matrices,
+!>  Calculates bands, hamiltonian components, kdotp matrices,
 !>  oscillator strengths, for a given k-vector
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         8 May 2004. 25 October 2025.
+!>  \date         8 May 2004. 3 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -45,6 +45,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, more flexibility in oscillator strength. 14 May 2025. JLM
 ! Modified, input of desired k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Modified, oscillator strength on a given direction. 25 October 2025. JLM
+! Modified, correct for dpin degeneracy. 3 November 2025. JLM
 
   implicit none
 
@@ -267,6 +268,13 @@ subroutine out_band_onek(ioreplay,                                       &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
 
+! orient the wave-functions to simplify printing
+
+  call psi_orient_xyz(rk0, adot, mtxd, neig, isort,                      &
+      psi, ei,                                                           &
+      ng, kgv,                                                           &
+      mxddim, mxdbnd, mxdgve)
+
 
   write(6,*)
   write(6,*) '  Do you want to analyze the results WITHOUT'
@@ -469,7 +477,7 @@ subroutine out_band_onek(ioreplay,                                       &
         lxyz = .TRUE.
 
         call out_band_oscillator_strength(neig, ei, dh0drk, adot,        &
-            lpair, lexcit, lxyz, rdircar,                                &
+            .FALSE., lpair, lexcit, lxyz, rdircar,                       &
             ninitbeg, ninitend, nfinalbeg, nfinalend,                    &
             mxdbnd)
 
@@ -485,12 +493,12 @@ subroutine out_band_onek(ioreplay,                                       &
           call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
 
           call out_band_oscillator_strength(neig, ei, dh0drk, adot,      &
-             lpair, lexcit, lxyz, rdircar,                               &
+             .FALSE., lpair, lexcit, lxyz, rdircar,                      &
              ninitbeg, ninitend, nfinalbeg, nfinalend,                   &
              mxdbnd)
 
           write(6,*)
-          write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+          write(6,*) '  Do you want the oscillator strengths in a new direction? (y/n)'
           write(6,*)
 
 
@@ -529,6 +537,9 @@ subroutine out_band_onek(ioreplay,                                       &
         nqnl, delqnl, vkb, nkb,                                          &
         ntype, natom, rat, adot,                                         &
         mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+    call psi_orient_spin(mtxd, neig, psi_so, ei_so,                      &
+        mxddim, mxdbnd)
 
     write(6,*)
     write(6,*) '  Do you want to see the eigenvalues (0,1,2,3)'
@@ -688,7 +699,7 @@ subroutine out_band_onek(ioreplay,                                       &
         lxyz = .TRUE.
 
         call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,    &
-            lpair, lexcit, lxyz, rdircar,                                &
+            .TRUE., lpair, lexcit, lxyz, rdircar,                        &
             ninitbeg, ninitend, nfinalbeg, nfinalend,                    &
             2*mxdbnd)
 
@@ -702,12 +713,12 @@ subroutine out_band_onek(ioreplay,                                       &
           call cpw_pp_get_r_point(rdir, rdircar, adot, typeofr, ioreplay)
 
           call out_band_oscillator_strength(2*neig, ei_so, dh_so, adot,  &
-              lpair, lexcit, lxyz, rdircar,                              &
+              .TRUE., lpair, lexcit, lxyz, rdircar,                      &
               ninitbeg, ninitend, nfinalbeg, nfinalend,                  &
               2*mxdbnd)
 
           write(6,*)
-          write(6,*) '  Do you want the oscillator strengths on x y z directions? (y/n)'
+          write(6,*) '  Do you want the oscillator strengths in a new direction? (y/n)'
           write(6,*)
 
 
