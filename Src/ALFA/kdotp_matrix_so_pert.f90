@@ -134,8 +134,8 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
   allocate(pmat(3,mxdbnd,mxdbnd))
 
-  call psi_p_psi(mtxd, neig, psi, pmat, rkpt, isort, ng, kgv, .FALSE.,   &
-  mxddim, mxdbnd, mxdgve)
+  call psi_p_psi(mtxd, neig, psi, pmat, rkpt, isort, ng, kgv, 1,         &
+      mxddim, mxdbnd, mxdgve)
 
   call size_proj_nl_kb(ntype, natom, nkb, nanl, nanlso, nanlnoso,        &
       mxdtyp)

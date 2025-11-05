@@ -11,86 +11,92 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the product of separable non-local
-!>     pseudopotential times neig wavevectors.  complex version
+!>  calculates the product of separable non-local
+!>  pseudopotential times neig wavevectors.  complex*16 version
+!>  works for both spin and non-spin
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.12
+!>  \date         25 july 2002. 4 November 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine hk_psi_nl_c16(mtxd,neig,psi,hpsi,anlga,xnlkb,nanl,     &
-     & ladd,mxddim,mxdbnd,mxdanl)
+subroutine hk_psi_nl_c16(mtxd, neig, psi, hpsi, anlga, xnlkb, nanl,      &
+  ladd, mxddim, mxdbnd, mxdanl)
 
-!      written 25 july 2002. jlm
-!      copyright INESC-MN/Jose Luis Martins
-!      modified for complex variables and f90  18 June 2012
-!      Modified, documentation, January 2020. JLM
-!      modified 7 January 2014, style. JLM
+! written 25 july 2002. jlm
+! modified for complex variables and f90  18 June 2012
+! Modified, documentation, January 2020. JLM
+! modified 7 January 2014, style. JLM
+! Modified, indentation, 4 November 2025. JLM
 
-!      version 4.94
 
-       implicit none
+  implicit none
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      input
+! input
 
-       integer, intent(in)                ::  mxddim                     !<  array dimension of plane-waves
-       integer, intent(in)                ::  mxdanl                     !<  array dimension of number of projectors
-       integer, intent(in)                ::  mxdbnd                     !<  array dimension for number of bands
-       integer, intent(in)                ::  mtxd                       !<  wavefunction dimension (basis size)
-       integer, intent(in)                ::  neig                       !<  number of wavefunctions
-       integer, intent(in)                ::  nanl                       !<  number of projectors
-       complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)       !<  Kleinman-Bylander projectors
-       real(REAL64), intent(in)           ::  xnlkb(mxdanl)              !<  Kleinman-Bylander normalization
-       complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)         !<  wavevector
-       logical, intent(in)                ::  ladd                       !<  true: adds to existing hpsi, false: input hpsi is zeroed
+  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
+  integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  mtxd                            !<  wavefunction dimension (basis size)
+  integer, intent(in)                ::  neig                            !<  number of wavefunctions
+  integer, intent(in)                ::  nanl                            !<  number of projectors
+  complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)            !<  Kleinman-Bylander projectors
+  real(REAL64), intent(in)           ::  xnlkb(mxdanl)                   !<  Kleinman-Bylander normalization
+  complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  wavevector
 
-!      output
+  logical, intent(in)                ::  ladd                            !<  true: adds to existing hpsi, false: input hpsi is zeroed
 
-       complex(REAL64), intent(inout)     ::  hpsi(mxddim,mxdbnd)        !<  |hpsi> =  V_NL |psi>
+! output
 
-!      local variables
+  complex(REAL64), intent(inout)     ::  hpsi(mxddim,mxdbnd)             !<  |hpsi> =  V_NL |psi>
 
-       complex(REAL64),allocatable ::  dhd(:,:)
-       complex(REAL64) ::  zu
+! local variables
 
-!      constants
+  complex(REAL64),allocatable ::  dhd(:,:)
+  complex(REAL64) ::  zu
 
-       real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+! constants
 
-!      counters
+  real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
-       integer   ::   i,n
+! counters
 
-       if(ladd) then
-         zu = cmplx(UM,ZERO,REAL64)
-       else
-         zu = cmplx(ZERO,ZERO,REAL64)
-       endif
+  integer   ::   i,n
 
-       allocate(dhd(nanl,neig))
+  if(ladd) then
+    zu = cmplx(UM,ZERO,REAL64)
+  else
+    zu = cmplx(ZERO,ZERO,REAL64)
+  endif
 
-       if(nanl > 0) then
+  allocate(dhd(nanl,neig))
 
-!        dhd = < anl | psi >
+  if(nanl > 0) then
 
-         call zgemm('c','n',nanl,neig,mtxd,(UM,ZERO),anlga,mxddim,psi,  &
-     &                mxddim,(ZERO,ZERO),dhd,nanl)
+!   dhd = < anl | psi >
 
-!        dhd := Diag(xnl) dhd
+    call zgemm('c','n',nanl,neig,mtxd,(UM,ZERO),anlga,mxddim,psi,  &
+                 mxddim,(ZERO,ZERO),dhd,nanl)
 
-         do n=1,neig
-           do i=1,nanl
-             dhd(i,n) = xnlkb(i)*dhd(i,n)
-           enddo
-         enddo
+!   dhd := Diag(xnl) dhd
 
-!        | hpsi > := | hpsi> + | anl > dhd = | hpsi> + | anl > Diag(xnl) < anl | psi >
+    do n=1,neig
+      do i=1,nanl
+        dhd(i,n) = xnlkb(i)*dhd(i,n)
+      enddo
+    enddo
 
-         call zgemm('n','n',mtxd,neig,nanl,(UM,ZERO),anlga,mxddim,dhd,  &
-     &                 nanl,zu,hpsi,mxddim)
+!   | hpsi > := | hpsi> + | anl > dhd = | hpsi> + | anl > Diag(xnl) < anl | psi >
 
-       endif
+    call zgemm('n','n',mtxd,neig,nanl,(UM,ZERO),anlga,mxddim,dhd,  &
+                  nanl,zu,hpsi,mxddim)
 
-       deallocate(dhd)
+  endif
 
-       return
+  deallocate(dhd)
 
-       end subroutine hk_psi_nl_c16
+  return
+
+end subroutine hk_psi_nl_c16

@@ -15,8 +15,8 @@
 !>  The calculation of the oscillator strength
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         April 14, 2014. 30 November 2023.
+!>  \version      5.12
+!>  \date         April 14, 2014. 4 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine kdotp_matrix(mtxd, neig, psi, ei, rkpt, isort, nder,          &
@@ -29,6 +29,7 @@ subroutine kdotp_matrix(mtxd, neig, psi, ei, rkpt, isort, nder,          &
 
 ! Written April 14, 2014, from previous code. JLM
 ! Modified, documentation, nder, 20 February 2020. JLM
+! Modified, call to psi_p-psi. 4 November 2025. JLM
 
 
   implicit none
@@ -124,7 +125,7 @@ subroutine kdotp_matrix(mtxd, neig, psi, ei, rkpt, isort, nder,          &
 
   allocate(pmat(3,mxdbnd,mxdbnd))
 
-  call psi_p_psi(mtxd, neig, psi, pmat, rkpt, isort, ng, kgv, .FALSE.,   &
+  call psi_p_psi(mtxd, neig, psi, pmat, rkpt, isort, ng, kgv, 1,         &
            mxddim, mxdbnd, mxdgve)
 
 ! non-local pseudopotential matrix elements

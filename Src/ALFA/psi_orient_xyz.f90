@@ -16,8 +16,8 @@
 !>  Also chooses a phase for each wave-function
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         30 October 2023.
+!>  \version      5.12
+!>  \date         30 October 2023. 4 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
@@ -27,6 +27,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 
 ! Written 30 October 2023.  JLM
 ! Modified TOL, coeficients, overwrites psi. 10 April 2024. JLM
+! Modified interface to psi_kin_psi, 4 November 2025. JLM
 
 
 
@@ -164,7 +165,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
         psi_tmp(:,n) = psi(:,nk)
       enddo
 
-      call psi_kin_psi(mtxd, levdeg(nl), psi_tmp, aoper, ekpg,           &
+      call psi_kin_psi(mtxd, levdeg(nl), psi_tmp, aoper, ekpg, 1,        &
            mxddim, mxddeg)
 
       call diag_c16(levdeg(nl), aoper, aeig, aeigvec, mxddeg, info)

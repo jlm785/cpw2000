@@ -13,6 +13,7 @@
 
 !>  calculates the matrix <Psi|V_NL|Psi> for a separable non-local
 !>  pseudopotential V_NL for neig wavevectors.  complex version
+!>  works for both spin and non-spin
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.02
@@ -27,9 +28,7 @@ subroutine psi_vnl_psi(mtxd, neig, psi, vnl, anlga, xnlkb, nanl,         &
 ! Modified (ladd) 6 February 2014. JLM
 ! Modified, less memory, documentation. 13 January 2020. JLM
 ! Modified, nanl > 0,  28 October 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
 
-! version 5.02
 
   implicit none
 

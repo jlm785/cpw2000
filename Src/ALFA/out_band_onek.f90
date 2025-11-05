@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         8 May 2004. 3 November 2025.
+!>  \date         8 May 2004. 4 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -46,6 +46,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Modified, input of desired k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Modified, oscillator strength on a given direction. 25 October 2025. JLM
 ! Modified, correct for dpin degeneracy. 3 November 2025. JLM
+! Print spin hamiltonian. 4 November 2025. JLM
 
   implicit none
 
@@ -140,6 +141,8 @@ subroutine out_band_onek(ioreplay,                                       &
   complex(REAL64), allocatable       ::  dh_so(:,:,:)                    !  dhso0drk in the vec_so representation
   complex(REAL64), allocatable       ::  tmp1(:,:),tmp2(:,:)             !  temporary
 
+  real(REAL64), allocatable          ::  vscr_sp(:,:)
+
 ! local variables
 
   integer           ::  mxdscr                                           !  array dimension for screening potential
@@ -198,7 +201,6 @@ subroutine out_band_onek(ioreplay,                                       &
 
 
 ! calculates local potential in fft mesh
-
 
   if(flgdal == 'DUAL') then
     kmscr(1) = kmax(1)/2 + 2
@@ -274,7 +276,6 @@ subroutine out_band_onek(ioreplay,                                       &
       psi, ei,                                                           &
       ng, kgv,                                                           &
       mxddim, mxdbnd, mxdgve)
-
 
   write(6,*)
   write(6,*) '  Do you want to analyze the results WITHOUT'
@@ -355,26 +356,29 @@ subroutine out_band_onek(ioreplay,                                       &
         psi_tmp(n,n) = C_UM
       enddo
 
-      call psi_h_psi(rk0, nsmall, psi_tmp, mtxd, isort, ekpg,            &
+      allocate(vscr_sp(mxdscr,1))
+      vscr_sp(:,1) = vscr(:)
+      call psi_h_psi(rk0, nsmall, psi_tmp, mtxd, isort, ekpg, 1, 1,      &
           hloc, hkin, hnl,                                               &
           ng, kgv,                                                       &
-          vscr, kmscr, nqnl, delqnl, vkb, nkb,                           &
+          vscr_sp, kmscr, nqnl, delqnl, vkb, nkb,                        &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr)
+      deallocate(vscr_sp)
 
       write(6,*)
       write(6,*)  '  Local component of hamiltonian'
       write(6,*)
 
-      call print_hamilt(icmplx,rk0,hloc,nsmall,                          &
-          adot,isort,kgv,                                                &
-          mxddim,mxdgve,nsmall)
+      call print_hamilt(icmplx, rk0, hloc, nsmall, 1,                    &
+          adot, isort, kgv,                                              &
+          mxddim, mxdgve, nsmall)
 
       write(6,*)
       write(6,*)  '  Kinetic component of hamiltonian'
       write(6,*)
 
-      call print_hamilt(icmplx, rk0, hkin, nsmall,                       &
+      call print_hamilt(icmplx, rk0, hkin, nsmall, 1,                    &
           adot, isort, kgv,                                              &
           mxddim, mxdgve, nsmall)
 
@@ -382,7 +386,7 @@ subroutine out_band_onek(ioreplay,                                       &
       write(6,*)  '  Non-Local component of hamiltonian'
       write(6,*)
 
-      call print_hamilt(icmplx, rk0, hnl, nsmall,                        &
+      call print_hamilt(icmplx, rk0, hnl, nsmall, 1,                     &
           adot, isort, kgv,                                              &
           mxddim, mxdgve, nsmall)
 
@@ -576,6 +580,81 @@ subroutine out_band_onek(ioreplay,                                       &
     endif
 
     write(6,*)
+    write(6,*) '  Do you want to print hamiltonian components (y/n)'
+    write(6,*)
+
+    read(5,*) yesno
+    write(ioreplay,*) yesno,'   hamiltonian components'
+
+    if(yesno == 'y' .or. yesno == 'Y') then
+
+      write(6,*)
+      write(6,*) '  How many components do you want to see?'
+      write(6,*) '  Suggestion: about 20.'
+      write(6,*)
+
+      read(5,*) nsmall
+      write(ioreplay,*) nsmall,'   number of components'
+
+      if(nsmall < 1) nsmall = 20
+      if(nsmall > mtxd) nsmall = mtxd
+
+      allocate(psi_tmp(mxddim,nsmall))
+
+      allocate(hloc(nsmall,nsmall))
+      allocate(hkin(nsmall,nsmall))
+      allocate(hnl(nsmall,nsmall))
+
+      do n = 1,nsmall
+        do j = 1,mxddim
+          psi_tmp(j,n) = C_ZERO
+        enddo
+        psi_tmp(n,n) = C_UM
+      enddo
+
+      allocate(vscr_sp(mxdscr,1))
+      vscr_sp(:,1) = vscr(:)
+      call psi_h_psi(rk0, nsmall, psi_tmp, mtxd, isort, ekpg, 2, 1,      &
+          hloc, hkin, hnl,                                               &
+          ng, kgv,                                                       &
+          vscr_sp, kmscr, nqnl, delqnl, vkb, nkb,                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr)
+      deallocate(vscr_sp)
+
+      write(6,*)
+      write(6,*)  '  Local component of hamiltonian'
+      write(6,*)
+
+      call print_hamilt(icmplx, rk0, hloc, nsmall, 2,                    &
+          adot, isort, kgv,                                              &
+          mxddim, mxdgve, nsmall)
+
+      write(6,*)
+      write(6,*)  '  Kinetic component of hamiltonian'
+      write(6,*)
+
+      call print_hamilt(icmplx, rk0, hkin, nsmall, 2,                    &
+          adot, isort, kgv,                                              &
+          mxddim, mxdgve, nsmall)
+
+      write(6,*)
+      write(6,*)  '  Non-Local component of hamiltonian'
+      write(6,*)
+
+      call print_hamilt(icmplx, rk0, hnl, nsmall, 2,                     &
+          adot, isort, kgv,                                              &
+          mxddim, mxdgve, nsmall)
+
+      deallocate(psi_tmp)
+
+      deallocate(hloc)
+      deallocate(hkin)
+      deallocate(hnl)
+
+    endif
+
+    write(6,*)
     write(6,*) '  Do you want to create a file for k.p calculations? (y/n)'
     write(6,*)
 
@@ -760,4 +839,5 @@ subroutine out_band_onek(ioreplay,                                       &
   deallocate(ekpsi)
 
   return
+
 end subroutine out_band_onek
