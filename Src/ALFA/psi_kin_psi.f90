@@ -37,7 +37,7 @@ subroutine psi_kin_psi(mtxd, neig, psi, hkin, ekpg, nspin,               &
 ! input
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves (not counting spin)
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (not counting spin)
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (including spin)
 
   integer, intent(in)                ::  nspin                           !<  spin components (1:no spin or 2:spin present)
 
@@ -45,11 +45,11 @@ subroutine psi_kin_psi(mtxd, neig, psi, hkin, ekpg, nspin,               &
   integer, intent(in)                ::  neig                            !<  wavefunction dimension (including spin)
   real(REAL64), intent(in)           ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
-  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  wavevectors
+  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,mxdbnd)        !<  wavevectors
 
 ! output
 
-  complex(REAL64), intent(out)       ::  hkin(nspin*mxdbnd,nspin*mxdbnd) !<  <Psi|K|Psi>
+  complex(REAL64), intent(out)       ::  hkin(mxdbnd,nspin)              !<  <Psi|K|Psi>
 
 ! local variables
 
@@ -68,7 +68,7 @@ subroutine psi_kin_psi(mtxd, neig, psi, hkin, ekpg, nspin,               &
       mxddim, mxdbnd)
 
   call zgemm('c','n', neig, neig, nspin*mtxd, C_UM, psi, nspin*mxddim,   &
-      hpsi, nspin*mxddim, C_ZERO, hkin, nspin*mxdbnd)
+      hpsi, nspin*mxddim, C_ZERO, hkin, mxdbnd)
 
   deallocate(hpsi)
 

@@ -60,15 +60,17 @@ subroutine hk_psi_nl_c16(mtxd, neig, psi, hpsi, anlga, xnlkb, nanl,      &
 ! constants
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
 
 ! counters
 
   integer   ::   i,n
 
   if(ladd) then
-    zu = cmplx(UM,ZERO,REAL64)
+    zu = C_UM
   else
-    zu = cmplx(ZERO,ZERO,REAL64)
+    zu = C_ZERO
   endif
 
   allocate(dhd(nanl,neig))
@@ -77,8 +79,8 @@ subroutine hk_psi_nl_c16(mtxd, neig, psi, hpsi, anlga, xnlkb, nanl,      &
 
 !   dhd = < anl | psi >
 
-    call zgemm('c','n',nanl,neig,mtxd,(UM,ZERO),anlga,mxddim,psi,  &
-                 mxddim,(ZERO,ZERO),dhd,nanl)
+    call zgemm('c','n', nanl, neig, mtxd, C_UM, anlga, mxddim,           &
+               psi, mxddim, C_ZERO, dhd, nanl)
 
 !   dhd := Diag(xnl) dhd
 
@@ -90,8 +92,8 @@ subroutine hk_psi_nl_c16(mtxd, neig, psi, hpsi, anlga, xnlkb, nanl,      &
 
 !   | hpsi > := | hpsi> + | anl > dhd = | hpsi> + | anl > Diag(xnl) < anl | psi >
 
-    call zgemm('n','n',mtxd,neig,nanl,(UM,ZERO),anlga,mxddim,dhd,  &
-                  nanl,zu,hpsi,mxddim)
+    call zgemm('n', 'n', mtxd, neig, nanl, C_UM, anlga, mxddim,          &
+               dhd, nanl, zu, hpsi, mxddim)
 
   endif
 

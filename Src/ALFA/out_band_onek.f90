@@ -254,7 +254,6 @@ subroutine out_band_onek(ioreplay,                                       &
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
 
-
   nocc = neig
 
   call h_kb_dia_all('pw  ', emax, rk0, neig, nocc,                       &
@@ -363,7 +362,7 @@ subroutine out_band_onek(ioreplay,                                       &
           ng, kgv,                                                       &
           vscr_sp, kmscr, nqnl, delqnl, vkb, nkb,                        &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr)
+          mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr, 1)
       deallocate(vscr_sp)
 
       write(6,*)
@@ -426,7 +425,7 @@ subroutine out_band_onek(ioreplay,                                       &
       enddo
       neltot = nint(ztot)
       j = neltot/2
-      emidgap = (h0(j,j) + h0(j+1,j+1)) / 2
+      emidgap = real( (h0(j,j) + h0(j+1,j+1)) / 2, REAL64 )
 
       call kdotp_silvaco_out('matrix_kdotp.dat', 23, neig, adot, rk0,    &
           h0, dh0drk, d2h0drk2, natot, neltot, emidgap, .FALSE.,         &
@@ -599,14 +598,14 @@ subroutine out_band_onek(ioreplay,                                       &
       if(nsmall < 1) nsmall = 20
       if(nsmall > mtxd) nsmall = mtxd
 
-      allocate(psi_tmp(mxddim,nsmall))
+      allocate(psi_tmp(2*mxddim,nsmall))
 
       allocate(hloc(nsmall,nsmall))
       allocate(hkin(nsmall,nsmall))
       allocate(hnl(nsmall,nsmall))
 
       do n = 1,nsmall
-        do j = 1,mxddim
+        do j = 1,2*mxddim
           psi_tmp(j,n) = C_ZERO
         enddo
         psi_tmp(n,n) = C_UM
@@ -619,7 +618,7 @@ subroutine out_band_onek(ioreplay,                                       &
           ng, kgv,                                                       &
           vscr_sp, kmscr, nqnl, delqnl, vkb, nkb,                        &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr)
+          mxdtyp, mxdatm, mxdgve, mxddim, nsmall, mxdlqp, mxdscr, 1)
       deallocate(vscr_sp)
 
       write(6,*)
@@ -686,7 +685,7 @@ subroutine out_band_onek(ioreplay,                                       &
       enddo
       neltot = nint(ztot)
       j = neltot
-      emidgap = (hso0(j,j) + hso0(j+1,j+1)) / 2
+      emidgap = real( (hso0(j,j) + hso0(j+1,j+1)) / 2,REAL64 )
 
       call kdotp_silvaco_out('matrix_kdotp_so.dat', 23,                  &
           2*neig, adot, rk0,                                             &

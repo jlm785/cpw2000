@@ -45,8 +45,8 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,  nspin, nsp,    &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
-  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves (not counting spin)
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (including spin)
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdscr                          !<  array dimension of vscr
   integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
@@ -54,12 +54,12 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,  nspin, nsp,    &
   integer, intent(in)                ::  nspin                           !<  spin components (1:no spin or 2:spin present)
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
-  integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
-  integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors (including spin)
+  integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian (not counting spin)
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
   real(REAL64), intent(in)           ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
-  complex(REAL64), intent(inout)     ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  component j of eigenvector i (guess on input)
+  complex(REAL64), intent(inout)     ::  psi(nspin*mxddim,mxdbnd)        !<  component j of eigenvector i (guess on input)
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -80,15 +80,14 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,  nspin, nsp,    &
 
 ! output
 
-  complex(REAL64), intent(out)       ::  hloc(nspin*mxdbnd,nspin*mxdbnd) !<  local component of reduced hamiltonian
-  complex(REAL64), intent(out)       ::  hkin(nspin*mxdbnd,nspin*mxdbnd) !<  kinetic component of reduced hamiltonian
-  complex(REAL64), intent(out)       ::  hnl(nspin*mxdbnd,nspin*mxdbnd)  !<  non-local pseudopotential component of reduced hamiltonian
+  complex(REAL64), intent(out)       ::  hloc(mxdbnd,mxdbnd)             !<  local component of reduced hamiltonian
+  complex(REAL64), intent(out)       ::  hkin(mxdbnd,mxdbnd)             !<  kinetic component of reduced hamiltonian
+  complex(REAL64), intent(out)       ::  hnl(mxdbnd,mxdbnd)              !<  non-local pseudopotential component of reduced hamiltonian
 
 ! allocatable arrays
 
   complex(REAL64), allocatable       ::  anlga(:,:)                      !  KB projectors without spin-orbit
   real(REAL64), allocatable          ::  xnlkb(:)                        !  KB normalization without spin-orbit
-  real(REAL64), allocatable          ::  vscr_sp(:,:)
 
 ! local variables
 
@@ -155,8 +154,8 @@ subroutine psi_h_psi(rkpt, neig, psi, mtxd, isort, ekpg,  nspin, nsp,    &
   call psi_kin_psi(mtxd, neig, psi, hkin, ekpg, nspin,                   &
       mxddim, mxdbnd)
 
-  call psi_vnl_psi(mtxd, neig, psi, hnl, anlga, xnlkb, nanl,             &
-      mxddim, mxdbnd, mxdanl)
+  call psi_vnl_psi(nspin*mtxd, neig, psi, hnl, anlga, xnlkb, nanl,       &
+      nspin*mxddim, mxdbnd, mxdanl)
 
   deallocate(anlga)
   deallocate(xnlkb)

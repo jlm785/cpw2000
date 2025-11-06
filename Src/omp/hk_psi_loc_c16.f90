@@ -39,7 +39,7 @@ subroutine hk_psi_loc_c16(mtxd, neig, psi, hpsi, ladd, nspin, nsp,       &
 ! input
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves (not counting spin)
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (not counting spin)
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (including spin)
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdscr                          !<  array dimension of vscr
   integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
@@ -58,11 +58,11 @@ subroutine hk_psi_loc_c16(mtxd, neig, psi, hpsi, ladd, nspin, nsp,       &
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
 
-  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  wavevector
+  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,mxdbnd)        !<  wavevector
 
 ! input and output
 
-  complex(REAL64), intent(inout)     ::  hpsi(nspin*mxddim,nspin*mxdbnd) !<  |hpsi> =  V_loc |psi>
+  complex(REAL64), intent(inout)     ::  hpsi(nspin*mxddim,mxdbnd)       !<  |hpsi> =  V_loc |psi>
 
 ! local allocatable arrays
 
@@ -240,7 +240,7 @@ subroutine hk_psi_loc_c16(mtxd, neig, psi, hpsi, ladd, nspin, nsp,       &
       else
 
 !$omp parallel do default(shared) private(i)
-        do i=1,mtxd
+        do i = 1,mtxd
           hpsi(i,n) = chd(ipoint(i))
         enddo
 !$omp end parallel do

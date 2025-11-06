@@ -35,7 +35,7 @@ subroutine hk_psi_kin_c16(mtxd, neig, psi, hpsi, ekpg, ladd, nspin,      &
 ! input
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves (not counting spin)
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (not counting spin)
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (including spin)
 
   integer, intent(in)                ::  nspin                           !<  spin components (1:no spin or 2:spin present)
 
@@ -45,11 +45,11 @@ subroutine hk_psi_kin_c16(mtxd, neig, psi, hpsi, ekpg, ladd, nspin,      &
 
   logical, intent(in)                ::  ladd                            !<  true: adds to existing hpsi, false: input hpsi is zeroed
 
-  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  wavevector
+  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,mxdbnd)        !<  wavevector
 
 ! input and output
 
-  complex(REAL64), intent(inout)     ::  hpsi(nspin*mxddim,nspin*mxdbnd) !<  |hpsi> =  K |psi>
+  complex(REAL64), intent(inout)     ::  hpsi(nspin*mxddim,mxdbnd)       !<  |hpsi> =  K |psi>
 
 ! counters
 

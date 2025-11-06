@@ -39,10 +39,10 @@ subroutine psi_loc_psi(mtxd, neig, psi, hloc, nspin, nsp,                &
 ! input
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves (not counting spin)
-  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (not counting spin)
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands (including spin)
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdscr                          !<  array dimension of vscr
-  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
+  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components of v_xc (1,2,4)
 
   integer, intent(in)                ::  nspin                           !<  spin components (1:no spin or 2:spin present)
 
@@ -57,11 +57,11 @@ subroutine psi_loc_psi(mtxd, neig, psi, hloc, nspin, nsp,                &
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
 
-  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,nspin*mxdbnd)  !<  wavevector
+  complex(REAL64), intent(in)        ::  psi(nspin*mxddim,mxdbnd)        !<  wavevector
 
 ! output
 
-  complex(REAL64), intent(out)       ::  hloc(nspin*mxdbnd,nspin*mxdbnd)  !<  <Psi|V_loc|Psi>
+  complex(REAL64), intent(out)       ::  hloc(mxdbnd,mxdbnd)             !<  <Psi|V_loc|Psi>
 
 ! local variables
 
@@ -82,7 +82,7 @@ subroutine psi_loc_psi(mtxd, neig, psi, hloc, nspin, nsp,                &
       mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
   call zgemm('c', 'n', neig, neig, nspin*mtxd, C_UM, psi, nspin*mxddim,  &
-             hpsi, nspin*mxddim, C_ZERO, hloc, nspin*mxdbnd)
+             hpsi, nspin*mxddim, C_ZERO, hloc, mxdbnd)
 
   deallocate(hpsi)
 
