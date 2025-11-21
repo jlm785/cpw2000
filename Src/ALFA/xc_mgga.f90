@@ -14,8 +14,8 @@
 !>  Tran-Blaha mgga exchange and LDA correlation.
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.04
-!>  \date         September 2015, 29 September 2022.
+!>  \version      5.12
+!>  \date         September 2015, 11 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
@@ -24,6 +24,7 @@ subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
 ! Written by Carlos Loia Reis, September 2015.
 ! Modified, documentation, December 2019. JLM
 ! Simplified, 29 September 2022. JLM
+! Modified rho < EPS, 11 November 2025. JLM
 
   implicit none
 
@@ -48,12 +49,36 @@ subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
 ! parameters
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
+  real(REAL64), parameter  :: EPS = 1.0E-24_REAL64
 
-  call xc_lda(author, rho, epsx, epsc, vx, vc )
-  call xc_tran_blaha(rho, grho, lap_rho, twotau/2, ctb09, vx)
 
-  epsx = ZERO
-  epsc = ZERO
+
+  if(rho < EPS) then
+
+    epsx = ZERO
+    epsc = ZERO
+    vx = ZERO
+    vc = ZERO
+
+  else
+
+
+    if (author == 'tbl' .or. author == 'TBL' .or.                        &
+        author == 'tb00' .or. author == 'TB09') then
+
+     call xc_lda('PW92', rho, epsx, epsc, vx, vc )
+     call xc_mgga_x_tb09(rho, grho, lap_rho, twotau/2, ctb09, vx)
+
+    else
+
+      write(6,'("  STOPPED  in xc_mgga:   unknown exchange-correlation")')
+      write(6,*) '     ',author
+
+      stop
+
+    endif
+
+  endif
 
   return
 
@@ -69,7 +94,7 @@ end subroutine xc_mgga
 !>  \date         September 2015, 25 September 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_tran_blaha(rho, grho, lap_rho, tau, set_ctb09, vrho)
+subroutine xc_mgga_x_tb09(rho, grho, lap_rho, tau, set_ctb09, vrho)
 
 ! Written September 2015.  CLR
 ! version 1.0 of xc, September 2015
@@ -103,20 +128,16 @@ subroutine xc_tran_blaha(rho, grho, lap_rho, tau, set_ctb09, vrho)
   real(REAL64), parameter   :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
 
-  vrho   = ZERO
-
-  if(max(rho, ZERO) < MIN_DENS) return
-
 ! Becke-Roussel exchange is with spin-density
 
-  call xc_becke_roussel(rho/2, grho*grho/4, lap_rho/2, tau/2, v_BR)
+  call xc_mgga_x_br89(rho/2, grho*grho/4, lap_rho/2, tau/2, v_BR)
 
   c_HEG  = (3*set_ctb09 - 2*UM)*sqrt((5*UM)/(12*UM)) / PI
   vrho  = set_ctb09*v_BR + c_HEG*sqrt(2*tau/rho)
 
   return
 
-end subroutine xc_tran_blaha
+end subroutine xc_mgga_x_tb09
 
 
 
@@ -129,7 +150,7 @@ end subroutine xc_tran_blaha
 !>  \date         September 2015, 22 September 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_becke_roussel(rho, sigma, lap_rho, tau, v_BR)
+subroutine xc_mgga_x_br89(rho, sigma, lap_rho, tau, v_BR)
 
 ! Written September 2015.  CLR
 ! version 1.0 of xc, September 2015
@@ -167,7 +188,7 @@ subroutine xc_becke_roussel(rho, sigma, lap_rho, tau, v_BR)
   br_Q  = (lap_rho - 2*BR_GAMMA*2*tau + BR_GAMMA*sigma/(2*rho))/(6*UM)
   br_Q  = br_Q / rho5T
 
-  call xc_becke_roussel_x(br_Q,br_x)
+  call xc_mgga_num_br_find_x(br_Q,br_x)
 
   if ((br_x) > MIN_TAU) then
     v_BR =  exp(br_x/3) * (UM - exp(-br_x)*(UM + br_x/(2*UM))) / br_x
@@ -179,7 +200,7 @@ subroutine xc_becke_roussel(rho, sigma, lap_rho, tau, v_BR)
 
   return
 
-end subroutine xc_becke_roussel
+end subroutine xc_mgga_x_br89
 
 
 
@@ -192,7 +213,7 @@ end subroutine xc_becke_roussel
 !>  \date         September 2015, 22 September 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_becke_roussel_x(br_Q,br_x)
+subroutine xc_mgga_num_br_find_x(br_Q,br_x)
 ! libxc 1.2.0
 ! Modified, documentation, December 2019, 24 September 2022. JLM
 
@@ -216,13 +237,13 @@ subroutine xc_becke_roussel_x(br_Q,br_x)
 
 ! Newton-Raphson should always work
 
-  call xc_br_newt_raph(br_x, rhs, TOL, res, ierr)
+  call xc_mgga_num_br_newt_raph(br_x, rhs, TOL, res, ierr)
 
   if(ierr == 0) then
 
 ! Try bissection
 
-     call xc_br_bisect(br_x, rhs, TOL, ierr)
+     call xc_mgga_num_br_bisect(br_x, rhs, TOL, ierr)
 
      if(ierr == 0) then
 
@@ -243,7 +264,7 @@ subroutine xc_becke_roussel_x(br_Q,br_x)
 
   return
 
-end subroutine xc_becke_roussel_x
+end subroutine xc_mgga_num_br_find_x
 
 
 
@@ -256,7 +277,7 @@ end subroutine xc_becke_roussel_x
 !>  \date         September 2015, 22 September 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_br_newt_raph(xc_br, a, tol, res, ierr)
+subroutine xc_mgga_num_br_newt_raph(xc_br, a, tol, res, ierr)
 
 ! libxc 1.2.0
 ! Modified, documentation, December 2019. JLM
@@ -335,7 +356,7 @@ subroutine xc_br_newt_raph(xc_br, a, tol, res, ierr)
 
   return
 
-end subroutine xc_br_newt_raph
+end subroutine xc_mgga_num_br_newt_raph
 
 
 
@@ -347,7 +368,7 @@ end subroutine xc_br_newt_raph
 !>  \date         September 2015, 22 September 2022.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_br_bisect(xc_br, a, tol, ierr)
+subroutine xc_mgga_num_br_bisect(xc_br, a, tol, ierr)
 
 ! libxc 1.2.0
 ! Modified, documentation, December 2019. JLM
@@ -421,5 +442,5 @@ subroutine xc_br_bisect(xc_br, a, tol, ierr)
 
   return
 
-end subroutine xc_br_bisect
+end subroutine xc_mgga_num_br_bisect
 
