@@ -11,20 +11,18 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Tran-Blaha mgga exchange and LDA correlation.
+
+!>  mgga exchange and LDA/mgga correlation.  Only potential (e.g. Tran-Blaha)
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.12
-!>  \date         September 2015, 11 November 2025.
+!>  \date         September 2015, 21 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
+subroutine xc_mgga_vxc(author, rho, grho, lap_rho, tau,                  &
                      epsx, epsc, vx, vc, ctb09 )
 
-! Written by Carlos Loia Reis, September 2015.
-! Modified, documentation, December 2019. JLM
-! Simplified, 29 September 2022. JLM
-! Modified rho < EPS, 11 November 2025. JLM
+!
 
   implicit none
 
@@ -36,7 +34,7 @@ subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
   real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
   real(REAL64), intent(in)           ::  grho                            !<  gradient of charge density
   real(REAL64), intent(in)           ::  lap_rho                         !<  Laplacian of charge density
-  real(REAL64), intent(in)           ::  twotau                          !<  Twice the kinetic energy density
+  real(REAL64), intent(in)           ::  tau                             !<  The kinetic energy density
   real(REAL64), intent(in)           ::  ctb09                           !<  TB constant
 
 ! output
@@ -52,26 +50,26 @@ subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
   real(REAL64), parameter  :: EPS = 1.0E-24_REAL64
 
 
+  epsx = ZERO
+  epsc = ZERO
+
 
   if(rho < EPS) then
 
-    epsx = ZERO
-    epsc = ZERO
     vx = ZERO
     vc = ZERO
 
   else
 
-
     if (author == 'tbl' .or. author == 'TBL' .or.                        &
         author == 'tb00' .or. author == 'TB09') then
 
-     call xc_lda('PW92', rho, epsx, epsc, vx, vc )
-     call xc_mgga_x_tb09(rho, grho, lap_rho, twotau/2, ctb09, vx)
+      call xc_lda('PW92', rho, epsx, epsc, vx, vc )
+      call xc_mgga_x_tb09(rho, grho, lap_rho, tau, ctb09, vx)
 
     else
 
-      write(6,'("  STOPPED  in xc_mgga:   unknown exchange-correlation")')
+      write(6,'("  STOPPED  in xc_mgga_vxc:   unknown exchange-correlation")')
       write(6,*) '     ',author
 
       stop
@@ -82,7 +80,7 @@ subroutine xc_mgga(author, rho, grho, lap_rho, twotau,                   &
 
   return
 
-end subroutine xc_mgga
+end subroutine xc_mgga_vxc
 
 
 
