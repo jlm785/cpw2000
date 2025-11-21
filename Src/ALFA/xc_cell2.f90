@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.12
-!>  \date         September 2015, 6 October 2025.
+!>  \date         September 2015, 21 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
@@ -31,6 +31,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 ! Modified, documentation, December 2019. JLM
 ! sigma, twotau, 29 September 2022. JLM
 ! indentation, avois noise with Tran-Blaha and slabs, 6 October 2025. JLM
+! Changed name of old xc_mgga to xc_mgga_vxc in preparaation for new functionals. 21 November 2025. JLM
 
 ! WARNING choice of correlation for Meta-GGA is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -346,7 +347,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
       if(rho > RHOEPS*rhomax) then
 
-        call xc_mgga('pz', rho, grho, lap, twotau,                       &
+        call xc_mgga_vxc('pz', rho, grho, lap, twotau,                   &
                            epsx, epsc, vx, vc, tb09_const_c )
 
 !        exc = exc + rho * (epsx + epsc)
@@ -360,7 +361,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
         if(twotau/rho > 2.0) twotau = 2.0*rho
         if(grho/rho > 2.5) grho = 2.5*rho
 
-        call xc_mgga('pz', rho, grho, lap, twotau,                       &
+        call xc_mgga_vxc('pz', rho, grho, lap, twotau,                   &
                            epsx, epsc, vx, vc, tb09_const_c )
 
         call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
