@@ -347,7 +347,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
       if(rho > RHOEPS*rhomax) then
 
-        call xc_mgga_vxc('pz', rho, grho, lap, twotau,                   &
+        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
                            epsx, epsc, vx, vc, tb09_const_c )
 
 !        exc = exc + rho * (epsx + epsc)
@@ -361,7 +361,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
         if(twotau/rho > 2.0) twotau = 2.0*rho
         if(grho/rho > 2.5) grho = 2.5*rho
 
-        call xc_mgga_vxc('pz', rho, grho, lap, twotau,                   &
+        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
                            epsx, epsc, vx, vc, tb09_const_c )
 
         call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )

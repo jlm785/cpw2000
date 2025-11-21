@@ -19,7 +19,7 @@
 !>  \date         September 2015, 21 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_mgga_vxc(author, rho, grho, lap_rho, tau,                  &
+subroutine xc_mgga_vxc(author_x, author_c, rho, grho, lap_rho, tau,      &
                      epsx, epsc, vx, vc, ctb09 )
 
 !
@@ -30,7 +30,8 @@ subroutine xc_mgga_vxc(author, rho, grho, lap_rho, tau,                  &
 
 ! input
 
-  character(len = *), intent(in)     ::  author                          !<  type of correlation wanted.
+  character(len = *), intent(in)     ::  author_x                        !<  type of exchange wanted.
+  character(len = *), intent(in)     ::  author_c                        !<  type of correlation wanted.
   real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
   real(REAL64), intent(in)           ::  grho                            !<  gradient of charge density
   real(REAL64), intent(in)           ::  lap_rho                         !<  Laplacian of charge density
@@ -61,16 +62,16 @@ subroutine xc_mgga_vxc(author, rho, grho, lap_rho, tau,                  &
 
   else
 
-    if (author == 'tbl' .or. author == 'TBL' .or.                        &
-        author == 'tb00' .or. author == 'TB09') then
+    if (author_x == 'tbl' .or. author_x == 'TBL' .or.                    &
+        author_x == 'tb00' .or. author_x == 'TB09') then
 
-      call xc_lda('PW92', rho, epsx, epsc, vx, vc )
+      call xc_lda(author_c, rho, epsx, epsc, vx, vc )
       call xc_mgga_x_tb09(rho, grho, lap_rho, tau, ctb09, vx)
 
     else
 
       write(6,'("  STOPPED  in xc_mgga_vxc:   unknown exchange-correlation")')
-      write(6,*) '     ',author
+      write(6,*) '     ',author_x,'  ', author_c
 
       stop
 
