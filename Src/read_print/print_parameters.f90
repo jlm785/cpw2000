@@ -65,6 +65,10 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
   logical, intent(in)                ::  flgkplusg                       !<  finish cell minimization with fixed k+G
   real(REAL64), intent(in)           ::  epskplusg                       !<  criteria for switching to fixed k+G
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! parameters
 
   real(REAL64), parameter :: AUTOGPA = 29421.58_REAL64
@@ -76,19 +80,25 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 
   write(6,*)
   write(6,*)
-  if(adjustl(trim(author)) == 'CA' .or. adjustl(trim(author)) == 'PZ') then
+  if( chrsameinfo(author, 'CA' ) .or. chrsameinfo(author, 'PZ' ) ) then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Perdew and Zunger'
-  elseif(author == 'PW92') then
+  elseif(chrsameinfo(author, 'PW92' )) then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Perdew and Wang (1992)'
-  elseif(adjustl(trim(author)) == 'VWN') then
+  elseif( chrsameinfo(author, 'VWN' )) then
     write(6,*) '   Local Density Approximation (LDA) using ',            &
      '   Ceperley and Alder as parametrized by Vosko, Wilk and Nusair'
-  elseif(adjustl(trim(author)) == 'PBE') then
+  elseif( chrsameinfo(author, 'WI' )) then
+    write(6,*) '   Local Density Approximation (LDA) using ',            &
+     '   Wigner correlation'
+  elseif( chrsameinfo(author, 'PBE' )) then
     write(6,*) 'Generalized Gradient Approximation (GGA)',               &
          '   as parametrized by Perdew, Burke and Ernzerhof'
-  elseif(adjustl(trim(author)) == 'TBL') then
+   elseif( chrsameinfo(author, 'LAK' )) then
+    write(6,*) 'Meta Generalized Gradient Approximation (MGGA)',         &
+         '   as parametrized by Lebeda, Aschebrock and Kümmel'
+ elseif( chrsameinfo(author, 'TBL' )) then
     write(6,*) '   Tran-Blaha meta-gga  '
     if(tblaha < 0) then
       write(6,*) ' Using calculated tb constant'

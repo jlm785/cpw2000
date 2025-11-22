@@ -51,6 +51,10 @@ subroutine xc_mgga( author, rho, grho,  lap_rho, tau,                    &
   real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of epsx (1/bohr^3)
   real(REAL64), intent(out)          ::  decdtau                         !<  derivative with respect to tau of epsc (1/bohr^3)
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! parameters
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64
@@ -71,7 +75,7 @@ subroutine xc_mgga( author, rho, grho,  lap_rho, tau,                    &
   else
 
 
-    if (author == 'lak' .or. author == 'LAK') then
+    if (chrsameinfo(author, 'LAK' ) ) then
 
 !     T. Lebeda, T. Aschebrock, and S. Kummel,
 !     Phys. Rev. Lett. 133, 136402 (2024)

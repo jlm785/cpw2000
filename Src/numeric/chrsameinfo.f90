@@ -11,38 +11,40 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Accepts a string of nchar characters and replaces
-!>  any lowercase letters by uppercase ones.
-!>  If n = 0, uses the string length.
+!>  Checks if strings have the same info
+!>  irrespective of case and leading or trailing blanks.
+!>
 !>
 !>  \author       JLM adapted from the web
 !>  \version      5.12
-!>  \date         before August 1997, 22 November 2025.
+!>  \date         22 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine chrcap(string,nchar)
+logical function chrsameinfo(string1, string2)
 
-! Modified documentation August 2019.  JLM
-! Indentation case. 22 November 2025. JLM
+! Written 22 November 2025. JLM
 
   implicit none
 
-  integer, intent(in)                ::  nchar                           !<  string length
-  character(len=*), intent(inout)    ::  string                          !<  string to be uppercased
+  character(len=*), intent(in)       ::  string1                         !<  string to be compared
+  character(len=*), intent(in)       ::  string2                         !<  string to be compared
 
-  integer       ::  ncopy, i, itemp
+! local copies
 
-  ncopy = nchar
-  if(ncopy < 1) ncopy = len(string)
-  do i=1,ncopy
+  character(len=len(string1))        ::  str1
+  character(len=len(string2))        ::  str2
 
-    if(lge(string(i:i),'a') .and. lle(string(i:i),'z'))then
-      itemp=ichar(string(i:i))+ichar('A')-ichar('a')
-      string(i:i)=char(itemp)
-      endif
-  enddo
+  chrsameinfo = .FALSE.
+
+  str1 = adjustl(trim(string1))
+  str2 = adjustl(trim(string2))
+
+  call chrcap(str1,0)
+  call chrcap(str2,0)
+
+  if(str1 == str2) chrsameinfo = .TRUE.
 
   return
 
-end subroutine chrcap
+end function chrsameinfo
 

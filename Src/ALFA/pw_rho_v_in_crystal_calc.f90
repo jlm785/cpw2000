@@ -99,6 +99,10 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   character(len=250)  ::  line250
   integer             ::  ioerr, ioerr2
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! counters
 
   integer    ::  i, j, k
@@ -185,33 +189,31 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     author(4:4) = ' '
   endif
 
-  if(adjustl(trim(author)) == 'ca' .or.                                  &
-     adjustl(trim(author)) == 'CA' .or.                                  &
-     adjustl(trim(author)) == 'pz' .or.                                  &
-     adjustl(trim(author)) == 'PZ') then
+  if( chrsameinfo(author, 'CA' ) .or. chrsameinfo(author, 'PZ' ) ) then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by Perdew and Zunger)")')
-  elseif(author == 'PW92' .or. author == 'pw92') then
+  elseif( chrsameinfo(author, 'PW92' ) ) then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by Perdew and Wang (1992) )")')
-  elseif(adjustl(trim(author)) == 'vwn' .or.                             &
-         adjustl(trim(author)) == 'VWN') then
+  elseif( chrsameinfo(author, 'VWN' ) ) then
     write(6,*)
     write(6,'("  The potential was calculated in the local ",            &
       &   "density aproximation using Ceperley and Alder correlation")')
     write(6,'("  (as parametrized by  Vosko, Wilk and Nusair)")')
-  elseif(adjustl(trim(author)) == 'pbe' .or.                             &
-         adjustl(trim(author)) == 'PBE' ) then
+  elseif( chrsameinfo(author, 'WI' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Wigner correlation")')
+  elseif( chrsameinfo(author, 'PBE' ) ) then
     write(6,*)
     write(6,'("  The potential was calculated in the generalized",       &
       &   " gradient aproximation as parametrized by Perdew, Burke ",    &
       &   "and Ernzerhof")')
-  elseif(adjustl(trim(author)) == 'tbl' .or.                             &
-         adjustl(trim(author)) == 'TBL' ) then
+  elseif( chrsameinfo(author, 'TBL' ) .or. chrsameinfo(author, 'TB09' ) ) then
     write(6,*)
     write(6,'("  The potential was calculated in the modified",          &
       &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')

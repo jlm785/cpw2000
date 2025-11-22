@@ -49,6 +49,10 @@ subroutine xc_gga( author, rho, grho,                                    &
   real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of rho*epsx (hartree/bohr^2)
   real(REAL64), intent(out)          ::  decdgr                          !<  derivative with respect to grho of rho*epsc (hartree/bohr^2)
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! parameters
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64
@@ -67,7 +71,7 @@ subroutine xc_gga( author, rho, grho,                                    &
   else
 
 
-    if (author == 'pbe' .or. author == 'PBE') then
+    if ( chrsameinfo(author, 'PBE' ) ) then
 
 !     Perdew, Burke and Ernzerhof, Phys. Rev. Lett. 77, 3865 (1996)
 !     Phys. Rev. Lett. 78, 1396 (1997)

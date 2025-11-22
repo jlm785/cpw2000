@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 14 October 2025.
+!>  \date         October 1993, 22 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -49,6 +49,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, itmix=-1 indicates restarting. 2 October 2025. JLM
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
+! Modified, calls chr_author_info, 22 November 2025. JLM
 
   use cpw_variables
 
@@ -301,7 +302,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   integer                ::  irkpsi                                      !  used for saving to disk
 
-  logical                ::  lexccalc                                    !  exchange energy calculated.  False in Tran-Blaha, etc...
+  logical                ::  lxccalc                                     !  exchange energy calculated.  False in Tran-Blaha, etc...
+  logical                ::  lxcgrad, lxclap, lxctau, lxctb09            !  properties of xc functionals
 
 ! counters
 
@@ -329,6 +331,11 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   nfailmix = 0
   maxnfailmix = min(max(1,mxdscf/5),10)
+
+! properties ox xc functionals
+
+  call chr_author_info(xc_%author, lxcgrad, lxclap, lxctau,              &
+       lxctb09, lxccalc)
 
 ! allocations
 
@@ -652,7 +659,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     allocate(tau(dims_%mxdnst))
 
-    if(xc_%author == "TBL") then
+    if(lxctau) then
       do i = 1,recip_%ns
         tau(i) = C_ZERO
       enddo
@@ -698,7 +705,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
           recip_%inds, recip_%kmax, recip_%mstar,                           &
           dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
 
-      if(xc_%author == "TBL") then
+      if(lxctau) then
 
         allocate(tauk(dims_%mxdnst))
 
@@ -727,7 +734,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     allocate(rholap(dims_%mxdnst))
 
-    if(xc_%author == "TBL") then
+    if(lxclap) then
 
       call lap_rho(chdens_%den, rholap, crys_%adot,                      &
           recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,   &
@@ -775,11 +782,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         pseudo_%ztot, crys_%adot,                                        &
         dims_%mxdgve, dims_%mxdnst)
 
-!   traps the case where E_xc is not calculated.
-
-    lexccalc = .TRUE.
-    if(abs(exc) < EPS) lexccalc = .FALSE.
-
 !   detects problems in convergence
 
     if(abs(itmix) == 1) then
@@ -795,7 +797,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     else
 
-      if(total_%energy < enerlow .and. lexccalc) then
+      if(total_%energy < enerlow .and. lxccalc) then
 
         enerlow = total_%energy
         itlow = itmix
@@ -859,7 +861,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     else
 
-      call mixer_bfgs_c16(itmix, lexccalc, crys_%adot, pseudo_%ztot,     &
+      call mixer_bfgs_c16(itmix, lxccalc, crys_%adot, pseudo_%ztot,      &
           bandwid, penngap, total_%energy,                               &
           recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
           recip_%mstar, recip_%ek,                                       &

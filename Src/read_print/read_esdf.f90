@@ -223,18 +223,18 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
 ! choice of exchange and correlation
 
-
   author = 'CA  '
 ! author = 'PBE '
 
   author = esdf_string('XC.Authors', author)
-  call chrcap(author,4)
 
   if (command_argument_count() >=2) then
 !  if (iargc() >=2) then
 !    call getarg(2,author)
     call get_command_argument(2,author)
   endif
+  call chrcap(author,4)
+
 
 ! and Tran-Blaha constant
 

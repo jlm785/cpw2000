@@ -307,9 +307,9 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,*)
 
   if(ltbl) then
-    write(io,'("XC.Authors                    TBL           # CA, PBE, TBL")')
+    write(io,'("XC.Authors                    TBL           # CA, PBE, TBL, VWN, LAK")')
   else
-    write(io,'("XC.Authors                    CA            # CA, PBE, TBL")')
+    write(io,'("XC.Authors                    CA            # CA, PBE, TBL, VWN, LAK")')
   endif
   write(io,*)
 

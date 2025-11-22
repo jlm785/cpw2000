@@ -44,6 +44,10 @@ subroutine xc_lda(author, rho, epsx, epsc, vx, vc)
   real(REAL64), intent(out)          ::  vx                              !<  exchange potential (hartree/bohr^3)
   real(REAL64), intent(out)          ::  vc                              !<  correlation potential (hartree/bohr^3)
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! parameters
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64
@@ -67,28 +71,27 @@ subroutine xc_lda(author, rho, epsx, epsc, vx, vc)
 
 !   C o r r e l a t i o n
 
-    if ( author == 'ca' .or. author == 'CA' .or.                         &
-         author == 'pz' .or. author == 'PZ') then
+    if ( chrsameinfo(author, 'CA' ) .or.  chrsameinfo(author, 'PZ' ) ) then
 
 !     P e r d e w    a n d     Z u n g e r
 
       call xc_lda_c_pz(rho, epsc, vc)
 
 
-    elseif ( author == 'vwn' .or. author == 'VWN' ) then
+    elseif ( chrsameinfo(author, 'VWN' ) ) then
 
 !     V o s k o     W i l k     and     N u s a i r
 
       call xc_lda_c_vwn(rho, epsc, vc)
 
 
-    elseif ( author == 'wi' .or. author == 'WI') then
+    elseif ( chrsameinfo(author, 'WI' ) ) then
 
 !     W i g n e r
 
       call xc_lda_c_wigner(rho, epsc, vc)
 
-    elseif ( author == 'pw92' .or. author == 'PW92' ) then
+    elseif ( chrsameinfo(author, 'PW92' ) ) then
 
 !     P e r d e w     &     W a n g     1 9 9 2
 

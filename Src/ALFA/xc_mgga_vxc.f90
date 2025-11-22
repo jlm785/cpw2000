@@ -45,6 +45,10 @@ subroutine xc_mgga_vxc(author_x, author_c, rho, grho, lap_rho, tau,      &
   real(REAL64), intent(out)          ::  vx                              !<  Tran-Blaha exchange potential (hartree/bohr^3)
   real(REAL64), intent(out)          ::  vc                              !<  LDA correlation potential (hartree/bohr^3)
 
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
 ! parameters
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
@@ -62,8 +66,7 @@ subroutine xc_mgga_vxc(author_x, author_c, rho, grho, lap_rho, tau,      &
 
   else
 
-    if (author_x == 'tbl' .or. author_x == 'TBL' .or.                    &
-        author_x == 'tb00' .or. author_x == 'TB09') then
+    if ( chrsameinfo(author_x, 'TBL' ) .or. chrsameinfo(author_x, 'TB09' ) ) then
 
       call xc_lda(author_c, rho, epsx, epsc, vx, vc )
       call xc_mgga_x_tb09(rho, grho, lap_rho, tau, ctb09, vx)
