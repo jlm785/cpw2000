@@ -16,8 +16,8 @@
 !>
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
-!>  \version      5.05
-!>  \date         8 June 1987.  29 September 2022.
+!>  \version      5.12
+!>  \date         8 June 1987.  23 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
@@ -37,6 +37,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
 ! Modified documentation, January 2020. JLM
 ! Modified ipr, icheck, 13 February 2021. JLM
 ! Minor stuff, 29 September 2022. JLM
+! Other mgga besides Tran-Blaha. only one xc_cell. 23 November 2025. JLM
 
 
   implicit none
@@ -96,6 +97,8 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
   real(REAL64)    ::  fac
   integer         ::  ncheck(4)
 
+  logical         ::  lxcgrad, lxclap, lxctau, lxctb09, lxccalc          !  properties of xc functionals
+
 ! counters
 
   integer       ::  i
@@ -106,6 +109,11 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
+
+! properties of xc functionals
+
+  call xc_author_info(author, lxcgrad, lxclap, lxctau,                   &
+       lxctb09, lxccalc)
 
   call adot_to_bdot(adot, vcell, bdot)
 
@@ -158,56 +166,66 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
 
 ! compute exchange and correlation
 
-  if(author=="TBL") then
+  if(lxclap) then
 
     allocate(rholapmsh(mxdfft))
-    allocate(taumsh(mxdfft))
 
     call mesh_set(ipr, "rholap", adot, rholap, rholapmsh, ncheck,        &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
-  if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3           &
+    if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
       .or. ncheck(4) /= id) then
-    write(6,*)
-    write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
-    write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,    &
+      write(6,*)
+      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
+      write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,  &
                (ncheck(i),i=1,4)
-    write(6,*)
+      write(6,*)
 
-    stop
+      stop
+
+    endif
+
+  else
+
+    allocate(rholapmsh(1))
 
   endif
 
-    call mesh_set(ipr, "tau", adot, twotau, taumsh, ncheck,                 &
+  if(lxctau) then
+
+    allocate(taumsh(mxdfft))
+
+    call mesh_set(ipr, "tau", adot, twotau, taumsh, ncheck,              &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
-  if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3           &
+    if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
       .or. ncheck(4) /= id) then
-    write(6,*)
-    write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
-    write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,    &
+      write(6,*)
+      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
+      write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,  &
                (ncheck(i),i=1,4)
-    write(6,*)
+      write(6,*)
 
-    stop
+      stop
+
+    endif
+
+  else
+
+    allocate(taumsh(1))
 
   endif
 
-    call xc_cell2(author, tblaha, id, n2, n1,n2,n3,                      &
+
+  call xc_cell2(author, tblaha, id, n2, n1,n2,n3,                        &
         rhomsh, taumsh, rholapmsh, vxcmsh, adot, exc, rhovxc, strxc )
 
 
   deallocate(rholapmsh)
   deallocate(taumsh)
 
-  else
-
-    call xc_cell( author, id, n2, n1, n2, n3,                            &
-        rhomsh, vxcmsh, adot, exc, rhovxc, strxc )
-
-  endif
 !-----------------------clr----------------------------------------
 
 ! fills chd
@@ -251,4 +269,5 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
   deallocate(vxcg)
 
   return
+
 end subroutine v_hartree_xc

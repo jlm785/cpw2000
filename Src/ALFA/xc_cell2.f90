@@ -64,6 +64,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
   real(REAL64)        ::  rho, epsx, epsc, vx, vc
   real(REAL64)        ::  strgga(3,3)                                    !  contribution to stress
   real(REAL64)        ::  grho,dexdr,decdr,dexdgr,decdgr
+  real(REAL64)        ::  dexdtau, decdtau
 
   integer, parameter  ::  mxdnn = 3                                      !  Lagrange interpolation uses 2*mxdnn+1 points
   real(REAL64)        ::  dgdm(-mxdnn:mxdnn),drhodm(3),drhocon(3)
@@ -77,6 +78,9 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
   real(REAL64)        ::  rhomax                                         !  maximum value of density
   real(REAL64)        ::  epsx_lda, epsc_lda, vx_lda, vc_lda             !  LDA XC
   real(REAL64)        ::  cprop                                          !  mix of TBL and LDA
+
+  logical             ::  lxclda, lxcgga, lxcmgga, lxcmggavxc            !  family of xc functionals
+  logical             ::  lxcgrad, lxclap, lxctau, lxctb09, lxccalc      !  properties of xc functionals
 
 ! parameters
 
@@ -119,6 +123,10 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
   if(n1 <= 0 .or. n2 <= 0 .or. n3 <= 0) return
 
 
+  call xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
+
+  call xc_author_info(author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
+
   rhomax = chdr(1,1,1)
   do i3 = 1,n3
   do i2 = 1,n2
@@ -151,236 +159,7 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
   enddo
   enddo
 
-  if (author == 'pz' .or. author == 'PZ'                                 &
-      .or. author == 'ca' .or. author == 'CA'                            &
-      .or. author == 'pw92' .or. author == 'PW92'                        &
-      .or. author == 'vwn' .or. author == 'VWN'                          &
-      .or. author == 'wi' .or. author == 'WI'                            &
-      .or. xc_call == 0) then
-
-!  LDA exchange and correlation
-
-    if(xc_call == 0) then
-
-      do i3 = 1,n3
-      do i2 = 1,n2
-      do i1 = 1,n1
-        rho = chdr(i1,i2,i3)
-
-        call xc_lda('PZ', rho, epsx, epsc, vx, vc )
-
-        exc = exc + rho * (epsx + epsc)
-        vxc(i1,i2,i3) = vx + vc
-        rhovxc = rhovxc + rho*(vx + vc)
-      enddo
-      enddo
-      enddo
-      xc_call = 1
-      tb09_integral = ZERO
-
-    else
-
-      do i3 = 1,n3
-      do i2 = 1,n2
-      do i1 = 1,n1
-        rho = chdr(i1,i2,i3)
-
-        call xc_lda( author, rho, epsx, epsc, vx, vc )
-
-        exc = exc + rho * (epsx + epsc)
-        vxc(i1,i2,i3) = vx + vc
-        rhovxc = rhovxc + rho*(vx + vc)
-      enddo
-      enddo
-      enddo
-
-    endif
-
-  elseif (author == 'tbl' .or. author == 'TBL') then
-
-!   meta-gga exchange and correlation
-
-
-!   Weights for lagrange interpolation formula
-
-    nn = min(n1,n2,n3) / 2
-    nn = min(nn,mxdnn)
-    do in = -nn,nn
-      if1 = 1
-      if2 = 1
-      do jn = -nn,nn
-        if (jn /= in .and. jn /= 0) if1 = if1 * (0  - jn)
-        if (jn /= in)               if2 = if2 * (in - jn)
-      enddo
-      dgdm(in) = (if1*UM) / (if2*UM)
-    enddo
-    dgdm(0) = ZERO
-
-!   calculation of tb09 constant c :(
-
-    if(tblaha > ZERO) then
-
-      tb09_const_c = tblaha
-
-    else
-
-      tb09_integral = ZERO
-
-      do i3=1,n3
-      do i2=1,n2
-      do i1=1,n1
-        rho   = chdr(i1,i2,i3)
-
-!       calculates gradient of rho
-
-        drhodm(1) = ZERO
-        do in = -nn,nn
-          ip = i1 + in
-          ip = mod(ip+n1-1,n1) + 1
-          drhodm(1) = drhodm(1) + dgdm(in)*chdr(ip,i2,i3)
-        enddo
-        drhodm(1) = n1*drhodm(1)
-
-        drhodm(2) = ZERO
-        do in = -nn,nn
-          ip = i2 + in
-          ip = mod(ip+n2-1,n2) + 1
-          drhodm(2) = drhodm(2) + dgdm(in)*chdr(i1,ip,i3)
-        enddo
-        drhodm(2) = n2*drhodm(2)
-
-        drhodm(3) = ZERO
-        do in = -nn,nn
-          ip = i3 + in
-          ip = mod(ip+n3-1,n3) + 1
-          drhodm(3) = drhodm(3) + dgdm(in)*chdr(i1,i2,ip)
-        enddo
-        drhodm(3) = n3*drhodm(3)
-
-        drhocon(1) = bdot(1,1)*drhodm(1) + bdot(1,2)*drhodm(2) + bdot(1,3)*drhodm(3)
-        drhocon(2) = bdot(2,1)*drhodm(1) + bdot(2,2)*drhodm(2) + bdot(2,3)*drhodm(3)
-        drhocon(3) = bdot(3,1)*drhodm(1) + bdot(3,2)*drhodm(2) + bdot(3,3)*drhodm(3)
-        grho = drhodm(1)*drhocon(1) + drhodm(2)*drhocon(2) + drhodm(3)*drhocon(3)
-
-        if(grho < EPS) then
-          grho = ZERO
-          drhocon(1) = ZERO
-          drhocon(2) = ZERO
-          drhocon(3) = ZERO
-        else
-          grho = sqrt(grho)
-          drhocon(1) = drhocon(1) / grho
-          drhocon(2) = drhocon(2) / grho
-          drhocon(3) = drhocon(3) / grho
-        endif
-
-        tb09_integral = tb09_integral + (grho/rho)
-
-      enddo
-      enddo
-      enddo
-
-      tb09_integral = tb09_integral / (n1*n2*n3)
-      tb09_const_c = TB09_ALPHA + TB09_BETA*sqrt(tb09_integral)
-
-      write(6,*)
-      write(6,*) '   tb09_integral is: ',  tb09_integral
-      write(6,*) '   tb09_const_c is:  ',  tb09_const_c
-      write(6,*)
-
-    endif
-
-!   end of calculation ot TB constant
-
-    do i3=1,n3
-    do i2=1,n2
-    do i1=1,n1
-      rho = chdr(i1,i2,i3)
-      twotau = taumsh(i1,i2,i3)
-      lap = lapmsh(i1,i2,i3)
-
-!     calculates gradient of rho again
-
-      drhodm(1) = ZERO
-      do in = -nn,nn
-        ip = i1 + in
-        ip = mod(ip+n1-1,n1) + 1
-        drhodm(1) = drhodm(1) + dgdm(in)*chdr(ip,i2,i3)
-      enddo
-      drhodm(1) = n1*drhodm(1)
-
-      drhodm(2) = ZERO
-      do in = -nn,nn
-        ip = i2 + in
-        ip = mod(ip+n2-1,n2) + 1
-        drhodm(2) = drhodm(2) + dgdm(in)*chdr(i1,ip,i3)
-      enddo
-      drhodm(2) = n2*drhodm(2)
-
-      drhodm(3) = ZERO
-      do in = -nn,nn
-        ip = i3 + in
-        ip = mod(ip+n3-1,n3) + 1
-        drhodm(3) = drhodm(3) + dgdm(in)*chdr(i1,i2,ip)
-      enddo
-      drhodm(3) = n3*drhodm(3)
-
-      drhocon(1) = bdot(1,1)*drhodm(1) + bdot(1,2)*drhodm(2) + bdot(1,3)*drhodm(3)
-      drhocon(2) = bdot(2,1)*drhodm(1) + bdot(2,2)*drhodm(2) + bdot(2,3)*drhodm(3)
-      drhocon(3) = bdot(3,1)*drhodm(1) + bdot(3,2)*drhodm(2) + bdot(3,3)*drhodm(3)
-      grho = drhodm(1)*drhocon(1) + drhodm(2)*drhocon(2) + drhodm(3)*drhocon(3)
-
-      if(grho < EPS) then
-        grho = ZERO
-        drhocon(1) = ZERO
-        drhocon(2) = ZERO
-        drhocon(3) = ZERO
-      else
-        grho = sqrt(grho)
-        drhocon(1) = drhocon(1) / grho
-        drhocon(2) = drhocon(2) / grho
-        drhocon(3) = drhocon(3) / grho
-      endif
-
-!     avoids unphysical values due to noise at low densities
-!     useful for slabs
-
-      if(rho > RHOEPS*rhomax) then
-
-        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
-                           epsx, epsc, vx, vc, tb09_const_c )
-
-!        exc = exc + rho * (epsx + epsc)
-        vxc(i1,i2,i3) = vx + vc
-!        rhovxc = rhovxc + rho*(vx + vc)
-
-      else
-
-!       low density unstable region
-
-        if(twotau/rho > 2.0) twotau = 2.0*rho
-        if(grho/rho > 2.5) grho = 2.5*rho
-
-        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
-                           epsx, epsc, vx, vc, tb09_const_c )
-
-        call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
-
-        cprop = (UM + COS(PI*rho/(RHOEPS*rhomax)))/2
-        vxc(i1,i2,i3) = (UM-cprop)*(vx + vc) + cprop*(vx_lda+vc_lda)
-
-        if(vxc(i1,i2,i3) >  20.0) vxc(i1,i2,i3) = 20.0
-        if(vxc(i1,i2,i3) < -20.0) vxc(i1,i2,i3) =-20.0
-
-      endif
-
-    enddo
-    enddo
-    enddo
-
-  elseif (author == 'pbe' .or. author == 'PBE') then
-
-!   gga exchange and correlation
+  if(lxcgrad) then
 
     if(n1 < 3 .or. n2 < 3 .or. n3 < 3) then
       write(6,'("   STOPPED in xc_cell:   dimensions too small ",3i5)') n1,n2,n3
@@ -404,55 +183,78 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
     enddo
     dgdm(0) = ZERO
 
+  endif
+
+! calculates the Tran-Blaha constant
+
+  if(lxctb09) then
+
+    if(tblaha > ZERO) then
+
+      tb09_const_c = tblaha
+
+    else
+
+      tb09_integral = ZERO
+
+      do i3=1,n3
+      do i2=1,n2
+      do i1=1,n1
+
+        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
+            nn, dgdm, bdot, rho, grho, drhocon,                          &
+            mxdnn)
+
+        tb09_integral = tb09_integral + (grho/rho)
+
+      enddo
+      enddo
+      enddo
+
+      tb09_integral = tb09_integral / (n1*n2*n3)
+      tb09_const_c = TB09_ALPHA + TB09_BETA*sqrt(tb09_integral)
+
+      write(6,*)
+      write(6,*) '   tb09_integral is: ',  tb09_integral
+      write(6,*) '   tb09_const_c is:  ',  tb09_const_c
+      write(6,*)
+
+    endif
+
+  endif
+
+! LDA exchange and correlation
+
+  if(lxclda) then
+
     do i3 = 1,n3
     do i2 = 1,n2
     do i1 = 1,n1
       rho = chdr(i1,i2,i3)
 
-!     calculates gradient of rho
+      call xc_lda( author, rho, epsx, epsc, vx, vc )
 
-      drhodm(1) = ZERO
-      do in = -nn,nn
-        ip = i1 + in
-        ip = mod(ip+n1-1,n1) + 1
-        drhodm(1) = drhodm(1) + dgdm(in)*chdr(ip,i2,i3)
-      enddo
-      drhodm(1) = n1*drhodm(1)
+      exc = exc + rho * (epsx + epsc)
+      vxc(i1,i2,i3) = vx + vc
+      rhovxc = rhovxc + rho*(vx + vc)
 
-      drhodm(2) = ZERO
-      do in = -nn,nn
-        ip = i2 + in
-        ip = mod(ip+n2-1,n2) + 1
-        drhodm(2) = drhodm(2) + dgdm(in)*chdr(i1,ip,i3)
-      enddo
-      drhodm(2) = n2*drhodm(2)
+    enddo
+    enddo
+    enddo
 
-      drhodm(3) = ZERO
-      do in = -nn,nn
-        ip = i3 + in
-        ip = mod(ip+n3-1,n3) + 1
-        drhodm(3) = drhodm(3) + dgdm(in)*chdr(i1,i2,ip)
-      enddo
-      drhodm(3) = n3*drhodm(3)
+  elseif(lxcgga) then
 
-      drhocon(1) = bdot(1,1)*drhodm(1) + bdot(1,2)*drhodm(2) + bdot(1,3)*drhodm(3)
-      drhocon(2) = bdot(2,1)*drhodm(1) + bdot(2,2)*drhodm(2) + bdot(2,3)*drhodm(3)
-      drhocon(3) = bdot(3,1)*drhodm(1) + bdot(3,2)*drhodm(2) + bdot(3,3)*drhodm(3)
-      grho = drhodm(1)*drhocon(1) + drhodm(2)*drhocon(2) + drhodm(3)*drhocon(3)
+!   gga exchange and correlation
 
-      if(grho < EPS) then
-        grho = ZERO
-        drhocon(1) = ZERO
-        drhocon(2) = ZERO
-        drhocon(3) = ZERO
-      else
-        grho = sqrt(grho)
-        drhocon(1) = drhocon(1) / grho
-        drhocon(2) = drhocon(2) / grho
-        drhocon(3) = drhocon(3) / grho
-      endif
+    do i3 = 1,n3
+    do i2 = 1,n2
+    do i1 = 1,n1
 
-      call xc_gga( author, rho, grho,                               &
+      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
+          nn, dgdm, bdot, rho, grho, drhocon,                            &
+          mxdnn)
+
+      call xc_gga( author, rho, grho,                                    &
                    epsx, epsc, dexdr, decdr, dexdgr, decdgr )
 
       exc = exc + rho * (epsx + epsc)
@@ -491,6 +293,112 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
     enddo
     enddo
 
+  elseif(lxcmgga) then
+
+!   meta-gga exchange and correlation with both potential and energy
+
+!   gga exchange and correlation
+
+    do i3 = 1,n3
+    do i2 = 1,n2
+    do i1 = 1,n1
+
+      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
+          nn, dgdm, bdot, rho, grho, drhocon,                            &
+          mxdnn)
+
+      twotau = taumsh(i1,i2,i3)
+      lap = ZERO
+
+      call xc_mgga( author, rho, grho,  lap, twotau / 2,                 &
+                   epsx, epsc, dexdr, decdr, dexdgr, decdgr,             &
+                   dexdtau, decdtau  )
+
+      exc = exc + rho * (epsx + epsc)
+      vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
+      coef = (dexdgr + decdgr) * grho
+      do i=1,3
+      do j=1,3
+        strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
+      enddo
+      enddo
+
+      do in = -nn,nn
+        ip = i1 + in
+        ip = mod(ip+n1-1,n1) + 1
+        vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
+      enddo
+      do in = -nn,nn
+        ip = i2 + in
+        ip = mod(ip+n2-1,n2) + 1
+        vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
+      enddo
+      do in = -nn,nn
+        ip = i3 + in
+        ip = mod(ip+n3-1,n3) + 1
+        vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
+      enddo
+    enddo
+    enddo
+    enddo
+
+    do i3=1,n3
+    do i2=1,n2
+    do i1=1,n1
+      rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
+    enddo
+    enddo
+    enddo
+
+  elseif(lxcmggavxc) then
+
+!   meta-gga exchange and correlation with only potential
+
+    do i3=1,n3
+    do i2=1,n2
+    do i1=1,n1
+
+      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
+          nn, dgdm, bdot, rho, grho, drhocon,                            &
+          mxdnn)
+
+      twotau = taumsh(i1,i2,i3)
+      lap = lapmsh(i1,i2,i3)
+
+!     avoids unphysical values due to noise at low densities
+!     useful for slabs
+
+      if(rho > RHOEPS*rhomax) then
+
+        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+                           epsx, epsc, vx, vc, tb09_const_c )
+
+        vxc(i1,i2,i3) = vx + vc
+
+      else
+
+!       low density unstable region
+
+        if(twotau/rho > 2.0) twotau = 2.0*rho
+        if(grho/rho > 2.5) grho = 2.5*rho
+
+        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+                           epsx, epsc, vx, vc, tb09_const_c )
+
+        call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
+
+        cprop = (UM + COS(PI*rho/(RHOEPS*rhomax)))/2
+        vxc(i1,i2,i3) = (UM-cprop)*(vx + vc) + cprop*(vx_lda+vc_lda)
+
+        if(vxc(i1,i2,i3) >  20.0) vxc(i1,i2,i3) = 20.0
+        if(vxc(i1,i2,i3) < -20.0) vxc(i1,i2,i3) =-20.0
+
+      endif
+
+    enddo
+    enddo
+    enddo
+
   else
 
     write(6,'("    STOPPED in xc_cell:   unknown correlation")')
@@ -522,3 +430,103 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
 end subroutine xc_cell2
 
+subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
+       nn, dgdm, bdot, rho, grho, drhocon,                               &
+       mxdnn)
+
+
+  implicit none
+
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  integer, intent(in)                ::  mxdnn                           !<  Lagrange interpolation uses at most 2*mxdnn+1 points
+
+  integer, intent(in)                ::  id1, id2                        !<  first and second dimensions of the fft array
+  integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
+
+  integer, intent(in)                ::  i1, i2, i3                      !<  target point in the array
+  real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
+  real(REAL64), intent(in)           ::  bdot(3,3)                       !<  bdot/2*pi**2
+
+  integer, intent(in)                ::  nn                              !<  Lagrange interpolation used 2*mxdnn+1 points
+  real(REAL64), intent(in)           ::  dgdm(-mxdnn:mxdnn)              !<  Lagrange interpolation coefficients
+
+! output
+
+  real(REAL64), intent(out)          ::  rho                             !<  charge density
+  real(REAL64), intent(out)          ::  grho                            !<  absolute value of gradient of rho
+  real(REAL64), intent(out)          ::  drhocon(3)                      !<  components of gradient of rho (contravariant)
+
+! allocatable arrays
+
+  real(REAL64), allocatable          ::  drhodm(:)                       !  to be thread safe
+
+! local variables
+
+  integer           ::  if1, if2, ip
+
+! counters
+
+  integer           ::  in, jn
+
+! parameters
+
+  real(REAL64), parameter  :: PI = 3.14159265358979323846_REAL64
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter  :: EPS = 1.0E-18_REAL64
+
+
+  allocate(drhodm(3))
+
+  rho = chdr(i1,i2,i3)
+
+! calculates gradient of rho
+
+  drhodm(1) = ZERO
+  do in = -nn,nn
+    ip = i1 + in
+    ip = mod(ip+n1-1,n1) + 1
+    drhodm(1) = drhodm(1) + dgdm(in)*chdr(ip,i2,i3)
+  enddo
+  drhodm(1) = n1*drhodm(1)
+
+  drhodm(2) = ZERO
+  do in = -nn,nn
+    ip = i2 + in
+    ip = mod(ip+n2-1,n2) + 1
+    drhodm(2) = drhodm(2) + dgdm(in)*chdr(i1,ip,i3)
+  enddo
+  drhodm(2) = n2*drhodm(2)
+
+  drhodm(3) = ZERO
+  do in = -nn,nn
+    ip = i3 + in
+    ip = mod(ip+n3-1,n3) + 1
+    drhodm(3) = drhodm(3) + dgdm(in)*chdr(i1,i2,ip)
+  enddo
+  drhodm(3) = n3*drhodm(3)
+
+  drhocon(1) = bdot(1,1)*drhodm(1) + bdot(1,2)*drhodm(2) + bdot(1,3)*drhodm(3)
+  drhocon(2) = bdot(2,1)*drhodm(1) + bdot(2,2)*drhodm(2) + bdot(2,3)*drhodm(3)
+  drhocon(3) = bdot(3,1)*drhodm(1) + bdot(3,2)*drhodm(2) + bdot(3,3)*drhodm(3)
+  grho = drhodm(1)*drhocon(1) + drhodm(2)*drhocon(2) + drhodm(3)*drhocon(3)
+
+  if(grho < EPS) then
+    grho = ZERO
+    drhocon(1) = ZERO
+    drhocon(2) = ZERO
+    drhocon(3) = ZERO
+  else
+    grho = sqrt(grho)
+    drhocon(1) = drhocon(1) / grho
+    drhocon(2) = drhocon(2) / grho
+    drhocon(3) = drhocon(3) / grho
+  endif
+
+  deallocate(drhodm)
+
+  return
+
+end subroutine xc_cell_deriv

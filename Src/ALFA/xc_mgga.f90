@@ -242,8 +242,7 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_fxalpha_dgr = d_fxalpha_dalpha*d_alpha_dgr
   d_fxalpha_dtau = d_fxalpha_dalpha*d_alpha_dtau
 
-  arg = BX/sqrt(s)
-  if(arg < ARGMAX) then
+  if(s > (BX/ARGMAX)*(BX/ARGMAX)) then
     gxs = UM - exp(-BX/sqrt(s))
     d_gxs_ds = (gxs-UM) * BX / (2*sqrt(s)*s)
   else
@@ -256,19 +255,22 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
   arg = ((s*s)/(AX*AX))*(UM+s*s)
   d_arg_ds = ((2*s)/(AX*AX))*(UM+s*s) + ((s*s)/(AX*AX))*2*s
-  if(arg < ARGMAX) then
-    xkx = exp(-UM/arg)
-    d_xkx_ds = (UM / (arg*arg)) * xkx * d_arg_ds
-  else
+  if(arg > ARGMAX) then
     xkx = ZERO
     d_xkx_ds = ZERO
+  elseif(arg < ARGMAX) then
+    xkx = UM
+    d_xkx_ds = ZERO
+  else
+    xkx = exp(-UM/arg)
+    d_xkx_ds = (UM / (arg*arg)) * xkx * d_arg_ds
   endif
 
   h1x = hxge4 + xkx*(AX-hxge4)
   d_h1x_ds = d_hxge4_ds + d_xkx_ds*(AX-hxge4) - xkx*d_hxge4_ds
 
-  arg = ANUM*ANUM/(s*s)
-  if(arg < ARGMAX) then
+  if(s > ANUM/sqrt(ARGMAX)) then
+    arg = ANUM*ANUM/(s*s)
     gnum = UM - exp(-arg)
     d_gnum_ds = -exp(-arg) * 2*arg / s
   else
@@ -466,7 +468,7 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_g2_drs = -2*(afunc*tt * g2*g2)*(d_afunc_drs*tt + d_tt_drs*afunc)
   d_g2_ds = -2*d_tt_ds*afunc*afunc*tt * g2*g2
   if(betat > ZERO) then
-    if(UM + 4*afunc*tt > ZERO) then
+    if(UM + 4*afunc*tt > DBL_EPSILON) then
       g1 = UM / sqrt(sqrt(UM + 4*afunc*tt))
       d_g1_drs = -g1 *(d_afunc_drs*tt+afunc*d_tt_drs) / (UM + 4*afunc*tt)
       d_g1_ds = -g1 *afunc*d_tt_ds / (UM + 4*afunc*tt)
@@ -485,7 +487,7 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
       d_g3_ds = ZERO
     endif
   else
-    if(UM - 4*afunc*tt > ZERO) then
+    if(UM - 4*afunc*tt > DBL_EPSILON) then
       g1 = UM / sqrt(sqrt(UM - 4*afunc*tt))
       d_g1_drs = g1 *(d_afunc_drs*tt+afunc*d_tt_drs) / (UM - 4*afunc*tt)
       d_g1_ds = g1 *afunc*d_tt_ds / (UM - 4*afunc*tt)
@@ -505,13 +507,18 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
     endif
   endif
 
-
-  h1 = GAM*log( UM + w1*(UM-g1)*(UM-g2+g3) )
-  d_h1_drs = -GAM*w1*(d_g1_drs*(UM-g2+g3) + (UM-g1)*(d_g2_drs-d_g3_drs)  ) /   &
+  if(UM + w1*(UM-g1)*(UM-g2+g3) > DBL_MIN) then
+    h1 = GAM*log( UM + w1*(UM-g1)*(UM-g2+g3) )
+    d_h1_drs = -GAM*w1*(d_g1_drs*(UM-g2+g3) + (UM-g1)*(d_g2_drs-d_g3_drs)  ) /   &
                      ( UM + w1*(UM-g1)*(UM-g2+g3) )
 
-  d_h1_ds = -GAM*w1*(d_g1_ds*(UM-g2+g3) + (UM-g1)*(d_g2_ds-d_g3_ds) ) /        &
+    d_h1_ds = -GAM*w1*(d_g1_ds*(UM-g2+g3) + (UM-g1)*(d_g2_ds-d_g3_ds) ) /        &
                      ( UM + w1*(UM-g1)*(UM-g2+g3) )
+  else
+    h1 = GAM*log(DBL_MIN)
+    d_h1_drs = ZERO
+    d_h1_ds = ZERO
+  endif
 
   eclda0 = -B1C / (UM + B2C*rs)
   d_eclda0_drs = eclda0*eclda0*B2C/B1C
@@ -570,8 +577,9 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_fc_dgr = (UM/(UM+arg*arg)) * fcge2*d_abar_dgr
   d_fc_dtau = (UM/(UM+arg*arg)) * fcge2*d_abar_dtau
 
-  arg = ANUM*ANUM/(s*s)
-  if(arg < ARGMAX) then
+
+  if(s > ANUM/sqrt(ARGMAX)) then
+    arg = ANUM*ANUM/(s*s)
     gnum = UM - exp(-arg)
     d_gnum_ds = -exp(-arg) * 2*arg / s
   else

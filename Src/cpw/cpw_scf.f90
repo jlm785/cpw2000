@@ -49,7 +49,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, itmix=-1 indicates restarting. 2 October 2025. JLM
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
-! Modified, calls chr_author_info, 22 November 2025. JLM
+! Modified, calls xc_author_info, 22 November 2025. JLM
 
   use cpw_variables
 
@@ -332,9 +332,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   nfailmix = 0
   maxnfailmix = min(max(1,mxdscf/5),10)
 
-! properties ox xc functionals
+! properties of xc functionals
 
-  call chr_author_info(xc_%author, lxcgrad, lxclap, lxctau,              &
+  call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau,               &
        lxctb09, lxccalc)
 
 ! allocations

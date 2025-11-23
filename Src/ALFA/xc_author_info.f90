@@ -20,10 +20,10 @@
 !>  \date         22 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine chr_author_info(author, lxcgrad, lxclap, lxctau,              &
+subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
        lxctb09, lxccalc)
 
-! Written August 5, 2002. jlm
+! Written 22 November 2025. JLM
 
   implicit none
 
@@ -67,4 +67,59 @@ subroutine chr_author_info(author, lxcgrad, lxclap, lxctau,              &
 
   return
 
-end subroutine chr_author_info
+end subroutine xc_author_info
+
+
+!>  Sets flags according to the families of exchange and correlation functionals.
+
+
+subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
+
+! Written 22 November 2025. JLM
+
+  implicit none
+
+! input
+
+  character(len=4), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pw92 , pbe,...)
+
+!output
+
+  logical, intent(out)               ::  lxclda                          !<  LDA functionals
+  logical, intent(out)               ::  lxcgga                          !<  GGA functionals
+  logical, intent(out)               ::  lxcmgga                         !<  meta-GGA functionals with energy and potential
+  logical, intent(out)               ::  lxcmggavxc                      !<  meta-GGA functionals with only the potential
+
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
+
+! set to false.  Only one can be true...
+
+  lxclda = .FALSE.
+  lxcgga = .FALSE.
+  lxcmgga = .FALSE.
+  lxcmggavxc = .FALSE.
+
+  if( chrsameinfo(author, 'PZ' ) .or. chrsameinfo(author, 'CA' ) .or.    &
+      chrsameinfo(author, 'PW92' ) .or. chrsameinfo(author, 'VWN' ) .or. &
+      chrsameinfo(author, 'WI' ) ) then
+        lxclda = .TRUE.
+  endif
+
+  if(chrsameinfo(author, 'PBE' )) then
+       lxcgga = .TRUE.
+  endif
+
+  if(chrsameinfo(author, 'LAK' )) then
+       lxcmgga = .TRUE.
+  endif
+
+  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09')) then
+       lxcmggavxc = .TRUE.
+  endif
+
+  return
+
+end subroutine xc_author_family
