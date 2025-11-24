@@ -20,7 +20,8 @@
 !>  \date         8 June 1987.  23 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
+subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
+    exc, strxc, rhovxc,                                                  &
     vhar, vxc, den, denc, rholap, twotau,                                &
     ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
     mxdgve, mxdnst)
@@ -52,6 +53,8 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
   integer, intent(in)                ::  ipr                             !<  print switch
   character(len=*), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pbe, tbl)
   real(REAL64), intent(in)           ::  tblaha                          !<  Tran-Blaha constant
+  logical, intent(in)                ::  lkincalc                        !<  Indicates that the kinetic energy density has been calculated.
+
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density for the prototype G-vector
@@ -219,7 +222,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, adot, exc, strxc, rhovxc,   &
   endif
 
 
-  call xc_cell2(author, tblaha, id, n2, n1,n2,n3,                        &
+  call xc_cell2(author, tblaha, lkincalc, id, n2, n1,n2,n3,              &
         rhomsh, taumsh, rholapmsh, vxcmsh, adot, exc, rhovxc, strxc )
 
 

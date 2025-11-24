@@ -44,6 +44,7 @@
 !      local variables
 
        real(REAL64)  ::  href
+       logical       ::  lfail
 
 !      counters
 
@@ -54,7 +55,6 @@
        real(REAL64), parameter ::  EPS = 0.000001_REAL64
        integer, parameter      ::  NFULL = 250                           !  hard coded parameter for full diagonalization
 
-
        if(mtxd < neig) then
          write(6,*)
          write(6,'("   stopped in size_mtxds:     matrix size is ",i6,   &
@@ -64,17 +64,31 @@
          stop
 
        endif
-      
+
        if(mtxd < NFULL) then
          mtxds = mtxd
        elseif(3*neig+20 >= mtxd) then
          mtxds = mtxd
        else
          href = abs(2*hdiag(neig)-hdiag(1)) + EPS
-         do i = 3*neig+20,mtxd
+
+         do i = 3*neig+20,mtxd-1
+           lfail = .FALSE.
            mtxds = i
            if(hdiag(i) > href .and. (hdiag(i+1)-hdiag(i)) > EPS) exit
-         enddo    
+           lfail = .TRUE.
+         enddo
+
+         if(lfail) then
+
+           mtxds = mtxd
+
+           write(6,*)
+           write(6,*) '  WARNING  mtxds = mtxd = ', mtxds
+           write(6,*)
+
+         endif
+
        endif
 
        if(ipr > 1) write(6,'("  small matrix size = ",i5)') mtxds

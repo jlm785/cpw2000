@@ -112,7 +112,7 @@
        ipr = 0
        if(iprglob > 1) ipr = 1
 
-       call v_hartree_xc(ipr,xc_%author,xc_%tblaha,crys_%adot,           &
+       call v_hartree_xc(ipr,xc_%author,xc_%tblaha, .FALSE., crys_%adot, &
      &   exc,strxc,rhovxc,                                               &
      &   vcomp_%vhar,vcomp_%vxc,chdens_%den,chdens_%denc,rholap,tau,     &
      &   recip_%ng,recip_%kgv,recip_%phase,recip_%conj,recip_%ns,        &

@@ -304,6 +304,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   logical                ::  lxccalc                                     !  exchange energy calculated.  False in Tran-Blaha, etc...
   logical                ::  lxcgrad, lxclap, lxctau, lxctb09            !  properties of xc functionals
+  logical                ::  lkincalc                                    !  Indicates that the kinetic energy density has been calculated.
 
 ! counters
 
@@ -336,6 +337,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau,               &
        lxctb09, lxccalc)
+
+  lkincalc = .FALSE.
 
 ! allocations
 
@@ -663,6 +666,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       do i = 1,recip_%ns
         tau(i) = C_ZERO
       enddo
+      lkincalc = .TRUE.
     endif
 
 !   second loop over k-points
@@ -750,7 +754,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     if(iprglob > 1) ipr = 1
     if(iprglob == 4) ipr = 2
 
-    call v_hartree_xc(ipr, xc_%author, xc_%tblaha,                       &
+    call v_hartree_xc(ipr, xc_%author, xc_%tblaha, lkincalc,             &
         crys_%adot, exc, strxc, rhovxc,                                  &
         vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc, rholap, tau, &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &

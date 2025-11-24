@@ -182,7 +182,7 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   real(REAL64), parameter  ::  XNUS = -(1606*UM - 50*XMUAX) / (18225*UM)
 
   real(REAL64), parameter  ::  C1 = XMUAX / (H0X - UM)
-  real(REAL64), parameter  ::  C2 = (XMUAX - XNUA) / (H0X - UM)
+  real(REAL64), parameter  ::  C2 = (XMUAX + XNUA) / (H0X - UM)
 
 ! Corrections to fxalpha expansion
 
@@ -256,10 +256,10 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   arg = ((s*s)/(AX*AX))*(UM+s*s)
   d_arg_ds = ((2*s)/(AX*AX))*(UM+s*s) + ((s*s)/(AX*AX))*2*s
   if(arg > ARGMAX) then
-    xkx = ZERO
-    d_xkx_ds = ZERO
-  elseif(arg < ARGMAX) then
     xkx = UM
+    d_xkx_ds = ZERO
+  elseif(arg < UM/ARGMAX) then
+    xkx = ZERO
     d_xkx_ds = ZERO
   else
     xkx = exp(-UM/arg)
@@ -352,7 +352,7 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   real(REAL64)     ::  tt, d_tt_drs, d_tt_ds
   real(REAL64)     ::  xmusc, d_xmusc_drs
   real(REAL64)     ::  betat, d_betat_drs
-  real(REAL64)     ::  w1
+  real(REAL64)     ::  w1, d_w1_drs
   real(REAL64)     ::  afunc, d_afunc_drs
   real(REAL64)     ::  g1, g2, g3
   real(REAL64)     ::  d_g1_drs, d_g2_drs, d_g3_drs
@@ -460,9 +460,12 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   betat = (AXC/CTP) * xmusc
 
   d_betat_drs = (AXC/CTP) * d_xmusc_drs
-  w1 = -UM                                                               !  it is afunction of spin polarization, keep for future
+
+  w1 = exp(-eclda/GAM) - UM
+  d_w1_drs = -exp(-eclda/GAM)*(d_eclda_dr / d_rs_dr) / GAM
+
   afunc = betat / (GAM*w1)
-  d_afunc_drs = d_betat_drs / (GAM*w1)
+  d_afunc_drs = d_betat_drs / (GAM*w1) - afunc*d_w1_drs / w1
 
   g2 = UM / (UM + afunc*afunc*tt*tt)
   d_g2_drs = -2*(afunc*tt * g2*g2)*(d_afunc_drs*tt + d_tt_drs*afunc)
@@ -498,8 +501,8 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
     endif
     if(abs(UM-(w1+B3C)*afunc*tt) > DBL_EPSILON) then
       g3 =-UM / (UM-(w1+B3C)*afunc*tt)
-      d_g3_drs = g3*g3 * (w1+B3C)*(d_afunc_drs*tt + afunc*d_tt_drs)
-      d_g3_ds = g3*g3 * (w1+B3C)*afunc*d_tt_ds
+      d_g3_drs = -g3*g3 * ((w1+B3C)*(d_afunc_drs*tt + afunc*d_tt_drs) + d_w1_drs*afunc*tt)
+      d_g3_ds = -g3*g3 * (w1+B3C)*afunc*d_tt_ds
     else
       g3 = UM / DBL_EPSILON
       d_g3_drs = ZERO
@@ -509,7 +512,8 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
   if(UM + w1*(UM-g1)*(UM-g2+g3) > DBL_MIN) then
     h1 = GAM*log( UM + w1*(UM-g1)*(UM-g2+g3) )
-    d_h1_drs = -GAM*w1*(d_g1_drs*(UM-g2+g3) + (UM-g1)*(d_g2_drs-d_g3_drs)  ) /   &
+    d_h1_drs = GAM*( d_w1_drs*(UM-g1)*(UM-g2+g3) - w1*d_g1_drs*(UM-g2+g3)        &
+                     - w1*(UM-g1)*(d_g2_drs-d_g3_drs) )  /                       &
                      ( UM + w1*(UM-g1)*(UM-g2+g3) )
 
     d_h1_ds = -GAM*w1*(d_g1_ds*(UM-g2+g3) + (UM-g1)*(d_g2_ds-d_g3_ds) ) /        &
@@ -543,6 +547,7 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
   if(eclda - eclda0 < -DBL_EPSILON) then                                        !  from maple file
     fcge2 = betalfa / (eclda - eclda0)
+!    fcge2 = betalfa / (eclda - ec0)
     d_fcge2_dr = d_betalfa_drs*d_rs_dr / (eclda - eclda0) -                    &
              fcge2*d_eclda_dr / (eclda - eclda0) +                             &
              fcge2*d_eclda0_drs*d_rs_dr / (eclda - eclda0)

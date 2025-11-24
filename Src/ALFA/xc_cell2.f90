@@ -22,7 +22,7 @@
 !>  \date         September 2015, 21 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
+subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
         chdr, taumsh, lapmsh, vxc, adot, exc, rhovxc, strxc )
 
 ! Written 23 February 1999. jlm
@@ -44,6 +44,8 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
   character(len = *), intent(in)     ::  author                          !<  type of xc wanted (ca=pz , pw92 , vwn, wi, pbe)
   real(REAL64), intent(in)           ::  tblaha                          !<  Tran-Blaha constant, if negative calculates it...
+  logical, intent(in)                ::  lkincalc                        !<  Indicates that the kinetic energy density has been calculated.
+
   integer, intent(in)                ::  id1, id2                        !<  first and second dimension of the fft array
   integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
   real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
@@ -67,11 +69,10 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
   real(REAL64)        ::  dexdtau, decdtau
 
   integer, parameter  ::  mxdnn = 3                                      !  Lagrange interpolation uses 2*mxdnn+1 points
-  real(REAL64)        ::  dgdm(-mxdnn:mxdnn),drhodm(3),drhocon(3)
+  real(REAL64)        ::  dgdm(-mxdnn:mxdnn), drhocon(3)
 
   real(REAL64)        ::  coef
 
-  integer, save       ::  xc_call = 0
   real(REAL64)        ::  twotau, lap
   real(REAL64)        ::  tb09_integral, tb09_const_c
 
@@ -295,109 +296,159 @@ subroutine xc_cell2( author, tblaha, id1, id2, n1, n2, n3,               &
 
   elseif(lxcmgga) then
 
-!   meta-gga exchange and correlation with both potential and energy
+    if(lkincalc) then
 
-!   gga exchange and correlation
+!     meta-gga exchange and correlation with both potential and energy
 
-    do i3 = 1,n3
-    do i2 = 1,n2
-    do i1 = 1,n1
+      do i3 = 1,n3
+      do i2 = 1,n2
+      do i1 = 1,n1
 
-      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
-          nn, dgdm, bdot, rho, grho, drhocon,                            &
-          mxdnn)
+        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
+            nn, dgdm, bdot, rho, grho, drhocon,                          &
+            mxdnn)
 
-      twotau = taumsh(i1,i2,i3)
-      lap = ZERO
+        twotau = taumsh(i1,i2,i3)
+        lap = ZERO
 
-      call xc_mgga( author, rho, grho,  lap, twotau / 2,                 &
-                   epsx, epsc, dexdr, decdr, dexdgr, decdgr,             &
-                   dexdtau, decdtau  )
+        call xc_mgga( author, rho, grho,  lap, twotau / 2,               &
+                     epsx, epsc, dexdr, decdr, dexdgr, decdgr,           &
+                     dexdtau, decdtau  )
 
-      exc = exc + rho * (epsx + epsc)
-      vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
-      coef = (dexdgr + decdgr) * grho
-      do i=1,3
-      do j=1,3
-        strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
+!        WRITE(55,'(11F20.10)') RHO, GRHO, TWOTAU / 2, EPSX, EPSC, DEXDR, DECDR, DEXDGR, DECDGR, DEXDTAU, DECDTAU
+
+        exc = exc + rho * (epsx + epsc)
+        vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
+        coef = (dexdgr + decdgr) * grho
+        do i=1,3
+        do j=1,3
+          strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
+        enddo
+        enddo
+
+!         do in = -nn,nn
+!           ip = i1 + in
+!           ip = mod(ip+n1-1,n1) + 1
+!           vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
+!         enddo
+!         do in = -nn,nn
+!           ip = i2 + in
+!           ip = mod(ip+n2-1,n2) + 1
+!           vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
+!         enddo
+!         do in = -nn,nn
+!           ip = i3 + in
+!           ip = mod(ip+n3-1,n3) + 1
+!           vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
+!         enddo
+
       enddo
       enddo
+      enddo
 
-      do in = -nn,nn
-        ip = i1 + in
-        ip = mod(ip+n1-1,n1) + 1
-        vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
+      do i3=1,n3
+      do i2=1,n2
+      do i1=1,n1
+        rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
       enddo
-      do in = -nn,nn
-        ip = i2 + in
-        ip = mod(ip+n2-1,n2) + 1
-        vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
       enddo
-      do in = -nn,nn
-        ip = i3 + in
-        ip = mod(ip+n3-1,n3) + 1
-        vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
       enddo
-    enddo
-    enddo
-    enddo
 
-    do i3=1,n3
-    do i2=1,n2
-    do i1=1,n1
-      rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
-    enddo
-    enddo
-    enddo
+!      IF(N3 > 5) STOP
+
+    else
+
+!     kinetic energy has not been calculated, default to LDA
+
+      do i3 = 1,n3
+      do i2 = 1,n2
+      do i1 = 1,n1
+        rho = chdr(i1,i2,i3)
+
+        call xc_lda( 'CA', rho, epsx, epsc, vx, vc )
+
+        exc = exc + rho * (epsx + epsc)
+        vxc(i1,i2,i3) = vx + vc
+        rhovxc = rhovxc + rho*(vx + vc)
+
+      enddo
+      enddo
+      enddo
+
+    endif
+
 
   elseif(lxcmggavxc) then
 
 !   meta-gga exchange and correlation with only potential
 
-    do i3=1,n3
-    do i2=1,n2
-    do i1=1,n1
+    if(lkincalc) then
 
-      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
-          nn, dgdm, bdot, rho, grho, drhocon,                            &
-          mxdnn)
+      do i3=1,n3
+      do i2=1,n2
+      do i1=1,n1
 
-      twotau = taumsh(i1,i2,i3)
-      lap = lapmsh(i1,i2,i3)
+        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
+            nn, dgdm, bdot, rho, grho, drhocon,                            &
+            mxdnn)
 
-!     avoids unphysical values due to noise at low densities
-!     useful for slabs
+        twotau = taumsh(i1,i2,i3)
+        lap = lapmsh(i1,i2,i3)
 
-      if(rho > RHOEPS*rhomax) then
+!       avoids unphysical values due to noise at low densities
+!       useful for slabs
 
-        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
-                           epsx, epsc, vx, vc, tb09_const_c )
+        if(rho > RHOEPS*rhomax) then
 
+          call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+                             epsx, epsc, vx, vc, tb09_const_c )
+
+          vxc(i1,i2,i3) = vx + vc
+
+        else
+
+!         low density unstable region
+
+          if(twotau/rho > 2.0) twotau = 2.0*rho
+          if(grho/rho > 2.5) grho = 2.5*rho
+
+          call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+                             epsx, epsc, vx, vc, tb09_const_c )
+
+          call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
+
+          cprop = (UM + COS(PI*rho/(RHOEPS*rhomax)))/2
+          vxc(i1,i2,i3) = (UM-cprop)*(vx + vc) + cprop*(vx_lda+vc_lda)
+
+          if(vxc(i1,i2,i3) >  20.0) vxc(i1,i2,i3) = 20.0
+          if(vxc(i1,i2,i3) < -20.0) vxc(i1,i2,i3) =-20.0
+
+        endif
+
+      enddo
+      enddo
+      enddo
+
+    else
+
+!     kinetic energy has not been calculated, default to LDA
+
+      do i3 = 1,n3
+      do i2 = 1,n2
+      do i1 = 1,n1
+        rho = chdr(i1,i2,i3)
+
+        call xc_lda( 'CA', rho, epsx, epsc, vx, vc )
+
+        exc = exc + rho * (epsx + epsc)
         vxc(i1,i2,i3) = vx + vc
+        rhovxc = rhovxc + rho*(vx + vc)
 
-      else
+      enddo
+      enddo
+      enddo
 
-!       low density unstable region
-
-        if(twotau/rho > 2.0) twotau = 2.0*rho
-        if(grho/rho > 2.5) grho = 2.5*rho
-
-        call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
-                           epsx, epsc, vx, vc, tb09_const_c )
-
-        call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
-
-        cprop = (UM + COS(PI*rho/(RHOEPS*rhomax)))/2
-        vxc(i1,i2,i3) = (UM-cprop)*(vx + vc) + cprop*(vx_lda+vc_lda)
-
-        if(vxc(i1,i2,i3) >  20.0) vxc(i1,i2,i3) = 20.0
-        if(vxc(i1,i2,i3) < -20.0) vxc(i1,i2,i3) =-20.0
-
-      endif
-
-    enddo
-    enddo
-    enddo
+    endif
 
   else
 
@@ -465,11 +516,11 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
 
 ! local variables
 
-  integer           ::  if1, if2, ip
+  integer           ::  ip
 
 ! counters
 
-  integer           ::  in, jn
+  integer           ::  in
 
 ! parameters
 

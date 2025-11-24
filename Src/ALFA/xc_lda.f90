@@ -218,6 +218,10 @@ end subroutine xc_lda_c_pz
 
 subroutine xc_lda_c_vwn(rho, epsc, vc)
 
+! Corrected the C2 from X(x) to X(x_0). Notice that in
+! J. Phys. C15 there is a parenthesis missing with respect to
+! Can.J.Phys. 58, 1200 (80).
+
   implicit none
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
