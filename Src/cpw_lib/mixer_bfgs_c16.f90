@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         May 20,1999. 14 October 2025.
+!>  \date         May 20,1999. 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 
@@ -43,6 +43,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
 ! Modified, itmix = -1 indicates restart. 2 October 2025. JLM
 ! Modified, logic of xmix_max_min, 8 October 2025. JLM
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
+! Modified, reallocate on restart (for kinetic energy functionals). 25 November 2025. JLM
 
   implicit none
 
@@ -127,7 +128,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
 
 ! first time mixer stepper is called
 
-  if(itmix == 1) then
+  if(abs(itmix) == 1) then
 
 !   allocations on first iteration
 
@@ -231,6 +232,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
     if (icount == 0) then
 
       hessd(1) = ZERO
+
       do i=2,nj
 
         call mixer_screening(xmix, .FALSE., ek(i), ztot, vcell)

@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.12
-!>  \date         September 2015, 21 November 2025.
+!>  \date         September 2015, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
@@ -32,6 +32,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 ! sigma, twotau, 29 September 2022. JLM
 ! indentation, avois noise with Tran-Blaha and slabs, 6 October 2025. JLM
 ! Changed name of old xc_mgga to xc_mgga_vxc in preparaation for new functionals. 21 November 2025. JLM
+! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
 
 ! WARNING choice of correlation for Meta-GGA is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -49,7 +50,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
   integer, intent(in)                ::  id1, id2                        !<  first and second dimension of the fft array
   integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
   real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
-  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  2*kinetic energy density (Hartree/bohr^3)
+  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3)
   real(REAL64), intent(in)           ::  lapmsh(id1,id2,n3)              !<  Laplacian of charge density (1/bohr^5)
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space (covariant components)
 
@@ -73,7 +74,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 
   real(REAL64)        ::  coef
 
-  real(REAL64)        ::  twotau, lap
+  real(REAL64)        ::  tau, lap
   real(REAL64)        ::  tb09_integral, tb09_const_c
 
   real(REAL64)        ::  rhomax                                         !  maximum value of density
@@ -308,14 +309,12 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
             nn, dgdm, bdot, rho, grho, drhocon,                          &
             mxdnn)
 
-        twotau = taumsh(i1,i2,i3)
+        tau = taumsh(i1,i2,i3)
         lap = ZERO
 
-        call xc_mgga( author, rho, grho,  lap, twotau / 2,               &
+        call xc_mgga( author, rho, grho,  lap, tau,                      &
                      epsx, epsc, dexdr, decdr, dexdgr, decdgr,           &
                      dexdtau, decdtau  )
-
-!        WRITE(55,'(11F20.10)') RHO, GRHO, TWOTAU / 2, EPSX, EPSC, DEXDR, DECDR, DEXDGR, DECDGR, DEXDTAU, DECDTAU
 
         exc = exc + rho * (epsx + epsc)
         vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
@@ -326,21 +325,21 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
         enddo
         enddo
 
-!         do in = -nn,nn
-!           ip = i1 + in
-!           ip = mod(ip+n1-1,n1) + 1
-!           vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
-!         enddo
-!         do in = -nn,nn
-!           ip = i2 + in
-!           ip = mod(ip+n2-1,n2) + 1
-!           vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
-!         enddo
-!         do in = -nn,nn
-!           ip = i3 + in
-!           ip = mod(ip+n3-1,n3) + 1
-!           vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
-!         enddo
+        do in = -nn,nn
+          ip = i1 + in
+          ip = mod(ip+n1-1,n1) + 1
+          vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
+        enddo
+        do in = -nn,nn
+          ip = i2 + in
+          ip = mod(ip+n2-1,n2) + 1
+          vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
+        enddo
+        do in = -nn,nn
+          ip = i3 + in
+          ip = mod(ip+n3-1,n3) + 1
+          vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
+        enddo
 
       enddo
       enddo
@@ -353,8 +352,6 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
       enddo
       enddo
       enddo
-
-!      IF(N3 > 5) STOP
 
     else
 
@@ -388,11 +385,11 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
       do i2=1,n2
       do i1=1,n1
 
-        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
-            nn, dgdm, bdot, rho, grho, drhocon,                            &
+        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
+            nn, dgdm, bdot, rho, grho, drhocon,                          &
             mxdnn)
 
-        twotau = taumsh(i1,i2,i3)
+        tau = taumsh(i1,i2,i3)
         lap = lapmsh(i1,i2,i3)
 
 !       avoids unphysical values due to noise at low densities
@@ -400,7 +397,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 
         if(rho > RHOEPS*rhomax) then
 
-          call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+          call xc_mgga_vxc('TB09','pz', rho, grho, lap, tau,             &
                              epsx, epsc, vx, vc, tb09_const_c )
 
           vxc(i1,i2,i3) = vx + vc
@@ -409,10 +406,10 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 
 !         low density unstable region
 
-          if(twotau/rho > 2.0) twotau = 2.0*rho
+          if(tau/rho > 1.0) tau = rho
           if(grho/rho > 2.5) grho = 2.5*rho
 
-          call xc_mgga_vxc('TB09','pz', rho, grho, lap, twotau/2,          &
+          call xc_mgga_vxc('TB09','pz', rho, grho, lap, tau,             &
                              epsx, epsc, vx, vc, tb09_const_c )
 
           call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )

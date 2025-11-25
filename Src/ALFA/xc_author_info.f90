@@ -123,3 +123,59 @@ subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
   return
 
 end subroutine xc_author_family
+
+
+
+!>  prints the information about exchange and correlation functionals.
+
+
+subroutine xc_author_print(author)
+
+! Written 25 November 2025. JLM
+
+  implicit none
+
+! input
+
+  character(len=4), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pw92 , pbe,...)
+
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
+  if( chrsameinfo(author, 'CA' ) .or. chrsameinfo(author, 'PZ' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Ceperley and Alder correlation")')
+    write(6,'("  (as parametrized by Perdew and Zunger)")')
+  elseif( chrsameinfo(author, 'PW92' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Ceperley and Alder correlation")')
+    write(6,'("  (as parametrized by Perdew and Wang (1992) )")')
+  elseif( chrsameinfo(author, 'VWN' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Ceperley and Alder correlation")')
+    write(6,'("  (as parametrized by  Vosko, Wilk and Nusair)")')
+  elseif( chrsameinfo(author, 'WI' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the local ",            &
+      &   "density aproximation using Wigner correlation")')
+  elseif( chrsameinfo(author, 'PBE' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the generalized",       &
+      &   " gradient aproximation as parametrized by Perdew, Burke ",    &
+      &   "and Ernzerhof")')
+  elseif( chrsameinfo(author, 'TBL' ) .or. chrsameinfo(author, 'TB09' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the modified",          &
+      &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')
+  else
+    write(6,*)
+    write(6,'("  The XC flag is:   ",a4)') author
+  endif
+
+  return
+
+end subroutine xc_author_print

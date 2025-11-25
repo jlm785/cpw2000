@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 22 November 2025.
+!>  \date         October 1993, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -50,6 +50,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 ! Modified, calls xc_author_info, 22 November 2025. JLM
+! Modified, do not keep data from first iteration if kinetic energy density is used. 25 November 2025. JLM
 
   use cpw_variables
 
@@ -230,7 +231,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   complex(REAL64), allocatable       ::  rholap(:)
   complex(REAL64), allocatable       ::  tauk(:)
-  complex(REAL64), allocatable       ::  tau(:)
+  complex(REAL64), allocatable       ::  tau(:)                          !  "kinetic energy density"
 
   real(REAL64), allocatable          ::  hdiag(:)                        !  Hamiltonian diagonal for k+G-vector i
   real(REAL64), allocatable          ::  qmod(:)                         !  length of k+G-vector i
@@ -318,6 +319,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   real(REAL64), parameter     ::  DELTA = 1.0_REAL64                     !  criterium for divergence  HARD CODED HARD CODED
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   real(REAL64), parameter     ::  EPS = 1.0E-10_REAL64
+
 
 ! You can reduce mxdupd,mxdscf in the unlikey case this takes too much
 ! memory (linear in number of atoms, only relevant for very old machines)
@@ -425,6 +427,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         mxdscr, dims_%mxdgve, dims_%mxdnst)
 
 !   checks if there is a problem, restart the convergence procedure
+
+!   With functionals with kinetic energy density, first iteration is
+!   with a different functional.  Skip data for first iteration.
+
+    if(iter == 1 .and. lxctau) itmix = -1
+    if(iter == 2 .and. lxctau) itmix =  1
 
     if(itmix > 2) then
       if((abs(vmin-vminold) > DELTA .or. abs(vmax-vmaxold) > DELTA)      &

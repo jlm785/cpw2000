@@ -14,8 +14,8 @@
 !>     prints the information about the parameters used in the calculation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         20 september 2002. 12 January 2024
+!>  \version      5.12
+!>  \date         20 september 2002. 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine print_parameters(flgcal, flgdal, flgscf,                      &
@@ -30,6 +30,7 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 ! Modified, documentation, kplusg,August 10 2019. JLM
 ! Modified, indentation, types of correlation, len=* in author. 12 January 2024. JLM
 ! Modified, write statement continuation, 22 February 2024. JLM
+! Modified, prints information about more functionals. 25 November 2025. JLM
 
 
   implicit none
@@ -79,36 +80,9 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 
 
   write(6,*)
-  write(6,*)
-  if( chrsameinfo(author, 'CA' ) .or. chrsameinfo(author, 'PZ' ) ) then
-    write(6,*) '   Local Density Approximation (LDA) using ',            &
-     '   Ceperley and Alder as parametrized by Perdew and Zunger'
-  elseif(chrsameinfo(author, 'PW92' )) then
-    write(6,*) '   Local Density Approximation (LDA) using ',            &
-     '   Ceperley and Alder as parametrized by Perdew and Wang (1992)'
-  elseif( chrsameinfo(author, 'VWN' )) then
-    write(6,*) '   Local Density Approximation (LDA) using ',            &
-     '   Ceperley and Alder as parametrized by Vosko, Wilk and Nusair'
-  elseif( chrsameinfo(author, 'WI' )) then
-    write(6,*) '   Local Density Approximation (LDA) using ',            &
-     '   Wigner correlation'
-  elseif( chrsameinfo(author, 'PBE' )) then
-    write(6,*) 'Generalized Gradient Approximation (GGA)',               &
-         '   as parametrized by Perdew, Burke and Ernzerhof'
-   elseif( chrsameinfo(author, 'LAK' )) then
-    write(6,*) 'Meta Generalized Gradient Approximation (MGGA)',         &
-         '   as parametrized by Lebeda, Aschebrock and Kümmel'
- elseif( chrsameinfo(author, 'TBL' )) then
-    write(6,*) '   Tran-Blaha meta-gga  '
-    if(tblaha < 0) then
-      write(6,*) ' Using calculated tb constant'
-    else
-      write(6,'("  Setting tb constant = ",f14.6)') tblaha
-    endif
-  else
-    write(6,'("   Unknown type of correlation, expect disaster ",a3)')   &
-             author
-  endif
+
+  call xc_author_print(author)
+
   write(6,*)
 
   if(flgdal == 'DUAL') then

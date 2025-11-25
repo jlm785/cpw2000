@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         June 2017, 12 October 2025.
+!>  \date         June 2017, 22 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -29,6 +29,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Bug squashed (metadata not from rede) September 2017.
 ! Write ideal volume if superlattice information is available. 21 June 2021. JLM
 ! Modified, option to write wave-functions to disk, filename of pseudopotentials. 12 October 2025. JLM
+! Adds more options for xc functionals. 22 November 2025. JLM
 
 
   implicit none

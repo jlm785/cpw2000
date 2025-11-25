@@ -13,11 +13,10 @@
 
 !>  Computes, symmetrizes, and adds the "kinetic energy density"
 !>  from the eigenvectors at a given k-point
-!>  Convention is tau is twice the "kinetic energy".
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
-!>  \version      5.05
-!>  \date         2 October 2015, 30 September 2022.
+!>  \version      5.12
+!>  \date         2 October 2015, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
@@ -25,10 +24,11 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
      ng, kgv, phase, conj, ns, inds, kmax, mstar,                        &
      mxddim, mxdbnd, mxdgve, mxdnst)
 
-! Adapted from charge_by_fft
-! written 2 October 2015. JLM
+! Adapted from charge_by_fft.
+! written 2 October 2015. JLM, CLR.
 ! Modified documentation, January 2020. JLM
 ! Corrected openmp bug, 30 September 2022. JLM
+! Remove the doubling of kinetic energy (as in libxc). 25 November 2025. JLM
 
 
   implicit none
@@ -91,7 +91,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 
 ! counters
 
-  integer         ::  i, j, n
+  integer         ::  i, j
 
 ! parameters
 
@@ -214,11 +214,12 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
         do i=1,ntot
           xp = conjg(chd(i,1))*chd(i,1) + conjg(chd(i,2))*chd(i,2)  &
                                         + conjg(chd(i,3))*chd(i,3)
-          taumsh(i) = taumsh(i) + occp(j)*real(xp,REAL64)
+          taumsh(i) = taumsh(i) + occp(j)*real(xp,REAL64) / 2
         enddo
 !$omp end parallel do
 
       enddo                  !  end loop over eigenvectors
+
 
 !     Fourier transform to momentum space
 

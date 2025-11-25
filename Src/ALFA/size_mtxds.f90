@@ -11,87 +11,92 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the small matrix size for the iterative
-!>     diagonalization subroutines.
-!>     works correctly only if the elements of the diagonal
-!>     of the hamiltonian are essentially in increasing order.
+!>  calculates the small matrix size for the iterative
+!>  diagonalization subroutines.
+!>  works correctly only if the elements of the diagonal
+!>  of the hamiltonian are essentially in increasing order.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.12
+!>  \date         4 November 1989, 21 November 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine size_mtxds(ipr,hdiag,neig,mtxd,mtxds)
+subroutine size_mtxds(ipr, hdiag, neig, mtxd, mtxds)
 
-!      Based on sizdit.f written 4 November 1989, and
-!      modified 25 March 1999. jlm
-!      Written 20 December 1989. jlm
-!      Modified, 3n+20, September 10, 2015. JLM
-!      Modified, documentation, January 2020. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Based on sizdit.f written 4 November 1989, and
+! modified 25 March 1999. jlm
+! Written 20 December 1989. jlm
+! Modified, 3n+20, September 10, 2015. JLM
+! Modified, documentation, January 2020. JLM
+! Modified, indentation, exceptional case mtxds=mtxd. 24 November 2025. JLM
 
-!      version 4.94
+  implicit none
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      input
+! input
 
-       integer, intent(in)                ::  ipr                        !<  prints message if ipr=1
-       integer, intent(in)                ::  mtxd                       !<  dimension of the hamiltonian
-       real(REAL64), intent(in)           ::  hdiag(mtxd)                !<  diagonal of the hamiltonian
-       integer, intent(in)                ::  neig                       !<  number of eigenvectors required
+  integer, intent(in)                ::  ipr                             !<  prints message if ipr=1
+  integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
+  real(REAL64), intent(in)           ::  hdiag(mtxd)                     !<  diagonal of the hamiltonian
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors required
 
-!      output
+! output
 
-       integer, intent(out)               ::  mtxds                      !<  dimension of the small matrix
+  integer, intent(out)               ::  mtxds                           !<  dimension of the small matrix
 
-!      local variables
+! local variables
 
-       real(REAL64)  ::  href
-       logical       ::  lfail
+  real(REAL64)  ::  href
+  logical       ::  lfail
 
-!      counters
+! counters
 
-       integer    ::  i
+  integer    ::  i
 
-!      parameters
+! parameters
 
-       real(REAL64), parameter ::  EPS = 0.000001_REAL64
-       integer, parameter      ::  NFULL = 250                           !  hard coded parameter for full diagonalization
+  real(REAL64), parameter ::  EPS = 0.000001_REAL64
+  integer, parameter      ::  NFULL = 250                           !  hard coded parameter for full diagonalization
 
-       if(mtxd < neig) then
-         write(6,*)
-         write(6,'("   stopped in size_mtxds:     matrix size is ",i6,   &
-     &        " and you want to calculate",i6," states")') mtxd,neig
-         write(6,'("   check cutoff energy!!")')
+  if(mtxd < neig) then
+    write(6,*)
+    write(6,'("   stopped in size_mtxds:     matrix size is ",i6,   &
+        & " and you want to calculate",i6," states")') mtxd,neig
+    write(6,'("   check cutoff energy!!")')
 
-         stop
+    stop
 
-       endif
+  endif
 
-       if(mtxd < NFULL) then
-         mtxds = mtxd
-       elseif(3*neig+20 >= mtxd) then
-         mtxds = mtxd
-       else
-         href = abs(2*hdiag(neig)-hdiag(1)) + EPS
+  if(mtxd < NFULL) then
+    mtxds = mtxd
+  elseif(3*neig+20 >= mtxd) then
+    mtxds = mtxd
+  else
+    href = abs(2*hdiag(neig)-hdiag(1)) + EPS
 
-         do i = 3*neig+20,mtxd-1
-           lfail = .FALSE.
-           mtxds = i
-           if(hdiag(i) > href .and. (hdiag(i+1)-hdiag(i)) > EPS) exit
-           lfail = .TRUE.
-         enddo
+    do i = 3*neig+20,mtxd-1
+      lfail = .FALSE.
+      mtxds = i
+      if(hdiag(i) > href .and. (hdiag(i+1)-hdiag(i)) > EPS) exit
+      lfail = .TRUE.
+    enddo
 
-         if(lfail) then
+    if(lfail) then
 
-           mtxds = mtxd
+      mtxds = mtxd
 
-           write(6,*)
-           write(6,*) '  WARNING  mtxds = mtxd = ', mtxds
-           write(6,*)
+      write(6,*)
+      write(6,*) '  WARNING  mtxds = mtxd = ', mtxds
+      write(6,*)
 
-         endif
+    endif
 
-       endif
+  endif
 
-       if(ipr > 1) write(6,'("  small matrix size = ",i5)') mtxds
+  if(ipr > 1) write(6,'("  small matrix size = ",i5)') mtxds
 
-       return
-       end subroutine size_mtxds
+  return
+
+end subroutine size_mtxds

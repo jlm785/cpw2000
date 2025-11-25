@@ -15,8 +15,8 @@
 !>  from the "io" file (default PW_RHO_V.DAT)
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         May 16, 2014, 25 February 2024.
+!>  \version      5.12
+!>  \date         May 16, 2014, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_crystal_calc(io,                                  &
@@ -41,6 +41,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified, meta_cpw2000 has information if file is old style, 15 February 2022. JLM
 ! Modified, size of author, 13 January 2024.
 ! Modified, back compatibility with old files. adjustl. 23 february 2024. JLM
+! Modified, printing of the information about the xc functional. 25 November 2025. JLM
 
 
   implicit none
@@ -98,10 +99,6 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   character(len=140)  ::  line140
   character(len=250)  ::  line250
   integer             ::  ioerr, ioerr2
-
-! functions
-
-  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
 
 ! counters
 
@@ -189,38 +186,9 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     author(4:4) = ' '
   endif
 
-  if( chrsameinfo(author, 'CA' ) .or. chrsameinfo(author, 'PZ' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the local ",            &
-      &   "density aproximation using Ceperley and Alder correlation")')
-    write(6,'("  (as parametrized by Perdew and Zunger)")')
-  elseif( chrsameinfo(author, 'PW92' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the local ",            &
-      &   "density aproximation using Ceperley and Alder correlation")')
-    write(6,'("  (as parametrized by Perdew and Wang (1992) )")')
-  elseif( chrsameinfo(author, 'VWN' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the local ",            &
-      &   "density aproximation using Ceperley and Alder correlation")')
-    write(6,'("  (as parametrized by  Vosko, Wilk and Nusair)")')
-  elseif( chrsameinfo(author, 'WI' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the local ",            &
-      &   "density aproximation using Wigner correlation")')
-  elseif( chrsameinfo(author, 'PBE' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the generalized",       &
-      &   " gradient aproximation as parametrized by Perdew, Burke ",    &
-      &   "and Ernzerhof")')
-  elseif( chrsameinfo(author, 'TBL' ) .or. chrsameinfo(author, 'TB09' ) ) then
-    write(6,*)
-    write(6,'("  The potential was calculated in the modified",          &
-      &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')
-  else
-    write(6,*)
-    write(6,'("  The XC flag is:   ",a4)') author
-  endif
+! allows ease of adding new functionals
+
+  call xc_author_print(author)
 
   if(flgscf(5:6) /= 'PW') then
     write(6,*)

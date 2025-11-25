@@ -17,12 +17,12 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.12
-!>  \date         8 June 1987.  23 November 2025.
+!>  \date         8 June 1987.  25 November 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
     exc, strxc, rhovxc,                                                  &
-    vhar, vxc, den, denc, rholap, twotau,                                &
+    vhar, vxc, den, denc, rholap, tau,                                   &
     ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
     mxdgve, mxdnst)
 
@@ -39,6 +39,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 ! Modified ipr, icheck, 13 February 2021. JLM
 ! Minor stuff, 29 September 2022. JLM
 ! Other mgga besides Tran-Blaha. only one xc_cell. 23 November 2025. JLM
+! Kinetic energy density not the double. 25 November 2025. JLM
 
 
   implicit none
@@ -60,7 +61,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density for the prototype G-vector
   complex(REAL64), intent(in)        ::  denc(mxdnst)                    !<  core density for the prototype G-vector
   complex(REAL64), intent(in)        ::  rholap(mxdnst)                  !<  Laplacian of charge density
-  complex(REAL64), intent(in)        ::  twotau(mxdnst)                  !<  2*kinetic energy
+  complex(REAL64), intent(in)        ::  tau(mxdnst)                     !<  "kinetic energy density"
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -199,7 +200,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
     allocate(taumsh(mxdfft))
 
-    call mesh_set(ipr, "tau", adot, twotau, taumsh, ncheck,              &
+    call mesh_set(ipr, "tau", adot, tau, taumsh, ncheck,                 &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
