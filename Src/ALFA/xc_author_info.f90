@@ -49,19 +49,25 @@ subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
   lxctb09 = .FALSE.
   lxccalc = .TRUE.
 
-  if(chrsameinfo(author, 'PBE') .or. chrsameinfo(author, 'LAK') .or.     &
-     chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09')) then
+  if(chrsameinfo(author, 'PBE')) then
        lxcgrad = .TRUE.
   endif
 
-  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09')) then
+  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09') .or.    &
+     chrsameinfo(author, 'BR') ) then
+       lxcgrad = .TRUE.
        lxclap = .TRUE.
-       lxctb09 = .TRUE.
+       lxctau = .TRUE.
        lxccalc = .FALSE.
   endif
 
-  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09') .or.    &
-     chrsameinfo(author, 'LAK')) then
+  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09') ) then
+       lxctb09 = .TRUE.
+  endif
+
+  if(chrsameinfo(author, 'LAK') .or. chrsameinfo(author, 'TASK') .or.    &
+     chrsameinfo(author, 'R2SC') ) then
+       lxcgrad = .TRUE.
        lxctau = .TRUE.
   endif
 
@@ -112,11 +118,13 @@ subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
        lxcgga = .TRUE.
   endif
 
-  if(chrsameinfo(author, 'LAK' )) then
+  if(chrsameinfo(author, 'LAK' ) .or. chrsameinfo(author, 'TASK') .or.   &
+     chrsameinfo(author, 'R2SC') ) then
        lxcmgga = .TRUE.
   endif
 
-  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09')) then
+  if(chrsameinfo(author, 'TBL') .or. chrsameinfo(author, 'TB09') .or.    &
+      chrsameinfo(author, 'BR') ) then
        lxcmggavxc = .TRUE.
   endif
 
@@ -171,6 +179,22 @@ subroutine xc_author_print(author)
     write(6,*)
     write(6,'("  The potential was calculated in the modified",          &
       &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')
+  elseif( chrsameinfo(author, 'BR' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the meta-GGA",          &
+      &   " of Becke and Roussel ")')
+  elseif( chrsameinfo(author, 'TBL' ) .or. chrsameinfo(author, 'TB09' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the modified",          &
+      &   " Becke-Johnson meta-GGA aproximation of Tran-Blaha ")')
+  elseif( chrsameinfo(author, 'LAK' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the meta-GGA",          &
+      &   " of Lebeda, Aschebrock and Kummel:  LAK")')
+  elseif( chrsameinfo(author, 'TASK' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the meta-GGA",          &
+      &   " of Aschebrock and Kummel:   TASK")')
   else
     write(6,*)
     write(6,'("  The XC flag is:   ",a4)') author

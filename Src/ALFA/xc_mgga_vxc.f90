@@ -71,6 +71,11 @@ subroutine xc_mgga_vxc(author_x, author_c, rho, grho, lap_rho, tau,      &
       call xc_lda(author_c, rho, epsx, epsc, vx, vc )
       call xc_mgga_x_tb09(rho, grho, lap_rho, tau, ctb09, vx)
 
+    elseif ( chrsameinfo(author_x, 'BR' )  ) then
+
+      call xc_lda(author_c, rho, epsx, epsc, vx, vc )
+      call xc_mgga_x_br89(rho/2, grho*grho/4, lap_rho/2, tau/2, vx)
+
     else
 
       write(6,'("  STOPPED  in xc_mgga_vxc:   unknown exchange-correlation")')

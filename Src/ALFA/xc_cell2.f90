@@ -34,7 +34,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 ! Changed name of old xc_mgga to xc_mgga_vxc in preparaation for new functionals. 21 November 2025. JLM
 ! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
 
-! WARNING choice of correlation for Meta-GGA is hard coded as Perdew-Zunger
+! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
 
   implicit none
@@ -262,6 +262,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
       exc = exc + rho * (epsx + epsc)
       vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
       coef = (dexdgr + decdgr) * grho
+
       do i=1,3
       do j=1,3
         strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
@@ -312,34 +313,35 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
         tau = taumsh(i1,i2,i3)
         lap = ZERO
 
-        call xc_mgga( author, rho, grho,  lap, tau,                      &
+        call xc_mgga( author, rho, grho, tau,                            &
                      epsx, epsc, dexdr, decdr, dexdgr, decdgr,           &
                      dexdtau, decdtau  )
 
         exc = exc + rho * (epsx + epsc)
-        vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
+        vxc(i1,i2,i3) = vxc(i1,i2,i3) + epsx + epsc
         coef = (dexdgr + decdgr) * grho
+
         do i=1,3
         do j=1,3
           strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
         enddo
         enddo
 
-        do in = -nn,nn
-          ip = i1 + in
-          ip = mod(ip+n1-1,n1) + 1
-          vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
-        enddo
-        do in = -nn,nn
-          ip = i2 + in
-          ip = mod(ip+n2-1,n2) + 1
-          vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
-        enddo
-        do in = -nn,nn
-          ip = i3 + in
-          ip = mod(ip+n3-1,n3) + 1
-          vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
-        enddo
+!         do in = -nn,nn
+!           ip = i1 + in
+!           ip = mod(ip+n1-1,n1) + 1
+!           vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
+!         enddo
+!         do in = -nn,nn
+!           ip = i2 + in
+!           ip = mod(ip+n2-1,n2) + 1
+!           vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
+!         enddo
+!         do in = -nn,nn
+!           ip = i3 + in
+!           ip = mod(ip+n3-1,n3) + 1
+!           vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
+!         enddo
 
       enddo
       enddo
@@ -362,7 +364,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
       do i1 = 1,n1
         rho = chdr(i1,i2,i3)
 
-        call xc_lda( 'CA', rho, epsx, epsc, vx, vc )
+        call xc_lda( 'PW92', rho, epsx, epsc, vx, vc )
 
         exc = exc + rho * (epsx + epsc)
         vxc(i1,i2,i3) = vx + vc

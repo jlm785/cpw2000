@@ -18,15 +18,16 @@
 !>
 !>  \author       J.L. Martins
 !>  \version      5.12
-!>  \date         21 November 2025.
+!>  \date         25 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_mgga( author, rho, grho,  lap_rho, tau,                    &
+subroutine xc_mgga( author, rho, grho, tau,                              &
                    epsx, epsc, dexdr, decdr, dexdgr, decdgr,             &
                    dexdtau, decdtau )
 
 
 ! Written 21 November 2025 from xc_gga . jlm
+! Added other functionals. Removed (for now) lap_rho. 25 November 2025. JLM
 
   implicit none
 
@@ -37,19 +38,19 @@ subroutine xc_mgga( author, rho, grho,  lap_rho, tau,                    &
   character(len = *), intent(in)     ::  author                          !<  type of xc wanted (ca=pz , pw92 , vwn, wi)
   real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
   real(REAL64), intent(in)           ::  grho                            !<  gradient of the electron density (1/bohr^4)
-  real(REAL64), intent(in)           ::  lap_rho                         !<  Laplacian of charge density
+!  real(REAL64), intent(in)           ::  lap_rho                         !<  Laplacian of charge density
   real(REAL64), intent(in)           ::  tau                             !<  kinetic energy density (hartree/bohr^3)
 
 ! output
 
   real(REAL64), intent(out)          ::  epsx                            !<  exchange energy density (hartree/bohr^3)
   real(REAL64), intent(out)          ::  epsc                            !<  correlation energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  dexdr                           !<  derivative with respect to rho of epsx (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  decdr                           !<  derivative with respect to rho of epsc (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of epsx (hartree/bohr^2)
-  real(REAL64), intent(out)          ::  decdgr                          !<  derivative with respect to grho of epsc (hartree/bohr^2)
-  real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of epsx (1/bohr^3)
-  real(REAL64), intent(out)          ::  decdtau                         !<  derivative with respect to tau of epsc (1/bohr^3)
+  real(REAL64), intent(out)          ::  dexdr                           !<  derivative with respect to rho of rho*epsx (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  decdr                           !<  derivative with respect to rho of rho*epsc (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of rho*epsx (hartree/bohr^2)
+  real(REAL64), intent(out)          ::  decdgr                          !<  derivative with respect to grho of rho*epsc (hartree/bohr^2)
+  real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of rho*epsx (1/bohr^3)
+  real(REAL64), intent(out)          ::  decdtau                         !<  derivative with respect to tau of rho*epsc (1/bohr^3)
 
 ! functions
 
@@ -83,6 +84,18 @@ subroutine xc_mgga( author, rho, grho,  lap_rho, tau,                    &
       call xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau)
 
       call xc_mgga_c_lak(rho, grho, tau, epsc, decdr, decdgr, decdtau)
+
+    elseif (chrsameinfo(author, 'TASK' ) ) then
+
+!     T. Aschebrock, and S. Kummel,
+!     Phys.Rev.Research. 1, 033082 (2019)
+
+      call xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau)
+
+      call xc_lda_c_pw92(rho, epsc, decdr)
+      decdgr = ZERO
+      decdtau = ZERO
+
 
     else
 
@@ -132,9 +145,9 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 ! output
 
   real(REAL64), intent(out)          ::  epsx                            !<  exchange energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  dexdr                           !<  derivative with respect to rho of epsx (hartree)
-  real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of epsx (hartree*bohr)
-  real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of epsx (dimensionless)
+  real(REAL64), intent(out)          ::  dexdr                           !<  derivative with respect to rho of rho*epsx (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of rho*epsx (hartree/bohr^2)
+  real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of rho*epsx (dimensionless)
 
 ! local variables
 
@@ -323,9 +336,9 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 ! output
 
   real(REAL64), intent(out)          ::  epsc                            !<  correlation energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  decdr                           !<  derivative with respect to rho of epsc (hartree)
-  real(REAL64), intent(out)          ::  decdgr                          !<  derivative with respect to grho of epsc (hartree*bohr)
-  real(REAL64), intent(out)          ::  decdtau                         !<  derivative with respect to tau of epsc (dimensionless)
+  real(REAL64), intent(out)          ::  decdr                           !<  derivative with respect to rho of rho*epsc (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  decdgr                          !<  derivative with respect to grho of rho*epsc (hartree/bohr^2)
+  real(REAL64), intent(out)          ::  decdtau                         !<  derivative with respect to tau of rho*epsc (dimensionless)
 
 ! local variables
 
@@ -600,3 +613,144 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   return
 
 end subroutine xc_mgga_c_lak
+
+
+
+!>  T. Aschebrock and S. Kummel, Phys.Rev.Research. 1, 033082 (2019)
+
+subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
+
+
+! Written 12 November 2025. JLM
+
+  implicit none
+
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
+  real(REAL64), intent(in)           ::  grho                            !<  gradient of the electron density (1/bohr^4)
+  real(REAL64), intent(in)           ::  tau                             !<  kinetic energy density (hartree/bohr^3)
+
+! output
+
+  real(REAL64), intent(out)          ::  epsx                            !<  exchange energy density (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  dexdr                           !<  derivative with respect to rho of rho*epsx (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  dexdgr                          !<  derivative with respect to grho of rho*epsx (hartree/bohr^2)
+  real(REAL64), intent(out)          ::  dexdtau                         !<  derivative with respect to tau of rho*epsx (dimensionless)
+
+! local variables
+
+  real(REAL64)     ::  rs                                                !  Wigner-Seitz radius
+  real(REAL64)     ::  exlda, d_exlda_dr                                 !  LDA exchange energy
+  real(REAL64)     ::  xkf, d_xkf_dr                                     !  Fermi wave-vector and derivative
+  real(REAL64)     ::  grloc                                             !  local value of grho
+  real(REAL64)     ::  fx, d_fx_dgr, d_fx_dr, d_fx_ds, d_fx_dtau         !  enancement factor, and derivative
+
+  real(REAL64)     ::  s, d_s_dr, d_s_dgr                                !  s parameter and derivatives
+
+  real(REAL64)     ::  tausingle, d_tausingle_dr, d_tausingle_dgr        !  single orbital limit of tau
+  real(REAL64)     ::  tauunif, d_tauunif_dr                             !  uniform limit of tau
+  real(REAL64)     ::  alpha, d_alpha_dr, d_alpha_dgr, d_alpha_dtau      !  alpha parameter and derivatives
+
+  real(REAL64)     ::  fxalpha, d_fxalpha_dalpha
+  real(REAL64)     ::  d_fxalpha_dr, d_fxalpha_dgr, d_fxalpha_dtau
+  real(REAL64)     ::  gxs, d_gxs_ds
+  real(REAL64)     ::  h1x, d_h1x_ds
+
+  real(REAL64)     ::  z, d_z_dalpha, d_z_ds                             !  Argument of Chebychev polynomial
+
+! parameters
+
+  real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter  ::  AKF = (9*PI/4)**(UM/(3*UM))
+
+! TASK_x parameters
+
+  real(REAL64), parameter  ::  AX = (4 / (9*PI))**(UM/3)
+
+  real(REAL64), parameter  ::  H0X = 1.174_REAL64
+  real(REAL64), parameter  ::  BX = 4.9479_REAL64
+
+! TASK_x Chebyshev coeficients
+
+  real(REAL64), parameter  ::  A0 = 0.938719_REAL64
+  real(REAL64), parameter  ::  A1 =-0.076371_REAL64
+  real(REAL64), parameter  ::  A2 =-0.0150899_REAL64
+
+  real(REAL64), parameter  ::  B0 =-0.628591_REAL64
+  real(REAL64), parameter  ::  B1 =-2.10315_REAL64
+  real(REAL64), parameter  ::  B2 =-0.5_REAL64
+  real(REAL64), parameter  ::  B3 = 0.103153_REAL64
+  real(REAL64), parameter  ::  B4 = 0.128591_REAL64
+
+! Avoids calculating irrelevant exponentials compared to unity
+
+  real(REAL64), parameter  ::  ARGMAX = 50.0_REAL64
+
+
+  rs = (3/(4*PI*rho))**(UM/3)
+
+  grloc = grho
+  if(grho < ZERO) grloc = ZERO
+
+  exlda = -((3*UM) / (4*UM)) / (PI*AX*rs)
+  d_exlda_dr = exlda / (3*rho)
+
+
+  xkf = AKF / rs                                                         !  (3*PI*PI * rho)**(UM/3)
+  d_xkf_dr = (UM/3) * xkf / rho                                          !  (UM/3)*(3*PI*PI * rho)**(UM/3) / rho
+
+  s = grloc / (2 * xkf * rho)
+  d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
+  d_s_dgr = UM / (2 * xkf * rho)
+
+  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
+  d_tausingle_dr = -tausingle/rho
+  d_tausingle_dgr = 2* grloc / (8*rho)
+  tauunif = (3*UM / 10) * xkf*xkf * rho
+  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  alpha = (tau - tausingle) / tauunif
+  d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
+  d_alpha_dgr = -d_tausingle_dgr/tauunif
+  d_alpha_dtau = UM/tauunif
+
+  z = (alpha-UM) / (alpha+UM)
+  d_z_dalpha = 2 / ((alpha+UM)*(alpha+UM))
+  fxalpha = B0 + B1*z + B2*(2*Z*Z-UM) + B3*(4*z*z*z-3*z) + B4*(8*z*z*z*z-8*z*z+UM)
+  d_fxalpha_dalpha = B1 + B2*4*z + B3*(12*z*z-3*UM) + B4*(32*z*z*z-16*z)
+  d_fxalpha_dalpha = d_fxalpha_dalpha*d_z_dalpha
+  d_fxalpha_dr = d_fxalpha_dalpha*d_alpha_dr
+  d_fxalpha_dgr = d_fxalpha_dalpha*d_alpha_dgr
+  d_fxalpha_dtau = d_fxalpha_dalpha*d_alpha_dtau
+
+  if(s > (BX/ARGMAX)*(BX/ARGMAX)) then
+    gxs = UM - exp(-BX/sqrt(s))
+    d_gxs_ds = (gxs-UM) * BX / (2*sqrt(s)*s)
+  else
+    gxs = UM
+    d_gxs_ds = ZERO
+  endif
+
+  z = (s*s-UM) / (s*s+UM)
+  d_z_ds = 4*s / ((s*s+UM)*(s*s+UM))
+  h1x = A0 + A1*Z + A2*(2*Z*Z-UM)
+  d_h1x_ds = (A1 + A2*4*z)*d_z_ds
+
+  fx = H0X*gxs + (UM - fxalpha)*(h1x - H0X)*gxs**10
+  d_fx_ds = H0X*d_gxs_ds + (UM - fxalpha)*d_h1x_ds*gxs**10 + (UM - fxalpha)*(h1x - H0X)*10*d_gxs_ds*gxs**9
+
+  d_fx_dr = d_fx_ds*d_s_dr - d_fxalpha_dr*(h1x - H0X)*gxs**10
+  d_fx_dgr = d_fx_ds*d_s_dgr  - d_fxalpha_dgr*(h1x - H0X)*gxs**10
+  d_fx_dtau = - d_fxalpha_dtau*(h1x - H0X)*gxs**10
+
+  epsx = exlda * fx
+  dexdr = d_exlda_dr*fx + exlda*d_fx_dr
+  dexdgr = exlda * d_fx_dgr
+  dexdtau = exlda * d_fx_dtau
+
+  return
+
+end subroutine xc_mgga_x_task
