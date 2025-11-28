@@ -241,7 +241,7 @@
 
        filename = 'cpw.out'
        callcode = 'pre_relax_vff'
-       flgcal_new = 'LBFSYM'
+       flgcal_new = 'EPILBF'
 
        call write_cpwout(10, filename, meta_pwdat, flgcal_new, callcode, &
      & adot, ntype, natom, nameat, rat, atmass, alatt,                   &
