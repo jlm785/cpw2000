@@ -195,6 +195,10 @@ subroutine xc_author_print(author)
     write(6,*)
     write(6,'("  The potential was calculated in the meta-GGA",          &
       &   " of Aschebrock and Kummel:   TASK")')
+  elseif( chrsameinfo(author, 'R2SC' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated in the meta-GGA",          &
+      &   " r2SCAN of Furness et al.:   R2SC")')
   else
     write(6,*)
     write(6,'("  The XC flag is:   ",a4)') author
