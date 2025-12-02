@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         June 2017, 22 November 2025.
+!>  \date         June 2017, 2 December 2025.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -30,6 +30,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Write ideal volume if superlattice information is available. 21 June 2021. JLM
 ! Modified, option to write wave-functions to disk, filename of pseudopotentials. 12 October 2025. JLM
 ! Adds more options for xc functionals. 22 November 2025. JLM
+! New date format. 2 december 2025. JLM
 
 
   implicit none
@@ -77,6 +78,9 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   character(len=3)   ::  vers                                            ! program version
   character(len=50)  ::  title                                           ! title of the calculation
   character(len=140) ::  metadata                                        ! metadata of the calculation
+
+  character(len=9)   ::  dmydate                                         ! date in the day-month-year format
+  character(len=10)  ::  ymddate                                         ! date in the year.month.day format
 
   integer  ::  isl1(3),isl2(3),isl3(3)
   integer  ::  nat
@@ -142,7 +146,9 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
     do i=1,125
       if(metadata(i:i+4) == '#DATE') then
         iend = i-1
-        write(io,'("Rede.Date",21x,a9)') metadata(i+6:i+15)
+        dmydate = metadata(i+6:i+14)
+        call zedate_convert(dmydate, ymddate, .FALSE.)
+        write(io,'("Rede.Date",21x,a10,"    #  ",a9)') ymddate, dmydate
         write(io,*)
 
         exit
@@ -152,7 +158,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 
     do i=1,126
       if(metadata(i:i+4) == '#TIME') then
-        write(io,'("Rede.Time",21x,a8)') metadata(i+6:i+14)
+        write(io,'("Rede.Time",21x,a8)') metadata(i+6:i+13)
         write(io,*)
 
         exit

@@ -22,7 +22,7 @@
 !>  \date         September 2015, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
+subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
         chdr, taumsh, lapmsh, vxc, adot, exc, rhovxc, strxc )
 
 ! Written 23 February 1999. jlm
@@ -478,7 +478,7 @@ subroutine xc_cell2( author, tblaha, lkincalc, id1, id2, n1, n2, n3,     &
 
   return
 
-end subroutine xc_cell2
+end subroutine xc_cell
 
 subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
        nn, dgdm, bdot, rho, grho, drhocon,                               &

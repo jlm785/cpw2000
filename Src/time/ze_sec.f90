@@ -11,36 +11,37 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Gets cpu time in seconds (sum over cores)
-!>     linux gfortran/ifort version
+!>  Gets cpu time in seconds (sum over cores)
+!>  linux gfortran/ifort version
+!>
+!>  \author       José Luís Martins
+!>  \version      5.12
+!>  \date         21 october 2003, 2 December 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine zesec(tback)
+subroutine zesec(tback)
 
-!      Gets cpu time in seconds
-!      linux gfortran/ifort version
+! Written 21 october 2003
+! Modified 11 September 2015. f90. JLM
+! Modified, documentation, December 2019. JLM
+! Modified, indentation, 2 December2025. JLM
 
-!      Written 21 october 2003
-!      Modified 11 September 2015. f90. JLM
-!      Modified, documentation, December 2019. JLM
-!      copyright INESC-MN/Jose Luis Martins
+  implicit none
 
-!      version 4.94
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL32 = selected_real_kind(6)
 
-       implicit none
+! output
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
-       integer, parameter          :: REAL32 = selected_real_kind(6)
+  real(REAL64), intent(out)          ::  tback                           !<  cpu time in seconds
 
-!      output
+! local variables
 
-       real(REAL64), intent(out)          ::  tback                    !<  cpu time in seconds
+  real(REAL32)    :: tin
 
-!      local variables
+  call cpu_time(tin)
+  tback = tin
 
-       real(REAL32)    :: tin
+  return
 
-       call cpu_time(tin)
-       tback = tin
-
-       return
-       end subroutine zesec
+end subroutine zesec

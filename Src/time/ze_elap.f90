@@ -11,41 +11,46 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     gets the elapsed time since beginning of month
-!>     precision of miliseconds
-!>     linux gfortran/ifort version
+!>  gets the elapsed time since beginning of month
+!>  precision of miliseconds
+!>  linux gfortran/ifort version
+!>
+!>  \author       José Luís Martins
+!>  \version      5.12
+!>  \date         2 may 2006, 2 December 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine zeelap(el_time)
+subroutine zeelap(el_time)
 
-!      Written 2 may 2006
-!      Modified 11 September 2015. f90. JLM
-!      Modified, documentation, beginning of month, December 2019. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 2 may 2006
+! Modified 11 September 2015. f90. JLM
+! Modified, documentation, beginning of month, December 2019. JLM
+! Modified, indentation, 2 December2025. JLM
 
-!      version 4.94
+  implicit none
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      output
+! output
 
-       real(REAL64), intent(out)          ::  el_time                    !<  elapsed time since beginning of month
+  real(REAL64), intent(out)          ::  el_time                         !<  elapsed time since beginning of month
 
-!      local variables
+! local variables
 
-       character(len=8)   ::  date
-       character(len=10)  ::  time
-       character(len=5)   ::  zone
-       integer            ::  ival(8)
+  character(len=8)   ::  date
+  character(len=10)  ::  time
+  character(len=5)   ::  zone
+  integer            ::  ival(8)
 
-!      constants
+! constants
 
-       real(REAL64), parameter  ::  UM = 1.0_REAL64
+  real(REAL64), parameter  ::  UM = 1.0_REAL64
 
-       call date_and_time(date,time,zone,ival)
+  call date_and_time(date,time,zone,ival)
 
-       el_time = ((((ival(3)-1)*24 + ival(5))*60 + ival(6))*60 +         &
-     &               ival(7))*UM + (ival(8)*UM)/(1000*UM)
+  el_time = ((((ival(3)-1)*24 + ival(5))*60 + ival(6))*60 +              &
+                ival(7))*UM + (ival(8)*UM)/(1000*UM)
 
-       return
-       end subroutine zeelap
+  return
+
+end subroutine zeelap

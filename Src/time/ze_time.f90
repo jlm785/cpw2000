@@ -11,32 +11,36 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     gets the time of day (hh:mm:ss)
-!>     linux gfortran/ifort version
+!>  gets the time of day (hh:mm:ss)
+!>  linux gfortran/ifort version
+!>
+!>  \author       José Luís Martins
+!>  \version      5.12
+!>  \date         21 october 2003, 2 December 2025.
+!>  \copyright    GNU Public License v2
 
-       subroutine zetime(btime)
+subroutine zetime(btime)
 
-!      Written 21 october 2003
-!      Modified 11 September 2015. f90. JLM
-!      Modified, documentation, December 2019. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 21 october 2003
+! Modified 11 September 2015. f90. JLM
+! Modified, documentation, December 2019. JLM
+! Modified, indentation, 2 December2025. JLM
 
-!      version 4.94
+  implicit none
 
-       implicit none
+! output
 
-!      output
+  character(len=8), intent(out)      ::  btime                           !<  time of day (hh:mm:ss)
 
-       character(len=8), intent(out)      ::  btime                      !<  time of day (hh:mm:ss)
+! local variables
 
-!      local variables
+  character(len=8)   ::  date
+  character(len=10)  ::  time
 
-       character(len=8)   ::  date
-       character(len=10)  ::  time
+  call date_and_time(date, time )
 
-       call date_and_time(date, time )
+  write(btime,'(a2,":",a2,":",a2)') time(1:2),time(3:4),time(5:6)
 
-       write(btime,'(a2,":",a2,":",a2)') time(1:2),time(3:4),time(5:6)
+  return
 
-       return
-       end subroutine zetime
+end subroutine zetime

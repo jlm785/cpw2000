@@ -223,7 +223,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   endif
 
 
-  call xc_cell2(author, tblaha, lkincalc, id, n2, n1,n2,n3,              &
+  call xc_cell(author, tblaha, lkincalc, id, n2, n1,n2,n3,               &
         rhomsh, taumsh, rholapmsh, vxcmsh, adot, exc, rhovxc, strxc )
 
 

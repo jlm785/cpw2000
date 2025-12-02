@@ -38,7 +38,7 @@
 
        character(len=250), intent(out)    ::  meta_cpw2000               !<  metadata coded in cpw2000
        logical, intent(out)               ::  lrede                      !<  checks that NumberOfLatticePlanes was set
-  
+
 !      local variables
 
        integer            ::  nlines
@@ -47,10 +47,12 @@
        character(len=3)   ::  vers                           ! program version of rede
        character(len=50)  ::  title                          ! title of the calculation
        character(len=140) ::  name                           ! name of the calculation
-       character(len=9)   ::  bdate                          ! date that rede.f90 was run 
-       character(len=8)   ::  btime                          ! time of day that rede.f90 was run 
+       character(len=9)   ::  bdate                          ! date that rede.f90 was run
+       character(len=8)   ::  btime                          ! time of day that rede.f90 was run
        integer            ::  isl(3,3)
        character(len=140) ::  subtitle                       ! subtitle of the calculation
+
+       character(len=10)  ::  ymddate                        ! date in the year.month.day format
 
        integer            ::  kt, ktmax
        integer            ::  ioerr
@@ -110,14 +112,14 @@
 
 
 !        calculation name
- 
+
          name = esdf_string('Rede.Name',name)
 
 
-!        date rede.f90 was run
+!        date rede.f90 was run (convert to old internal format)
 
-         bdate = esdf_string('Rede.Date',bdate)
-
+         ymddate = esdf_string('Rede.Date',ymddate)
+         call zedate_convert(bdate, ymddate, .TRUE.)
 
 !        time of day rede.f90 was run
 
@@ -139,8 +141,8 @@
            ioerr = 0
            do i=1,nlines
 
-             read(block_data(i),*,iostat=ioerr) (isl(j,i),j=1,3)           
-   
+             read(block_data(i),*,iostat=ioerr) (isl(j,i),j=1,3)
+
              if(ioerr /= 0) then
                write(6,*)
                write(6,*) '    Stopped in read_esdf_rede'
