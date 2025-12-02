@@ -119,7 +119,14 @@
 !        date rede.f90 was run (convert to old internal format)
 
          ymddate = esdf_string('Rede.Date',ymddate)
-         call zedate_convert(bdate, ymddate, .TRUE.)
+
+!        tries to catch the old format
+
+         if(ymddate(5:5) == '.') then
+           call zedate_convert(bdate, ymddate, .TRUE.)
+         else
+           bdate =  ymddate(1:9)
+         endif
 
 !        time of day rede.f90 was run
 
