@@ -4,8 +4,8 @@
 
 # chooses compiler and libraries
 
-F77="ifort"
-LIBS="-mkl"
+F77="ifx"
+LIBS="-qmkl"
 
 
 # debugging option (true, false)
@@ -27,7 +27,7 @@ then
    FCOPTS="-xHost -O3 ${PROF}"
    FCOMP="-qopenmp"
 else
-   FCOPTS="-g -check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check"
+   FCOPTS="-g -check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0"
    FCOMP=" "
 fi
 
@@ -40,7 +40,7 @@ FCSAFE="-O0"
 
 # suffix for executables if you want to compare compilers
 
-SUFFIX="_ifort"
+SUFFIX="_ifx"
 # SUFFIX=""
 if [ $DEBUG = "true" ]
 then

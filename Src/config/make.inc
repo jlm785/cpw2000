@@ -21,8 +21,8 @@ CPU=Intel
 #   As of early 2024 ifx should be considered "beta" and unreliable.
 
 ifeq ($(CPU),Intel)
-   F77=ifort
-   # F77=ifx
+   F77=ifx
+   # F77=ifort
    # F77=gfortran
    # F77=pgfortran
 else
@@ -123,11 +123,11 @@ ifeq ($(IFORTX),true)
    LIBS=-qmkl
 
    ifeq ($(DEBUG),false)
-      FCOPTS=-xHost -O3 $(PROF)
+      FCOPTS=-xHost -O3 $(PROF) -diag-disable=10448
       FCOMP=-qopenmp
       # FCOMP=-openmp
    else
-      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0
+      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0 -diag-disable=10448
       FCOMP=
    endif
 
@@ -135,6 +135,33 @@ ifeq ($(IFORTX),true)
    FCSAFE=-O0
 
 endif
+
+#  For Intel ifx compiler:
+
+ifeq ($(F77),ifx)
+
+   ifeq ($(DEBUG),false)
+      FCOPTS=-xHost -O3 $(PROF)
+   else
+      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -g -O0
+   endif
+
+endif
+
+
+
+#  For Intel ifort compiler:
+
+ifeq ($(F77),ifort)
+
+   ifeq ($(DEBUG),false)
+      FCOPTS=-xHost -O3 $(PROF) -diag-disable=10448
+   else
+      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0 -diag-disable=10448
+   endif
+
+endif
+
 
 
 

@@ -111,4 +111,10 @@ then
 fi
 
 
+# it is safer to use fortran dcg...
+
+   # MKLEXTRALIB=false
+   MKLEXTRALIB=true
+
+
 

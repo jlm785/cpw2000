@@ -1,8 +1,15 @@
 #!/bin/bash
 #
-#   shell script to make the pw library. Comment/uncomment
-#   the following lines to choose the compiler and compilation flags
-#   and alter them according to your machine
+#   Although make should be the preferred way to compile the code, this shell script
+#   also does the job.  Copy a configuration file from config, example
+#
+#   $ cp config/config.sh.ifx config.sh
+#
+#   and run this script (shoule be executable) to get the library
+#
+#   $ ./Mklibpw
+#
+#   You should still compile the main code...
 #
 
 source config.sh
@@ -61,7 +68,7 @@ fi
 
 if [ $HKPSI = "mkldfti" ]
 then
-   $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90
+   $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/mkl_3D/mkl_dfti.f90 hk_psi/mkl_3D/hk_psi_c16.f90 hk_psi/mkl_3D/hk_psi_spin_c16.f90
 else
    $F77 -c $FCOPTS $FCEXTRA $FCOMP hk_psi/reference/*.f90
 fi
@@ -94,7 +101,7 @@ $F77 -c $FCOPTS LIBS/esdf_read/esdf_key_mod.f90 LIBS/esdf_read/esdf_mod.f90
 $F77 -c $FCOPTS LIBS/lbfgs/*.f
 $F77 -c $FCSAFE LIBS/lbfgs/dpmeps.f
 
-$F77 -c $FCOPTS ao_interpolation/irredbzinit.f90 ao_interpolation/fourier_interpolation.f90 ao_interpolation/nonorthointerp.f90
+$F77 -c $FCOPTS ao_interpolation/fourier_interpolation.f90 ao_interpolation/nonorthointerp.f90
 $F77 -c $FCOPTS ao_interpolation/ao*.f90
 
 $F77 -c $FCOPTS ALFA/*.f90
@@ -108,6 +115,8 @@ $F77 -c $FCOPTS mesh/*.f90
 $F77 -c $FCOPTS numeric/*.f90
 
 $F77 -c $FCOPTS read_print/*.f90
+
+$F77 -c $FCOPTS QE/*.f90
 
 
 
