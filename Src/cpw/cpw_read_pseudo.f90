@@ -14,8 +14,8 @@
 !>  Interface subroutine for read_pseudo
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         19 November 2019. 10 October 2025.
+!>  \version      5.12
+!>  \date         19 November 2019. 11 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
@@ -24,6 +24,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! Written 19 November 2019. JLM
 ! Modified, indentation, author, 13 January 2024. JLM
 ! Modified, filenames for pseudos.  10 October 2025. JLM
+! Modified, prepare for more than ine type of atomic basis. 11 February 2026. JLM
 
   use cpw_variables
 
@@ -44,8 +45,22 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
   integer              ::  nt, l
 
+  INTEGER                      ::  TMP_MXDSET
+
+  INTEGER                      ::  TMP_N_BSETS
+  INTEGER, ALLOCATABLE         ::  TMP_NORBAT(:,:)
+  INTEGER, ALLOCATABLE         ::  TMP_LORB(:,:,:)
+  REAL(REAL64), ALLOCATABLE    ::  TMP_WVFAO(:,:,:,:)
+
+  INTEGER                      ::  N, J
+
   ipr = 0
   if(iprglob > 0) ipr = 1
+
+!   call size_mxdlqp_lao(crys_%ntype, crys_%nameat,                        &
+!        filename_%pseudo_path, filename_%pseudo_suffix,                   &
+!        filename_%itape_pseudo,                                           &
+!        dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
 
   call size_mxdlqp_lao(crys_%ntype, crys_%nameat,                        &
        filename_%pseudo_path, filename_%pseudo_suffix,                   &
@@ -66,22 +81,40 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
   allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
 
+!  allocate(atorb_%n_bsets(dims_%mxdtyp))
   allocate(atorb_%norbat(dims_%mxdtyp))
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
   allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
   allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
 
+  TMP_MXDSET = 2
+  ALLOCATE(TMP_NORBAT(TMP_MXDSET,dims_%mxdtyp))
+  ALLOCATE(TMP_LORB(dims_%mxdlao,TMP_MXDSET,dims_%mxdtyp))
+  ALLOCATE(TMP_WVFAO(-2:dims_%mxdlqp,dims_%mxdlao,TMP_MXDSET,dims_%mxdtyp))
+
+
+
   call read_pseudo(ipr, author,                                          &
        pseudo_%ealraw, PSEUDO_%NQ, PSEUDO_%DELQ, pseudo_%vkb,            &
        pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
-       atorb_%norbat, atorb_%nqwf, atorb_%delqwf, atorb_%wvfao,          &
-       atorb_%lorb, atorb_%latorb,                                       &
+       TMP_N_BSETS, TMP_NORBAT, atorb_%nqwf, atorb_%delqwf, TMP_WVFAO,          &
+       TMP_LORB, atorb_%latorb,                                       &
        crys_%ntype, crys_%natom, crys_%nameat,                           &
        pseudo_%zv, pseudo_%ztot,                                         &
        filename_%pseudo_path, filename_%pseudo_suffix,                   &
        filename_%itape_pseudo,                                           &
-       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
+       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao, TMP_MXDSET)
+
+  DO NT = 1,crys_%ntype
+    atorb_%norbat(NT) = TMP_NORBAT(1,NT)
+    DO N = 1,TMP_NORBAT(1,NT)
+      atorb_%lorb(N,NT) = TMP_LORB(N,1,NT)
+      DO J = -2,dims_%mxdlqp
+        atorb_%wvfao(J,N,NT) = TMP_WVFAO(J,N,1,NT)
+      ENDDO
+    ENDDO
+  ENDDO
 
 
   do nt = 1,crys_%ntype

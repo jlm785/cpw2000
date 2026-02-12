@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         October 1993, 25 November 2025.
+!>  \date         October 1993, 12 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -51,6 +51,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 ! Modified, calls xc_author_info, 22 November 2025. JLM
 ! Modified, do not keep data from first iteration if kinetic energy density is used. 25 November 2025. JLM
+! Modified, cleanup of mixer at the end of self-consistency. 12 February 2026. JLM
 
   use cpw_variables
 
@@ -907,6 +908,27 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   enddo
 
+! cleanup of mixer
+
+  if(flags_%flgmix == 'BROYD1') then
+
+    call mixer_broyden1_c16( -2, crys_%adot, pseudo_%ztot,             &
+        recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
+        recip_%mstar, recip_%ek,                                       &
+        vhxc, vhxcout, delvhxc,                                        &
+        dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+
+  else
+
+    call mixer_bfgs_c16( -2 , lxccalc, crys_%adot, pseudo_%ztot,       &
+        bandwid, penngap, total_%energy,                               &
+        recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
+        recip_%mstar, recip_%ek,                                       &
+        vhxc, vhxcout, delvhxc,                                        &
+        dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+
+  endif
+
   deallocate(ekl)
 
   deallocate(hpsi)
@@ -930,6 +952,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   deallocate(occp)
 
   deallocate(vscr)
+
 
 ! if self-consistency not reached
 
