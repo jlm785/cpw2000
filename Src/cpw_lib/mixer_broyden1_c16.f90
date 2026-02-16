@@ -22,7 +22,7 @@
 !>
 !>  \author       Sverre Froyen, Jose Luis Martins
 !>  \version      5.12
-!>  \date         May 20,1999. 12 February 2026
+!>  \date         May 20,1999. Modified
 !>  \copyright    GNU Public License v2
 
 
@@ -34,7 +34,6 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
 ! Adapted from Sverre Froyen plane wave program.
 ! Written May 20,1999.
 ! Modified to complex, 29 September 2025. JLM
-! Cleanup of allocations, 12 February 2026. JLM
 
   implicit none
 
@@ -101,20 +100,6 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
 ! paranoid check, stops complaint about unused ng...
 
   if(ng > mxdgve) stop
-
-! cleanup
-
-  if(itmix == -2) then
-
-    if(allocated(hessd)) deallocate(hessd)
-    if(allocated(vold)) deallocate(vold)
-    if(allocated(voldout)) deallocate(voldout)
-    if(allocated(pth)) deallocate(pth)
-    if(allocated(pmhp)) deallocate(pmhp)
-
-    return
-
-  endif
 
   icount = itmix - 1
 

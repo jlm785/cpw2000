@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.12
-!>  \date         12 February 2026
+!>  \date         10 October 2025
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -102,6 +102,8 @@ program cpw2000
 
   integer, parameter                  ::  mxdlbf = 30                    !<  array dimension for l-bfgs optimization
 
+  character(len=2)                    ::  icorr                          !<  eXchange-Correlation choice
+
   integer              ::  iguess
   real(REAL64)         ::  t0,tin,tout,tinit,tfinal
   real(REAL64)         ::  telin,telout,tel0,telfin
@@ -146,6 +148,8 @@ program cpw2000
 
 
 ! reads the pseudopotential data
+
+  icorr = xc_%author(1:2)
 
   call cpw_read_pseudo(iprglob, xc_%author,                              &
        crys_, pseudo_, atorb_, filename_, dims_)
@@ -409,9 +413,6 @@ program cpw2000
 
   endif
 
-  call cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,               &
-      vcomp_, pseudo_, atorb_, total_, ewald_, kpoint_,                  &
-      hamallk_, psiallk_)
 
 
   call zesec(tout)
