@@ -19,15 +19,16 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         1980s, 10 October 2025.
+!>  \date         1980s, 18 February 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine read_pseudo(ipr, author, ealraw,                              &
-      nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                       &
-      norbat, nqwf, delqwf, wvfao, lorb, latorb,                         &
+subroutine read_pseudo(ipr, author,                                      &
+      ealraw, nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,               &
+      latorb, nqwf, delqwf,                                              &
+      n_bsets, norbat, lorb, wvfao,                                      &
       ntype, natom, nameat, zv, ztot,                                    &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &
-      mxdtyp, mxdlqp, mxdlao)
+      mxdtyp, mxdlqp, mxdlao, mxdset)
 
 ! adapted from Sverre Froyen plane wave program
 ! adapted from version 4.36 of pseukb.
@@ -43,6 +44,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 ! Modified, Perdew-Wang (1992) not flagged as unsupported. 12 January 2024. JLM
 ! Modified, ititle -> psdtitle, useless but for consistency. 20 February 2025. JLM
 ! Modified, filenames for pseudos. 10 October 2025. JLM
+! Reads more than one atomic basus set. 18 February 2026. JLM
 
 
   implicit none
@@ -53,6 +55,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  dimension for number of atomic basis sets
 
   integer, intent(in)                ::  ipr                             !<  should be equal to one if information is to be printed.
   character(len=*), intent(in)       ::  author                          !<  type of correlation
@@ -75,12 +78,18 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
   real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
-  integer, intent(out)               ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+
+  logical, intent(out)               ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
+
   integer, intent(out)               ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(out)          ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(out)               ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (non normalized to vcell)
-  logical, intent(out)               ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
+
+  integer, intent(out)               ::  n_bsets(mxdtyp)                 !<  number of basis sets for each atom k
+  integer, intent(out)               ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
+
+  integer, intent(out)               ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (non normalized to vcell)
+
   real(REAL64), intent(out)          ::  zv(mxdtyp)                      !<  valence of atom with type i
   real(REAL64), intent(out)          ::  ztot                            !<  total charge density (electrons/cell)
 
@@ -105,6 +114,9 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
   integer                  :: nskip
 
   integer                  :: ioerror
+  character(len=512)       :: line                                       !  avoid backspace
+
+  logical                  :: l2026                                      !  extended pseudo format from 2026
 
 ! constants
 
@@ -112,7 +124,7 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 
 ! counters
 
-  integer                  :: nt,n,j,m,l,mmax,nc
+  integer                  :: nt, n, j, m, l, mmax, nc,nb
 
 
 ! write heading
@@ -141,17 +153,34 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 !   read heading
 
     psdtitle(1:20) = '          '
+    line(1:512) = ' '
 
-    read(it,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,20a10)',iostat=ioerror)  &
-         namel, icorrt, irel, icore, iray, psdtitle
+    read(it,'(a)',iostat=ioerror) line
+
+!   check file is not corrupted in the first calls
 
     if(ioerror /= 0) then
-      backspace(it)
-      read(it,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,7a10)')                &
-           namel, icorrt, irel, icore, iray, psdtitle(1:7)
+      write(6,*)
+      write(6,*) ' STOPPED in read_pseudo'
+      write(6,*) ' incorrect pseudopotential file'
+
+      stop
+
     endif
 
-    read(it,*) izv,nql,delql,vql0
+    read(line,'(1x,a2,1x,a2,1x,a3,1x,a4,1x,a60,1x,20a10)',iostat=ioerror)   &
+          namel, icorrt, irel, icore, iray, psdtitle
+
+    if(ioerror /= 0) then
+      write(6,*)
+      write(6,*) ' STOPPED in read_pseudo'
+      write(6,*) ' incorrect pseudopotential file'
+
+      stop
+
+    endif
+
+    read(it,*) izv, nql, delql, vql0
     zv(nt) = izv*UM
     delqnl(nt) =delql
 
@@ -169,13 +198,6 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 
     if (namel /= nameat(nt)) write(6,'("  *** warning in read_",         &
       &     "pseudo   chemical symbols do not match")')
-
-!     if(icorrt == 'ca') icorrt='CA'
-!     if(icorrt == 'xa') icorrt='XA'
-!     if(icorrt == 'wi') icorrt='WI'
-!     if(icorrt == 'hl') icorrt='HL'
-!     if(icorrt == 'pb') icorrt='PB'
-!     if(icorrt == 'pw') icorrt='PW'
 
     call chrcap(icorrt,2)
     if(icorrt /= icorr) write(6,'("  *** warning in read_pseudo",        &
@@ -387,79 +409,121 @@ subroutine read_pseudo(ipr, author, ealraw,                              &
 
 !   reads the fourier transforms of the wavefunctions
 
+    do nb = 1,mxdset
     do n = 1,mxdlao
     do j = -2,mxdlqp
-      wvfao(j,n,nt) = ZERO
+      wvfao(j,n,nb,nt) = ZERO
     enddo
     enddo
-    read(it,*) nqwf(nt),delqwf(nt),norbat(nt)
+    enddo
+
+    line(1:512) = ' '
+    read(it,'(a)',iostat=ioerror) line
+
+    read(line,*,iostat=ioerror) nqwf(nt),delqwf(nt),norbat(1,nt), n_bsets(nt)
+
+
+    l2026 = .TRUE.
+    if(ioerror /= 0) then
+      read(line,*,iostat=ioerror) nqwf(nt),delqwf(nt),norbat(1,nt)
+      n_bsets(nt) = 1
+      l2026 = .FALSE.
+    endif
+
 
     if(nqwf(nt)-1 > mxdlqp) then
       write(6,'("  stopped in read_pseudo  reading data for ",           &
         &    a2,"  increase mxdlqp (wavefunction) to ",i7)')             &
-          nameat(nt),nqwf(nt)-1
+          nameat(nt), nqwf(nt)-1
 
       stop
 
     endif
-    if(norbat(nt) > mxdlao) then
+    if(norbat(1,nt) > mxdlao) then
       write(6,'("  stopped in read_pseudo  reading data for ",           &
         &    a2,"  program does not accept ",i4,                         &
-        &    " orbitals (max",i4,")")') nameat(nt),norbat(nt),mxdlao
+        &    " orbitals (max",i4,")")') nameat(nt),norbat(1,nt),mxdlao
 
       stop
 
     endif
 
-    nskip = 0
-    do n=1,norbat(nt)
+!   this part is convoluted but it is a way to keep back-compatibility
+!   of the files with only one basis set
 
-      read(it,*) lorb(n-nskip,nt),eorbwv(n-nskip)
 
-      l = lorb(n-nskip,nt)
+    do nb = 1,n_bsets(nt)
 
-      if(l < 0) then
-        write(6,'("  stopped in read_pseudo  reading data for ",         &
-          &    a2,"  program does noes not accept negative l in",        &
-          &    " wavefunctions")') nameat(nt)
+      if(l2026) then
 
-        stop
+        read(it,*) lorb(1,nb,nt), eorbwv(1), norbat(nb,nt)
+        if(norbat(1,nt) > mxdlao) then
+          write(6,'("  stopped in read_pseudo  reading data for ",           &
+            &    a2,i4,"  program does not accept ",i4,                      &
+            &    " orbitals (max",i4,")")') nameat(nt), nb, norbat(nb,nt),mxdlao
 
-      endif
-
-      if(l > 3) then
-        write(6,'("  WARNING in read_pseudo  reading data for ",         &
-          &    a2,"  code not written for l= ",i4,                       &
-          &    " in wavefunctions")') nameat(nt),l
-        write(6,'("  skipping atomic orbital")')
-        do j = 0,nqwf(nt)-1
-          read(it,*) wvfao(j,n-nskip,nt)
-        enddo
-        nskip = nskip+1
-      else
-        do j = 0,nqwf(nt)-1
-          read(it,*) wvfao(j,n-nskip,nt)
-        enddo
-
-!       divides by 1/q**l
-
-        if(l > 0) then
-          do j = 1,nqwf(nt)-1
-            fac = (j*delqwf(nt))**l
-            wvfao(j,n-nskip,nt) = wvfao(j,n-nskip,nt) / fac
-          enddo
-
-          wvfao(0,n-nskip,nt) = (4*wvfao(1,n-nskip,nt) - wvfao(2,n-nskip,nt)) / 3
+          stop
 
         endif
 
-        wvfao(-1,n-nskip,nt) = wvfao(1,n-nskip,nt)
-        wvfao(-2,n-nskip,nt) = wvfao(2,n-nskip,nt)
-
       endif
 
+      nskip = 0
+
+      do n = 1,norbat(nb,nt)
+
+        if(l2026) then
+          if(n /= 1) read(it,*) lorb(n-nskip,nb,nt), eorbwv(n-nskip)
+        else
+          read(it,*) lorb(n-nskip,nb,nt), eorbwv(n-nskip)
+        endif
+
+        l = lorb(n-nskip,nb,nt)
+
+        if(l < 0) then
+          write(6,'("  stopped in read_pseudo  reading data for ",         &
+            &    a2,"  program does noes not accept negative l in",        &
+            &    " wavefunctions")') nameat(nt)
+
+          stop
+
+        endif
+
+        if(l > 3) then
+          write(6,'("  WARNING in read_pseudo  reading data for ",         &
+            &    a2,"  code not written for l= ",i4,                       &
+            &    " in wavefunctions")') nameat(nt),l
+          write(6,'("  skipping atomic orbital")')
+          do j = 0,nqwf(nt)-1
+            read(it,*) wvfao(j,n-nskip,nb,nt)
+          enddo
+          nskip = nskip+1
+        else
+          do j = 0,nqwf(nt)-1
+            read(it,*) wvfao(j,n-nskip,nb,nt)
+          enddo
+
+!         divides by 1/q**l
+
+          if(l > 0) then
+            do j = 1,nqwf(nt)-1
+              fac = (j*delqwf(nt))**l
+              wvfao(j,n-nskip,nb,nt) = wvfao(j,n-nskip,nb,nt) / fac
+            enddo
+
+            wvfao(0,n-nskip,nb,nt) = (4*wvfao(1,n-nskip,nb,nt) - wvfao(2,n-nskip,nb,nt)) / 3
+
+          endif
+
+          wvfao(-1,n-nskip,nb,nt) = wvfao(1,n-nskip,nb,nt)
+          wvfao(-2,n-nskip,nb,nt) = wvfao(2,n-nskip,nb,nt)
+
+        endif
+
+      enddo
+      norbat(nb,nt) = norbat(nb,nt) - nskip
+
     enddo
-    norbat(nt) = norbat(nt) - nskip
 
     close (unit=it)
 

@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.12
-!>  \date         12 February 2026
+!>  \date         18 February 2026
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -56,6 +56,8 @@ program cpw2000
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
 
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
+
+  type(new_atorb_t)                  ::  new_atorb_                      !<  atomic orbitals in G-space
 
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
 
@@ -148,7 +150,7 @@ program cpw2000
 ! reads the pseudopotential data
 
   call cpw_read_pseudo(iprglob, xc_%author,                              &
-       crys_, pseudo_, atorb_, filename_, dims_)
+       crys_, pseudo_, atorb_, new_atorb_, filename_, dims_)
 
   call cpw_reset_nbandin(6, crys_%ntype, pseudo_%zv, pwexp_%nbandin,     &
      dims_%mxdtyp)
@@ -269,20 +271,31 @@ program cpw2000
       iguess = 1
     endif
 
+    if(flags_%flgscf == 'AO    ' .or.                                    &
+       flags_%flgscf == 'AOJC  ' .or.                                    &
+       flags_%flgscf == 'AOJCPW') then
 
-    if((flags_%flgscf == 'AO    ' .or.                                   &
-        flags_%flgscf == 'AOJC  ' .or.                                   &
-        flags_%flgscf == 'AOJCPW') .and. atorb_%latorb) then
+      if(atorb_%latorb) then
 
+        call cpw_scf('AO', iprglob, iguess, kmscr,                       &
+            efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,          &
+            dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,    &
+            vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,        &
+            total_, ewald_, chdens_, filename_)
 
-      call cpw_scf('AO', iprglob, iguess, kmscr,                         &
-      efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
-      dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
-      vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_, filename_)
+        iguess = 1
 
+      else
 
-      iguess = 1
+        write(6,*)
+        write(6,*) '    STOPPED in cpw2000'
+        write(6,*) '    Requested a calculation with atomic orbitals,'
+        write(6,*) '    but pseudopotential files did not contain'
+        write(6,*) '    the necessary data'
+
+        stop
+
+      endif
 
     endif
 
@@ -410,7 +423,7 @@ program cpw2000
   endif
 
   call cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,               &
-      vcomp_, pseudo_, atorb_, total_, ewald_, kpoint_,                  &
+      vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
       hamallk_, psiallk_)
 
 

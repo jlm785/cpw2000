@@ -14,15 +14,16 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         11 February 2026.
+!>  \date         18 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
-      vcomp_, pseudo_, atorb_, total_, ewald_, kpoint_,                  &
+      vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
       hamallk_, psiallk_)
 
 
 ! Written 11 February 2026. JLM
+! Added new_atorb_ temporarily. 18 February 2026.
 
 
   use cpw_variables
@@ -37,6 +38,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
+  type(new_atorb_t)                  ::  new_atorb_                      !<  atomic orbitals in G-space
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
@@ -69,12 +71,18 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 
   deallocate(pseudo_%vkb)
 
-!  deallocate(atorb_%n_bsets)
   deallocate(atorb_%norbat)
   deallocate(atorb_%nqwf)
   deallocate(atorb_%delqwf)
   deallocate(atorb_%wvfao)
   deallocate(atorb_%lorb)
+
+  deallocate(new_atorb_%n_bsets)
+  deallocate(new_atorb_%norbat)
+  deallocate(new_atorb_%nqwf)
+  deallocate(new_atorb_%delqwf)
+  deallocate(new_atorb_%wvfao)
+  deallocate(new_atorb_%lorb)
 
   deallocate(kpoint_%rk)
   deallocate(kpoint_%wgk)

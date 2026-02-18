@@ -2,3 +2,12 @@ This directory contains the subroutines the esdf module and the subroutines that
 
 The esdf_mod.f90 was modified in June 2017 to revert to some previous version
 and to have the correct behavior with missing data.
+
+Modifications are mostly indicated by !jlm or !JLM
+
+With time this version and PARSEC, CASTEP, CASINO versions have diverged.
+
+Major modifications are:
+
+--  Use of "%block" to indicate a block instead of "begin" to be similar to SIESTA
+

@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         22 April 2021, 10 October 2025.
+!>  \date         22 April 2021, 18 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
@@ -42,6 +42,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 ! Modified, mxdlao, ntrans, 13 September 2021. JLM
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, filenames for pseudos. 10 October 2025. JLM
+! Modified, preliminary modifications for more than one basis set. 18 February 2026. JLM
 
   implicit none
 
@@ -103,7 +104,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 
   character(len=9 )   ::  bdate
   character(len=8)    ::  btime
-  integer             ::  mxdl, mxdlao
+  integer             ::  mxdl, mxdlao, mxdset
 
 ! counters
 
@@ -112,7 +113,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 
   call size_mxdlqp_lao(ntype, nameat,                                    &
          pseudo_path, pseudo_suffix, itape_pseudo,                       &
-         mxdtyp, mxdl, mxdlao)
+         mxdtyp, mxdl, mxdlao, mxdset)
 
   open(unit=io, file=filename, status='UNKNOWN', form='UNFORMATTED')
 
@@ -163,4 +164,5 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   close(unit = io)
 
   return
+
 end subroutine pw_rho_v_out

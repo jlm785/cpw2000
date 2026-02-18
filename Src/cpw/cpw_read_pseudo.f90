@@ -14,16 +14,17 @@
 !>  Interface subroutine for read_pseudo
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         19 November 2019. 10 October 2025.
+!>  \version      5.12
+!>  \date         19 November 2019. 18 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
-       crys_, pseudo_, atorb_, filename_, dims_)
+       crys_, pseudo_, atorb_, new_atorb_, filename_, dims_)
 
 ! Written 19 November 2019. JLM
 ! Modified, indentation, author, 13 January 2024. JLM
 ! Modified, filenames for pseudos.  10 October 2025. JLM
+! Modified, prepare for more than one type of atomic basis. 18 February 2026. JLM
 
   use cpw_variables
 
@@ -32,7 +33,10 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   type(dims_t)                       ::  dims_                           !<  array dimensions
   type(crys_t)                       ::  crys_                           !<  crystal structure
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
+  type(new_atorb_t)                  ::  new_atorb_                      !<  new format of atomic orbitals in G-space
+
   type(filename_t)                   ::  filename_                       !<  Information about used files
 
   integer,intent(in)                 ::  iprglob                         !<  level of detail of printout
@@ -42,7 +46,8 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
 ! counters
 
-  integer              ::  nt, l
+  integer              ::  nt, l, n, j
+
 
   ipr = 0
   if(iprglob > 0) ipr = 1
@@ -50,7 +55,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   call size_mxdlqp_lao(crys_%ntype, crys_%nameat,                        &
        filename_%pseudo_path, filename_%pseudo_suffix,                   &
        filename_%itape_pseudo,                                           &
-       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
+       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
 
 ! this is for compatibility between old and new version
 
@@ -66,22 +71,48 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
   allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
 
-  allocate(atorb_%norbat(dims_%mxdtyp))
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
-  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
+  allocate(atorb_%norbat(dims_%mxdtyp))
   allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
+  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
+
+  allocate(new_atorb_%nqwf(dims_%mxdtyp))
+  allocate(new_atorb_%delqwf(dims_%mxdtyp))
+  allocate(new_atorb_%n_bsets(dims_%mxdtyp))
+  allocate(new_atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
+  allocate(new_atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+  allocate(new_atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+
+! gets the stomic orbitals in new format
 
   call read_pseudo(ipr, author,                                          &
-       pseudo_%ealraw, PSEUDO_%NQ, PSEUDO_%DELQ, pseudo_%vkb,            &
+       pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vkb,            &
        pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
-       atorb_%norbat, atorb_%nqwf, atorb_%delqwf, atorb_%wvfao,          &
-       atorb_%lorb, atorb_%latorb,                                       &
+       new_atorb_%latorb, new_atorb_%nqwf, new_atorb_%delqwf,            &
+       new_atorb_%n_bsets, new_atorb_%norbat,                            &
+       new_atorb_%lorb, new_atorb_%wvfao,                                &
        crys_%ntype, crys_%natom, crys_%nameat,                           &
        pseudo_%zv, pseudo_%ztot,                                         &
        filename_%pseudo_path, filename_%pseudo_suffix,                   &
        filename_%itape_pseudo,                                           &
-       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao)
+       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
+
+! fills the old format
+
+  atorb_%latorb = new_atorb_%latorb
+
+  do nt = 1,crys_%ntype
+    atorb_%nqwf(nt) = new_atorb_%nqwf(nt)
+    atorb_%delqwf(nt) = new_atorb_%delqwf(nt)
+    atorb_%norbat(nt) = new_atorb_%norbat(1,nt)
+    do n = 1,new_atorb_%norbat(1,nt)
+      atorb_%lorb(n,nt) = new_atorb_%lorb(n,1,nt)
+      do j = -2,dims_%mxdlqp
+        atorb_%wvfao(j,n,nt) = new_atorb_%wvfao(j,n,1,nt)
+      enddo
+    enddo
+  enddo
 
 
   do nt = 1,crys_%ntype

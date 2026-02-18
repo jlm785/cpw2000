@@ -15,12 +15,12 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         January 30 2008, 10 October 2025.
+!>  \date         January 30 2008, 18 February 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine size_mxdlqp_lao(ntype, nameat,                              &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &
-      mxdtyp, mxdlqp, mxdlao)
+      mxdtyp, mxdlqp, mxdlao, mxdset)
 
 ! written, 16 June 2012. jlm
 ! modified, vkb dimensions, March 31, 2014. jlm
@@ -28,6 +28,7 @@
 ! Modified, takes into account that some compilers may insert
 ! line wraps in free format writes, 12 July 2020. JLM
 ! Path to pseudopotential files. Indentation. 10 October 2025. JLM
+! More than one atomic basis set. 18 February 2026. JLM
 
 
   implicit none
@@ -47,26 +48,36 @@
 
   integer, intent(out)               ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(out)               ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(out)               ::  mxdset                          !<  dimension for number of atomic basis sets
 
 ! local variables
 
-  character(len=255)       :: fnam                                       !  file to open
-  integer                  :: it                                         !  tape number
-  integer                  :: norb(-1:1)
-  integer                  :: nql,nqwf,lo(4,-1:1),nkbloc(0:3,-1:1)
-  real(REAL64)             :: eorb(0:3,-1:1)
-  integer                  :: norbat
-  character(len=2)         :: namel,icorrt
-  character(len=3)         :: irel
+  character(len=255)       ::  fnam                                      !  file to open
+  integer                  ::  it                                        !  tape number
+  integer                  ::  norb(-1:1)
+  integer                  ::  nql,nqwf,lo(4,-1:1),nkbloc(0:3,-1:1)
+  real(REAL64)             ::  eorb(0:3,-1:1)
+  integer                  ::  norbat
+  character(len=2)         ::  namel,icorrt
+  character(len=3)         ::  irel
+  integer                  ::  idummy
+  real(REAL64)             ::  dummy
+  integer                  ::  n_bsets
 
-  integer                  :: nt,n,j
-  integer                  :: idummy
-  real(REAL64)             :: dummy
+  integer                  ::  ioerror
+  character(len=512)       ::  line                                      !  avoid backspace
+
+  logical                  ::  l2026                                     !  extended pseudo format from 2026
+
+! counters
+
+  integer                  :: nt, nb, n, i, j
 
 ! start loop over atomic types
 
   mxdlqp = 1
   mxdlao = 1
+  mxdset = 1
 
   do nt=1,ntype
     it = itape_pseudo + nt
@@ -165,10 +176,38 @@
 
 !   q=0 is for j=1
 
-    read(it,*) nqwf,dummy,norbat
+    line(1:512) = ' '
+    read(it,'(a)',iostat=ioerror) line
 
-    mxdlqp = max(mxdlqp,nqwf-1)
+    read(line,*,iostat=ioerror) nqwf,dummy,norbat, n_bsets
+
+    l2026 = .TRUE.
+    if(ioerror /= 0) then
+      read(line,*,iostat=ioerror) nqwf,dummy,norbat
+      n_bsets = 1
+      l2026 = .FALSE.
+    endif
+
+    mxdset = max(mxdset,n_bsets)
     mxdlao = max(mxdlao,norbat)
+    mxdlqp = max(mxdlqp,nqwf-1)
+
+    do nb = 1,n_bsets
+
+      if(l2026) then
+        read(it,*) idummy, dummy, norbat
+      else
+        read(it,*) idummy, dummy
+      endif
+      mxdlao = max(mxdlao,norbat)
+      do i = 1, norbat
+        if(i /= 1) read(it,*) idummy, dummy
+        do j = 0,nqwf-1
+          read(it,*) dummy
+        enddo
+      enddo
+
+    enddo
 
     close(unit=it)
 
