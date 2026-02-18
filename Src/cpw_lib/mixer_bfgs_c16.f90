@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         May 20,1999. 25 November 2025.
+!>  \date         May 20,1999. 12 February 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -44,6 +44,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
 ! Modified, logic of xmix_max_min, 8 October 2025. JLM
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 ! Modified, reallocate on restart (for kinetic energy functionals). 25 November 2025. JLM
+! Cleanup of allocations, 12 February 2026. JLM
 
   implicit none
 
@@ -125,6 +126,21 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
 ! paranoid check, stops complaint about unused ng...
 
   if(ng > mxdgve) stop
+
+! cleanup
+
+  if(itmix == -2) then
+
+    if(allocated(hessd)) deallocate(hessd)
+    if(allocated(vold)) deallocate(vold)
+    if(allocated(voldout)) deallocate(voldout)
+    if(allocated(hy)) deallocate(hy)
+    if(allocated(pvec)) deallocate(pvec)
+    if(allocated(uvec)) deallocate(uvec)
+
+    return
+
+  endif
 
 ! first time mixer stepper is called
 
