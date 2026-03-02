@@ -15,8 +15,8 @@
 !>  that are neede to calculate the bands at a given k-point.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         2 February 2020, 12 March 2025.
+!>  \version      5.12
+!>  \date         2 February 2020, 2 March 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine cpw_pp_band_prepare(ioreplay,                                 &
 ! Modified, consistent space group, mstar bug. 17 January 2021. JLM
 ! Modified, bug in initialization of chd. 12 February 2021. JLM
 ! Modified, order of input variables, dims_in_, cpw_pp_convert. 12 March 2025. JLM
+! Modified, removed emax question. 2 March 2026. JLM
 
 
   use cpw_variables
@@ -97,13 +98,6 @@ subroutine cpw_pp_band_prepare(ioreplay,                                 &
 
     endif
   endif
-
-  write(6,*)
-  write(6,'("  The original calculation used a maximum energy",          &
-     & " PW cutoff of",f10.3," Hartree")') emax_in
-  write(6,*) '  Enter maximum energy in Hartree '
-  read(5,*) pwexp_%emax
-  write(ioreplay,*) pwexp_%emax,'   emax'
 
   call size_g_space(pwexp_%emax, crys_%adot,                             &
      spaceg_%ntrans, spaceg_%mtrx,                                       &
