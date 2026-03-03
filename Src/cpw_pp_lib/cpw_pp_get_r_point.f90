@@ -60,7 +60,7 @@ subroutine cpw_pp_get_r_point(rpoint, rcar, adot, typeofr, ioreplay)
 
 ! counters
 
-  integer    ::  k, j, m
+  integer    ::  k, j
 
 
 ! gets the k-point, but first generates coordinate system

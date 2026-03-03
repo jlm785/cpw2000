@@ -227,9 +227,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
   character(len=60)  ::  filename
 
-  character(len=1)   ::  yesno, yesno2
-
-  real(REAL64)       ::  xprec
+  character(len=1)   ::  yesno
 
 ! constants
 
@@ -273,9 +271,9 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
       pwexp_%emax, flags_%flgdal, epspsi, efermi)
 
 
-  call cpw_pp_band_prepare(ioreplay,                                     &
+  call cpw_pp_band_prepare(                                              &
       dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,           &
-      dims_in_, recip_in_, vcomp_in_, emax_in)
+      dims_in_, recip_in_, vcomp_in_)
 
 
   do i = 1,100

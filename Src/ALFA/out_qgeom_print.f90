@@ -73,7 +73,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 
 ! counters
 
-  integer    ::  i, j, n, k, m, jrepeat
+  integer    ::  i, j, n, m, jrepeat
   integer    ::  nk, mk
 
 

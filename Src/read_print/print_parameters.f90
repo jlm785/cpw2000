@@ -66,10 +66,6 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
   logical, intent(in)                ::  flgkplusg                       !<  finish cell minimization with fixed k+G
   real(REAL64), intent(in)           ::  epskplusg                       !<  criteria for switching to fixed k+G
 
-! functions
-
-  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
-
 ! parameters
 
   real(REAL64), parameter :: AUTOGPA = 29421.58_REAL64

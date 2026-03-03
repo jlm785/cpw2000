@@ -20,9 +20,9 @@
 !>  \copyright    GNU Public License v2
 
 
-subroutine cpw_pp_band_prepare(ioreplay,                                 &
+subroutine cpw_pp_band_prepare(                                          &
     dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,             &
-    dims_in_, recip_in_, vcomp_in_, emax_in)
+    dims_in_, recip_in_, vcomp_in_)
 
 ! written February 2, 2020 from previous code. JLM
 ! Modified, consistent space group, mstar bug. 17 January 2021. JLM
@@ -51,30 +51,16 @@ subroutine cpw_pp_band_prepare(ioreplay,                                 &
   type(recip_t)                      ::  recip_in_                       !<  input reciprocal space information
   type(vcomp_t)                      ::  vcomp_in_                       !<  input local potential contributions
 
-
-! input
-
-  integer, intent(in)                :: ioreplay                         !<  tape number for reproducing calculations
-
-  real(REAL64), intent(in)           ::  emax_in                         !<  input kinetic energy cutoff of plane wave expansion (hartree).
-
 ! other variables
 
   integer           ::  ipr
   integer           ::  isym
 
-  integer           ::  ngmax
   integer           ::  istatus                                          !  istatus = 0, successful; 1 not closed; 2 no inverse; 3 inconsistent with atomic positions
-
-! counters
-  integer    ::  i,j,k
 
 ! constants
 
-  real(REAL64), parameter    :: ZERO = 0.0_REAL64
   real(REAL64), parameter    :: TOL = 1.0E-07_REAL64
-  complex(REAL64), parameter :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
-
 
 
   isym = 1
