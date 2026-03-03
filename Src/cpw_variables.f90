@@ -39,6 +39,8 @@ module cpw_variables
     integer                            ::  mxdcub                        !<  array dimension for 3-index g-space
 
     integer                            ::  mxdlqp                        !<  array dimension for local potential
+
+    integer                            ::  mxdset                        !<  array dimension for number of basis sets
     integer                            ::  mxdlao                        !<  array dimension of orbital per atom type
 
     integer                            ::  mxdnrk                        !<  array dimension for number of k-points
@@ -222,14 +224,31 @@ module cpw_variables
 
     logical                            ::  latorb                        !<  indicates if all atoms have information about atomic orbitals
 
+    integer, allocatable               ::  nqwf(:)                       !<  number of points for wavefunction interpolation for atom k
+    real(REAL64), allocatable          ::  delqwf(:)                     !<  step used in the wavefunction interpolation for atom k
+
     integer, allocatable               ::  norbat(:)                     !<  number of atomic orbitals for atom k
     integer, allocatable               ::  lorb(:,:)                     !<  angular momentum of orbital n of atom k
     real(REAL64), allocatable          ::  wvfao(:,:,:)                  !<  wavefunction for atom k, ang. mom. l
 
+  end type atorb_t
+
+
+! new version of atomic orbitals in G-space
+
+  type  ::  new_atorb_t
+
+    logical                            ::  latorb                        !<  indicates if all atoms have information about atomic orbitals
+
     integer, allocatable               ::  nqwf(:)                       !<  number of points for wavefunction interpolation for atom k
     real(REAL64), allocatable          ::  delqwf(:)                     !<  step used in the wavefunction interpolation for atom k
 
-  end type atorb_t
+    integer, allocatable               ::  n_bsets(:)                    !<  number of basis sets for each atom k
+    integer, allocatable               ::  norbat(:,:)                   !<  number of atomic orbitals for basis set nb and atom k
+    integer, allocatable               ::  lorb(:,:,:)                   !<  angular momentum of orbital n of basis nb and atom k
+    real(REAL64), allocatable          ::  wvfao(:,:,:,:)                !<  wavefunction for atom k, ang. mom. l
+
+  end type new_atorb_t
 
 
 ! k-point data

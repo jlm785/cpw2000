@@ -1,8 +1,6 @@
            1    main task
-   10.0000000000000         emax
- y   dual
- n   modify precision
-          2    cpw_analysis task
+ y   default parameters
+           2    cpw_analysis task
            2    method
  y   Blade Runner test
  y   default GLK values
