@@ -14,7 +14,7 @@
 !>  Distributes a quantity on the representative G-vector
 !>  in an FFT mesh
 
-  subroutine mesh_set(ipr, purpose, adot, den, rhomsh, ncheck,           &
+  subroutine gvec_mesh_set(ipr, purpose, adot, den, rhomsh, ncheck,           &
     ng, kgv, phase, conj, inds, kmax,                                    &
     mxdgve, mxdnst, mxdscr)
 
@@ -129,7 +129,7 @@
     lwrap = .FALSE.
   endif
 
-  call mesh_unfold(den, chd, id, n1,n2,n3, lwrap,                        &
+  call gvec_mesh_unfold(den, chd, id, n1,n2,n3, lwrap,                        &
       ng, kgv, phase, conj, inds,                                        &
       mxdgve, mxdnst, mxdfft)
 
@@ -171,4 +171,4 @@
   deallocate(wrkfft)
 
   return
-end subroutine mesh_set
+end subroutine gvec_mesh_set

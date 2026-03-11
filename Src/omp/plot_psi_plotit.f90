@@ -30,6 +30,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 ! and rho_v_plot_sub.
 ! Documentation, merge of with(out) spin-orbit 3 February 2021. JLM
 ! Maximum value of iorb with spin-orbit. 22 October 2024.  JLM
+! name of mesh_fold. 10 March 2026. JLM
 
 
 
@@ -408,7 +409,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 
 !     initialize denu
 
-      call mesh_fold(denu,chd,id,n1,n2,n3,                               &
+      call gvec_mesh_fold(denu,chd,id,n1,n2,n3,                               &
       ng,kgv,                                                            &
       mxdgve,mxdfft)
 
@@ -481,5 +482,6 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
   deallocate(denu)
 
   return
+
 end subroutine plot_psi_plotit
 

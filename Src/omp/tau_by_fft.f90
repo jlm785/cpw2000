@@ -29,6 +29,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 ! Modified documentation, January 2020. JLM
 ! Corrected openmp bug, 30 September 2022. JLM
 ! Remove the doubling of kinetic energy (as in libxc). 25 November 2025. JLM
+! Name of star_of_g. 10 March 2026. JLM
 
 
   implicit none
@@ -257,7 +258,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 
 !     CONJ SHOULD BE CONVERTED TO INTEGER OR LOGICAL
 
-      call star_of_g_fold(tauk, tauu, .FALSE.,                           &
+      call gvec_star_of_g_fold(tauk, tauu, .FALSE.,                      &
            ng, phase, conj, ns, inds, mstar,                             &
            mxdgve, mxdnst)
 

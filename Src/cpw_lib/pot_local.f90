@@ -11,12 +11,17 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>Computes the local potential on a grid
-!>using fast fourier transforms.
+!>  Computes the local potential on a grid
+!>  using fast fourier transforms.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.12
+!>  \date         20 February 2018. 22 October 2024.
+!>  \copyright    GNU Public License v2
 
-subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
-  ng, kgv, phase, conj, ns, inds,                                         &
-  mxdscr,mxdgve,mxdnst)
+subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
+    ng, kgv, phase, conj, ns, inds,                                      &
+    mxdscr,mxdgve, mxdnst)
 
 ! written august 6 1987. jlm
 ! modified august 31 1987. jlm
@@ -28,9 +33,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
 ! Modified kmscr, 28 October 2015. JLM
 ! Modified, documentation, January 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
-! copyright INESC-MN/Jose Luis Martins
-
-! version 4.99
+! name of mesh_unfold. 10 March 2026. JLM
 
   implicit none
 
@@ -102,7 +105,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
 ! ni is the number of points used in direction i.
 
   call size_fft(kmscr,nsfft,mxdfft,mxdwrk)
-  
+
   if(mxdwrk > mxdscr) then
     write(6,*)
     write(6,'("   STOPPED in pot_local.  mxdwrk = ",i8,                  &
@@ -111,7 +114,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
     stop
 
   endif
-  
+
   allocate(chd(mxdfft))
   allocate(wrkfft(mxdwrk))
 
@@ -121,12 +124,12 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
 !  id = nsfft(1) + 1
   id = nsfft(1) + idshift
   ntot = id * n2 * n3
-  
+
   kmscr(4) = n1
   kmscr(5) = n2
   kmscr(6) = n3
   kmscr(7) = id
-  
+
   if (ipr /= 0) then
     write(6,*)
     write(6,'("  in fft for local potential n =",3i5)') n1,n2,n3
@@ -134,13 +137,13 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
 
 ! initialize charge density array and enter symmetrized charge.
 
-  call mesh_unfold(veff,chd,id,n1,n2,n3,.TRUE.,                          &
-  ng,kgv,phase,conj,inds,                                                &
-  mxdgve,mxdnst,mxdfft)
+  call gvec_mesh_unfold(veff, chd, id,n1,n2,n3, .TRUE.,                  &
+      ng, kgv, phase, conj, inds,                                        &
+      mxdgve, mxdnst, mxdfft)
 
 ! fourier transform to real space
 
-  call cfft_c16(chd,id,n1,n2,n3,-1,wrkfft,mxdwrk)
+  call cfft_c16(chd, id,n1,n2,n3, -1, wrkfft, mxdwrk)
 
   vmax = real(chd(1))
   vmin = vmax
@@ -186,6 +189,6 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,         &
   deallocate(chd)
   deallocate(wrkfft)
 
-
   return
+
 end subroutine pot_local

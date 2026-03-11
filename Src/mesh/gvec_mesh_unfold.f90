@@ -11,10 +11,10 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Unfolds a charge density or other quantity represented on 
+!>     Unfolds a charge density or other quantity represented on
 !>     prototype G-vectors on a uniform mesh.
 
-       subroutine mesh_unfold(den,chd,id,n1,n2,n3,lwrap,                 &
+       subroutine gvec_mesh_unfold(den,chd,id,n1,n2,n3,lwrap,                 &
      & ng,kgv,phase,conj,inds,                                           &
      & mxdgve,mxdnst,mxdfft)
 
@@ -33,13 +33,13 @@
        integer, intent(in)                ::  mxdgve                     !<  array dimension for g-space vectors
        integer, intent(in)                ::  mxdnst                     !<  array dimension for g-space stars
        integer, intent(in)                ::  mxdfft                     !<  array dimension for chd
-       
+
        complex(REAL64), intent(in)        ::  den(mxdnst)                !<  density or other quantity in prototype G-vector
        logical, intent(in)                ::  lwrap                      !<  indicates if it should wrap around wrong results will be obtained with inconsistent choice.
        integer, intent(in)                ::  id, n1, n2, n3             !<  dimensions of mesh
-       
+
        integer, intent(in)                ::  ng                         !<  size of g-space
-       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates 
+       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates
        complex(REAL64), intent(in)        ::  phase(mxdgve)              !<  phase factor of G-vector n
        real(REAL64), intent(in)           ::  conj(mxdgve)               !<  is -1 if one must take the complex conjugate of x*phase
        integer, intent(in)                ::  inds(mxdgve)               !<  star to which g-vector n belongs
@@ -55,7 +55,7 @@
 !      counters
 
        integer         ::  i
- 
+
 !      parameters
 
        real(REAL64), parameter :: ZERO = 0.0_REAL64
@@ -90,7 +90,7 @@
            k3 = k3 - kd
 
            iadd = (k3*n2 + k2)*id + k1 + 1
-           
+
            if(conj(i) > ZERO) then
              chd(iadd) = chd(iadd) + den(inds(i))*conjg(phase(i))
            else
@@ -110,9 +110,9 @@
            if (k2 < 0) k2 = n2 + k2
            k3 = kgv(3,i)
            if (k3 < 0) k3 = n3 + k3
-           
+
            iadd = (k3*n2 + k2)*id + k1 + 1
-           
+
            if(conj(i) > ZERO) then
              chd(iadd) = den(inds(i))*conjg(phase(i))
            else
@@ -123,4 +123,4 @@
        endif
 
        return
-       end subroutine mesh_unfold
+       end subroutine gvec_mesh_unfold

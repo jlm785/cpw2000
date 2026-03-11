@@ -11,10 +11,10 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Given a scalar field (density) represented in the prototype G-vector, 
+!>     Given a scalar field (density) represented in the prototype G-vector,
 !>     unfolds it to the full G-space.
 
-       subroutine star_of_g_unfold(deng,denk,ladd,                       &
+       subroutine gvec_star_of_g_unfold(deng,denk,ladd,                       &
      & ng,phase,conj,inds,                                               &
      & mxdgve,mxdnst)
 
@@ -43,13 +43,13 @@
        complex(REAL64), intent(in)        ::  denk(mxdnst)               !<  symmetrized density in prototype G-vector
 
 !      output
-       
+
        complex(REAL64), intent(out)       ::  deng(mxdgve)               !<  density in G-vectors
 
 !      counters
 
        integer         ::  i
- 
+
 !      parameters
 
        real(REAL64), parameter :: ZERO = 0.0_REAL64
@@ -74,4 +74,4 @@
        enddo
 
        return
-       end subroutine star_of_g_unfold
+       end subroutine gvec_star_of_g_unfold

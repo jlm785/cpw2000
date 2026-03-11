@@ -15,7 +15,7 @@
 !>     a field that has the full symmetry of the crystal
 !>     and represents it on the prototype G-vector.
 
-       subroutine star_of_g_fold(denk,denu,ladd,                         &
+       subroutine gvec_star_of_g_fold(denk,denu,ladd,                         &
      & ng,phase,conj,ns,inds,mstar,                                      &
      & mxdgve,mxdnst)
 
@@ -42,7 +42,7 @@
        integer, intent(in)                ::  ns                         !<  number os stars with length less than gmax
        integer, intent(in)                ::  inds(mxdgve)               !<  star to which g-vector n belongs
        integer, intent(in)                ::  mstar(mxdnst)              !<  number of g-vectors in the j-th star
-       
+
        complex(REAL64), intent(in)        ::  denu(mxdgve)               !<  unsymmetrized density G-vectors
 
 !      output
@@ -52,7 +52,7 @@
 !      counters
 
        integer         ::  i
- 
+
 !      parameters
 
        real(REAL64), parameter :: ZERO = 0.0_REAL64
@@ -79,4 +79,4 @@
        enddo
 
        return
-       end subroutine star_of_g_fold
+       end subroutine gvec_star_of_g_fold

@@ -25,6 +25,7 @@ subroutine cpw_pp_convert(veff, kmax, veff_in,                           &
       mxdgve, mxdnst, mxdgve_in, mxdnst_in)
 
 ! Extracted from cpw_pp_band_prepare. 12 March 2025. JLM
+! name of cube_to_star. 10 March 2026. JLM
 
   implicit none
 
@@ -92,16 +93,14 @@ subroutine cpw_pp_convert(veff, kmax, veff_in,                           &
   ngmax = 0
   do i = 1,min(ns,ns_in)
     do j = ngmax+1,ngmax+mstar_in(i)
-      if(abs(kgv_in(1,j)) <= kmax(1) .and.                 &
-         abs(kgv_in(2,j)) <= kmax(2) .and.                 &
+      if(abs(kgv_in(1,j)) <= kmax(1) .and.                               &
+         abs(kgv_in(2,j)) <= kmax(2) .and.                               &
          abs(kgv_in(3,j)) <= kmax(3) ) then
 
         if(conj_in(j) > ZERO) then
-          chd(kgv_in(1,j),kgv_in(2,j),kgv_in(3,j)) =      &
-                        veff_in(i)*conjg(phase_in(j))
+          chd(kgv_in(1,j),kgv_in(2,j),kgv_in(3,j)) = veff_in(i)*conjg(phase_in(j))
         else
-          chd(kgv_in(1,j),kgv_in(2,j),kgv_in(3,j)) =      &
-                        conjg(veff_in(i))*phase_in(j)
+          chd(kgv_in(1,j),kgv_in(2,j),kgv_in(3,j)) = conjg(veff_in(i))*phase_in(j)
         endif
 
       endif
@@ -113,7 +112,7 @@ subroutine cpw_pp_convert(veff, kmax, veff_in,                           &
 
 ! collects v_effective in stars
 
-  call cube_to_star(veff, kmax, chd,                                     &
+  call gvec_star_from_cube(veff, kmax, chd,                              &
       ng, kgv, phase, conj, ns, mstar,                                   &
       mxdgve, mxdnst)
 

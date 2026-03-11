@@ -40,6 +40,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 ! Minor stuff, 29 September 2022. JLM
 ! Other mgga besides Tran-Blaha. only one xc_cell. 23 November 2025. JLM
 ! Kinetic energy density not the double. 25 November 2025. JLM
+! name of mesh_fold, mesh_set, star_of_g. 10 March 2026. JLM
 
 
   implicit none
@@ -150,15 +151,15 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
     dentot(i) = den(i) + denc(i)
   enddo
 
-  call mesh_set(ipr, 'v_hartree_xc', adot, dentot, rhomsh, ncheck,       &
+  call gvec_mesh_set(ipr, 'v_hartree_xc', adot, dentot, rhomsh, ncheck,       &
       ng, kgv, phase, conj, inds, kmax,                                  &
       mxdgve, mxdnst, mxdfft)
 
   if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3           &
       .or. ncheck(4) /= id) then
     write(6,*)
-    write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
-    write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3,id,     &
+    write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
+    write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3,id,     &
                (ncheck(i),i=1,4)
     write(6,*)
 
@@ -174,15 +175,15 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
     allocate(rholapmsh(mxdfft))
 
-    call mesh_set(ipr, "rholap", adot, rholap, rholapmsh, ncheck,        &
+    call gvec_mesh_set(ipr, "rholap", adot, rholap, rholapmsh, ncheck,        &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
     if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
       .or. ncheck(4) /= id) then
       write(6,*)
-      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
-      write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,  &
+      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
+      write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3, id,  &
                (ncheck(i),i=1,4)
       write(6,*)
 
@@ -200,15 +201,15 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
     allocate(taumsh(mxdfft))
 
-    call mesh_set(ipr, "tau", adot, tau, taumsh, ncheck,                 &
+    call gvec_mesh_set(ipr, "tau", adot, tau, taumsh, ncheck,                 &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
     if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
       .or. ncheck(4) /= id) then
       write(6,*)
-      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in mesh_set:"
-      write(6,'("  in v_hxc ",4i6,"  in mesh_set ",4i6)') n1,n2,n3, id,  &
+      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
+      write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3, id,  &
                (ncheck(i),i=1,4)
       write(6,*)
 
@@ -257,11 +258,11 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
   allocate(vxcg(mxdgve))
 
-  call mesh_fold(vxcg, chd, id, n1,n2,n3,                                &
+  call gvec_mesh_fold(vxcg, chd, id, n1,n2,n3,                                &
       ng, kgv,                                                           &
       mxdgve, mxdfft)
 
-  call star_of_g_fold(vxc, vxcg, .FALSE.,                                &
+  call gvec_star_of_g_fold(vxc, vxcg, .FALSE.,                                &
       ng, phase, conj, ns, inds, mstar,                                  &
       mxdgve, mxdnst)
 

@@ -11,14 +11,14 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Folds a charge density or other quantity represented on 
+!>     Folds a charge density or other quantity represented on
 !>     a uniform mesh into the corresponding G-vectors.
 
-       subroutine mesh_fold(den,chd,id,n1,n2,n3,                         &
+       subroutine gvec_mesh_fold(den,chd,id,n1,n2,n3,                         &
      & ng,kgv,                                                           &
      & mxdgve,mxdfft)
 
-!      Folds a charge density or other quantity represented on 
+!      Folds a charge density or other quantity represented on
 !      a uniform mesh into the corresponding G-vectors.
 
 !      Written September 30, 2015 from v_hartree_xc
@@ -35,12 +35,12 @@
 
        integer, intent(in)                ::  mxdgve                     !<  array dimension for g-space vectors
        integer, intent(in)                ::  mxdfft                     !<  array dimension for chd
-       
+
        integer, intent(in)                ::  id, n1, n2, n3             !<  dimensions of mesh
        complex(REAL64), intent(in)        ::  chd(mxdfft)                !<  density or other quantity on regular mesh in G-space
-       
+
        integer, intent(in)                ::  ng                         !<  size of g-space
-       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates 
+       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates
 
 !      output
 
@@ -54,7 +54,7 @@
 !      counters
 
        integer         ::  i
- 
+
 !      parameters
 
        real(REAL64), parameter :: ZERO = 0.0_REAL64
@@ -89,4 +89,4 @@
        enddo
 
        return
-       end subroutine mesh_fold
+       end subroutine gvec_mesh_fold

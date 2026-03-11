@@ -24,6 +24,7 @@
 !      modified October 20, 2015, f90. JLM
 !      modified January 2019, newcalc intent. JLM
 !      Modified, documentation, August 2019, EPILNG. JLM
+!      Name star_to_cube, 10 March 2026. JLM
 !      Copyright INESC-MN/Jose Luis Martins
 
 !      version 4.94
@@ -52,7 +53,7 @@
        integer, intent(in)                ::  inds(mxdgve)               !<  star to which g-vector n belongs
        integer, intent(in)                ::  ns                         !<  number os stars with length less than gmax
        integer, intent(in)                ::  mstar(mxdnst)              !<  number of g-vectors in the j-th star
-       
+
 !      output
 
        complex(REAL64), intent(out)       ::                             &
@@ -62,7 +63,7 @@
 
 !      input and output
 
-       complex(REAL64), intent(inout)     ::  dend(mxdnst)               !<  bonding charge density from previous md step 
+       complex(REAL64), intent(inout)     ::  dend(mxdnst)               !<  bonding charge density from previous md step
 
 !      local variables
 
@@ -73,7 +74,7 @@
 
        real(REAL64), parameter  :: ZERO = 0.0_REAL64
        complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
-       
+
 !      counters
 
        integer          ::  i
@@ -97,7 +98,7 @@
      &    flgcal == 'VCSLBF' .or. flgcal == 'VCSMIC' .or.                &
      &    flgcal == 'EPILNG') then
 
-         call star_to_cube(dend, nsave, chdsave,                         &
+         call gvec_star_to_cube(dend, nsave, chdsave,                         &
      &   ng, kgv, phase, conj, inds, ns, mstar,                          &
      &   mxdgve,mxdnst)
 
