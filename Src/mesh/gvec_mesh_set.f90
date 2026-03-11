@@ -13,18 +13,20 @@
 
 !>  Distributes a quantity on the representative G-vector
 !>  in an FFT mesh
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.13
+!>  \date         September 30 2015, 10 March 2026.
+!>  \copyright    GNU Public License v2
 
-  subroutine gvec_mesh_set(ipr, purpose, adot, den, rhomsh, ncheck,           &
+subroutine gvec_mesh_set(ipr, purpose, adot, den, rhomsh, ncheck,        &
     ng, kgv, phase, conj, inds, kmax,                                    &
     mxdgve, mxdnst, mxdscr)
 
 ! Written September 30, 2015 from setinmesh(CLR)
 ! Modified 12 September 2019, documentation test of mxdfft.  JLM
-! Modified ipr, icheck, 13 February 2021. JLM                      WARNING   changed API
-! copyright INESC-MN/Jose Luis Martins/Carlos Loia Reis
-
-! version 4.99
-
+! Modified ipr, icheck, 13 February 2021. JLM
+! Name. 10 March 2026. JLM
 
   implicit none
 
@@ -89,7 +91,7 @@
 
   if(mxdfft > mxdscr) then
     write(6,*)
-    write(6,'("   STOPPED in mesh_set.  mxdfft = ",i8,                   &
+    write(6,'("   STOPPED in gvec_mesh_set.  mxdfft = ",i8,              &
           & " is greater than mxdscr = ",i8)') mxdfft, mxdscr
     write(6,*) purpose
 
@@ -116,7 +118,7 @@
 
   if(ipr > 2) then
     write(6,*)
-    write(6,'("  mesh_set  n = ",3i5)') n1,n2,n3
+    write(6,'("  gvec_mesh_set  n = ",3i5)') n1,n2,n3
     write(6,*)
   endif
 
@@ -129,7 +131,7 @@
     lwrap = .FALSE.
   endif
 
-  call gvec_mesh_unfold(den, chd, id, n1,n2,n3, lwrap,                        &
+  call gvec_mesh_unfold(den, chd, id, n1,n2,n3, lwrap,                   &
       ng, kgv, phase, conj, inds,                                        &
       mxdgve, mxdnst, mxdfft)
 
@@ -171,4 +173,5 @@
   deallocate(wrkfft)
 
   return
+
 end subroutine gvec_mesh_set

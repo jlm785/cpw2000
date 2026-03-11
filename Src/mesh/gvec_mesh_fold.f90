@@ -11,82 +11,84 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Folds a charge density or other quantity represented on
-!>     a uniform mesh into the corresponding G-vectors.
+!>  Folds a charge density or other quantity represented on
+!>  a uniform mesh into the corresponding G-vectors.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         September 30 2015, 10 March 2026.
+!>  \copyright    GNU Public License v2
 
-       subroutine gvec_mesh_fold(den,chd,id,n1,n2,n3,                         &
-     & ng,kgv,                                                           &
-     & mxdgve,mxdfft)
+subroutine gvec_mesh_fold(den, chd, id,n1,n2,n3,                         &
+    ng, kgv,                                                             &
+    mxdgve, mxdfft)
 
-!      Folds a charge density or other quantity represented on
-!      a uniform mesh into the corresponding G-vectors.
+! Written September 30, 2015 from v_hartree_xc
+! Modified 12 December 2019, documentation.  JLM
+! Name of subroutine. Indentation. 10 March 2026. JLM
 
-!      Written September 30, 2015 from v_hartree_xc
-!      Modified 12 December 2019, documentation.  JLM
-!      copyright INESC-MN/Jose Luis Martins
+  implicit none
 
-!      version 4.94
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
+  integer, intent(in)                ::  mxdfft                          !<  array dimension for chd
+
+  integer, intent(in)                ::  id, n1, n2, n3                  !<  dimensions of mesh
+  complex(REAL64), intent(in)        ::  chd(mxdfft)                     !<  density or other quantity on regular mesh in G-space
+
+  integer, intent(in)                ::  ng                              !<  size of g-space
+  integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
+
+! output
+
+  complex(REAL64), intent(out)       ::  den(mxdgve)                     !<  density or other quantity in prototype G-vector
+
+! local varaibles
+
+  integer         ::  k1, k2, k3, iadd
+  integer         ::  nn1, nn2, nn3
+
+! counters
+
+  integer         ::  i
+
+! parameters
+
+  real(REAL64), parameter :: ZERO = 0.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  nn1 = (n1-1) / 2
+  nn2 = (n2-1) / 2
+  nn3 = (n3-1) / 2
 
-!      input
+! initialize array
 
-       integer, intent(in)                ::  mxdgve                     !<  array dimension for g-space vectors
-       integer, intent(in)                ::  mxdfft                     !<  array dimension for chd
+  do i = 1,ng
+    den(i) = C_ZERO
+  enddo
 
-       integer, intent(in)                ::  id, n1, n2, n3             !<  dimensions of mesh
-       complex(REAL64), intent(in)        ::  chd(mxdfft)                !<  density or other quantity on regular mesh in G-space
+  do i=1,ng
 
-       integer, intent(in)                ::  ng                         !<  size of g-space
-       integer, intent(in)                ::  kgv(3,mxdgve)              !<  G-vectors in reciprocal lattice coordinates
+    k1 = kgv(1,i)
+    if (iabs(k1) <= nn1) then
+      if (k1 < 0) k1 = n1 + k1
+      k2 = kgv(2,i)
+      if (iabs(k2) <= nn2) then
+        if (k2 < 0) k2 = n2 + k2
+        k3 = kgv(3,i)
+        if (iabs(k3) <= nn3) then
+          if (k3 < 0) k3 = n3 + k3
+          iadd = (k3*n2 + k2)*id + k1 + 1
+          den(i) = chd(iadd)
+        endif
+      endif
+    endif
+  enddo
 
-!      output
+  return
 
-       complex(REAL64), intent(out)       ::  den(mxdgve)                !<  density or other quantity in prototype G-vector
-
-!      local varaibles
-
-       integer         ::  k1, k2, k3, iadd
-       integer         ::  nn1, nn2, nn3
-
-!      counters
-
-       integer         ::  i
-
-!      parameters
-
-       real(REAL64), parameter :: ZERO = 0.0_REAL64
-       complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
-
-       nn1 = (n1-1) / 2
-       nn2 = (n2-1) / 2
-       nn3 = (n3-1) / 2
-
-!      initialize array
-
-       do i = 1,ng
-         den(i) = C_ZERO
-       enddo
-
-       do i=1,ng
-
-         k1 = kgv(1,i)
-         if (iabs(k1) <= nn1) then
-           if (k1 < 0) k1 = n1 + k1
-           k2 = kgv(2,i)
-           if (iabs(k2) <= nn2) then
-             if (k2 < 0) k2 = n2 + k2
-             k3 = kgv(3,i)
-             if (iabs(k3) <= nn3) then
-               if (k3 < 0) k3 = n3 + k3
-               iadd = (k3*n2 + k2)*id + k1 + 1
-               den(i) = chd(iadd)
-             endif
-           endif
-         endif
-       enddo
-
-       return
-       end subroutine gvec_mesh_fold
+end subroutine gvec_mesh_fold
