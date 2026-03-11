@@ -20,9 +20,9 @@
 !>  \date         September 30, 2015, 10 March 2026.
 !>  \copyright    GNU Public License v2
 
-  subroutine gvec_star_of_g_fold(denk,denu,ladd,                         &
-  ng,phase,conj,ns,inds,mstar,                                      &
-  mxdgve,mxdnst)
+subroutine gvec_star_of_g_fold(denk, denu, ladd,                         &
+    ng, phase, conj, ns, inds, mstar,                                    &
+    mxdgve, mxdnst)
 
 ! Written September 30, 2015 from charge_by_fft
 ! Modified 12 December 2019.  Documentation

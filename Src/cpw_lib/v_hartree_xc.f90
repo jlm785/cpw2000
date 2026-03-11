@@ -41,6 +41,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 ! Other mgga besides Tran-Blaha. only one xc_cell. 23 November 2025. JLM
 ! Kinetic energy density not the double. 25 November 2025. JLM
 ! name of mesh_fold, mesh_set, star_of_g. 10 March 2026. JLM
+! Pass packing of rho/tau/.. to gvec_mesh_set. 11 March 2026. JLM
 
 
   implicit none
@@ -100,7 +101,6 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   integer         ::  mxdwrk, mxdfft
   integer         ::  nsfft(3), n1,n2,n3, id, ntot
   real(REAL64)    ::  fac
-  integer         ::  ncheck(4)
 
   logical         ::  lxcgrad, lxclap, lxctau, lxctb09, lxccalc          !  properties of xc functionals
 
@@ -151,21 +151,10 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
     dentot(i) = den(i) + denc(i)
   enddo
 
-  call gvec_mesh_set(ipr, 'v_hartree_xc', adot, dentot, rhomsh, ncheck,       &
+  call gvec_mesh_set(ipr, 'v_hartree_xc', adot, dentot,                  &
+      rhomsh, id,n1,n2,n3, .TRUE.,                                       &
       ng, kgv, phase, conj, inds, kmax,                                  &
       mxdgve, mxdnst, mxdfft)
-
-  if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3           &
-      .or. ncheck(4) /= id) then
-    write(6,*)
-    write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
-    write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3,id,     &
-               (ncheck(i),i=1,4)
-    write(6,*)
-
-    stop
-
-  endif
 
 !-----------------------clr----------------------------------------
 
@@ -175,21 +164,10 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
     allocate(rholapmsh(mxdfft))
 
-    call gvec_mesh_set(ipr, "rholap", adot, rholap, rholapmsh, ncheck,        &
+    call gvec_mesh_set(ipr, "rholap", adot, rholap,                      &
+        rholapmsh, id,n1,n2,n2, .TRUE.,                                  &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
-
-    if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
-      .or. ncheck(4) /= id) then
-      write(6,*)
-      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
-      write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3, id,  &
-               (ncheck(i),i=1,4)
-      write(6,*)
-
-      stop
-
-    endif
 
   else
 
@@ -201,21 +179,10 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
     allocate(taumsh(mxdfft))
 
-    call gvec_mesh_set(ipr, "tau", adot, tau, taumsh, ncheck,                 &
+    call gvec_mesh_set(ipr, "tau", adot, tau,                            &
+        taumsh, id,n1,n2,n3, .TRUE.,                                     &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
-
-    if(ncheck(1) /= n1 .or. ncheck(2) /= n2 .or. ncheck(3) /= n3         &
-      .or. ncheck(4) /= id) then
-      write(6,*)
-      write(6,*)  "  STOPPED in v_hartree_xc:  inconsistency in gvec_mesh_set:"
-      write(6,'("  in v_hxc ",4i6,"  in gvec_mesh_set ",4i6)') n1,n2,n3, id,  &
-               (ncheck(i),i=1,4)
-      write(6,*)
-
-      stop
-
-    endif
 
   else
 
@@ -242,7 +209,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
 ! fourier transform exchange and correlation
 
-  call cfft_c16(chd, id, n1,n2,n3, 1, wrkfft, mxdwrk)
+  call cfft_c16(chd, id,n1,n2,n3, 1, wrkfft, mxdwrk)
 
 ! compute v hartree
 
@@ -258,11 +225,11 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
   allocate(vxcg(mxdgve))
 
-  call gvec_mesh_fold(vxcg, chd, id, n1,n2,n3,                                &
+  call gvec_mesh_fold(vxcg, chd, id,n1,n2,n3,                            &
       ng, kgv,                                                           &
       mxdgve, mxdfft)
 
-  call gvec_star_of_g_fold(vxc, vxcg, .FALSE.,                                &
+  call gvec_star_of_g_fold(vxc, vxcg, .FALSE.,                           &
       ng, phase, conj, ns, inds, mstar,                                  &
       mxdgve, mxdnst)
 

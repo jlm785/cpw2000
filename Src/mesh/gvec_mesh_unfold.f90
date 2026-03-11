@@ -11,21 +11,22 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Unfolds a charge density or other quantity represented on
-!>     prototype G-vectors on a uniform mesh.
+!>  Unfolds a charge density or other quantity represented on
+!>  prototype G-vectors on a uniform mesh.
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
 !>  \date         September 30 2015, 10 March 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
-    ng, kgv, phase, conj, inds,                                          &
-    mxdgve, mxdnst, mxdfft)
+subroutine gvec_mesh_unfold(deng, chd, id,n1,n2,n3, lwrap,               &
+    ng, kgv,                                                             &
+    mxdgve, mxdfft)
 
 ! Written September 30, 2015 from v_hartree_xc
 ! Modified 12 December 2019.  Documentation.  JLM
 ! Name of subroutine. Indentation. 10 March 2026. JLM
+! make it the inverse of gvec_mesh_fold. 11 march 2026. JLM     WARNING  NEW API AND BEHAVIOUR
 
 
   implicit none
@@ -35,18 +36,14 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 ! input
 
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
-  integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
   integer, intent(in)                ::  mxdfft                          !<  array dimension for chd
 
-  complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density or other quantity in prototype G-vector
+  complex(REAL64), intent(in)        ::  deng(mxdgve)                    !<  density or other quantity in G-vector
   logical, intent(in)                ::  lwrap                           !<  indicates if it should wrap around wrong results will be obtained with inconsistent choice.
   integer, intent(in)                ::  id, n1, n2, n3                  !<  dimensions of mesh
 
   integer, intent(in)                ::  ng                              !<  size of g-space
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
-  complex(REAL64), intent(in)        ::  phase(mxdgve)                   !<  phase factor of G-vector n
-  real(REAL64), intent(in)           ::  conj(mxdgve)                    !<  is -1 if one must take the complex conjugate of x*phase
-  integer, intent(in)                ::  inds(mxdgve)                    !<  star to which g-vector n belongs
 
 ! output
 
@@ -68,7 +65,7 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 
 ! initialize mesh array
 
-  do i=1,id*n2*n3
+  do i = 1,id*n2*n3
     chd(i) = C_ZERO
   enddo
 
@@ -76,7 +73,7 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 
 !   wraps around the charge density (aliasing in FFT)
 
-    do i=1,ng
+    do i = 1,ng
 
       k1 = kgv(1,i)
       kd = n1*(k1/n1)
@@ -95,11 +92,7 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 
       iadd = (k3*n2 + k2)*id + k1 + 1
 
-      if(conj(i) > ZERO) then
-        chd(iadd) = chd(iadd) + den(inds(i))*conjg(phase(i))
-      else
-        chd(iadd) = chd(iadd) + conjg(den(inds(i)))*phase(i)
-      endif
+      chd(iadd) = chd(iadd) + deng(i)
 
     enddo
 
@@ -107,7 +100,7 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 
 !   does not wrap (this should be the normal case)
 
-    do i=1,ng
+    do i = 1,ng
       k1 = kgv(1,i)
       if (k1 < 0) k1 = n1 + k1
       k2 = kgv(2,i)
@@ -117,11 +110,7 @@ subroutine gvec_mesh_unfold(den, chd, id,n1,n2,n3, lwrap,                &
 
       iadd = (k3*n2 + k2)*id + k1 + 1
 
-      if(conj(i) > ZERO) then
-        chd(iadd) = den(inds(i))*conjg(phase(i))
-      else
-        chd(iadd) = conjg(den(inds(i)))*phase(i)
-      endif
+      chd(iadd) = deng(i)
 
     enddo
   endif

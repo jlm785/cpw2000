@@ -11,23 +11,20 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Distributes a quantity on the representative G-vector
-!>  in an FFT mesh
+!>  Gathers from an FFT mesh a quantity on the representative G-vector
+!>  Inverse of gvec_mesh_set
 !>
-!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         September 30 2015, 10 March 2026.
+!>  \date         11 March 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
+subroutine gvec_mesh_unset(ipr, purpose, adot, den,                      &
     rhomsh, id,n1,n2,n3, lvol,                                           &
-    ng, kgv, phase, conj, inds, kmax,                                    &
+    ng, kgv, phase, conj, ns, inds, kmax, mstar,                         &
     mxdgve, mxdnst, mxdscr)
 
-! Written September 30, 2015 from setinmesh(CLR)
-! Modified 12 September 2019, documentation test of mxdfft.  JLM
-! Modified ipr, icheck, 13 February 2021. JLM
-! Name. n1,n2,n3, lvol. 11 March 2026. JLM                       WARNING NEW API
+! Written inverting mesh_set. 11 march 2026. JLM
 
   implicit none
 
@@ -47,10 +44,12 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
   complex(REAL64), intent(in)        ::  phase(mxdgve)                   !<  phase factor of G-vector n
   real(REAL64), intent(in)           ::  conj(mxdgve)                    !<  is -1 if one must take the complex conjugate of x*phase
+  integer, intent(in)                ::  ns                              !<  number os stars with length less than gmax
   integer, intent(in)                ::  inds(mxdgve)                    !<  star to which g-vector n belongs
   integer, intent(in)                ::  kmax(3)                         !<  max value of |kgv(i,n)|
+  integer, intent(in)                ::  mstar(mxdnst)                   !<  number of g-vectors in the j-th star
 
-  complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density or other quantity in prototype G-vector
+  real(REAL64), intent(in)           ::  rhomsh(mxdscr)                  !<  density or other quantity on regular mesh in real space
 
   integer, intent(in)                ::  id,n1,n2,n3                     !<  packing of rhomsh(id,n2,n3), id >= n1
 
@@ -58,7 +57,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 
 ! output
 
-  real(REAL64), intent(out)          ::  rhomsh(mxdscr)                  !<  density or other quantity on regular mesh in real space
+  complex(REAL64), intent(out)       ::  den(mxdnst)                     !<  density or other quantity in prototype G-vector
 
 ! local allocatable arrays
 
@@ -72,9 +71,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
   real(REAL64)    ::  vcell, bdot(3,3)
   integer         ::  nsfft(3)
   integer         ::  nn1, nn2, nn3
-  real(REAL64)    ::  sum_rho, dmax, dmin, cmax, abschd
-  logical         ::  lwrap
-  integer         ::  ierr, iadd
+  integer         ::  iadd
 
   real(REAL64)    ::  fac
 
@@ -84,19 +81,17 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 
 ! parameters
 
-  real(REAL64), parameter :: EPS = 1.0E-09_REAL64
   real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-
 
 
   if(lvol) then
     call adot_to_bdot(adot, vcell, bdot)
-    fac = UM / vcell
+    fac = vcell
   else
     fac = UM
   endif
 
-  if(ipr > 2) write(6,*) '  gvec_mesh_set  ', purpose
+  if(ipr > 2) write(6,*) ' gvec_mesh_unset  ', purpose
 
 ! some paranoid checks
 ! find n for fast fourier transform
@@ -109,7 +104,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
   if(nsfft(1) /= n1 .or. nsfft(2) /= n2 .or. nsfft(3) /= n3              &
       .or. id < n1) then
     write(6,*)
-    write(6,*)  "  STOPPED in gvec_mesh_set applied to ", purpose
+    write(6,*)  "  STOPPED in gvec_mesh_unset applied to ", purpose
     write(6,'("  in v_hxc ",4i6," in gvec_mesh_set ",3i6)') n1,n2,n3,id, &
                (nsfft(i),i=1,3)
     write(6,*)
@@ -120,7 +115,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 
   if(mxdfft > mxdscr) then
     write(6,*)
-    write(6,'("   STOPPED in gvec_mesh_set.  mxdfft = ",i8,              &
+    write(6,'("   STOPPED in gvec_mesh_unset.  mxdfft = ",i8,            &
           & " is greater than mxdscr = ",i8)') mxdfft, mxdscr
     write(6,*) purpose
 
@@ -142,76 +137,32 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
     write(6,*)
   endif
 
-! initialize charge density array and enter symmetrized
-
-  lwrap = .TRUE.
-  if(kmax(1) < nn1 .and. kmax(2) < nn2 .and.                             &
-      kmax(3) < nn3) then
-!   this should be the normal case
-    lwrap = .FALSE.
-  endif
-
-  call gvec_star_of_g_unfold(deng, den, .FALSE.,                         &
-      ng, phase, conj, inds,                                             &
-      mxdgve, mxdnst)
-
-  call gvec_mesh_unfold(deng, chd, id, n1,n2,n3, lwrap,                  &
-      ng, kgv,                                                           &
-      mxdgve, mxdfft)
-
-! fourier transform to real space
-
-  call cfft_c16(chd, id, n1,n2,n3, -1, wrkfft, mxdwrk)
-
-! checks the correctness of the charge density
-! and converts to electrons(whatever)/bohr^3
-
-  sum_rho = ZERO
-  dmax = real(chd(1))
-  dmin = dmax
-  cmax = ZERO
-  ierr = 0
   do k3 = 1,n3
   do k2 = 1,n2
   do k1 = 1,n1
     iadd = ((k3-1)*n2 + (k2-1))*id + (k1-1) + 1
-    if (real(chd(iadd)) > dmax) dmax = real(chd(iadd))
-    if (real(chd(iadd)) < dmin) dmin = real(chd(iadd))
-    abschd = abs(aimag(chd(iadd)))
-    if (abschd > cmax) cmax = abschd
-    if (abschd > EPS) ierr = ierr+1
-    rhomsh(iadd) = real(chd(iadd),REAL64) * fac
-    sum_rho = sum_rho + rhomsh(iadd)
+    chd(iadd) = rhomsh(iadd) * fac
   enddo
   enddo
   enddo
-  sum_rho = sum_rho / (n1*n2*n3 * fac)
 
-  if (ierr /= 0) then
-    write(6,*)
-    write(6,*) '    WARNING in gvec_mesh_set for ', purpose
-    write(6,'("   complex function in", i12," points, cmax = ",e12.4)')  &
-                 ierr,cmax
-  endif
+! fourier transform to reciprocal space
 
-  if (cmax > 1000.0*EPS) then
-    write(6,*)
-    write(6,*) '   STOPPED in gvec_mesh_set for ', purpose
-    write(6,'("   cmax = ",e12.4)') cmax
+  call cfft_c16(chd, id, n1,n2,n3, 1, wrkfft, mxdwrk)
 
-    stop
+! initialize charge density array and enter symmetrized
 
-  endif
+  call gvec_mesh_fold(deng, chd, id, n1,n2,n3,                           &
+      ng, kgv,                                                           &
+      mxdgve, mxdfft)
 
-  if(ipr > 1) then
-    write(6,*) purpose,' sum_rho =', sum_rho
-    write(6,'("  max and min values:",3f14.6)') dmax,dmin,cmax
-    write(6,*)
-  endif
+  call gvec_star_of_g_fold(den, deng, .FALSE.,                           &
+      ng, phase, conj, ns, inds, mstar,                                  &
+      mxdgve, mxdnst)
 
   deallocate(chd)
   deallocate(wrkfft)
 
   return
 
-end subroutine gvec_mesh_set
+end subroutine gvec_mesh_unset

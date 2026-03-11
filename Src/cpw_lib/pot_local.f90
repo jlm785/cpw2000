@@ -15,8 +15,8 @@
 !>  using fast fourier transforms.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         20 February 2018. 22 October 2024.
+!>  \version      5.13
+!>  \date         20 February 2018. 11 March 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
@@ -33,7 +33,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
 ! Modified kmscr, 28 October 2015. JLM
 ! Modified, documentation, January 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
-! name of mesh_unfold. 10 March 2026. JLM
+! Modified, calls gvec_mesh_set. 11 March 2026. JLM
 
   implicit none
 
@@ -66,30 +66,42 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
   real(REAL64),  intent(out)         ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
   real(REAL64),  intent(out)         ::  vmax, vmin                      !<  maximum and minimum values of vscr
 
-! allocatable work arrays
-
-  real(REAL64), allocatable         ::  wrkfft(:)
-  complex(REAL64), allocatable      ::  chd(:)
-
 ! local variables
 
-  integer       ::  mxdfft                     !  array dimension for fft transform
-  integer       ::  mxdwrk                     !  array dimension for fft transform workspace
+  integer        ::  mxdfft                                              !  array dimension for fft transform
+  integer        ::  mxdwrk                                              !  array dimension for fft transform workspace
 
-  real(REAL64)   ::  cmax,abschd
-  integer    ::  id,n1,n2,n3,ntot
-  integer    ::  ierr
-  integer    ::  nsfft(3)
+  integer        ::  id,n1,n2,n3
+  integer        ::  nsfft(3)
+
+  real(REAL64)   ::  adot(3,3)                                           !  unused in gvec_mesh_set
+  integer        ::  kmax(3)                                             !  max value of |kgv(i,n)|
+
 
 
 ! constants
 
-  real(REAL64), parameter  :: ZERO = 0.0_REAL64
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter  :: SMALL = 1.0E-9_REAL64
 
 ! counters
 
   integer    ::  i, j, k, ijk
+
+
+! compatibility with new gvec_mesh_set, adot not used, kmax recalculated to avoid new API
+
+  adot(:,:) = ZERO
+  do i = 1,3
+    adot(i,i) = UM
+  enddo
+
+  do i = 1,3
+    kmax(i) = 0
+    do j = 1,ng
+      if(iabs(kgv(i,j)) > kmax(i)) kmax(i) = iabs(kgv(i,j))
+    enddo
+  enddo
 
 ! printout local potential
 
@@ -104,26 +116,22 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
 ! find n for fast fourier transform
 ! ni is the number of points used in direction i.
 
-  call size_fft(kmscr,nsfft,mxdfft,mxdwrk)
+  call size_fft(kmscr, nsfft, mxdfft, mxdwrk)
 
-  if(mxdwrk > mxdscr) then
+  if(mxdfft > mxdscr) then
     write(6,*)
-    write(6,'("   STOPPED in pot_local.  mxdwrk = ",i8,                  &
-          & " is greater than mxdscr = ",i8)') mxdwrk,mxdscr
+    write(6,'("   STOPPED in pot_local.  mxdfft = ",i8,                  &
+          & " is greater than mxdscr = ",i8)') mxdwrk, mxdscr
 
     stop
 
   endif
-
-  allocate(chd(mxdfft))
-  allocate(wrkfft(mxdwrk))
 
   n1 = nsfft(1)
   n2 = nsfft(2)
   n3 = nsfft(3)
 !  id = nsfft(1) + 1
   id = nsfft(1) + idshift
-  ntot = id * n2 * n3
 
   kmscr(4) = n1
   kmscr(5) = n2
@@ -137,57 +145,22 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
 
 ! initialize charge density array and enter symmetrized charge.
 
-  call gvec_mesh_unfold(veff, chd, id,n1,n2,n3, .TRUE.,                  &
-      ng, kgv, phase, conj, inds,                                        &
-      mxdgve, mxdnst, mxdfft)
+  call gvec_mesh_set(ipr, 'potential', adot, veff,                       &
+    vscr, id,n1,n2,n3, .FALSE.,                                          &
+    ng, kgv, phase, conj, inds, kmax,                                    &
+    mxdgve, mxdnst, mxdfft)
 
-! fourier transform to real space
-
-  call cfft_c16(chd, id,n1,n2,n3, -1, wrkfft, mxdwrk)
-
-  vmax = real(chd(1))
+  vmax = vscr(1)
   vmin = vmax
-  cmax = ZERO
-  ierr = 0
-  do k=1,n3
-  do j=1,n2
-  do i=1,n1
+  do k = 1,n3
+  do j = 1,n2
+  do i = 1,n1
     ijk = ((k-1)*n2 + j-1)*id + i
-    if (real(chd(ijk)) > vmax) vmax = real(chd(ijk))
-    if (real(chd(ijk)) < vmin) vmin = real(chd(ijk))
-    abschd = abs(aimag(chd(ijk)))
-    if (abschd > cmax) cmax=abschd
-    if (abschd > small) ierr=ierr+1
-    chd(ijk) = cmplx(real(chd(ijk),REAL64),ZERO,REAL64)
+    if (vscr(ijk) > vmax) vmax = vscr(ijk)
+    if (vscr(ijk) < vmin) vmin = vscr(ijk)
   enddo
   enddo
   enddo
-
-  if (ierr /= 0) then
-    write(6,*)
-    write(6,'("    WARNING in pot_local:  complex potential in",         &
-           &  i12," points, cmax = ",e12.4)') ierr,cmax
-  endif
-  if (cmax > 1000.0*small) then
-    write(6,*)
-    write(6,'("    STOPPED in pot_local:   complex potential",           &
-           &  " density. cmax = ",e12.4)') cmax
-
-    stop
-
-  endif
-  if (ipr /= 0) then
-    write(6,*)
-    write(6,'("  max and min of potential (Hartree)",3f10.4)')           &
-                 vmax,vmin,cmax
-  endif
-
-  do i=1,ntot
-    vscr(i) = real(chd(i),REAL64)
-  enddo
-
-  deallocate(chd)
-  deallocate(wrkfft)
 
   return
 
