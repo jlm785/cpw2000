@@ -16,8 +16,8 @@
 !>  of adding the Keating corrections and printing the result.
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.12
-!>  \date         20 October 93, 12 October 2024.
+!>  \version      5.13
+!>  \date         20 October 93, 31 March 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
@@ -29,7 +29,8 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
 ! Modified upstream in January 2010. vff_add_keating. JLM
 ! Modified, error after keating, 18 February 2020. JLM
 ! Modified, indentation, another printing choices, 21 February 2024. JLM
-! Modified, option to read wave-functions from disk
+! Modified, option to read wave-functions from disk. 12 October 2024.
+! Modifeid, equation of state option. 31 March 2026. JLM
 
 
 
@@ -142,10 +143,12 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
   endif
 
   if(flags_%flgcal == 'LBFSYM' .or. flags_%flgcal == 'VCSLBF' .or.       &
-           flags_%flgcal == 'EPILBF') then
+     flags_%flgcal == 'EPILBF' .or. flags_%flgcal == 'EOSVOL' .or.       &
+     flags_%flgcal == 'EOSEPI') then
 
     minrat = 1
-    if(flags_%flgcal == 'LBFSYM') then
+    if(flags_%flgcal == 'LBFSYM' .or. flags_%flgcal == 'EOSVOL' .or.     &
+       flags_%flgcal == 'EOSEPI') then
       minstr = 0
     elseif(flags_%flgcal == 'VCSLBF') then
       minstr = 1

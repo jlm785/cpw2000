@@ -71,7 +71,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
   integer         ::  mxdfft, mxdwrk
   real(REAL64)    ::  vcell, bdot(3,3)
   integer         ::  nsfft(3)
-  integer         ::  nn1, nn2, nn3
+  integer         ::  knn(3)
   real(REAL64)    ::  sum_rho, dmax, dmin, cmax, abschd
   logical         ::  lwrap
   integer         ::  ierr, iadd
@@ -98,20 +98,24 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 
   if(ipr > 2) write(6,*) '  gvec_mesh_set  ', purpose
 
+  knn(1) = (n1-1) / 2
+  knn(2) = (n2-1) / 2
+  knn(3) = (n3-1) / 2
+
 ! some paranoid checks
 ! find n for fast fourier transform
 ! ni is the number of points used in direction i.
 ! note that mxdfft mxdwrk may be dependent on fft package
 ! so it is safer to call size_fft again
 
-  call size_fft(kmax, nsfft, mxdfft, mxdwrk)
+  call size_fft(knn, nsfft, mxdfft, mxdwrk)
 
   if(nsfft(1) /= n1 .or. nsfft(2) /= n2 .or. nsfft(3) /= n3              &
       .or. id < n1) then
     write(6,*)
     write(6,*)  "  STOPPED in gvec_mesh_set applied to ", purpose
-    write(6,'("  in v_hxc ",4i6," in gvec_mesh_set ",3i6)') n1,n2,n3,id, &
-               (nsfft(i),i=1,3)
+    write(6,'("  mesh in calling sub: ",4i6," in gvec_mesh_set: ",3i6)') &
+               n1,n2,n3,id, (nsfft(i),i=1,3)
     write(6,*)
 
     stop
@@ -132,10 +136,6 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
   allocate(wrkfft(mxdwrk))
   allocate(deng(mxdgve))
 
-  nn1 = (n1-1) / 2
-  nn2 = (n2-1) / 2
-  nn3 = (n3-1) / 2
-
   if(ipr > 2) then
     write(6,*)
     write(6,'("  gvec_mesh_set  n = ",3i5)') n1,n2,n3
@@ -145,8 +145,8 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 ! initialize charge density array and enter symmetrized
 
   lwrap = .TRUE.
-  if(kmax(1) < nn1 .and. kmax(2) < nn2 .and.                             &
-      kmax(3) < nn3) then
+  if(kmax(1) < knn(1) .and. kmax(2) < knn(2) .and.                       &
+      kmax(3) < knn(3)) then
 !   this should be the normal case
     lwrap = .FALSE.
   endif

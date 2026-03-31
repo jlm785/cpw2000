@@ -14,8 +14,8 @@
 !>     prints the information about the parameters used in the calculation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         20 september 2002. 25 November 2025.
+!>  \version      5.13
+!>  \date         20 september 2002. 31 March 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine print_parameters(flgcal, flgdal, flgscf,                      &
@@ -31,6 +31,7 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 ! Modified, indentation, types of correlation, len=* in author. 12 January 2024. JLM
 ! Modified, write statement continuation, 22 February 2024. JLM
 ! Modified, prints information about more functionals. 25 November 2025. JLM
+! Equation of state. 31 March 2026. JLM
 
 
   implicit none
@@ -146,7 +147,8 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
   endif
 
   if(flgcal == 'VCSLBF' .or. flgcal == 'LBFSYM' .or.                     &
-     flgcal == 'EPILBF') then
+     flgcal == 'EPILBF' .or. flgcal == 'EOSVOL' .or.                     &
+     flgcal == 'EOSEPI') then
     write(6,'("    Maximum number of steps is : ",i10)') nstep
   endif
   write(6,*)

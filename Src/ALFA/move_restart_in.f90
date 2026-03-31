@@ -11,185 +11,188 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Reads the restart file.
-!>     For molecular dynamics trajectory should be the same.
-!>     for l_bfgs minimization, algorithm is restarted.
+!>  Reads the restart file.
+!>  For molecular dynamics trajectory should be the same.
+!>  for l_bfgs minimization, algorithm is restarted.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         26 may 99. 31 March 2026.
+!>  \copyright    GNU Public License v2
 
-       subroutine move_restart_in(flgcal,                                     &
-     & ntype,natom,nameat,atmass,rat,vat,adot,vadot,                     &
-     & istmd,tstep,beta,tempk,iseed,strext,press,celmas,                 &
-     & rat1,frc1,adot1,frcel1,                                           &
-     & mxdatm,mxdtyp)
+subroutine move_restart_in(flgcal, io7, filename,                        &
+    ntype, natom, nameat, atmass, rat, vat, adot, vadot,                 &
+    istmd, tstep, beta, tempk, iseed, strext, press, celmas,             &
+    rat1, frc1, adot1, frcel1,                                           &
+    mxdatm, mxdtyp)
 
-!      Written 26 may 99. jlm
-!      Rewritten 19 november 2002. jlm
-!      Modified 14 october 2003. jlm
-!      Modified (formats) 17 august 2004. jlm
-!      Modified 6 January 2017, f90. JLM
-!      Modified, documentation, August 2019. JLM
-!      Copyright inesc-mn/Jose Luis Martins/Benedito Costa Cabral
-
-!      version 4.94 of pw
+! Written 26 may 99. jlm
+! Rewritten 19 november 2002. jlm
+! Modified 14 october 2003. jlm
+! Modified (formats) 17 august 2004. jlm
+! Modified 6 January 2017, f90. JLM
+! Modified, documentation, August 2019. JLM
+! Filename, indentation, 31 March 2026. JLM
 
 
-       implicit none
+  implicit none
 
-       integer, parameter :: REAL64 = selected_real_kind(12)
+  integer, parameter :: REAL64 = selected_real_kind(12)
 
-!      input
+! input
 
-       integer, intent(in)                ::  mxdtyp                     !<  array dimension of types of atoms
-       integer, intent(in)                ::  mxdatm                     !<  array dimension of number of atoms of a given type
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
 
-       integer, intent(in)                ::  ntype                      !<  number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
-       character(len=2), intent(in)       ::  nameat(mxdtyp)             !<  chemical symbol for the type i
+  integer, intent(in)                ::  io7                             !<  tape number to read restart file
+  character(len=*), intent(in)       ::  filename                        !<  filename for restart
 
-!      input and output
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
+  character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
 
-       character(len=6), intent(inout)    ::  flgcal
+! input and output
 
-!      output
+  character(len=6), intent(inout)    ::  flgcal
 
-       real(REAL64), intent(out)          ::  atmass(mxdtyp)             !<  atomic mass of atoms of type i
+! output
 
-       real(REAL64), intent(out)          ::  rat(3,mxdatm,mxdtyp)       !<  lattice coordinates of atom j of type i
-       real(REAL64), intent(out)          ::  vat(3,mxdatm,mxdtyp)       !<  d rat / d t  velocity in lattice coordinates of atom j of type i
-       real(REAL64), intent(out)          ::  adot(3,3)                  !<  metric in real space
-       real(REAL64), intent(out)          ::  vadot(3,3)                 !<  d adot / d t  rate of change of metric
+  real(REAL64), intent(out)          ::  atmass(mxdtyp)                  !<  atomic mass of atoms of type i
 
-       integer,intent(out)                ::  istmd                      !<  md step. Equal to 1 in first step of molecular dynamics
-       real(REAL64), intent(out)          ::  tstep                      !<  molecular dynamics time step (in a.u.)
+  real(REAL64), intent(out)          ::  rat(3,mxdatm,mxdtyp)            !<  lattice coordinates of atom j of type i
+  real(REAL64), intent(out)          ::  vat(3,mxdatm,mxdtyp)            !<  d rat / d t  velocity in lattice coordinates of atom j of type i
+  real(REAL64), intent(out)          ::  adot(3,3)                       !<  metric in real space
+  real(REAL64), intent(out)          ::  vadot(3,3)                      !<  d adot / d t  rate of change of metric
 
-       real(REAL64), intent(out)          ::  tempk                      !<  ionic temperature (in Kelvin)
-       real(REAL64), intent(out)          ::  beta                       !<  friction coefficient/mass (in a.u.)
+  integer,intent(out)                ::  istmd                           !<  md step. Equal to 1 in first step of molecular dynamics
+  real(REAL64), intent(out)          ::  tstep                           !<  molecular dynamics time step (in a.u.)
 
-       integer, intent(out)               ::  iseed                      !<  seed for random number generator
+  real(REAL64), intent(out)          ::  tempk                           !<  ionic temperature (in Kelvin)
+  real(REAL64), intent(out)          ::  beta                            !<  friction coefficient/mass (in a.u.)
 
-       real(REAL64), intent(out)          ::  strext(3,3)                !<  external applied stress
-       real(REAL64), intent(out)          ::  press                      !<  external pressure
-       real(real64), intent(out)          ::  celmas                     !<  fictitious cell mass       
+  integer, intent(out)               ::  iseed                           !<  seed for random number generator
 
-       real(REAL64), intent(out)          ::  rat1(3,mxdatm,mxdtyp)      !<  previous value of lattice coordinates of atom j of type i
-       real(REAL64), intent(out)          ::  frc1(3,mxdatm,mxdtyp)      !<  previous value of force on atom j of type i
-       real(REAL64), intent(out)          ::  adot1(3,3)                 !<  previous value of adot
-       real(REAL64), intent(out)          ::  frcel1(3,3)                !<  previous cell "force" (covariant components)
+  real(REAL64), intent(out)          ::  strext(3,3)                     !<  external applied stress
+  real(REAL64), intent(out)          ::  press                           !<  external pressure
+  real(real64), intent(out)          ::  celmas                          !<  fictitious cell mass
 
-!      local variables
+  real(REAL64), intent(out)          ::  rat1(3,mxdatm,mxdtyp)           !<  previous value of lattice coordinates of atom j of type i
+  real(REAL64), intent(out)          ::  frc1(3,mxdatm,mxdtyp)           !<  previous value of force on atom j of type i
+  real(REAL64), intent(out)          ::  adot1(3,3)                      !<  previous value of adot
+  real(REAL64), intent(out)          ::  frcel1(3,3)                     !<  previous cell "force" (covariant components)
 
-       integer              ::  ntyold, natold
-       character(len=6)     ::  flgold
-       character(len=2)     ::  namold
+! local variables
 
-!      counters
+  integer              ::  ntyold, natold
+  character(len=6)     ::  flgold
+  character(len=2)     ::  namold
 
-       integer       ::  nt, i, j
+! counters
 
-       open(unit = 7,file = 'RESTART.DAT',status = 'unknown',            &
-     &      form = 'formatted')
+  integer       ::  nt, i, j
 
-       read(7,'(2x,a6)') flgold
+  open(unit = io7, file = adjustl(trim(filename)), status = 'unknown',   &
+        form = 'formatted')
 
-       read(7,'(9(2x,e24.16))') ((adot(i,j),i=1,3),j=1,3)
-       read(7,'(2x,i10)') ntyold
+  read(io7,'(2x,a6)') flgold
 
-       if(ntyold /= ntype) then
-         write(6,'("   STOPPED in restart_in:    old and new number",    &
-     &        " of types of atoms are",2i7)') ntyold, ntype
+  read(io7,'(9(2x,e24.16))') ((adot(i,j),i=1,3),j=1,3)
+  read(io7,'(2x,i10)') ntyold
 
-         stop
+  if(ntyold /= ntype) then
+    write(6,'("   STOPPED in restart_in:    old and new number",         &
+          &   " of types of atoms are",2i7)') ntyold, ntype
 
-       endif
+    stop
 
-       do nt = 1,ntype
-         read(7,'(2x,i10,2x,a2,2x,e24.16)') natold,namold,atmass(nt)
+  endif
 
-         if(natold /= natom(nt) .or. namold /= nameat(nt)) then
-           write(6,'("   STOPPED in restart_in:  for atom number ",i4,   &
-     &        " the old and new number of atoms and symbols are",        &
-     &        2i7,2x,a2,2x,a2)') nt,natold,natom(nt),namold,nameat(nt)
+  do nt = 1,ntype
+    read(io7,'(2x,i10,2x,a2,2x,e24.16)') natold, namold, atmass(nt)
 
-           stop
+    if(natold /= natom(nt) .or. namold /= nameat(nt)) then
+      write(6,'("   STOPPED in restart_in:  for atom number ",i4,        &
+            &   " the old and new number of atoms and symbols are",      &
+            &   2i7,2x,a2,2x,a2)') nt, natold, natom(nt), namold, nameat(nt)
 
-         endif
+      stop
 
-         do i = 1,natom(nt)
-           read(7,'(3(2x,e24.16))') (rat(j,i,nt),j=1,3)
-         enddo
-       enddo
+    endif
 
-       if(flgcal == 'RSTRT ') flgcal = flgold
+    do i = 1,natom(nt)
+      read(io7,'(3(2x,e24.16))') (rat(j,i,nt),j=1,3)
+    enddo
+  enddo
 
-       if(flgcal == 'MICRO ') then
+  if(flgcal == 'RSTRT ') flgcal = flgold
 
-         read(7,'(2x,i10,2x,e24.16)') istmd,tstep
-         do nt=1,ntype
-           do i=1,natom(nt)
-             read(7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),               &
-     &                   (rat1(j,i,nt),j=1,3),                           &
-     &                   (frc1(j,i,nt),j=1,3)
-           enddo
-         enddo
+  if(flgcal == 'MICRO ') then
 
-       elseif(flgcal == 'LANG  ') then
+    read(io7,'(2x,i10,2x,e24.16)') istmd, tstep
+    do nt = 1,ntype
+      do i = 1,natom(nt)
+        read(io7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),                  &
+                    (rat1(j,i,nt),j=1,3), (frc1(j,i,nt),j=1,3)
+      enddo
+    enddo
 
-         read(7,'(2x,i10,3(2x,e24.16),2x,i10)') istmd,tstep,beta,        &
-     &           tempk,iseed
-         do nt = 1,ntype
-           do i = 1,natom(nt)
-             read(7,'(11(2x,e24.16))') (vat(j,i,nt),j=1,3),              &
-     &                   (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
-           enddo
-         enddo
+  elseif(flgcal == 'LANG  ') then
 
-       elseif(flgcal == 'VCSLNG' .or. flgcal == 'EPILNG') then
+    read(io7,'(2x,i10,3(2x,e24.16),2x,i10)') istmd, tstep, beta, tempk,iseed
+    do nt = 1,ntype
+      do i = 1,natom(nt)
+        read(io7,'(11(2x,e24.16))') (vat(j,i,nt),j=1,3),                 &
+                    (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
+      enddo
+    enddo
 
-         read(7,'(2x,i10,3(2x,e24.16),2x,i10)') istmd,tstep,beta,        &
-     &           tempk,iseed
-         read(7,'(11(2x,e24.16))') press,((strext(i,j),i=1,3),j=1,3),    &
-     &           celmas
-         do nt = 1,ntype
-           do i = 1,natom(nt)
-             read(7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),               &
-     &                   (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
-           enddo
-         enddo
-         read(7,'(9(2x,e24.16))') ((vadot(i,j),i=1,3),j=1,3)
-         read(7,'(9(2x,e24.16))') ((adot1(i,j),i=1,3),j=1,3)
-         read(7,'(9(2x,e24.16))') ((frcel1(i,j),i=1,3),j=1,3)
+  elseif(flgcal == 'VCSLNG' .or. flgcal == 'EPILNG') then
 
-       elseif(flgcal == 'VCSMIC') then
+    read(io7,'(2x,i10,3(2x,e24.16),2x,i10)') istmd, tstep, beta, tempk, iseed
+    read(io7,'(11(2x,e24.16))') press,((strext(i,j),i=1,3),j=1,3), celmas
+    do nt = 1,ntype
+      do i = 1,natom(nt)
+        read(io7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),                  &
+                    (rat1(j,i,nt),j=1,3), (frc1(j,i,nt),j=1,3)
+      enddo
+    enddo
+    read(io7,'(9(2x,e24.16))') ((vadot(i,j),i=1,3),j=1,3)
+    read(io7,'(9(2x,e24.16))') ((adot1(i,j),i=1,3),j=1,3)
+    read(io7,'(9(2x,e24.16))') ((frcel1(i,j),i=1,3),j=1,3)
 
-         read(7,'(2x,i10,2x,e24.16)') istmd,tstep
-         read(7,'(11(2x,e24.16))') press,((strext(i,j),i=1,3),j=1,3),    &
-     &           celmas
-         do nt = 1,ntype
-           do i = 1,natom(nt)
-             read(7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),               &
-     &                   (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
-           enddo
-         enddo
-         read(7,'(9(2x,e24.16))') ((vadot(i,j),i=1,3),j=1,3)
-         read(7,'(9(2x,e24.16))') ((adot1(i,j),i=1,3),j=1,3)
-         read(7,'(9(2x,e24.16))') ((frcel1(i,j),i=1,3),j=1,3)
+  elseif(flgcal == 'VCSMIC') then
 
-       elseif(flgcal == 'VCSLBF' .or. flgcal == 'EPILBF') then
+    read(io7,'(2x,i10,2x,e24.16)') istmd, tstep
+    read(io7,'(11(2x,e24.16))') press, ((strext(i,j),i=1,3),j=1,3), celmas
+    do nt = 1,ntype
+      do i = 1,natom(nt)
+        read(io7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),                  &
+                    (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
+      enddo
+    enddo
+    read(io7,'(9(2x,e24.16))') ((vadot(i,j),i=1,3),j=1,3)
+    read(io7,'(9(2x,e24.16))') ((adot1(i,j),i=1,3),j=1,3)
+    read(io7,'(9(2x,e24.16))') ((frcel1(i,j),i=1,3),j=1,3)
 
-         read(7,'(11(2x,e24.16))') press,((strext(i,j),i=1,3),j=1,3)
+  elseif(flgcal == 'VCSLBF' .or. flgcal == 'EPILBF') then
 
-       elseif(flgcal == 'LBFSYM') then
+    read(io7,'(11(2x,e24.16))') press, ((strext(i,j),i=1,3),j=1,3)
 
-!      do nothing
+  elseif(flgcal == 'LBFSYM') then
 
-       else
-         write(6,'("   STOPPED in restart_in:  do not know how to",      &
-     &        " restart.  flgcal = ",a6)') flgcal
+! do nothing
 
-         stop
+  else
 
-       endif
+    write(6,'("   STOPPED in restart_in:  do not know how to",           &
+          &   " restart.  flgcal = ",a6)') flgcal
 
-       close(unit=7)
+    stop
 
-       return
-       end subroutine move_restart_in
+  endif
+
+  close(unit = io7)
+
+  return
+
+end subroutine move_restart_in

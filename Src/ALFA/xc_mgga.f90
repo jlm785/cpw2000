@@ -132,7 +132,7 @@ end subroutine xc_mgga
 !>  Lengths in Bohr, energies in Hartrees.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
+!>  \version      5.13
 !>  \date         12 November 2025.
 !>  \copyright    GNU Public License v2
 
@@ -316,7 +316,7 @@ end subroutine xc_mgga_x_lak
 
 
 
-!>  Computes the exchange energy and potential
+!>  Computes the correlation energy and potential
 !>  in the meta generalized gradient approximation (mGGA).
 !>  T. Lebeda, T. Aschebrock, and S. Kummel, Phys. Rev. Lett. 133, 136402 (2024)
 !>  Lengths in Bohr, energies in Hartrees.
@@ -626,8 +626,15 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 end subroutine xc_mgga_c_lak
 
 
-
+!>  Computes the exchange energy and potential
+!>  in the meta generalized gradient approximation (mGGA).
 !>  T. Aschebrock and S. Kummel, Phys.Rev.Research. 1, 033082 (2019)
+!>  Lengths in Bohr, energies in Hartrees.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         12 November 2025.
+!>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
@@ -727,6 +734,12 @@ subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
   d_alpha_dgr = -d_tausingle_dgr/tauunif
   d_alpha_dtau = UM/tauunif
+  if(alpha < ZERO) then
+    alpha = ZERO
+    d_alpha_dr = ZERO
+    d_alpha_dgr = ZERO
+    d_alpha_dtau = ZERO
+  endif
 
   z = (alpha-UM) / (alpha+UM)
   d_z_dalpha = 2 / ((alpha+UM)*(alpha+UM))
@@ -766,8 +779,17 @@ subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 end subroutine xc_mgga_x_task
 
-!>  Furness, Kaplan, Ning, Perdew and Sun, J.Phys.Chem.Lett. 11, 8208 (2020)
 
+
+!>  Computes the exchange energy and potential
+!>  in the meta generalized gradient approximation (mGGA).
+!>  Furness, Kaplan, Ning, Perdew and Sun, J.Phys.Chem.Lett. 11, 8208 (2020)
+!>  Lengths in Bohr, energies in Hartrees.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         25 November 2025.
+!>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
@@ -883,11 +905,11 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_alpha_dtau = UM / (tauunif + ETA*tausingle)
 
   if(alpha < ZERO) then
-    fxalpha = exp(-c1x*alpha / (UM-alpha))
-    d_fxalpha_dalpha = -c1x*fxalpha / ((UM-alpha)*(UM-alpha))
+    fxalpha = exp(-C1X*alpha / (UM-alpha))
+    d_fxalpha_dalpha = -C1X*fxalpha / ((UM-alpha)*(UM-alpha))
   elseif(alpha > 2.5) then
-    fxalpha = -DX*exp(c2x*alpha / (UM-alpha))
-    d_fxalpha_dalpha = c2x*fxalpha / ((UM-alpha)*(UM-alpha))
+    fxalpha = -DX*exp(C2X*alpha / (UM-alpha))
+    d_fxalpha_dalpha = C2X*fxalpha / ((UM-alpha)*(UM-alpha))
   else
     fxalpha = CX0 + alpha*(CX1 + alpha*(CX2 + alpha*(CX3 + alpha*(CX4 +    &
               alpha*(CX5 + alpha*(CX6+alpha*CX7))))))
@@ -931,6 +953,16 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 end subroutine xc_mgga_x_r2scan
 
+
+!>  Computes the correlation energy and potential
+!>  in the meta generalized gradient approximation (mGGA).
+!>  Furness, Kaplan, Ning, Perdew and Sun, J.Phys.Chem.Lett. 11, 8208 (2020)
+!>  Lengths in Bohr, energies in Hartrees.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         20 November 2025.
+!>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
@@ -1172,11 +1204,11 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_ec0_dgr = d_h0_ds*d_s_dgr
 
   if(alpha < ZERO) then
-    fc = exp(-c1c*alpha / (UM-alpha))
-    d_fc_dalpha = -c1c*fc / ((UM-alpha)*(UM-alpha))
+    fc = exp(-C1C*alpha / (UM-alpha))
+    d_fc_dalpha = -C1C*fc / ((UM-alpha)*(UM-alpha))
   elseif(alpha > 2.5) then
-    fc = -DC*exp(c2c*alpha / (UM-alpha))
-    d_fc_dalpha = c2c*fc / ((UM-alpha)*(UM-alpha))
+    fc = -DC*exp(C2C*alpha / (UM-alpha))
+    d_fc_dalpha = C2C*fc / ((UM-alpha)*(UM-alpha))
   else
     fc = CC0 + alpha*(CC1 + alpha*(CC2 + alpha*(CC3 + alpha*(CC4 +    &
               alpha*(CC5 + alpha*(CC6+alpha*CC7))))))

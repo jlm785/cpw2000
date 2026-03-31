@@ -11,73 +11,75 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     prints type of calculation
+!>  prints type of calculation
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         May 29 1987. 30 March 2026.
+!>  \copyright    GNU Public License v2
 
-       subroutine tpage_calc(flgcal)
+subroutine tpage_calc(flgcal)
 
+! written may 29 1987. jlm
+! modified may 16 1990. jlm
+! version 4.1 17 january 1996. jlm
+! version 4.41 19 september 2002. jlm
+! modified 17 august 2004. jlm
+! modified 18 february 2008. jlm
+! Modified titles 14 December 2016,  JLM
+! Removed title, 16 June 2017.  JLM
+! Split in 2, 21 February 2019. JLM
+! Add EPILNG, 21 September 2019.JLM
+! Add EOSVOL and EOSEPI. 30 March 2026. JLM
 
-!      input:
-!      flgcal     type of calculation
+  implicit none
 
-!      written may 29 1987. jlm
-!      modified may 16 1990. jlm
-!      version 4.1 17 january 1996. jlm
-!      version 4.41 19 september 2002. jlm
-!      modified 17 august 2004. jlm
-!      modified 18 february 2008. jlm
-!      Modified titles 14 December 2016,  JLM
-!      Removed title, 16 June 2017.  JLM
-!      Split in 2, 21 February 2019. JLM
-!      Add EPILNG, 21 September 2019.JLM
+! input
 
-!      Copyright inesc-mn/Jose Luis Martins
+  character(len=6), intent(in)      ::  flgcal                           !<  type of calculation
 
-!      version 4.94
+  write(6,*)
+  write(6,*)
 
-       implicit none
+  if(flgcal == 'ONE   ') then
+    write(6,'(//,5x,"Single geometry calculation",//)')
+  elseif(flgcal == 'ONEVRD') then
+    write(6,'(//,5x,"Single geometry, potential from file",//)')
+  elseif(flgcal == 'MICRO ') then
+    write(6,'(//,5x,"Micro-canonic Molecular Dynamics ",                 &
+          &    "simulation",//)')
+  elseif(flgcal == 'LANG  ') then
+    write(6,'(//,5x,"Langevin Molecular Dynamics simulation",//)')
+  elseif(flgcal == 'LBFSYM') then
+    write(6,'(//,5x,"Geometry optimization",//)')
+  elseif(flgcal == 'VCSLNG') then
+    write(6,'(//,5x,"Langevin Molecular Dynamics simulation",            &
+          &   " including variational cell shape",//)')
+  elseif(flgcal == 'VCSMIC') then
+    write(6,'(//,5x,"Micro-canonic Molecular Dynamics simulation",       &
+          &   " including variational cell shape",//)')
+  elseif(flgcal == 'VCSLBF') then
+    write(6,'(//,5x,"Geometry optimization",                             &
+          &   " including variational cell shape",//)')
+  elseif(flgcal == 'EPILBF') then
+    write(6,'(//,5x,"geometry optimization",                             &
+          &   " in an epitaxial situation",//)')
+  elseif(flgcal == 'EPILNG') then
+    write(6,'(//,5x,"Langevin Molecular Dynamics simulation",            &
+          &   " including variational cell shape with epitaxial",        &
+          &   " constraints",//)')
+  elseif(flgcal == 'RSTRT ') then
+    write(6,'(//,5x,"restarting old calculation",//)')
+  elseif(flgcal == 'EOSVOL') then
+    write(6,'(//,5x,"Volume equation of state E(V)",//)')
+  elseif(flgcal == 'EOSEPI') then
+    write(6,'(//,5x,"Epitaxial equation of state E(c)",//)')
+  else
+    write(6,'(//,5x,"unknown type of calculation, expect disaster",//)')
+  endif
+  write(6,*)
+  write(6,*)
 
-!      input
+  return
 
-       character(len=6), intent(in)      ::  flgcal                      !<  type of calculation
-
-       write(6,*)
-       write(6,*)
-
-       if(flgcal == 'ONE   ') then
-         write(6,'(//,5x,"Single geometry calculation",//)')
-       elseif(flgcal == 'ONEVRD') then
-         write(6,'(//,5x,"Single geometry, potential from file",//)')
-       elseif(flgcal == 'MICRO ') then
-         write(6,'(//,5x,"Micro-canonic Molecular Dynamics ",            &
-     &             "simulation",//)')
-       elseif(flgcal == 'LANG  ') then
-         write(6,'(//,5x,"Langevin Molecular Dynamics simulation",//)')
-       elseif(flgcal == 'LBFSYM') then
-         write(6,'(//,5x,"Geometry optimization",//)')
-       elseif(flgcal == 'VCSLNG') then
-         write(6,'(//,5x,"Langevin Molecular Dynamics simulation",       &
-     &        " including variational cell shape",//)')
-       elseif(flgcal == 'VCSMIC') then
-         write(6,'(//,5x,"Micro-canonic Molecular Dynamics simulation",  &
-     &        " including variational cell shape",//)')
-       elseif(flgcal == 'VCSLBF') then
-         write(6,'(//,5x,"Geometry optimization",                        &
-     &        " including variational cell shape",//)')
-       elseif(flgcal == 'EPILBF') then
-         write(6,'(//,5x,"geometry optimization",                        &
-     &        " in an epitaxial situation",//)')
-       elseif(flgcal == 'EPILNG') then
-         write(6,'(//,5x,"Langevin Molecular Dynamics simulation",       &
-     &        " including variational cell shape with epitaxial",        &
-     &        " constraints",//)')
-       elseif(flgcal == 'RSTRT ') then
-         write(6,'(//,5x,"restarting old calculation",//)')
-       else
-         write(6,'(//,5x,"unknown type of calculation, ",                &
-     &        "expect disaster",//)')
-       endif
-       write(6,*)
-       write(6,*)
-
-       return
-       end subroutine tpage_calc
+end subroutine tpage_calc

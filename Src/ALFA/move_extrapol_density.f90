@@ -91,7 +91,8 @@ subroutine move_extrapol_density(newcalc, flgcal, nsave, chdsave,        &
 
     if(flgcal == 'VCSLNG' .or. flgcal == 'EPILBF' .or.              &
        flgcal == 'VCSLBF' .or. flgcal == 'VCSMIC' .or.              &
-       flgcal == 'EPILNG') then
+       flgcal == 'EPILNG' .or. flgcal == 'EOSVOL' .or.               &
+       flgcal == 'EOSEPI') then
 
       call gvec_star_from_cube(dend, nsave,chdsave,                 &
       ng, kgv, phase, conj, ns, mstar,                              &

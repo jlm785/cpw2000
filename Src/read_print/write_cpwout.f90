@@ -278,8 +278,8 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("#------------------------------------------------")')
   write(io,*)
 
-  write(io,'("MD.TypeOfRun",18x,a6,8x,"# ONE,EPILBF,MICRO,",             &
-     &      "LANG,LBFSYM,VCSLNG,VCSLBF,RSTRT,EPILNG")') flgcal
+  write(io,'("MD.TypeOfRun",18x,a6,8x,"# ONE,EPILBF,MICRO,LANG,",        &
+     &    "LBFSYM,VCSLNG,VCSLBF,RSTRT,EPILNG,EOSVOL,EOSEPI")') flgcal
   write(io,*)
 
   if(callcode == 'pre_relax_vff') then
