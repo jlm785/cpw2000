@@ -38,6 +38,7 @@
 !   Changed to hartree jlm. jun 04
 !   Changed to f90 and gnuplot. June 2022. JLM
 !   Interactive prompts, prints lattice constant in angstroms.  19 April 2024. JLM
+!   Read data in separate subroutine. Epitaxial situation.
 
 program eqst
 
@@ -52,7 +53,14 @@ program eqst
   real(REAL64)              ::  volfac                                   !<  volume is volfac*alatt**3
   integer                   ::  npt                                      !<  number of calculated energies
 
-  real(REAL64)              ::  xar, yar, xscl, yscl, fn
+  real(REAL64)              ::  xarall(mxdnpt,mxdstr)                    !<  Cell volume
+  real(REAL64)              ::  yarall(mxdnpt,mxdstr)                    !<  Energy in Rydberg:-(
+  integer                   ::  nptall(mxdstr)                           !<  number of points for each structure
+  real(REAL64)              ::  volfacall(mxdstr)                        !<  volume is volfac*alatt**3
+
+  real(REAL64)              ::  xscl, yscl, fn
+
+  real(REAL64)              ::  xar, yar
   common/params/ xar(mxdnpt),yar(mxdnpt),xscl(mxdnpt), yscl(mxdnpt),fn,npt
 
   real(REAL64)              ::  alat(mxdnpt)
@@ -72,7 +80,7 @@ program eqst
   real(REAL64)              ::  y, yav, y2av
   real(REAL64)              ::  vary, sqvry
   real(REAL64)              ::  bpmin, bpmax                             !<  bounds for B'
-  real(REAL64)              ::  below, above, eps
+  real(REAL64)              ::  below, above, epszb, epsmu
   real(REAL64)              ::  emin
   integer                   ::  nmin
   real(REAL64)              ::  sq, qq
@@ -87,9 +95,6 @@ program eqst
   real(REAL64)              ::  vmin
   real(REAL64)              ::  vzero
 
-  integer                   ::  ioerr
-  character(len=100)        ::  fline
-
   real(REAL64)              ::  pmax
   integer                   ::  npts
 
@@ -100,6 +105,7 @@ program eqst
 
   real(REAL64), parameter   ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter   ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter   ::  EPS = 1.0E-8_REAL64
 
 ! counters
 
@@ -109,143 +115,24 @@ program eqst
   filename = 'replay_eqst.dat'
   ioreplay = 15
 
-  open(unit=ioreplay, file=filename, status='UNKNOWN', form='FORMATTED')
 
-! reads the number of structures and type of fit
+  call eqst_read_data(ioreplay, filename, ftype, nstr,                   &
+        volfacall, label, nptall, xarall, yarall,                        &
+        mxdstr, mxdnpt)
 
-  write(6,*)
-  write(6,*) '  Enter the choice of equation of state'
-  write(6,*) '  Result should not depend much on the choice'
-  write(6,*) '  Enter MURNA for Murnaghan equation of state'
-  write(6,*) '  Enter BIRCH for Birch-Murnaghan equation of state'
-  write(6,*)
-
-  read(5,*) ftype
-  if(ftype /= 'MURNA' .and. ftype /= 'murna' .and.                       &
-     ftype /= 'BIRCH' .and. ftype /= 'birch') then
-
-    write(6,*) '  Wrong answer, will assume Murnaghan equation of state'
-    write(6,*)
-    ftype = 'MURNA'
-
-  endif
-  write(ioreplay,'(2x,a5,10x,"Type of equation of state")') ftype
-
-  write(6,*)
-  write(6,*) '  Enter the number of crystal structures to be compared'
-  write(6,*)
-
-  read(5,*) nstr
-  if(nstr > mxdstr) then
-    write(6,*)
-    write(6,*) '  Code cannot accept more than ',mxdstr,'structures'
-    write(6,*) '  Modify and recompile the code :-('
-    write(6,*) '  It was written before allocate instructions (early 1980s)'
-    write(6,*)
-
-    stop
-
-  endif
-  write(ioreplay,'(2x,i5,10x,"Number of structures")') nstr
-
-! loop over structures
-
-  do ns = 1,nstr
-
-!   read number of points
-
-    write(6,*)
-    write(6,*) '  Enter number of points for fit of structure',ns
-    write(6,*)
-
-    read(5,*) npt
-    if(npt > mxdnpt .or. npt < 4) then
-    write(6,*)
-      write(6,*) '  Code cannot accept more than ',mxdnpt,' points'
-      write(6,*) '  or less than 4'
-      write(6,*) '  Calculate more points or modify the code :-('
-      write(6,*) '  It was written before allocate instructions (early 1980s)'
-      write(6,*)
-
-      stop
-
-    endif
-    write(ioreplay,'(2x,i5,10x,"Number of points for structure",i5)') npt, ns
-    fn = UM*npt
-
-!   volfac is the volume of primitive cell in (lattice constant)**3,
-!   e.g. for fcc bravais lattice, volfac = .25
-!   if volfac is negative volume instead of lattice constants are read
-
-    write(6,*)
-    write(6,*) '  Enter the volume factor, VOLFAC, and structure label'
-    write(6,*) '  In a single line.'
-    write(6,*)
-    write(6,*) '  The volume of the primitive cell is abs(VOLFAC)'
-    write(6,*) '  times the cube of the lattice constant.'
-    write(6,*)
-    write(6,*) '  If volfac is positive the code expects lattice constants'
-    write(6,*) '  in the data lines, otherwise it expects primitive cell volume.'
-    write(6,*)
-
-    do ii = 1,100
-      fline(ii:ii) = ' '
-    enddo
-
-    read(5,'(a100)') fline
-    read(fline,*,iostat=ioerr) volfac, label(ns)
-
-    if(ioerr /= 0) then
-      read(fline,*) volfac
-      if(ns < 10) then
-        write(label(ns),'("struct-N.",i1)') ns
-      elseif(ns < 100) then
-        write(label(ns),'("structN.",i2)') ns
-      else
-        label(ns) = '          '
-      endif
-    endif
-    write(ioreplay,'(3x,f15.6,3x,a10,10x,"volfac, label")') volfac, label(ns)
-
-!   reads in the data points. the lattice constant is
-!   in atomic units, the energy in Hartree and converted to Rydberg.
-!   For angstroms exchange commented lines
-
-    if(volfac < ZERO) then
-      write(6,*)
-      write(6,*) '  Enter ',npt,' lines with the cell volume and energy'
-      write(6,*) '  Both in atomic units (Bohr^3 and Hartree)'
-      write(6,*)
-    else
-      write(6,*)
-      write(6,*) '  Enter ',npt,' lines with the lattice constant and energy'
-      write(6,*) '  Both in atomic units (Bohr and Hartree)'
-      write(6,*)
-    endif
-
-    do mm = 1,npt
-
-      read (5,*) alat(mm),yar(mm)
-
-      if(volfac < ZERO) then
-        xar(mm) = alat(mm)
-!       xar(mm) = alat(mm)/0.529177**3
-        write(ioreplay,'(2(3x,f17.8),10x,"volume energy for point ",2i5)')   &
-                alat(mm), yar(mm), ns, mm
-      else
-        xar(mm) = volfac*(alat(mm))**3
-        write(ioreplay,'(2(3x,f17.8),10x,"lattice const. energy for point ",2i5)')   &
-                alat(mm), yar(mm), ns, mm
-!       xar(mm) = volfac*(alat(mm)/0.529177)**3
-      endif
-!     back to Rydberg :-(
-      yar(mm)  =  2*yar(mm)
-
-    enddo
 
 !   evaluate ybar,y2bar for use in the variance
 !   and average of each variable, in order to scale the array y
 !   to make the least squares algorithm more stable
+
+  do ns = 1,nstr
+
+    xar(:) = xarall(:,ns)
+    yar(:) = yarall(:,ns)
+    npt = nptall(ns)
+    volfac = volfacall(ns)
+
+    fn = UM*npt
 
     yav = ZERO
     y2av =ZERO
@@ -260,9 +147,9 @@ program eqst
     sqvry = sqrt(vary)
 
     write(6,*)
-    write(6,'(2x,a5," fit from ",i3," (x,y) data pairs")') ftype,npt
-    write(6,'( 5x,"mean of y = ",f10.5,"  variance = ",f10.5,5x,              &
-        &   "---y array are re-scaled")') yav,sqvry
+    write(6,'(2x,a5," fit from ",i3," (x,y) data pairs")') ftype, npt
+    write(6,'( 5x,"mean of y = ",f10.5,"  variance = ",f10.5,5x,         &
+        &   "---y array are re-scaled")') yav, sqvry
     write(6,*)
     write(6,*)
 
@@ -270,6 +157,10 @@ program eqst
       xscl(ii) = xar(ii)
       yscl(ii) = (yar(ii)-yav)/sqvry
     enddo
+
+    DO II = 1,NPT
+      WRITE(6,*) '  XAR(II), XSCL(II) ', XAR(II), XSCL(II)
+    ENDDO
 
 !   fit of the equation of state
 
@@ -283,15 +174,15 @@ program eqst
       bpmax = 7*UM
       below  =  UM-bpmax
       above  =  UM-bpmin
-      eps = 0.0001
+      epszb = 0.0001
 
-      dd = zbrent(fmurna,below,above,eps)
+      dd = zbrent(fmurna, below, above, epszb)
 
     else
 
 !     estimates the equilibrium volume
 
-      eps = 0.000001
+      epsmu = 0.000001
       nmin = 1
       emin = yscl(1)
       do n = 1,npt
@@ -308,10 +199,10 @@ program eqst
         if(xar(n) .lt. above .and. xar(n) .gt. vmin+eps) above = xar(n)
       enddo
 
-      call brent(fbirch, below, vmin, above, ezero, vzero, bzero, bprim,eps)
+      call brent(fbirch, below, vmin, above, ezero, vzero, bzero, bprim, epsmu)
     endif
 
-    write(6,'("  cols are x(in),y(in),alat,y(in,scaled),y(fit,scaled), and % diff")')
+    write(6,'("  cols are x(in), y(in), alat, y(in,scaled), y(fit,scaled), and % diff")')
     write(6,*)
 
 
@@ -328,7 +219,7 @@ program eqst
       percnt = 100.*dy
       sq = sq+dy*dy
       write(6,'(2x,f10.5,4x,2(f10.5,2x),2x,2(f10.5,2x),4x,f10.5,3x,f8.3)')    &
-           xar(n), yar(n), alat(n), yscl(n), qq, percnt
+           xar(n), yar(n)/2, alat(n), yscl(n), qq, percnt
     enddo
 
     if(npt > 4) then
@@ -377,15 +268,43 @@ program eqst
 !       aeq = vzero**(1./3.)
 !     endif
 
-    aeq = (vzero/abs(volfac))**(UM/(3*UM))
+    if(abs(volfac) < EPS) then
 
-    write(6,*)
-    write(6,'("   aeq(a.u.)=",f8.4,"   Veq(a.u.)=",f9.3,"   E0(Ryd)=",f10.5)')  &
-               aeq, vzero, ezero
-    write(6,'("   B0(GPa)=",f8.2,"   B0PRIM= ",f6.2)') bulkmd, bprim
-    write(6,*)
-    write(6,'("  Lattice constant in Angstroms: ",f10.5)') aeq*BOHR
-    write(6,*)
+      aeq = vzero**(UM/(3*UM))
+
+      write(6,*)
+      write(6,'("      Veq(a.u.)=",f9.3,"   E0(Hartree)=",f10.5)')       &
+               vzero, ezero/2
+      write(6,'("   B0(GPa)=",f8.2,"   B0PRIM= ",f6.2)') bulkmd, bprim
+      write(6,*)
+      write(6,'("  Cubic root of volume in Angstroms: ",f10.5)') aeq*BOHR
+      write(6,*)
+
+    elseif(volfac > ZERO) then
+
+      aeq = (vzero/abs(volfac))**(UM/(3*UM))
+
+      write(6,*)
+      write(6,'("   aeq(a.u.)=",f8.4,"   Veq(a.u.)=",f9.3,"   E0(Hartree)=",f10.5)')  &
+               aeq, vzero, ezero/2
+      write(6,'("   B0(GPa)=",f8.2,"   B0PRIM= ",f6.2)') bulkmd, bprim
+      write(6,*)
+      write(6,'("  Lattice constant in Angstroms: ",f10.5)') aeq*BOHR
+      write(6,*)
+
+    else
+
+      aeq = vzero/abs(volfac)
+
+      write(6,*)
+      write(6,'("   ceq(a.u.)=",f8.4,"   Veq(a.u.)=",f9.3,"   E0(Hartree)=",f10.5)')  &
+               aeq, vzero, ezero/2
+      write(6,'("   Elastic constant(GPa)=",f8.2,"   B0PRIM= ",f6.2)') bulkmd, bprim
+      write(6,*)
+      write(6,'("  Perpendicular lattice constant in Angstroms: ",f10.5)') aeq*BOHR
+      write(6,*)
+
+    endif
 
 !   stores for plot subroutine
 
@@ -433,6 +352,198 @@ program eqst
   stop
 
 end program eqst
+
+
+
+subroutine eqst_read_data(ioreplay, filename, ftype, nstr,               &
+        volfacall, label, nptall, xarall, yarall,                        &
+        mxdstr, mxdnpt)
+
+! extracted from the main program. 31 March 2026. JLM
+
+  implicit none
+
+  integer, parameter  ::  REAL64 = selected_real_kind(12)
+
+! input
+
+  integer, intent(in)                   ::  mxdstr                       !<  maximum number of structures
+  integer, intent(in)                   ::  mxdnpt                       !<  maximum number of energy points (per structure)
+
+
+  character(len=*), intent(in)          ::  filename                     !<  writes input for future reuse
+  integer, intent(in)                   ::  ioreplay                     !<  tape number of filename
+
+!output
+
+  character(len=5), intent(out)         ::  ftype                        !<  type of function
+
+  integer, intent(out)                  ::  nstr                         !<  number of structures
+  real(REAL64), intent(out)             ::  volfacall(mxdstr)               !<  volume is volfac*alatt**3 if zero, volume is read, if negative it is the are of the base in epitaxial
+  character(len=10), intent(out)        ::  label(mxdstr)                !<  label of the structure
+
+  integer, intent(out)                  ::  nptall(mxdstr)               !<  number of calculated energies
+
+  real(REAL64), intent(out)             ::  xarall(mxdnpt,mxdstr)        !<  Cell volume
+  real(REAL64), intent(out)             ::  yarall(mxdnpt,mxdstr)        !<  Energy in Rydberg:-(
+
+! local variables
+
+  character(len=100)        ::  fline
+
+  real(REAL64)              ::  alat(mxdnpt)
+  integer                   ::  ioerr
+
+! constants
+
+  real(REAL64), parameter   ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter   ::  EPS = 1.0E-8_REAL64
+
+! counters
+
+  integer                   ::  ns, ii, mm
+
+
+
+
+  open(unit = ioreplay, file = adjustl(trim(filename)),                  &
+       status  ='UNKNOWN', form='FORMATTED')
+
+! reads the number of structures and type of fit
+
+  write(6,*)
+  write(6,*) '  Enter the choice of equation of state'
+  write(6,*) '  Result should not depend much on the choice'
+  write(6,*) '  Enter MURNA for Murnaghan equation of state'
+  write(6,*) '  Enter BIRCH for Birch-Murnaghan equation of state'
+  write(6,*)
+
+  read(5,*) ftype
+  if(ftype /= 'MURNA' .and. ftype /= 'murna' .and.                       &
+     ftype /= 'BIRCH' .and. ftype /= 'birch') then
+
+    write(6,*) '  Wrong answer, will assume Murnaghan equation of state'
+    write(6,*)
+    ftype = 'MURNA'
+
+  endif
+  write(ioreplay,'(2x,a5,10x,"Type of equation of state")') ftype
+
+  write(6,*)
+  write(6,*) '  Enter the number of crystal structures to be compared'
+  write(6,*)
+
+  read(5,*) nstr
+  if(nstr > mxdstr) then
+    write(6,*)
+    write(6,*) '  Code cannot accept more than ',mxdstr,'structures'
+    write(6,*) '  Modify and recompile the code :-('
+    write(6,*) '  It was written before allocate instructions (early 1980s)'
+    write(6,*)
+
+    stop
+
+  endif
+  write(ioreplay,'(2x,i5,10x,"Number of structures")') nstr
+
+! loop over structures
+
+  do ns = 1,nstr
+
+!   read number of points
+
+    write(6,*)
+    write(6,*) '  Enter number of points for fit of structure',ns
+    write(6,*)
+
+    read(5,*) nptall(ns)
+    if(nptall(ns) > mxdnpt .or. nptall(ns) < 4) then
+    write(6,*)
+      write(6,*) '  Code cannot accept more than ',mxdnpt,' points'
+      write(6,*) '  or less than 4'
+      write(6,*) '  Calculate more points or modify the code :-('
+      write(6,*) '  It was written before allocate instructions (early 1980s)'
+      write(6,*)
+
+      stop
+
+    endif
+    write(ioreplay,'(2x,i5,10x,"Number of points for structure",i5)') nptall(ns), ns
+
+!   volfacall is the volume of primitive cell in (lattice constant)**3,
+!   e.g. for fcc bravais lattice, volfacall = .25
+!   if volfacall is zero volume instead of lattice constants are read
+!   if it is negative onle the height of cell is being changed
+
+    write(6,*)
+    write(6,*) '  Enter the volume factor, VOLFAC, and structure label'
+    write(6,*) '  In a single line.'
+    write(6,*)
+    write(6,*) '  The volume of the primitive cell is abs(VOLFAC)'
+    write(6,*) '  times the cube of the lattice constant.'
+    write(6,*)
+    write(6,*) '  If volfac is positive the code expects lattice constants'
+    write(6,*) '  in the data lines, otherwise it expects primitive cell volume.'
+    write(6,*)
+
+    do ii = 1,100
+      fline(ii:ii) = ' '
+    enddo
+
+    read(5,'(a100)') fline
+    read(fline,*,iostat=ioerr) volfacall(ns), label(ns)
+
+    if(ioerr /= 0) then
+      read(fline,*) volfacall(ns)
+      if(ns < 10) then
+        write(label(ns),'("struct-N.",i1)') ns
+      elseif(ns < 100) then
+        write(label(ns),'("structN.",i2)') ns
+      else
+        label(ns) = '          '
+      endif
+    endif
+    write(ioreplay,'(3x,f15.6,3x,a10,10x,"volfac, label")') volfacall(ns), label(ns)
+
+!   reads in the data points. the lattice constant is
+!   in atomic units, the energy in Hartree and converted to Rydberg.
+!   For angstroms exchange commented lines
+
+    if(volfacall(ns) < EPS) then
+      write(6,*)
+      write(6,*) '  Enter ',nptall(ns),' lines with the cell volume and energy'
+      write(6,*) '  Both in atomic units (Bohr^3 and Hartree)'
+      write(6,*)
+    else
+      write(6,*)
+      write(6,*) '  Enter ',nptall(ns),' lines with the lattice constant and energy'
+      write(6,*) '  Both in atomic units (Bohr and Hartree)'
+      write(6,*)
+    endif
+
+    do mm = 1,nptall(ns)
+
+      read (5,*) alat(mm),yarall(mm,ns)
+
+      if(volfacall(ns) < EPS) then
+        xarall(mm,ns) = alat(mm)
+!       xar(mm) = alat(mm)/0.529177**3
+        write(ioreplay,'(2(3x,f17.8),10x,"volume energy for point ",2i5)')   &
+                alat(mm), yarall(mm,ns), ns, mm
+      else
+        xarall(mm,ns) = volfacall(ns)*(alat(mm))**3
+        write(ioreplay,'(2(3x,f17.8),10x,"lattice const. energy for point ",2i5)')   &
+                alat(mm), yarall(mm,ns), ns, mm
+!       xar(mm) = volfacall*(alat(mm)/0.529177)**3
+      endif
+!     back to Rydberg :-(
+      yarall(mm,ns)  =  2*yarall(mm,ns)
+
+    enddo
+
+  enddo
+
+end subroutine eqst_read_data
 
 
 

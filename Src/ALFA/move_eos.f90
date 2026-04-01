@@ -11,16 +11,21 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>   Step subroutine to calculate the equation of state
+!>  Step subroutine to calculate the equation of state.
+!>  Can be use for cubic crystals, or for the epitaxial situation.
+!>  For non-cubic systems it is not accurate.
+!>
+!>  Writes the file to be read by eqst.f90 in Tools
 !>
 !>  \author       Jose Luis Martins
-!>  \version      1.6.2 of md
-!>  \date         18 March 2026.
+!>  \version      5.13
+!>  \date         31 March 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
 ! Written 18 March 2026. JLM
+! Final debugging 31 March 2026. JLM
 
   implicit none
 
@@ -52,18 +57,28 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
   real(REAL64), save                 ::  vs(9)                           !  scan of volume
   integer, save                      ::  ns = 0
 
+  real(REAL64), save                 ::  volfac                          !  ratio between cell volume and lattice constant cubed
+  real(REAL64), save                 ::  alatfac                         !  ratio between conventional cubic lattice constant and lentgh of third lattice vector
+  real(REAL64), save                 ::  barea                           !  area
+
+  logical, save                      ::  lcub                            !  indicates that it is a cubic structure
+
 ! local variables
 
   real(REAL64)          ::  atmp, etmp
   real(REAL64)          ::  fac
   real(REAL64)          ::  vcell, bdot(3,3)
-  real(REAL64)          ::  volfac
+
+  integer               ::  bravais, mtotal(3,3)
+  real(REAL64)          ::  adotnig(3,3), adotsym(3,3)
+  real(REAL64)          ::  avec(3,3), aconv(3,3), avecnig(3,3)
 
 ! parameters
 
-  real(REAL64), parameter :: EPS = 0.00001_REAL64
-  real(REAL64), parameter :: DELTA = 0.1_REAL64
-  real(REAL64), parameter :: UM = 1.0_REAL64
+  real(REAL64), parameter   :: EPS = 0.00001_REAL64
+  real(REAL64), parameter   :: DELTA = 0.1_REAL64
+  real(REAL64), parameter   :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter   :: PI = 3.14159265358979323846_REAL64
 
 ! counters
 
@@ -73,6 +88,39 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
   lfinisheos = .FALSE.
 
   if(nstatus == 1) then
+
+!   gets initial information about the structure
+
+    call metric_ident(adot, adotnig, adotsym, bravais, mtotal,           &
+                      avec, aconv, avecnig, EPS, 0)
+
+    call adot_to_bdot(adot,vcell,bdot)
+
+    lcub = .FALSE.
+    if(bravais == 1 .or. bravais == 2 .or. bravais == 3) lcub = .TRUE.
+
+    if(lepi) then
+      barea = vcell*sqrt(bdot(3,3)) / (2*PI)
+    else
+      if(lcub) then
+        fac = sqrt(adot(3,3))
+        alatfac = aconv(3,3) / fac
+        volfac = vcell / (alatfac*alatfac*alatfac*fac*fac*fac)
+      else
+        write(6,*)
+        write(6,*)
+        write(6,*)
+        write(6,*) '  WARNING   WARNING   WARNING   WARNING   WARNING'
+        write(6,*) '  The cell is not cubic, this calculation may'
+        write(6,*) '  not be valid for non-cubic crystals'
+        write(6,*)
+        write(6,*)
+        write(6,*)
+        alatfac = UM
+        fac = sqrt(adot(3,3))
+        volfac = vcell / (fac*fac*fac)
+      endif
+    endif
 
 !   initial point
 
@@ -330,17 +378,22 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
       write(12,'(i5)') 1
       write(12,'(i5)') 9
       if(lepi) then
-        write(12,'(f14.8,"     move\_eos")') -1.0
+        write(12,'(f14.8,"     move\_eos")') -barea
         do i = 1,9
           write(12,'(f18.8,f14.8)') vs(i), es(i)
         enddo
       else
-        a3 = sqrt(adot(3,3))
-        fac = vs(9) / (a3*a3*a3)
-        write(12,'(f14.8,"     move\_eos")') fac
-        do i = 1,9
-          write(12,'(2f14.8)') as(i),es(i)
-        enddo
+        if(lcub) then
+          write(12,'(f14.8,"     move\_eos")') volfac
+          do i = 1,9
+            write(12,'(2f14.8)') as(i)*alatfac, es(i)
+          enddo
+        else
+          write(12,'(f14.8,"     move\_eos")') ZERO
+          do i = 1,9
+            write(12,'(2f14.8)') vs(i), es(i)
+          enddo
+        endif
       endif
       write(12,'(f8.3,i5)') 4.0, 101
 
