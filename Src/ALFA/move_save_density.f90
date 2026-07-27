@@ -97,7 +97,7 @@
        if(flgcal == 'VCSLNG' .or. flgcal == 'EPILBF' .or.                &
      &    flgcal == 'VCSLBF' .or. flgcal == 'VCSMIC' .or.                &
      &    flgcal == 'EPILNG' .or. flgcal == 'EOSVOL' .or.                &
-          flgcal == 'EOSEPI') then
+     &    flgcal == 'EOSEPI') then
 
          call gvec_star_to_cube(dend, nsave, chdsave,                    &
      &   ng, kgv, phase, conj, inds, ns, mstar,                          &

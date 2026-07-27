@@ -141,7 +141,7 @@ subroutine move_restart_in(flgcal, io7, filename,                        &
     read(io7,'(2x,i10,3(2x,e24.16),2x,i10)') istmd, tstep, beta, tempk,iseed
     do nt = 1,ntype
       do i = 1,natom(nt)
-        read(io7,'(11(2x,e24.16))') (vat(j,i,nt),j=1,3),                 &
+        read(io7,'(9(2x,e24.16))') (vat(j,i,nt),j=1,3),                  &
                     (rat1(j,i,nt),j=1,3),(frc1(j,i,nt),j=1,3)
       enddo
     enddo

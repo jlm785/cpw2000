@@ -140,6 +140,7 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 
 ! Written 12 November 2025. JLM
+! xc_tau, 23 April 2026. JLM
 
   implicit none
 
@@ -236,11 +237,9 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
   d_s_dgr = UM / (2 * xkf * rho)
 
-  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  call xc_tau(rho, grloc, tauunif, tausingle,                            &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
   alpha = (tau - tausingle) / tauunif
   d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
   d_alpha_dgr = -d_tausingle_dgr/tauunif
@@ -329,8 +328,8 @@ end subroutine xc_mgga_x_lak
 
 subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
-
 ! Written 20 November 2025. JLM
+! xc_tau, 23 April 2026. JLM
 
   implicit none
 
@@ -445,11 +444,9 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
   d_s_dgr = UM / (2 * xkf * rho)
 
-  tausingle = grloc*grloc / (8*rho)
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  call xc_tau(rho, grloc, tauunif, tausingle,                            &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
   alpha = (tau - tausingle) / tauunif
   d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
   d_alpha_dgr = -d_tausingle_dgr/tauunif
@@ -640,6 +637,7 @@ subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 
 ! Written 12 November 2025. JLM
+! xc_tau, 23 April 2026. JLM
 
   implicit none
 
@@ -725,11 +723,9 @@ subroutine xc_mgga_x_task(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
   d_s_dgr = UM / (2 * xkf * rho)
 
-  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  call xc_tau(rho, grloc, tauunif, tausingle,                            &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
   alpha = (tau - tausingle) / tauunif
   d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
   d_alpha_dgr = -d_tausingle_dgr/tauunif
@@ -795,6 +791,7 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 
 ! Written 25 November 2025. JLM
+! xc_tau, 23 April 2026. JLM
 
   implicit none
 
@@ -891,11 +888,9 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
   d_s_dgr = UM / (2 * xkf * rho)
 
-  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  call xc_tau(rho, grloc, tauunif, tausingle,                            &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
   alpha = (tau - tausingle) / (tauunif + ETA*tausingle)
   d_alpha_dr = -d_tausingle_dr * ( UM / (tauunif + ETA*tausingle)        &
                + ETA*alpha / (tauunif + ETA*tausingle) )                 &
@@ -968,6 +963,7 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
 
 ! Written 20 November 2025. JLM
+! xc_tau, 23 April 2026. JLM
 
   implicit none
 
@@ -1125,11 +1121,9 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_s_dr = -s/rho - (s/xkf)*d_xkf_dr
   d_s_dgr = UM / (2 * xkf * rho)
 
-  tausingle = grloc*grloc / (8*rho)
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+  call xc_tau(rho, grloc, tauunif, tausingle,                            &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
   alpha = (tau - tausingle) / (tauunif + ETA*tausingle)
   d_alpha_dr = -d_tausingle_dr * ( UM / (tauunif + ETA*tausingle)        &
                + ETA*alpha / (tauunif + ETA*tausingle) )                 &
@@ -1231,3 +1225,72 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   return
 
 end subroutine xc_mgga_c_r2scan
+
+
+!>  Computes the Thomas-Fermi von Weizsaker kinetic energy
+!   functional and its derivatives.
+!>
+!>  \author       J.L. Martins
+!>  \version      5.13
+!>  \date         22 April 2026.
+!>  \copyright    GNU Public License v2
+
+subroutine xc_tau(rho, grho, tauunif, tausingle,                         &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
+! Written 22 April 2026, extracted xc_mgga. JLM
+
+  implicit none
+
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
+  real(REAL64), intent(in)           ::  grho                            !<  gradient of the electron density (1/bohr^4)
+
+! output
+
+  real(REAL64), intent(out)          ::  tauunif                         !<  Thomas-Fermi kinetic energy density (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  tausingle                       !<  von Weizsaker correction to tauunif (hartree/bohr^3)
+
+  real(REAL64), intent(out)          ::  d_tauunif_dr                    !<  d tauunif / d rho
+  real(REAL64), intent(out)          ::  d_tausingle_dr                  !<  d tausingle / d rho
+  real(REAL64), intent(out)          ::  d_tausingle_dgr                 !<  d tausingle / d grho
+
+! local variables
+
+  real(REAL64)     ::  rs                                                !  Wigner-Seitz radius
+  real(REAL64)     ::  xkf, d_xkf_dr                                     !  Fermi wave-vector and derivative
+  real(REAL64)     ::  grloc                                             !  local value of grho
+
+! parameters
+
+  real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter  ::  AKF = (9*PI/4)**(UM/(3*UM))
+
+
+  rs = (3/(4*PI*rho))**(UM/3)
+
+! avoids noisy data
+
+  grloc = grho
+  if(grho < ZERO) grloc = ZERO
+
+
+  xkf = AKF / rs                                                         !  (3*PI*PI * rho)**(UM/3)
+  d_xkf_dr = (UM/3) * xkf / rho                                          !  (UM/3)*(3*PI*PI * rho)**(UM/3) / rho
+
+  tauunif = (3*UM / 10) * xkf*xkf * rho
+  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
+
+  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
+  d_tausingle_dr = -tausingle/rho
+  d_tausingle_dgr = 2* grloc / (8*rho)
+
+  return
+
+end subroutine xc_tau
+
+

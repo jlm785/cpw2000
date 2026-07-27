@@ -26,6 +26,7 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
 ! Written 18 March 2026. JLM
 ! Final debugging 31 March 2026. JLM
+! Minor stuff, 27 July 2026. Claude with Lukas
 
   implicit none
 
@@ -219,6 +220,26 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
       nstatus = 4
 
+      if(abs(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) < EPS) then
+        write(6,*)
+        write(6,*) '    STOPPED in move_eos, unstable prediction '
+        write(6,*) '    of lattice constant (nstatus = 3)'
+        write(6,*)
+
+        stop
+
+      endif
+
+      if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
+        write(6,*)
+        write(6,*) '    STOPPED in move_eos, unstable prediction '
+        write(6,*) '    of energy (nstatus = 3)'
+        write(6,*)
+
+        stop
+
+      endif
+
       apred = -(a3*a3*(e1 - e2) + a1*a1*(e2 - e3) + a2*a2*(e3 - e1)) /    &
                    (2*(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)))
       epred =  e1*(apred - a2)*(apred - a3) / ((a1 - a2)*(a1 - a3)) +     &
@@ -249,7 +270,7 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
         write(6,*)
         write(6,*) '   STOPPED in move_eos:  prediction outside interval'
-        write(6,'("  a1, a2 , a3, apred = ",4i5 )') a1, a2 , a3, apred
+        write(6,'("  a1, a2 , a3, apred = ",4f14.5 )') a1, a2 , a3, apred
         write(6,*)
 
         stop
@@ -289,6 +310,26 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
     e3 = energy
     a3 = sqrt(adot(3,3))
+
+    if(abs(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) < EPS) then
+      write(6,*)
+      write(6,*) '    STOPPED in move_eos, unstable prediction '
+      write(6,*) '    of lattice constant (nstatus = 4)'
+      write(6,*)
+
+      stop
+
+    endif
+
+    if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
+      write(6,*)
+      write(6,*) '    STOPPED in move_eos, unstable prediction '
+      write(6,*) '    of energy (nstatus = 4)'
+      write(6,*)
+
+      stop
+
+    endif
 
     apred = -(a3*a3*(e1 - e2) + a1*a1*(e2 - e3) + a2*a2*(e3 - e1)) /    &
                  (2*(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)))

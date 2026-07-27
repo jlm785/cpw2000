@@ -20,8 +20,8 @@
 !>  Phys. Rev. B 100, 045115 (2019).
 !>
 !>  \author       marsamos,...,fabrizio2, Quantum Espresso, Adapted by Jose Luis Martins
-!>  \version      5.06
-!>  \date         21 September 2011, 9 September 2021.
+!>  \version      5.13
+!>  \date         21 September 2011, 8 June 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -30,6 +30,9 @@
 
 subroutine QE_symdynph_gq_new( xq, phi, s, invs, rtau, irt, nsymq,       &
                             nat, irotmq, minus_q, t_rev)
+
+
+! Bug in arg 8 June 2026. Lukas Bauer with AI.
 
 !   USE kinds, only : DP
 !   USE constants, ONLY: tpi
@@ -150,7 +153,7 @@ subroutine QE_symdynph_gq_new( xq, phi, s, invs, rtau, irt, nsymq,       &
                  arg = arg + (xq (ipol) * (rtau (ipol, irot, na) -       &
                                            rtau (ipol, irot, nb) ) )
               enddo
-              arg = arg * 2+PI
+              arg = arg * 2*PI
               faseq (isymq) = CMPLX(cos (arg), sin (arg) , REAL64)
               do ipol = 1, 3
                  do jpol = 1, 3

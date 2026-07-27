@@ -16,8 +16,8 @@
 !>  k-point and makes 1D, 2D, and 3D plots.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         16 February 2018, 22 October 2025.
+!>  \version      5.13
+!>  \date         16 February 2018, 27 July 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -29,6 +29,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, size of author, 13 January 2024.
 ! Modified, enter method for k-point. 22 October 2025. JLM
+! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 
 
   use cpw_variables
@@ -282,9 +283,11 @@ subroutine plot_psi_sub(ioreplay)
 
 ! prepares calculation
 
-  call cpw_pp_band_prepare(ioreplay,                                     &
+  pwexp_%emax = emax_in
+
+  call cpw_pp_band_prepare(                                              &
        dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
-       dims_in_, recip_in_, vcomp_in_, emax_in)
+       dims_in_, recip_in_, vcomp_in_)
 
 !   calculates the local potential
 

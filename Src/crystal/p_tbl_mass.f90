@@ -11,7 +11,7 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Gives the atomic mass of an element
+!>  Gives the atomic mass unit of an element
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.10
@@ -35,7 +35,7 @@ subroutine p_tbl_mass(name,atmass)
 
 ! output
 
-  real(REAL64), intent(out)          ::  atmass                          !< atomic mass (in a.u.)
+  real(REAL64), intent(out)          ::  atmass                          !< atomic mass (in amu)
 
 
 

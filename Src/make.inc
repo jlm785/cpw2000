@@ -20,8 +20,8 @@ CPU=Intel
 #   Suggestions for compilers.  Feel free to override the suggestions.
 
 ifeq ($(CPU),Intel)
-   #F77=ifort
    F77=ifx
+   # F77=ifort
    # F77=gfortran
    # F77=pgfortran
 else
@@ -121,13 +121,32 @@ ifeq ($(IFORTX),true)
    # LIBS=-mkl
    LIBS=-qmkl
 
-   ifeq ($(DEBUG),false)
-      FCOPTS=-xHost -O3 $(PROF) -diag-disable=10448
-      FCOMP=-qopenmp
-      # FCOMP=-openmp
-   else
-      FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0
-      FCOMP=
+   #  For Intel ifort compiler:
+
+   ifeq ($(F77),ifort)
+
+      ifeq ($(DEBUG),false)
+         FCOPTS=-xHost -O3 $(PROF) -diag-disable=10448
+         FCOMP=-qopenmp
+         # FCOMP=-openmp
+      else
+         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0 -diag-disable=10448
+         FCOMP=
+      endif
+
+   endif
+
+   #  For Intel ifx compiler:
+
+   ifeq ($(F77),ifx)
+
+      ifeq ($(DEBUG),false)
+         FCOPTS=-xHost -O3 $(PROF)
+         #  FCOPTS=-xCORE-AVX2 -O3 $(PROF)
+      else
+         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -g -O0
+      endif
+
    endif
 
    FCEXTRA=

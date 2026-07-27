@@ -15,8 +15,8 @@
 !>  the charge density, or any other scalar periodic quantity.
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.11
-!>  \date         September 5, 2012, 14 March 2025.
+!>  \version      5.13
+!>  \date         September 5, 2012, 27 July 2026.
 !>  \copyright    GNU Public License v2
 
 ! For the double average see  PRL 61, 734 (1988).
@@ -26,6 +26,7 @@
 ! Modified, May 2020, cpw_variables. CLR
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, cpw_pp_plot_prepare (bitrot vxc,etc...), 14 March 2025. JLM
+! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 
 subroutine plot_rho_v_sub(ioreplay)
 
@@ -237,10 +238,13 @@ subroutine plot_rho_v_sub(ioreplay)
        pwline, title, subtitle ,meta_cpw2000,                            &
        dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
+! prepares calculation
 
-  call cpw_pp_band_prepare(ioreplay,                                     &
+  pwexp_%emax = emax_in
+
+  call cpw_pp_band_prepare(                                              &
        dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
-       dims_in_, recip_in_, vcomp_in_, emax_in)
+       dims_in_, recip_in_, vcomp_in_)
 
   call cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,               &
        crys_, strfac_,  pseudo_,                                         &

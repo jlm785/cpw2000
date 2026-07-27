@@ -17,8 +17,8 @@
 !>  MTB (Modified Tight Binding) method.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.11
-!>  \date         December 18, 2013, 12 March 2025.
+!>  \version      5.13
+!>  \date         December 18, 2013, 27 July 2026 .
 !>  \copyright    GNU Public License v2
 
 
@@ -35,6 +35,8 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Modified, size of author, 13 January 2024.
 ! Modified, indentation, duplicate ao_interpolation_prepare. 2 October 2024. JLM
 ! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
+! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
+
 
   use cpw_variables
   use NonOrthoInterp
@@ -248,9 +250,13 @@ subroutine ao_interpolation_sub(ioreplay)
        pwline, title, subtitle ,meta_cpw2000,                            &
        dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
-  call cpw_pp_band_prepare(ioreplay,                                     &
+! prepares calculation
+
+  pwexp_%emax = emax_in
+
+  call cpw_pp_band_prepare(                                              &
      dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,            &
-     dims_in_, recip_in_, vcomp_in_, emax_in)
+     dims_in_, recip_in_, vcomp_in_)
 
 
   write(6,*)
