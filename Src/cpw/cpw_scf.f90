@@ -223,26 +223,19 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! local allocatable arrays
 
 !  complex(REAL64), allocatable       ::  psi(:,:)
-  complex(REAL64), allocatable       ::  hpsi(:,:)
-  complex(REAL64), allocatable       ::  denk(:)
 
   complex(REAL64), allocatable       ::  vhxc(:)                         !  Hartre+xc potential that enters the diagonalization or after mixing
   complex(REAL64), allocatable       ::  vhxcout(:)                      !  Hartre+xc potential that comes out of the diagonalization
   complex(REAL64), allocatable       ::  delvhxc(:)                      !  After mixing vhxc = vhxc + delvhxc for next iteration
 
   complex(REAL64), allocatable       ::  rholap(:)
-  complex(REAL64), allocatable       ::  tauk(:)
   complex(REAL64), allocatable       ::  tau(:)                          !  "kinetic energy density"
+  complex(REAL64), allocatable       ::  tau_tfvw(:)                     !  "kinetic energy density" approximation of Thomas-Fermi-von Weizsaker
+  complex(REAL64), allocatable       ::  tau_val(:)                      !  "kinetic energy density" for valence
+  complex(REAL64), allocatable       ::  tau_0(:)                        !  "kinetic energy density" dorbitalizatio correction
 
-  real(REAL64), allocatable          ::  hdiag(:)                        !  Hamiltonian diagonal for k+G-vector i
-  real(REAL64), allocatable          ::  qmod(:)                         !  length of k+G-vector i
-  real(REAL64), allocatable          ::  ekpg(:)                         !  kinetic energy (Hartree) of k+G-vector  i
 
   real(REAL64), allocatable          ::  ekl(:)                          !  kinetic energy of wave-function j, for all the k-points
-
-  real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue j
-  real(REAL64), allocatable          ::  ekn(:)                          !  kinetic energy of wave-function j
-  real(REAL64), allocatable          ::  occp(:)                         !  ocupation*weight*spin deg. of eigenvector j
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the FFT real space mesh
 
@@ -259,7 +252,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   real(REAL64)           ::  epsconv                                     !  convergence criteria PW/AO
 
-  integer                ::  ifail                                       !  if ifail=0 the subroutine was successfull. Otherwise ifail indicates the number of correct digits.
   integer                ::  minifail                                    !  minimum value of non-zero ifail, or 100 if all ifail is 0
 
   real(REAL64)           ::  vmax, vmin                                  !  maximum and minimum values of vscr
@@ -274,15 +266,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   real(REAL64)           ::  rhovxc                                      !  correction for XC energy (int rho * v_XC in Hartree).
   real(REAL64)           ::  errvhxc                                     !  maximum value of abs(vhxcout(i) - vhxc(i))
 
-  integer                ::  neig, mtxd
-  real(REAL64)           ::  rkpt(3)
-
-  integer                ::  ipr, iconv, nrka
-  integer                ::  ickin, idshift
-  integer                ::  iel
-  character(len=5)       ::  labelk
-
-  real(REAL64)           ::  veffr1
+  integer                ::  ipr, iconv
+  integer                ::  idshift
 
   integer                ::  nsfft(3)
   integer                ::  mxdwrk
@@ -297,21 +282,17 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   real(REAL64)           ::  tin, tout
 
-  character(len=4)       ::  diag_type                                   !  selects diagonalization, 'pw  ','ao  ','aojc'
-  integer                ::  nocc
-
   real(REAL64)           ::  pmix                                        !  mixing coefficient for diverging calculations
 
-  integer                ::  irkpsi                                      !  used for saving to disk
-
   logical                ::  lxccalc                                     !  exchange energy calculated.  False in Tran-Blaha, etc...
+  logical                ::  lxclda, lxcgga, lxcmgga, lxcmggavxc         !  family of xc functionals
   logical                ::  lxcgrad, lxclap, lxctau, lxctb09            !  properties of xc functionals
   logical                ::  lkincalc                                    !  Indicates that the kinetic energy density has been calculated.
 
 ! counters
 
-  integer       ::  i, j
-  integer       ::  irk, iter
+  integer       ::  i
+  integer       ::  iter
 
 ! parameters
 
@@ -338,8 +319,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 ! properties of xc functionals
 
-  call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau,               &
-       lxctb09, lxccalc)
+  call xc_author_family(xc_%author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
+
+  call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
 
   lkincalc = .FALSE.
 
@@ -347,25 +329,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   allocate(ekl(dims_%mxdnrk*dims_%mxdbnd))
 
-  allocate(hpsi(dims_%mxddim,dims_%mxdbnd))
-
-  allocate(denk(dims_%mxdnst))
-
   allocate(vhxc(dims_%mxdnst))
   allocate(vhxcout(dims_%mxdnst))
   allocate(delvhxc(dims_%mxdnst))
 
   allocate(vhxclow(dims_%mxdnst))
   allocate(vhxcoutlow(dims_%mxdnst))
-
-  allocate(ei(dims_%mxdbnd))
-
-  allocate(hdiag(dims_%mxddim))
-  allocate(qmod(dims_%mxddim))
-  allocate(ekpg(dims_%mxddim))
-
-  allocate(ekn(dims_%mxdbnd))
-  allocate(occp(dims_%mxdbnd))
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
@@ -403,11 +372,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   itmix = 1
   itlow = 0
 
+  if(lxctau .and. lxcmgga) then
+    allocate(tau_0(dims_%mxdnst))
+  endif
+
   do iter = 1,acc_%itmax
 
 !   do until convergence
-
-    iel = 0
 
 !   calculates local potential in fft mesh
 
@@ -484,160 +455,16 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     vmaxold = vmax
     vminold = vmin
 
-    minifail = 100
-
-    do irk = 1,kpoint_%nrk
-
-!     loop over k-points
-
-      rkpt(1) = kpoint_%rk(1,irk)
-      rkpt(2) = kpoint_%rk(2,irk)
-      rkpt(3) = kpoint_%rk(3,irk)
-!
-      neig = kpoint_%nband(irk)
-
-!     calculates hamiltonian and diagonalizes
-!     ***************************************
-
-!     past first iteration one has a guess of the eigenvalues
-
-      if(filename_%itape_save_psi > 9) then
-        irkpsi = 1
-      else
-        irkpsi = irk
-      endif
-
-      if(iter > 1) then
-        iguess = 1
-        if(filename_%itape_save_psi > 9) then
-          read(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
-        endif
-      endif
+!   first loop over k-points. calculate wave-function psi and related quantities
 
 
-      mtxd = hamallk_%mtxd_allk(irk)
+    call cpw_scf_loop_psi(iprglob, iter, minifail,                       &
+        flgaopw, iguess,  lkpg,                                          &
+        kmscr, vscr, ekl,                                                &
+        dims_, crys_, flags_, pwexp_, recip_, acc_, strfac_,             &
+        vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_, filename_, &
+        mxdscr)
 
-      if(flgaopw == 'PW') then
-
-        ipr = 0
-        if(iprglob > 2) ipr = 1
-
-        diag_type = 'pw  '
-        nocc = neig
-
-        call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,      &
-            flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                   &
-            iguess, acc_%epspsi,                                         &
-            recip_%ng, recip_%kgv, recip_%phase, recip_%conj,            &
-            recip_%ns, recip_%inds, recip_%kmax,                         &
-            recip_%indv, recip_%ek,                                      &
-            strfac_%sfact, vcomp_%veff, strfac_%icmplx,                  &
-            pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,          &
-            crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                &
-            mtxd, hdiag, hamallk_%isort_allk(:,irk),                     &
-            qmod, ekpg, lkpg,                                            &
-            psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                     &
-            vscr, kmscr,                                                 &
-            atorb_%latorb, atorb_%norbat, atorb_%nqwf,                   &
-            atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                    &
-            dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,      &
-            dims_%mxdcub, dims_%mxdlqp, dims_%mxddim, dims_%mxdbnd,      &
-            mxdscr, dims_%mxdlao)
-
-        if(ifail /= 0) minifail = min(ifail,minifail)
-
-        if(ifail < -3) then
-          write(6,*)
-          write(6,'("   Stopped in cpw_scf:  cycle is diverging",        &
-             &    " negative number of accuracy digits",i5)') ifail
-
-          stop
-
-        endif
-
-      elseif(flgaopw == 'AO') then
-
-        veffr1 = real(vcomp_%veff(1),REAL64)
-        nocc = neig
-
-        if(flags_%flgscf == 'AOJCPW') diag_type = 'aojc'
-        if(flags_%flgscf == 'AOJC  ') diag_type = 'aojc'
-        if(flags_%flgscf == 'AO    ') diag_type = 'ao  '
-
-        call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,      &
-            flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                   &
-            iguess, acc_%epspsi,                                         &
-            recip_%ng, recip_%kgv, recip_%phase, recip_%conj,            &
-            recip_%ns, recip_%inds, recip_%kmax,                         &
-            recip_%indv, recip_%ek,                                      &
-            strfac_%sfact, vcomp_%veff, strfac_%icmplx,                  &
-            pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,          &
-            crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                &
-            mtxd, hdiag, hamallk_%isort_allk(:,irk),                     &
-            qmod, ekpg, lkpg,                                            &
-            psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                     &
-            vscr, kmscr,                                                 &
-            atorb_%latorb, atorb_%norbat, atorb_%nqwf,                   &
-            atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                    &
-            dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,      &
-            dims_%mxdcub, dims_%mxdlqp, dims_%mxddim, dims_%mxdbnd,      &
-            mxdscr, dims_%mxdlao)
-
-      else
-
-        write(6,*)
-        write(6,'("     STOPPED in scf_kb_c16:   unknown type",          &
-           &      " of basis   ",a2)') flgaopw
-
-        stop
-
-      endif
-
-
-      hamallk_%mtxd_allk(irk) = mtxd
-      kpoint_%nband(irk) = neig
-
-
-!     end of diagonalization
-
-
-!     calculates the kinetic energy
-
-      call kinetic_energy(neig, mtxd, ekpg, psiallk_%psi_allk(:,:,irkpsi), EKN,  &
-          dims_%mxddim,dims_%mxdbnd)
-
-!     prints the eigensolutions
-
-      ipr = 0
-      if(iprglob == 3) ipr = 1
-      if(iprglob == 4) ipr = 2
-
-      nrka = -1
-
-      ickin = 1
-
-      call print_eig(ipr, irk, labelk, nrka, rkpt,                       &
-          mtxd, ickin, neig, psiallk_%psi_allk(:,:,irkpsi),              &
-          crys_%adot, ei, EKN, hamallk_%isort_allk(:,irk), recip_%kgv,   &
-          dims_%mxddim, dims_%mxdbnd, dims_%mxdgve)
-
-!     stores eigenvalues and kinetic energies
-
-      do j=1,neig
-        iel = iel + 1
-        psiallk_%eig_allk(iel) = ei(j)
-        ekl(iel) = ekn(j)
-      enddo
-
-!     stores the wavefunctions
-
-      if(filename_%itape_save_psi > 9) then
-        write(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
-      endif
-
-!     end of loop over k-points
-
-    enddo
 
 !   finds the fermi level
 
@@ -670,80 +497,33 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     enddo
 
     allocate(tau(dims_%mxdnst))
+    allocate(tau_tfvw(dims_%mxdnst))
+    allocate(tau_val(dims_%mxdnst))
 
     if(lxctau) then
       do i = 1,recip_%ns
         tau(i) = C_ZERO
+        tau_val(i) = C_ZERO
+        tau_tfvw(i) = C_ZERO
       enddo
       lkincalc = .TRUE.
     endif
 
-!   second loop over k-points
+!   second loop over k-points, calculates charge density rho (and tau)
 
 
-    ektot = zero
-    iel = 0
-    do irk = 1,kpoint_%nrk
+    call cpw_scf_loop_rho(ektot, ekl, lxctau, tau_val,                   &
+        dims_, crys_, recip_, kpoint_, hamallk_, psiallk_, chdens_,      &
+        filename_)
 
-!     reads psi if saved to disk
+!   calculates the Thomas-Fermi-von Weizsaker kinetic energy density
 
-      if(filename_%itape_save_psi > 9) then
-        read(filename_%itape_save_psi,rec = irk) psiallk_%psi_allk
-        irkpsi = 1
-      else
-        irkpsi = irk
-      endif
+    call kinetic_density_tfvw(ipr, crys_%adot, chdens_%den, tau_tfvw,  &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,   &
+        recip_%inds, recip_%kmax, recip_%mstar,                        &
+        dims_%mxdgve, dims_%mxdnst)
 
-      rkpt(1) = kpoint_%rk(1,irk)
-      rkpt(2) = kpoint_%rk(2,irk)
-      rkpt(3) = kpoint_%rk(3,irk)
-
-      neig = kpoint_%nband(irk)
-      mtxd = hamallk_%mtxd_allk(irk)
-
-!     adds to sum of occupied eigenvalues and kinetic energy
-
-      do j = 1,neig
-        iel = iel + 1
-        occp(j) = 2*kpoint_%wgk(irk)*psiallk_%occ_allk(iel)
-        ektot = ektot + occp(j)*ekl(iel)
-      enddo
-
-!     adds to total charge density
-
-
-      call charge_by_fft(mtxd, neig, occp,                                  &
-          hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi), denk,  &
-          recip_%ng, recip_%kgv, recip_%phase , recip_%conj, recip_%ns,     &
-          recip_%inds, recip_%kmax, recip_%mstar,                           &
-          dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
-
-      if(lxctau) then
-
-        allocate(tauk(dims_%mxdnst))
-
-        call tau_by_fft(tauk, mtxd, neig, occp,                          &
-            hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),   &
-            rkpt, crys_%adot,                                            &
-            recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns, &
-            recip_%inds, recip_%kmax, recip_%mstar,                      &
-            dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
-
-        do i = 1,recip_%ns
-          tau(i) = tau(i) + tauk(i)
-        enddo
-
-        deallocate(tauk)
-
-      endif
-
-      do i=1,recip_%ns
-        chdens_%den(i) = chdens_%den(i) + denk(i)
-      enddo
-
-    enddo
-
-!   end of loop over k-points
+!   calculates laplacian of rho
 
     allocate(rholap(dims_%mxdnst))
 
@@ -755,6 +535,20 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
           dims_%mxdgve, dims_%mxdnst)
 
 
+    endif
+
+!   sets up appropriate tau (total or correction)
+
+    if(lxctau) then
+      if(lxcmgga) then
+        if(iter == 1) then
+          tau_0(:) = tau_val(:) - tau_tfvw(:)
+        endif
+!        tau(:) = tau_0(:)
+        TAU(:) = C_ZERO
+      else
+        tau(:) = tau_val(:)
+      endif
     endif
 
 !   calculates the screening potential
@@ -771,6 +565,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         dims_%mxdgve, dims_%mxdnst)
 
     deallocate(tau)
+    deallocate(tau_tfvw)
+    deallocate(tau_val)
     deallocate(rholap)
 
     do i=1,recip_%ns
@@ -931,10 +727,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   deallocate(ekl)
 
-  deallocate(hpsi)
-
-  deallocate(denk)
-
   deallocate(vhxc)
   deallocate(vhxcout)
   deallocate(delvhxc)
@@ -942,17 +734,11 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   deallocate(vhxclow)
   deallocate(vhxcoutlow)
 
-  deallocate(ei)
-
-  deallocate(hdiag)
-  deallocate(qmod)
-  deallocate(ekpg)
-
-  deallocate(ekn)
-  deallocate(occp)
-
   deallocate(vscr)
 
+  if(lxctau .and. lxcmgga) then
+    deallocate(tau_0)
+  endif
 
 ! if self-consistency not reached
 

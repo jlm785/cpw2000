@@ -111,6 +111,6 @@ clean:
 	(cd back_compat       &&  make clean )
 	(cd hk_psi/mkl_3D     &&  make clean )
 	(cd hk_psi/reference  &&  make clean )
-	(rm *.mod)
+	(/bin/rm -f *.mod *.a *.exe *.o *~)
 
 .PHONY:   clean libpw  blas  esdflib  fftlib  timelib  hkpsilib  mklextra

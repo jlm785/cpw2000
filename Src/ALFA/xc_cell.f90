@@ -18,8 +18,8 @@
 !>  Adapted from older LDA code.
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
-!>  \version      5.12
-!>  \date         September 2015, 25 November 2025.
+!>  \version      5.13
+!>  \date         September 2015, 12 May 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
@@ -33,6 +33,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 ! indentation, avois noise with Tran-Blaha and slabs, 6 October 2025. JLM
 ! Changed name of old xc_mgga to xc_mgga_vxc in preparaation for new functionals. 21 November 2025. JLM
 ! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
+! Thomas-Fermi-von Weizsaker for tau. 12 May 2026. JLM
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -50,7 +51,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
   integer, intent(in)                ::  id1, id2                        !<  first and second dimension of the fft array
   integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
   real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
-  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3)
+  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) [total for lxcmggavxc, correction for lxcmgga]
   real(REAL64), intent(in)           ::  lapmsh(id1,id2,n3)              !<  Laplacian of charge density (1/bohr^5)
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space (covariant components)
 
@@ -83,6 +84,15 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
   logical             ::  lxclda, lxcgga, lxcmgga, lxcmggavxc            !  family of xc functionals
   logical             ::  lxcgrad, lxclap, lxctau, lxctb09, lxccalc      !  properties of xc functionals
+
+  real(REAL64)        ::  tauunif                         !  Thomas-Fermi kinetic energy density (hartree/bohr^3)
+  real(REAL64)        ::  tausingle                       !  von Weizsaker correction to tauunif (hartree/bohr^3)
+
+  real(REAL64)        ::  d_tauunif_dr                    !  d tauunif / d rho
+  real(REAL64)        ::  d_tausingle_dr                  !  d tausingle / d rho
+  real(REAL64)        ::  d_tausingle_dgr                 !  d tausingle / d grho
+  real(REAL64)        ::  tautfvw                         !  tauunif + tausingle
+  real(REAL64)        ::  d_exc_dgr                       !  d E_xc / d grad_rho
 
 ! parameters
 
@@ -310,7 +320,13 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
             nn, dgdm, bdot, rho, grho, drhocon,                          &
             mxdnn)
 
-        tau = taumsh(i1,i2,i3)
+!       uses an approximate expression for tau and its derivatives
+
+        call xc_tau(rho, grho, tauunif, tausingle,                       &
+                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+
+        tautfvw = tauunif + tausingle
+        tau = taumsh(i1,i2,i3) + tautfvw
         lap = ZERO
 
         call xc_mgga( author, rho, grho, tau,                            &
@@ -318,8 +334,13 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
                      dexdtau, decdtau  )
 
         exc = exc + rho * (epsx + epsc)
-        vxc(i1,i2,i3) = vxc(i1,i2,i3) + epsx + epsc
-        coef = (dexdgr + decdgr) * grho
+
+        d_exc_dgr = dexdgr + decdgr + (dexdtau + decdtau)*d_tausingle_dgr
+        coef = d_exc_dgr * grho
+
+        vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
+
+        vxc(i1,i2,i3) = vxc(i1,i2,i3) + (dexdtau + decdtau)*(d_tauunif_dr + d_tausingle_dr)
 
         do i=1,3
         do j=1,3
@@ -327,21 +348,21 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
         enddo
         enddo
 
-!         do in = -nn,nn
-!           ip = i1 + in
-!           ip = mod(ip+n1-1,n1) + 1
-!           vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*(dexdgr + decdgr)*drhocon(1)*dgdm(in)
-!         enddo
-!         do in = -nn,nn
-!           ip = i2 + in
-!           ip = mod(ip+n2-1,n2) + 1
-!           vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*(dexdgr + decdgr)*drhocon(2)*dgdm(in)
-!         enddo
-!         do in = -nn,nn
-!           ip = i3 + in
-!           ip = mod(ip+n3-1,n3) + 1
-!           vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*(dexdgr + decdgr)*drhocon(3)*dgdm(in)
-!         enddo
+        do in = -nn,nn
+          ip = i1 + in
+          ip = mod(ip+n1-1,n1) + 1
+          vxc(ip,i2,i3) = vxc(ip,i2,i3) + n1*d_exc_dgr*drhocon(1)*dgdm(in)
+        enddo
+        do in = -nn,nn
+          ip = i2 + in
+          ip = mod(ip+n2-1,n2) + 1
+          vxc(i1,ip,i3) = vxc(i1,ip,i3) + n2*d_exc_dgr*drhocon(2)*dgdm(in)
+        enddo
+        do in = -nn,nn
+          ip = i3 + in
+          ip = mod(ip+n3-1,n3) + 1
+          vxc(i1,i2,ip) = vxc(i1,i2,ip) + n3*d_exc_dgr*drhocon(3)*dgdm(in)
+        enddo
 
       enddo
       enddo
