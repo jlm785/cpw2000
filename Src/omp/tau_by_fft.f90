@@ -30,6 +30,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 ! Corrected openmp bug, 30 September 2022. JLM
 ! Remove the doubling of kinetic energy (as in libxc). 25 November 2025. JLM
 ! Name of star_of_g. 10 March 2026. JLM
+! remove dble, 18 August 2026. JLM
 
 
   implicit none
@@ -190,9 +191,9 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 
 !$omp parallel do default(shared) private(i,qk,qcar)
         do i=1,mtxd
-          qk(1) = rkpt(1) + dble(kgv(1,isort(i)))
-          qk(2) = rkpt(2) + dble(kgv(2,isort(i)))
-          qk(3) = rkpt(3) + dble(kgv(3,isort(i)))
+          qk(1) = rkpt(1) + real(kgv(1,isort(i)),REAL64)
+          qk(2) = rkpt(2) + real(kgv(2,isort(i)),REAL64)
+          qk(3) = rkpt(3) + real(kgv(3,isort(i)),REAL64)
           qcar(1) = bvec(1,1)*qk(1) + bvec(1,2)*qk(2) + bvec(1,3)*qk(3)
           qcar(2) = bvec(2,1)*qk(1) + bvec(2,2)*qk(2) + bvec(2,3)*qk(3)
           qcar(3) = bvec(3,1)*qk(1) + bvec(3,2)*qk(2) + bvec(3,3)*qk(3)

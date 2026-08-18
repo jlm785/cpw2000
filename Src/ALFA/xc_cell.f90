@@ -34,6 +34,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 ! Changed name of old xc_mgga to xc_mgga_vxc in preparaation for new functionals. 21 November 2025. JLM
 ! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
 ! Thomas-Fermi-von Weizsaker for tau. 12 May 2026. JLM
+! replace dble, 18 August 2026. JLM
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -481,11 +482,12 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
 ! scales by volume factor
 
-  exc  = exc  * vcell / dble(n1*n2*n3)
-  rhovxc  = rhovxc * vcell / dble(n1*n2*n3)
+  coef = UM / (n1*n2*n3)
+  exc  = coef* exc  * vcell
+  rhovxc  = coef* rhovxc * vcell
   do i=1,3
   do j=1,3
-    strgga(i,j) = strgga(i,j) * vcell / dble(n1*n2*n3)
+    strgga(i,j) = coef * strgga(i,j) * vcell
   enddo
   enddo
 
