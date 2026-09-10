@@ -18,12 +18,12 @@
 !>  g-vectors.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
+!>  \version      5.13
 !>  \date         1980s, 18 February 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_pseudo(ipr, author,                                      &
-      ealraw, nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,               &
+      ealraw, nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,       &
       latorb, nqwf, delqwf,                                              &
       n_bsets, norbat, lorb, wvfao,                                      &
       ntype, natom, nameat, zv, ztot,                                    &
@@ -44,7 +44,8 @@ subroutine read_pseudo(ipr, author,                                      &
 ! Modified, Perdew-Wang (1992) not flagged as unsupported. 12 January 2024. JLM
 ! Modified, ititle -> psdtitle, useless but for consistency. 20 February 2025. JLM
 ! Modified, filenames for pseudos. 10 October 2025. JLM
-! Reads more than one atomic basus set. 18 February 2026. JLM
+! Reads more than one atomic basis set. 18 February 2026. JLM
+! Reads the partial core kinetic energy density. 3 March 2026. JLM
 
 
   implicit none
@@ -78,6 +79,8 @@ subroutine read_pseudo(ipr, author,                                      &
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
   real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
+
+  real(REAL64), intent(out)          ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density  (hartree/bohr^3)
 
   logical, intent(out)               ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
 
@@ -525,12 +528,25 @@ subroutine read_pseudo(ipr, author,                                      &
 
     enddo
 
+    if(l2026) then
+      read(it,*) tauc_q(0,nt)
+      do j = 1,nql
+        read(it,*) tauc_q(j,nt)
+      enddo
+      tauc_q(-1,nt) = tauc_q(1,nt)
+    else
+      tauc_q(:,nt) = ZERO
+    endif
+
     close (unit=it)
 
 !   converts to hartree
 
     do j = -1,nql
       vloc(j,nt) = vloc(j,nt) / 2
+    enddo
+    do j = -1,nql
+      tauc_q(j,nt) = tauc_q(j,nt) / 2
     enddo
     do n = 0,3
       do j = -2,nqnl(nt)

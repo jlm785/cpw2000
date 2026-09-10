@@ -10,179 +10,192 @@
 !                                                            !
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
+!>  Driver subroutine for gspace, including allocation deallocation management.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         Before February 2020. 15 April 2026.
+!>  \copyright    GNU Public License v2
 
-       subroutine cpw_gspace(iprglob,kmscr,                              &
-     &    dims_,crys_,spaceg_,pwexp_,recip_,strfac_,pseudo_,chdens_,     &
-     &    vcomp_,flags_)
- 
-       use cpw_variables
+! Written before February 2020.
+! Indentation, core kinetic energy density, 15 April 2026. JLM
 
-       implicit none
+  subroutine cpw_gspace(iprglob, kmscr,                                  &
+     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
+     vcomp_, flags_)
 
-       type(dims_t)                       ::  dims_                      !<  array dimensions
-       type(crys_t)                       ::  crys_                      !<  crystal structure
-       type(flags_t)                      ::  flags_                     !<  computational flags
-       type(pwexp_t)                      ::  pwexp_                     !<  plane-wave expansion choices
-       type(recip_t)                      ::  recip_                     !<  reciprocal space information
-       type(strfac_t)                     ::  strfac_                    !<  structure factors
-       type(chdens_t)                     ::  chdens_                    !<  charge densities    
-       type(vcomp_t)                      ::  vcomp_                     !<  Componemts of local potential
-       type(pseudo_t)                     ::  pseudo_                    !<  pseudo-potential (Kleinman-Bylander)
-       type(spaceg_t)                     ::  spaceg_                    !<  space group information
+  use cpw_variables
 
-       integer, intent(in)                ::  iprglob                    !<  controls the amount of printing by subroutines
+  implicit none
 
-       integer      ::  ipr
-       integer, intent(out)               ::  kmscr(7)                   !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
+  type(dims_t)                       ::  dims_                           !<  array dimensions
+  type(crys_t)                       ::  crys_                           !<  crystal structure
+  type(flags_t)                      ::  flags_                          !<  computational flags
+  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
+  type(recip_t)                      ::  recip_                          !<  reciprocal space information
+  type(strfac_t)                     ::  strfac_                         !<  structure factors
+  type(chdens_t)                     ::  chdens_                         !<  charge densities
+  type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
+  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(spaceg_t)                     ::  spaceg_                         !<  space group information
 
-       logical, save         ::  lfirst = .TRUE.                         !  first time run
-       integer               ::  maxgve,maxnst,maxcub                    !  provisional array dimensions
+  integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
 
-       call size_g_space(pwexp_%emax,crys_%adot,                         &
-     &     spaceg_%ntrans,spaceg_%mtrx,                                  &
-     &     maxgve,maxnst,maxcub)
-  
-       if(lfirst) then
+  integer      ::  ipr
+  integer, intent(out)               ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
 
-         lfirst = .FALSE.
-
-         dims_%mxdgve = maxgve
-         dims_%mxdnst = maxnst
-         dims_%mxdcub = maxcub
-
-         allocate(recip_%kgv(3,dims_%mxdgve))
-         allocate(recip_%inds(dims_%mxdgve))
-         allocate(recip_%phase(dims_%mxdgve))
-         allocate(recip_%conj(dims_%mxdgve))
-         allocate(recip_%indv(dims_%mxdcub))
-         allocate(recip_%mstar(dims_%mxdnst))
-         allocate(recip_%izstar(dims_%mxdnst))
-         allocate(recip_%ek(dims_%mxdnst))
-
-         allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
-
-         allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
-         allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
-         allocate(pseudo_%dvql(dims_%mxdnst))
-         allocate(pseudo_%ddc(dims_%mxdnst))
-
-         allocate(chdens_%den(dims_%mxdnst))
-         allocate(chdens_%denc(dims_%mxdnst))
-         allocate(chdens_%dens(dims_%mxdnst))
-         allocate(chdens_%dend(dims_%mxdnst))
-         allocate(chdens_%dend1(dims_%mxdnst))
-
-         allocate(vcomp_%vion(dims_%mxdnst))
-         allocate(vcomp_%vhar(dims_%mxdnst))
-         allocate(vcomp_%vxc(dims_%mxdnst))
-         allocate(vcomp_%veff(dims_%mxdnst))
-
-       else
-
-         if(maxgve > dims_%mxdgve) then
-
-           dims_%mxdgve = maxgve
-         
-           deallocate(recip_%kgv)
-           deallocate(recip_%inds)
-           deallocate(recip_%phase)
-           deallocate(recip_%conj)
-           
-           allocate(recip_%kgv(3,dims_%mxdgve))
-           allocate(recip_%inds(dims_%mxdgve))
-           allocate(recip_%phase(dims_%mxdgve))
-           allocate(recip_%conj(dims_%mxdgve))
+  logical, save         ::  lfirst = .TRUE.                              !  first time run
+  integer               ::  maxgve,maxnst,maxcub                         !  provisional array dimensions
 
 
-         endif
+  call size_g_space(pwexp_%emax, crys_%adot,                             &
+      spaceg_%ntrans, spaceg_%mtrx,                                      &
+      maxgve, maxnst, maxcub)
 
-         if(maxcub > dims_%mxdcub) then
+  if(lfirst) then
 
-           dims_%mxdcub = maxcub
+    lfirst = .FALSE.
 
-           deallocate(recip_%indv)
-           allocate(recip_%indv(dims_%mxdcub))
+    dims_%mxdgve = maxgve
+    dims_%mxdnst = maxnst
+    dims_%mxdcub = maxcub
 
-         endif
-         
-         if(maxnst > dims_%mxdnst) then
+    allocate(recip_%kgv(3,dims_%mxdgve))
+    allocate(recip_%inds(dims_%mxdgve))
+    allocate(recip_%phase(dims_%mxdgve))
+    allocate(recip_%conj(dims_%mxdgve))
+    allocate(recip_%indv(dims_%mxdcub))
+    allocate(recip_%mstar(dims_%mxdnst))
+    allocate(recip_%izstar(dims_%mxdnst))
+    allocate(recip_%ek(dims_%mxdnst))
 
-           dims_%mxdnst = maxnst
+    allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
 
-           deallocate(recip_%mstar)
-           deallocate(recip_%izstar)
-           deallocate(recip_%ek)
+    allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
+    allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
+    allocate(pseudo_%dvql(dims_%mxdnst))
+    allocate(pseudo_%ddc(dims_%mxdnst))
 
+    allocate(chdens_%den(dims_%mxdnst))
+    allocate(chdens_%denc(dims_%mxdnst))
+    allocate(chdens_%tauc_g(dims_%mxdnst))
+    allocate(chdens_%dens(dims_%mxdnst))
+    allocate(chdens_%dend(dims_%mxdnst))
+    allocate(chdens_%dend1(dims_%mxdnst))
 
-           deallocate(strfac_%sfact)
+    allocate(vcomp_%vion(dims_%mxdnst))
+    allocate(vcomp_%vhar(dims_%mxdnst))
+    allocate(vcomp_%vxc(dims_%mxdnst))
+    allocate(vcomp_%veff(dims_%mxdnst))
 
-           deallocate(pseudo_%vql)
-           deallocate(pseudo_%dnc)
-           deallocate(pseudo_%dvql)
-           deallocate(pseudo_%ddc)
+  else
 
-           deallocate(chdens_%den)
-           deallocate(chdens_%denc)
-           deallocate(chdens_%dens)
-           deallocate(chdens_%dend)
-           deallocate(chdens_%dend1)
+    if(maxgve > dims_%mxdgve) then
 
-           deallocate(vcomp_%vion)
-           deallocate(vcomp_%vhar)
-           deallocate(vcomp_%vxc)
-           deallocate(vcomp_%veff)
+      dims_%mxdgve = maxgve
 
-           allocate(recip_%mstar(dims_%mxdnst))
-           allocate(recip_%izstar(dims_%mxdnst))
-           allocate(recip_%ek(dims_%mxdnst))
+      deallocate(recip_%kgv)
+      deallocate(recip_%inds)
+      deallocate(recip_%phase)
+      deallocate(recip_%conj)
 
-           allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
-
-           allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
-           allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
-           allocate(pseudo_%dvql(dims_%mxdnst))
-           allocate(pseudo_%ddc(dims_%mxdnst))
-
-           allocate(chdens_%den(dims_%mxdnst))
-           allocate(chdens_%denc(dims_%mxdnst))
-           allocate(chdens_%dens(dims_%mxdnst))
-           allocate(chdens_%dend(dims_%mxdnst))
-           allocate(chdens_%dend1(dims_%mxdnst))
-
-           allocate(vcomp_%vion(dims_%mxdnst))
-           allocate(vcomp_%vhar(dims_%mxdnst))
-           allocate(vcomp_%vxc(dims_%mxdnst))
-           allocate(vcomp_%veff(dims_%mxdnst))
-
-         endif
-
-       endif
-
-       ipr = 0
-       if(iprglob > 0) ipr = 1
-       if(iprglob == 4) ipr = 2
-
-       call g_space(ipr,pwexp_%emax,                                     &
-     &     crys_%adot,spaceg_%ntrans,spaceg_%mtrx,spaceg_%tnp,           &
-     &     recip_%ng,recip_%kgv,recip_%phase,recip_%conj,                &
-     &     recip_%inds,recip_%kmax,recip_%indv,recip_%ns,recip_%mstar,   &
-     &     recip_%ek,recip_%izstar,                                      &
-     &     dims_%mxdgve,dims_%mxdnst,dims_%mxdcub)
+      allocate(recip_%kgv(3,dims_%mxdgve))
+      allocate(recip_%inds(dims_%mxdgve))
+      allocate(recip_%phase(dims_%mxdgve))
+      allocate(recip_%conj(dims_%mxdgve))
 
 
+    endif
 
-!      gspace size for dual space method
+    if(maxcub > dims_%mxdcub) then
 
-       if(flags_%flgdal == 'DUAL') then
-         kmscr(1) = recip_%kmax(1)/2 + 2
-         kmscr(2) = recip_%kmax(2)/2 + 2
-         kmscr(3) = recip_%kmax(3)/2 + 2
-       else
-         kmscr(1) = recip_%kmax(1)
-         kmscr(2) = recip_%kmax(2)
-         kmscr(3) = recip_%kmax(3)
-       endif
+      dims_%mxdcub = maxcub
 
-       return
+      deallocate(recip_%indv)
+      allocate(recip_%indv(dims_%mxdcub))
 
-       end subroutine cpw_gspace
+    endif
+
+    if(maxnst > dims_%mxdnst) then
+
+      dims_%mxdnst = maxnst
+
+      deallocate(recip_%mstar)
+      deallocate(recip_%izstar)
+      deallocate(recip_%ek)
+
+
+      deallocate(strfac_%sfact)
+
+      deallocate(pseudo_%vql)
+      deallocate(pseudo_%dnc)
+      deallocate(pseudo_%dvql)
+      deallocate(pseudo_%ddc)
+
+      deallocate(chdens_%den)
+      deallocate(chdens_%denc)
+      deallocate(chdens_%tauc_g)
+      deallocate(chdens_%dens)
+      deallocate(chdens_%dend)
+      deallocate(chdens_%dend1)
+
+      deallocate(vcomp_%vion)
+      deallocate(vcomp_%vhar)
+      deallocate(vcomp_%vxc)
+      deallocate(vcomp_%veff)
+
+      allocate(recip_%mstar(dims_%mxdnst))
+      allocate(recip_%izstar(dims_%mxdnst))
+      allocate(recip_%ek(dims_%mxdnst))
+
+      allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
+
+      allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
+      allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
+      allocate(pseudo_%dvql(dims_%mxdnst))
+      allocate(pseudo_%ddc(dims_%mxdnst))
+
+      allocate(chdens_%den(dims_%mxdnst))
+      allocate(chdens_%denc(dims_%mxdnst))
+      allocate(chdens_%tauc_g(dims_%mxdnst))
+      allocate(chdens_%dens(dims_%mxdnst))
+      allocate(chdens_%dend(dims_%mxdnst))
+      allocate(chdens_%dend1(dims_%mxdnst))
+
+      allocate(vcomp_%vion(dims_%mxdnst))
+      allocate(vcomp_%vhar(dims_%mxdnst))
+      allocate(vcomp_%vxc(dims_%mxdnst))
+      allocate(vcomp_%veff(dims_%mxdnst))
+
+    endif
+
+  endif
+
+  ipr = 0
+  if(iprglob > 0) ipr = 1
+  if(iprglob == 4) ipr = 2
+
+  call g_space(ipr, pwexp_%emax,                                         &
+      crys_%adot, spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,             &
+      recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
+      recip_%inds, recip_%kmax, recip_%indv, recip_%ns, recip_%mstar,    &
+      recip_%ek, recip_%izstar,                                          &
+      dims_%mxdgve, dims_%mxdnst, dims_%mxdcub)
+
+
+
+! gspace size for dual space method
+
+  if(flags_%flgdal == 'DUAL') then
+    kmscr(1) = recip_%kmax(1)/2 + 2
+    kmscr(2) = recip_%kmax(2)/2 + 2
+    kmscr(3) = recip_%kmax(3)/2 + 2
+  else
+    kmscr(1) = recip_%kmax(1)
+    kmscr(2) = recip_%kmax(2)
+    kmscr(3) = recip_%kmax(3)
+  endif
+
+  return
+
+end subroutine cpw_gspace

@@ -15,8 +15,8 @@
 !>  Define main variables and types for main cpw program
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.12
-!>  \date         November   2019, 10 October 2025
+!>  \version      5.13
+!>  \date         November   2019, 15 April 2026
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
@@ -161,6 +161,7 @@ module cpw_variables
     real(REAL64), allocatable          ::  vloc(:,:)                     !<  local pseudopotential for atom k (Hartree)
     real(REAL64), allocatable          ::  dcor(:,:)                     !<  core charge density for atom k
     real(REAL64), allocatable          ::  dval(:,:)                     !<  valence charge density for atom k
+    real(REAL64), allocatable          ::  tauc_q(:,:)                   !<  partial core kinetic energy density (hartree/bohr^3) for atom k
 
     real(REAL64), allocatable          ::  zv(:)                         !<  Valence of atom with type i
 
@@ -202,6 +203,7 @@ module cpw_variables
     complex(REAL64), allocatable       ::  dens(:)                       !<  spherical atomic valence charge density for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  dend(:)                       !<  bonding charge density from previous md step
     complex(REAL64), allocatable       ::  dend1(:)                      !<  bonding charge density from second previous md step
+    complex(REAL64), allocatable       ::  tauc_g(:)                     !<  partial core kinetic energy density (hartree/bohr^3) for prototype g-vector in star j
 
   end type chdens_t
 

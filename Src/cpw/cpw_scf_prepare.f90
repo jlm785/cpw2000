@@ -27,6 +27,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
 ! Adapted from the code without cpw_variables. around 2020. JLM
 ! New variable for v_Hartree_xc. Indentation. 24 November 2025. JLM
+! core kinetic energy density, 15 April 2026. JLM
 
   use cpw_variables
 
@@ -78,10 +79,10 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   call v_first(recip_%ns, recip_%ek, strfac_%sfact, ealpha,              &
       pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vloc,            &
-      pseudo_%dcor, pseudo_%dval,                                        &
+      pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,                        &
       crys_%ntype, crys_%adot,                                           &
-      vcomp_%vion, chdens_%denc, chdens_%dens, pseudo_%vql, pseudo_%dvql,&
-      pseudo_%dnc, pseudo_%ddc,                                          &
+      vcomp_%vion, chdens_%denc, chdens_%dens, chdens_%tauc_g,           &
+      pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdnst)
 
 

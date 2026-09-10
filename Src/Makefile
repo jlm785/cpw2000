@@ -81,7 +81,7 @@ hkpsilib:
 	   (cd hk_psi/reference  &&  make libadd ) ;\
 	fi
 
-clean:
+cleanobj:
 	(cd cpw               &&  make clean )
 	(cd cpw_lib           &&  make clean )
 	(cd cpw_pp_lib        &&  make clean )
@@ -111,6 +111,9 @@ clean:
 	(cd back_compat       &&  make clean )
 	(cd hk_psi/mkl_3D     &&  make clean )
 	(cd hk_psi/reference  &&  make clean )
-	(/bin/rm -f *.mod *.a *.exe *.o *~)
+	(/bin/rm -f *.mod *.o *~)
 
-.PHONY:   clean libpw  blas  esdflib  fftlib  timelib  hkpsilib  mklextra
+clean:  cleanobj
+	(/bin/rm -f *.a *.exe)
+
+.PHONY:   clean cleanobj libpw  blas  esdflib  fftlib  timelib  hkpsilib  mklextra

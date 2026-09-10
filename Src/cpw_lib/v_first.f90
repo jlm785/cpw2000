@@ -20,9 +20,9 @@
 !>  \copyright    GNU Public License v2
 
   subroutine v_first(ns, ek, sfact, ealpha, ealraw,                      &
-      nq, delq, vloc, dcor, dval,                                        &
+      nq, delq, vloc, dcor, dval, tauc_q,                                &
       ntype, adot,                                                       &
-      vion, denc, dens, vql, dvql, dnc, ddc,                             &
+      vion, denc, dens, tauc_g, vql, dvql, dnc, ddc,                     &
       mxdtyp, mxdlqp, mxdnst)
 
 ! written october 94. jlm
@@ -55,6 +55,7 @@
   real(REAL64), intent(in)           ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(in)           ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
   real(REAL64), intent(in)           ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
+  real(REAL64), intent(in)           ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density (hartree/bohr^3) for atom k
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
@@ -66,6 +67,8 @@
   complex(REAL64), intent(out)       ::  vion(mxdnst)                    !<  ionic potential for the prototype G-vector in star j
   complex(REAL64), intent(out)       ::  denc(mxdnst)                    !<  core charge density for the prototype G-vector
   complex(REAL64), intent(out)       ::  dens(mxdnst)                    !<  spherical atomic valence charge density for the prototype G-vector in star j
+  complex(REAL64), intent(out)       ::  tauc_g(mxdnst)                  !<  partial core kinetic energy density (hartree/bohr^3) for prototype g-vector in star j
+
 
   real(REAL64), intent(out)          ::  vql(mxdtyp,mxdnst)              !<  local pseudopotential for atom type i and prototype g-vector in star j
   real(REAL64), intent(out)          ::  dnc(mxdtyp,mxdnst)              !<  core charge for atom type i and prototype g-vector in star j
@@ -77,9 +80,9 @@
   real(REAL64)           ::  vionr1
   integer                ::  n, nql
   real(REAL64)           ::  vcell, bdot(3,3)
-  real(REAL64)           ::  gmax,glmax,delql
-  real(REAL64)           ::  qj,xn,q2vn,q2vp,q2vm
-  real(REAL64)           ::  vqj,dvqj,dcj,ddcj,dvj
+  real(REAL64)           ::  gmax, glmax, delql
+  real(REAL64)           ::  qj, xn, q2vn, q2vp, q2vm
+  real(REAL64)           ::  vqj, dvqj, dcj, ddcj, dvj, dtj
 
 ! constants
 
@@ -107,6 +110,7 @@
     dens(i) = C_ZERO
     dvql(i) = C_ZERO
     ddc(i) = C_ZERO
+    tauc_g(i) = C_ZERO
   enddo
 
   do nt = 1,ntype
@@ -201,6 +205,29 @@
 !       sum up the charge density
 
         dens(j) = dens(j) + dvj*sfact(nt,j)
+
+      endif
+    enddo
+
+!   compute core kinetic energy density tau
+
+    do j = 1,ns
+
+!     interpolate vda
+
+      xn = sqrt(2*ek(j))/delql
+      n = int(xn + UM/2)
+      if (n < nql) then
+
+        if(n < 0) n = 0
+        xn = xn - n*UM
+        dtj = tauc_q(n,nt) * (UM+xn) * (UM-xn)                           &
+            + (UM/2) * (tauc_q(n+1,nt)*(UM+xn)                           &
+            - tauc_q(n-1,nt)*(UM-xn)) * xn
+
+!       sum up the charge density
+
+        tauc_g(j) = tauc_g(j) + dtj*sfact(nt,j)
 
       endif
     enddo

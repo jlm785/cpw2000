@@ -14,8 +14,8 @@
 !>  Converts the charge densities for subsequent plotting
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         13 March 2025.
+!>  \version      5.13
+!>  \date         13 March 2025. 15 April 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -24,6 +24,7 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
     dims_in_, recip_in_, vcomp_in_, chdens_in_)
 
 ! written 13 March 2025. JLM
+! core kinetic energy density. 15 April 2026. JLM
 
 
   use cpw_variables
@@ -93,6 +94,7 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
   allocate(recip_in_%ek(dims_in_%mxdnst))
   allocate(vcomp_in_%vion(dims_in_%mxdnst))
   allocate(chdens_in_%denc(dims_in_%mxdnst))
+  allocate(chdens_in_%tauc_g(dims_in_%mxdnst))
   allocate(chdens_in_%dens(dims_in_%mxdnst))
   allocate(pseudo_%vql(dims_%mxdtyp,dims_in_%mxdnst))
   allocate(pseudo_%dvql(dims_in_%mxdnst))
@@ -115,9 +117,10 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 
   call v_first(recip_in_%ns, recip_in_%ek, strfac_%sfact, ealpha,        &
       pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vloc,            &
-      pseudo_%dcor, pseudo_%dval,                                        &
+      pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,                        &
       crys_%ntype, crys_%adot,                                           &
       vcomp_in_%vion, chdens_in_%denc, chdens_in_%dens,                  &
+      chdens_in_%tauc_g,                                                 &
       pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
       dims_%mxdtyp, dims_%mxdlqp, dims_in_%mxdnst)
 

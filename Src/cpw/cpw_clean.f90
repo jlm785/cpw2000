@@ -23,7 +23,8 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 
 
 ! Written 11 February 2026. JLM
-! Added new_atorb_ temporarily. 18 February 2026.
+! Added new_atorb_ temporarily (only used in read pseudo). 18 February 2026.
+! core kinetic energy densidty. 3 March 2026. JLM
 
 
   use cpw_variables
@@ -68,6 +69,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   deallocate(pseudo_%vloc)
   deallocate(pseudo_%dcor)
   deallocate(pseudo_%dval)
+  deallocate(pseudo_%tauc_q)
 
   deallocate(pseudo_%vkb)
 
@@ -118,6 +120,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   deallocate(chdens_%dens)
   deallocate(chdens_%dend)
   deallocate(chdens_%dend1)
+  deallocate(chdens_%tauc_g)
 
   deallocate(vcomp_%vion)
   deallocate(vcomp_%vhar)

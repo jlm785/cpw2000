@@ -14,8 +14,8 @@
 !>  Interface subroutine for read_pseudo
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         19 November 2019. 18 February 2026.
+!>  \version      5.13
+!>  \date         19 November 2019. 3 March 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
@@ -25,6 +25,8 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! Modified, indentation, author, 13 January 2024. JLM
 ! Modified, filenames for pseudos.  10 October 2025. JLM
 ! Modified, prepare for more than one type of atomic basis. 18 February 2026. JLM
+! core kinetic energy density, 3 March 2026. JLM
+
 
   use cpw_variables
 
@@ -68,6 +70,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%dcor(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
+  allocate(pseudo_%tauc_q(-1:dims_%mxdlqp,dims_%mxdtyp))
 
   allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
 
@@ -89,6 +92,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   call read_pseudo(ipr, author,                                          &
        pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vkb,            &
        pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
+       pseudo_%tauc_q,                                                   &
        new_atorb_%latorb, new_atorb_%nqwf, new_atorb_%delqwf,            &
        new_atorb_%n_bsets, new_atorb_%norbat,                            &
        new_atorb_%lorb, new_atorb_%wvfao,                                &
