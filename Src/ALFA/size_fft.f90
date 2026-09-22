@@ -19,20 +19,20 @@
 !>  \date         6 August 2012, 22 September 2026
 !>  \copyright    GNU Public License v2
 
-subroutine size_fft(kmax,nsfft,mfft,mwrk)
+subroutine size_fft(kmfft,nsfft,mfft,mwrk)
 
 ! written april 8 1988. jlm
 ! modified june 7, 1993. jlm
 ! modified August 6, 2012. jlm
 ! Modified, documentation, January 2020. JLM
-! Modified, kmscr renamed to kmax, indentation. 22 September 2026. JLM
+! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
 
 
   implicit none
 
 ! input
 
-  integer, intent(in)                ::  kmax(3)                         !<  max value of kgv(i,n) used for the potential fft mesh
+  integer, intent(in)                ::  kmfft(3)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
 ! output
 
@@ -51,19 +51,19 @@ subroutine size_fft(kmax,nsfft,mfft,mwrk)
   integer   ::  n,j,k
 
   do n=1,3
-    if(2*kmax(n)+1 < 32) then
+    if(2*kmfft(n)+1 < 32) then
       do j=1,11
         nsfft(n) = inprim(j)
 
-        if(2*kmax(n)+1 <= nsfft(n)) exit
+        if(2*kmfft(n)+1 <= nsfft(n)) exit
 
       enddo
     else
-      k = int(log(real(2*kmax(n)+1))/log(real(2)))
+      k = int(log(real(2*kmfft(n)+1))/log(real(2)))
       do j=1,6
         nsfft(n) = 2**(k-5) * insec(j)
 
-        if(2*kmax(n)+1 <= nsfft(n)) exit
+        if(2*kmfft(n)+1 <= nsfft(n)) exit
 
       enddo
     endif

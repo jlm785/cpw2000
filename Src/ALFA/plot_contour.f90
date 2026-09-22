@@ -27,7 +27,7 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 ! modified 28 april 2004
 ! modified, f90, subroutine, 27 May 2014. JLM
 ! Documentation, merge rho/psi. 4 February 2021. JLM
-! Modified, kmscr renamed to kmax. 22 September 2026. JLM
+! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
 
 
   implicit none
@@ -59,7 +59,7 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
   integer      :: id, n1,n2,n3, k1,k2,k3, kd
   integer      :: mxdwrk
 
-  integer      ::  kmax(3), nsfft(3)
+  integer      ::  kmfft(3), nsfft(3)
   integer      ::  mfft, mwrk
   integer      ::  ktmp(3)
 
@@ -86,16 +86,16 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 ! finds basic fft grid
 
   do j = 1,3
-    kmax(j) = 0
+    kmfft(j) = 0
   enddo
 
   do i=1,ng
     do j=1,3
-      if(abs(kgv(j,i)) > kmax(j)) kmax(j) = kgv(j,i)
+      if(abs(kgv(j,i)) > kmfft(j)) kmfft(j) = kgv(j,i)
     enddo
   enddo
 
-  call size_fft(kmax,nsfft,mfft,mwrk)
+  call size_fft(kmfft,nsfft,mfft,mwrk)
 
   write(6,*)
   write(6,'("  The basic fft grid is: ",3i8)') (nsfft(j),j=1,3)
@@ -121,10 +121,10 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 
     do j = 1,3
       ktmp(j) = (ktmp(j)-1)/2
-      kmax(j) = max(kmax(j),ktmp(j))
+      kmfft(j) = max(kmfft(j),ktmp(j))
     enddo
 
-    call size_fft(kmax,nsfft,mfft,mwrk)
+    call size_fft(kmfft,nsfft,mfft,mwrk)
 
     write(6,*)
     write(6,'("  The fft grid will be: ",3i8)') (nsfft(j),j=1,3)

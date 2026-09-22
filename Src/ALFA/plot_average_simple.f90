@@ -28,7 +28,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
 ! Modified, split code, complex variables, 26 May 2014. JLM
 ! Documentation, merged psi with rho_v. 5 February 2021. JLM
 ! Modified, double average. 2 March 2023. JLM
-! Modified, kmscr renamed to kmax. 22 September 2026. JLM
+! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
 
   implicit none
 
@@ -79,7 +79,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 ! other variables
 
-  integer             ::  kmax(3), nsfft(3)
+  integer             ::  kmfft(3), nsfft(3)
   real(REAL64)        ::  height
   integer             ::  id, n1, n2, n3, nn
 
@@ -131,16 +131,16 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 
   do j=1,3
-    kmax(j) = 0
+    kmfft(j) = 0
   enddo
 
   do i=1,ng
     do j=1,3
-      if(abs(kgv(j,i)) > kmax(j)) kmax(j) = kgv(j,i)
+      if(abs(kgv(j,i)) > kmfft(j)) kmfft(j) = kgv(j,i)
     enddo
   enddo
 
-  call size_fft(kmax, nsfft, mfft, mwrk)
+  call size_fft(kmfft, nsfft, mfft, mwrk)
 
   write(6,*)
   write(6,'("  the basic fft grid is: ",3i8)') (nsfft(j),j=1,3)
@@ -164,9 +164,9 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 ! make it more dense on the averaging direction
 
-  ktmp(1) = kmax(1)
-  ktmp(2) = kmax(2)
-  ktmp(3) = nmult*kmax(3)
+  ktmp(1) = kmfft(1)
+  ktmp(2) = kmfft(2)
+  ktmp(3) = nmult*kmfft(3)
 
 ! tries to get a multiple of nplane (if nplane is a prime number it just increases the number of points)
 
