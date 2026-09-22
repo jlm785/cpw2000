@@ -2,7 +2,7 @@ C*
 C*
       SUBROUTINE SCFFTI (N,WSAVE)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION WSAVE(1)
+      DIMENSION WSAVE(*)
 C
       IF (N .EQ. 1) RETURN
 C

@@ -1,7 +1,7 @@
 C*
       SUBROUTINE SCFFTF (N,C,WSAVE)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION C(1), WSAVE(1)
+      DIMENSION C(*), WSAVE(*)
 C
       IF (N .EQ. 1) RETURN
 C

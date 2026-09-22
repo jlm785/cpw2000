@@ -1,6 +1,6 @@
       SUBROUTINE SCFTF1 (N,C,CH,WA,IFAC)
       IMPLICIT REAL*8 (A-H,O-Z)
-      DIMENSION C(1), CH(1), WA(1)
+      DIMENSION C(*), CH(*), WA(*)
       DIMENSION IFAC(*)
 C
       NF = IFAC(2)
