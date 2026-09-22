@@ -11,70 +11,69 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the apropriate sizes for the
-!>     most efficient fast fourier transform
+!>  Calculates the apropriate sizes for the
+!>  most efficient Fast Fourier Transform
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         6 August 2012, 22 September 2026
+!>  \copyright    GNU Public License v2
 
-       subroutine size_fft(kmscr,nsfft,mfft,mwrk)
+subroutine size_fft(kmax,nsfft,mfft,mwrk)
 
-!      written april 8 1988. jlm
-!      modified june 7, 1993. jlm
-!      modified August 6, 2012. jlm
-!      Modified, documentation, January 2020. JLM
+! written april 8 1988. jlm
+! modified june 7, 1993. jlm
+! modified August 6, 2012. jlm
+! Modified, documentation, January 2020. JLM
+! Modified, kmscr renamed to kmax, indentation. 22 September 2026. JLM
 
-!      copyright INESC-MN/Jose Luis Martins
-!
-!      This file is distributed under the terms of the GNU General Public License.
-!      See the file COPYING for license details.
 
-!      version 4.94
+  implicit none
 
-       implicit none
+! input
 
-!      input
+  integer, intent(in)                ::  kmax(3)                         !<  max value of kgv(i,n) used for the potential fft mesh
 
-       integer, intent(in)                ::  kmscr(3)                   !<  max value of kgv(i,n) used for the potential fft mesh
+! output
 
-!      output
+  integer, intent(out)               ::  nsfft(3)                        !<  fft dimensions in directions 1,2,3
 
-       integer, intent(out)               ::  nsfft(3)                   !<  fft dimensions in directions 1,2,3
+  integer, intent(out)               ::  mfft                            !<  minimum size of fft data array
+  integer, intent(out)               ::  mwrk                            !<  minimum size of fft work array
 
-       integer, intent(out)               ::  mfft                       !<  minimum size of fft data array
-       integer, intent(out)               ::  mwrk                       !<  minimum size of fft work array
+! local data
 
-!      local data
+  integer   ::    inprim(11)
+  data inprim /2,4,6,8,10,12,16,18,20,24,32/
+  integer   ::    insec(6)
+  data insec /36,40,48,50,54,64/
 
-       integer   ::    inprim(11)
-       data inprim /2,4,6,8,10,12,16,18,20,24,32/
-       integer   ::    insec(6)
-       data insec /36,40,48,50,54,64/
+  integer   ::  n,j,k
 
-       integer   ::  n,j,k
+  do n=1,3
+    if(2*kmax(n)+1 < 32) then
+      do j=1,11
+        nsfft(n) = inprim(j)
 
-       do n=1,3
-         if(2*kmscr(n)+1 < 32) then
-           do j=1,11
-             nsfft(n) = inprim(j)
+        if(2*kmax(n)+1 <= nsfft(n)) exit
 
-             if(2*kmscr(n)+1 <= nsfft(n)) exit
+      enddo
+    else
+      k = int(log(real(2*kmax(n)+1))/log(real(2)))
+      do j=1,6
+        nsfft(n) = 2**(k-5) * insec(j)
 
-           enddo
-         else
-           k = int(log(real(2*kmscr(n)+1))/log(real(2)))
-           do j=1,6
-             nsfft(n) = 2**(k-5) * insec(j)
+        if(2*kmax(n)+1 <= nsfft(n)) exit
 
-             if(2*kmscr(n)+1 <= nsfft(n)) exit
+      enddo
+    endif
+  enddo
 
-           enddo   
-         endif
-       enddo
+! This values maybe changed depending on the fft package !!!!!!!!!!
 
-!      This values maybe changed depending on the fft package !!!!!!!!!!
+  mfft = (nsfft(1)+1)*nsfft(2)*nsfft(3)
+  mwrk = 4*max(nsfft(1)*nsfft(2),nsfft(1)*nsfft(3),nsfft(2)*nsfft(3))
 
-       mfft = (nsfft(1)+1)*nsfft(2)*nsfft(3)
-       mwrk = 4*max(nsfft(1)*nsfft(2),nsfft(1)*nsfft(3),                 &
-     &                nsfft(2)*nsfft(3))
+  return
 
-       return
-
-       end subroutine size_fft
+end subroutine size_fft

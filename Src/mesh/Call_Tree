@@ -1,0 +1,47 @@
+
+         Call tree of mesh suroutines in cpw (not analysis)
+
+gvec_star_from_cube       <--  move_extrapol_density    <--   cpw                                            den(ns)  <--  chdsave(nsave)
+
+gvec_star_to_cube         <--  move_save_density        <--   cpw                                            chdsave(nsave)  <--  den(ns)
+
+
+
+
+gvec_star_of_g_fold       <--  ( lap_rho       )        <--   scf_kb_c16   <--  cpw                           den(ns)  <--  den(ng)
+                               ( tau_by_fft    )
+                               ( v_hartree_xc  )
+                               ( charge_by_fft )
+                               gvec_mesh_unset
+
+star_of_g_unfold          <--  lap_rho                  <--   scf_kb_c16   <--  cpw                            den(ng)  <--  den(ns)
+                               gvec_mesh_set
+
+
+
+
+gvec_mesh_set             <--  ( v_hartree_xc         ) <--   scf_kb_c16   <--  cpw                           rho(nscr)  <--  den(ns)   (rho is real)
+                               ( pot_local            )
+                               ( kinetic_density_tfvw )
+
+gvec_mesh_unset           <--  kinetic_density_tfvw     <--   scf_kb_c16   <--  cpw                           den(ns)    <--  rho(nscr)
+
+
+
+gvec_mesh_fold            <--  ( v_hartree_xc  )        <--   scf_kb_c16   <--  cpw                           den(ng)    <--  den(nscr)
+                               ( charge_by_fft )
+                               gvec_mesh_unset
+                               gvec_mesh_unset_nostar
+
+gvec_mesh_unfold          <--  pot_local               <--                <--,--   scf_kb_c16   <--  cpw     den(nscr)  <--  den(ng)
+                               gvec_mesh_set            '-  v_hartree_xc  <--'
+                               gvec_mesh_set_nostar
+
+
+gvec_mesh_set_nostar      <--  v_hartree_xc             <--   scf_kb_c16   <--  cpw                           rho(nscr)  <--  den(ng)   (rho is real)
+
+gvec_mesh_unset_nostar    Not called!
+
+
+
+

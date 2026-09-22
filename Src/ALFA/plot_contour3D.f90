@@ -11,7 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>generates the data for a 3D contourplot using xcrysden or vesta
+!>  Generates the data for a 3D contourplot using xcrysden or vesta
+!>
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.13
+!>  \date         4 February 2021, 22 September 2026
+!>  \copyright    GNU Public License v2
 
 subroutine plot_contour3D(ioreplay, func,                                &
      adot, ntype, natom, nameat, rat,                                    &
@@ -24,9 +29,7 @@ subroutine plot_contour3D(ioreplay, func,                                &
 ! Written 30 May 2014, from 2D and LightSO code. JLM
 ! Modified, documentation, 11 June 2020. JLM
 ! Modified to use calls to write_xsf, etc.., 1-4 February 2021. JLM
-! copyright  Jose Luis Martins, Carlos Loia Reis/INESC-MN
-
-! version 4.99
+! Modified, kmscr renamed to kmax. 22 September 2026. JLM
 
 
   implicit none
@@ -63,18 +66,18 @@ subroutine plot_contour3D(ioreplay, func,                                &
   integer      ::  k1,k2,k3, kd
   integer      ::  mxdwrk
 
-  integer      ::  kmscr(3), nsfft(3)
+  integer      ::  kmax(3), nsfft(3)
   integer      ::  mfft, mwrk
   integer      ::  ktmp(3)
-  
+
   integer      ::  ierr
   integer      ::  iotape
 
   real(REAL64) ::  dmin, dmax, cmax, small, abschd
-  
+
   real(REAL64) ::  avec(3,3), bvec(3,3)
   logical                ::  lvesta
-  
+
   character(len=1)  ::  yesno
 
 ! constants
@@ -89,29 +92,29 @@ subroutine plot_contour3D(ioreplay, func,                                &
 
   call adot_to_avec_sym(adot,avec,bvec)
 
-! finds basic fft grid 
+! finds basic fft grid
 
   do j=1,3
-    kmscr(j) = 0
+    kmax(j) = 0
   enddo
 
   do i=1,ng
     do j=1,3
-      if(abs(kgv(j,i)) > kmscr(j)) kmscr(j) = kgv(j,i)
+      if(abs(kgv(j,i)) > kmax(j)) kmax(j) = kgv(j,i)
     enddo
   enddo
 
-  call size_fft(kmscr, nsfft, mfft, mwrk)
+  call size_fft(kmax, nsfft, mfft, mwrk)
 
-  write(6,*) 
+  write(6,*)
   write(6,'("  The basic fft grid is: ",3i8)') (nsfft(j),j=1,3)
   write(6,*)
-  write(6,*) '  For a final smooth plot you may need to double' 
-  write(6,*) '  these values.' 
+  write(6,*) '  For a final smooth plot you may need to double'
+  write(6,*) '  these values.'
   write(6,*)
   write(6,*) '  Do you want a finer grid? (y/n)'
   write(6,*)
-  
+
   read(5,*) yesno
   write(ioreplay,'(2x,a1,"   new fft grid")') yesno
 
@@ -121,18 +124,18 @@ subroutine plot_contour3D(ioreplay, func,                                &
     write(6,*) '  Enter the new grid size (n1,n2,n3)'
     write(6,*) '  These values will be overridden for fast FFT!'
     write(6,*)
-    
+
     read(5,*) (ktmp(j),j=1,3)
     write(ioreplay,'(3(2x,i8),"   fft grid")') (ktmp(j),j=1,3)
 
     do j=1,3
       ktmp(j) = (ktmp(j)-1)/2
-      kmscr(j) = max(kmscr(j),ktmp(j))
+      kmax(j) = max(kmax(j),ktmp(j))
     enddo
 
-    call size_fft(kmscr, nsfft, mfft, mwrk)
+    call size_fft(kmax, nsfft, mfft, mwrk)
 
-    write(6,*) 
+    write(6,*)
     write(6,'("  The fft grid will be: ",3i8)') (nsfft(j),j=1,3)
     write(6,*)
 
@@ -217,7 +220,7 @@ subroutine plot_contour3D(ioreplay, func,                                &
     stop
 
   endif
-  
+
   iotape = 47
   lvesta = .TRUE.
 
@@ -235,7 +238,7 @@ subroutine plot_contour3D(ioreplay, func,                                &
 
 
   close(unit=iotape)
-  
+
   write(6,*)
   write(6,*) 'The file rho3D.xsf was written'
   write(6,*)
@@ -246,4 +249,5 @@ subroutine plot_contour3D(ioreplay, func,                                &
   deallocate(wrk)
 
   return
+
 end subroutine plot_contour3D

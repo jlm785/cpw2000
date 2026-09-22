@@ -34,6 +34,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 ! Documentation, merge psi_plot, 5 February 2021. JLM
 ! Double average by material.  March-April 2023. JLM
 ! double average for nmat/=nwidth. 10 March 2025. JLM
+! Modified, kmscr renamed to kmax. 22 September 2026. JLM
 
 
   implicit none
@@ -108,7 +109,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 ! other variables
 
-  integer             ::  kmscr(3), nsfft(3), ktmp(3)                    !  fft sizes
+  integer             ::  kmax(3), nsfft(3), ktmp(3)                     !  fft sizes
   integer             ::  mfft, mwrk                                     !  fft stuff
 
   integer             ::  istar, istop
@@ -176,16 +177,16 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 
   do j=1,3
-    kmscr(j) = 0
+    kmax(j) = 0
   enddo
 
   do i=1,ng
     do j=1,3
-      if(abs(kgv(j,i)) > kmscr(j)) kmscr(j) = kgv(j,i)
+      if(abs(kgv(j,i)) > kmax(j)) kmax(j) = kgv(j,i)
     enddo
   enddo
 
-  call size_fft(kmscr, nsfft, mfft, mwrk)
+  call size_fft(kmax, nsfft, mfft, mwrk)
 
   write(6,*)
   write(6,'("  the basic fft grid is: ",3i8)') (nsfft(j),j=1,3)
@@ -245,9 +246,9 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
 ! make it more dense on the averaging direction
 
-  ktmp(1) = kmscr(1)
-  ktmp(2) = kmscr(2)
-  ktmp(3) = nmult*kmscr(3)
+  ktmp(1) = kmax(1)
+  ktmp(2) = kmax(2)
+  ktmp(3) = nmult*kmax(3)
 
 ! tries to get a multiple of nmat (if nmat is a prime number it just increases the number of points)
 

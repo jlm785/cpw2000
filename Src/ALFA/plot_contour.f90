@@ -15,6 +15,11 @@
 !>  in a plane determined by one corner c0(i) and two vectors
 !>  vx(i) and vy(i) giving two sides. these are all given in units
 !>  of the lattice basis vectors.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         4 February 2021, 22 September 2026
+!>  \copyright    GNU Public License v2
 
 subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 
@@ -22,9 +27,7 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 ! modified 28 april 2004
 ! modified, f90, subroutine, 27 May 2014. JLM
 ! Documentation, merge rho/psi. 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
-
-! version 4.99
+! Modified, kmscr renamed to kmax. 22 September 2026. JLM
 
 
   implicit none
@@ -56,17 +59,17 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
   integer      :: id, n1,n2,n3, k1,k2,k3, kd
   integer      :: mxdwrk
 
-  integer      ::  kmscr(3), nsfft(3)
+  integer      ::  kmax(3), nsfft(3)
   integer      ::  mfft, mwrk
   integer      ::  ktmp(3)
-  
+
   integer      ::  nx,ny
   integer      ::  ierr
-  
+
   integer      ::  io
 
   real(REAL64) ::  dmin,dmax,cmax,small,abschd
-  
+
   character(len=1)  ::  yesno
   real(REAL64)         ::  c0(3)                       !  corner (origin) of plane
   real(REAL64)         ::  dx(3),dy(3)                 !  step vectors that define the plane (lattice coordinates)
@@ -80,29 +83,29 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 
   integer      ::  i, j, k
 
-! finds basic fft grid 
+! finds basic fft grid
 
   do j = 1,3
-    kmscr(j) = 0
+    kmax(j) = 0
   enddo
 
   do i=1,ng
     do j=1,3
-      if(abs(kgv(j,i)) > kmscr(j)) kmscr(j) = kgv(j,i)
+      if(abs(kgv(j,i)) > kmax(j)) kmax(j) = kgv(j,i)
     enddo
   enddo
 
-  call size_fft(kmscr,nsfft,mfft,mwrk)
+  call size_fft(kmax,nsfft,mfft,mwrk)
 
-  write(6,*) 
+  write(6,*)
   write(6,'("  The basic fft grid is: ",3i8)') (nsfft(j),j=1,3)
   write(6,*)
-  write(6,*) '  For a final smooth plot you may need to double' 
-  write(6,*) '  these values.' 
+  write(6,*) '  For a final smooth plot you may need to double'
+  write(6,*) '  these values.'
   write(6,*)
   write(6,*) '  Do you want a finer grid? (y/n)'
   write(6,*)
-  
+
   read(5,*) yesno
   write(ioreplay,'(2x,a1,"   new fft grid")') yesno
 
@@ -112,24 +115,24 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
     write(6,*) '  Enter the new grid size (n1,n2,n3)'
     write(6,*) '  These values will be overridden for fast FFT!'
     write(6,*)
-    
+
     read(5,*) (ktmp(j),j=1,3)
     write(ioreplay,'(3(2x,i8),"   fft grid")') (ktmp(j),j=1,3)
 
     do j = 1,3
       ktmp(j) = (ktmp(j)-1)/2
-      kmscr(j) = max(kmscr(j),ktmp(j))
+      kmax(j) = max(kmax(j),ktmp(j))
     enddo
 
-    call size_fft(kmscr,nsfft,mfft,mwrk)
+    call size_fft(kmax,nsfft,mfft,mwrk)
 
-    write(6,*) 
+    write(6,*)
     write(6,'("  The fft grid will be: ",3i8)') (nsfft(j),j=1,3)
     write(6,*)
 
   endif
 
-! initialize function array 
+! initialize function array
 
   write(6,*)
   write(6,'("  The integral of the function is: ",g12.4)') real(func(1))
@@ -245,7 +248,7 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
   write(6,*)
   write(6,*) '  Do you want to see a rough ASCII plot? (y/n)'
   write(6,*)
-  
+
   read(5,*) yesno
   write(ioreplay,'(2x,a1,"    ASCII plot")') yesno
 
@@ -265,4 +268,4 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 
   return
 
-  end subroutine plot_contour
+end subroutine plot_contour
