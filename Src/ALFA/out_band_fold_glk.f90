@@ -51,6 +51,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 ! Modified, out_glk_interpolation. 13 November 2023. JLM
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 ! Modified, length of labels, 24 September 2025. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
 
   implicit none
@@ -247,15 +248,8 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
 ! be more generous for fold as k-points are far from Gamma point
 
-  if(flgdal == 'DUAL') then
-    kmscr(1) = kmax(1)/2 + 4
-    kmscr(2) = kmax(2)/2 + 4
-    kmscr(3) = kmax(3)/2 + 4
-  else
-    kmscr(1) = kmax(1)
-    kmscr(2) = kmax(2)
-    kmscr(3) = kmax(3)
-  endif
+  idshift = 0
+  call size_kmscr(kmax, flgdal, 4, idshift, kmscr)
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
@@ -263,8 +257,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
   ipr = 1
 
-  idshift = 0
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
        ng, kgv, phase, conj, ns, inds,                                   &
        mxdscr, mxdgve, mxdnst)
 

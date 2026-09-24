@@ -19,6 +19,7 @@
 
 ! Written before February 2020.
 ! Indentation, core kinetic energy density, 15 April 2026. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
   subroutine cpw_gspace(iprglob, kmscr,                                  &
      dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
@@ -42,7 +43,7 @@
   integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
 
   integer      ::  ipr
-  integer, intent(out)               ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE)
+  integer, intent(out)               ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential FFT mesh (DUAL APPROXIMATION TYPE) and fft mesh size
 
   logical, save         ::  lfirst = .TRUE.                              !  first time run
   integer               ::  maxgve,maxnst,maxcub                         !  provisional array dimensions
@@ -186,15 +187,7 @@
 
 ! gspace size for dual space method
 
-  if(flags_%flgdal == 'DUAL') then
-    kmscr(1) = recip_%kmax(1)/2 + 2
-    kmscr(2) = recip_%kmax(2)/2 + 2
-    kmscr(3) = recip_%kmax(3)/2 + 2
-  else
-    kmscr(1) = recip_%kmax(1)
-    kmscr(2) = recip_%kmax(2)
-    kmscr(3) = recip_%kmax(3)
-  endif
+  call size_kmscr(recip_%kmax, flags_%flgdal, 2, 0, kmscr)
 
   return
 

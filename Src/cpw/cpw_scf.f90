@@ -52,6 +52,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, calls xc_author_info, 22 November 2025. JLM
 ! Modified, do not keep data from first iteration if kinetic energy density is used. 25 November 2025. JLM
 ! Modified, cleanup of mixer at the end of self-consistency. 12 February 2026. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
   use cpw_variables
 
@@ -267,7 +268,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   real(REAL64)           ::  errvhxc                                     !  maximum value of abs(vhxcout(i) - vhxc(i))
 
   integer                ::  ipr, iconv
-  integer                ::  idshift
 
   integer                ::  nsfft(3)
   integer                ::  mxdwrk
@@ -391,9 +391,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     if(iprglob > 1) ipr = 1
     if(iprglob == 4) ipr = 2
 
-    idshift = 0
 
-    call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, idshift,   &
+    call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,   &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
         recip_%ns, recip_%inds,                                          &
         mxdscr, dims_%mxdgve, dims_%mxdnst)
@@ -433,7 +432,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
             vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
           enddo
 
-          call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, idshift,  &
+          call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,  &
               recip_%ng, recip_%kgv, recip_%phase, recip_%conj,               &
               recip_%ns, recip_%inds,                                         &
               mxdscr, dims_%mxdgve, dims_%mxdnst)

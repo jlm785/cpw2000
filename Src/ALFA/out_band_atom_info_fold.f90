@@ -44,6 +44,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 !  Modified, ao_int_, improved indentation. 8 October 2024. JLM
 !  Modified, rk in out_band_eref, 13 August 2025. JLM
 !  Increase dimension of label. 17 September 2025. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
   implicit none
 
@@ -259,15 +260,8 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 
 !  calculates local potential in fft mesh
 
-  if(flgdal == 'DUAL') then
-    kmscr(1) = kmax(1)/2 + 4
-    kmscr(2) = kmax(2)/2 + 4
-    kmscr(3) = kmax(3)/2 + 4
-  else
-    kmscr(1) = kmax(1)
-    kmscr(2) = kmax(2)
-    kmscr(3) = kmax(3)
-  endif
+  idshift = 0
+  call size_kmscr(kmax, flgdal, 4, idshift, kmscr)
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
@@ -275,8 +269,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 
   ipr = 1
 
-  idshift = 0
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
 

@@ -30,6 +30,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified, size of author, 13 January 2024.
 ! Modified, enter method for k-point. 22 October 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
 
   use cpw_variables
@@ -300,18 +301,16 @@ subroutine plot_psi_sub(ioreplay)
 
     flgdal = 'DUAL'
 
-    kmscr(1) = recip_%kmax(1)/2 + 2
-    kmscr(2) = recip_%kmax(2)/2 + 2
-    kmscr(3) = recip_%kmax(3)/2 + 2
+  idshift = 0
+  call size_kmscr(recip_%kmax, flgdal, 2, idshift, kmscr)
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
 
   ipr = 1
-  idshift = 0
 
-  call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, idshift,     &
+  call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,     &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
       recip_%ns, recip_%inds,                                            &
       mxdscr, dims_%mxdgve, dims_%mxdnst)

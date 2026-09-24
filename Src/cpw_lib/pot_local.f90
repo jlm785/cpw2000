@@ -14,12 +14,16 @@
 !>  Computes the local potential on a grid
 !>  using fast fourier transforms.
 !>
+!>  The description of the fft mesh (kmscr) is calculated
+!>  outside, by size_kmscr, so that it can be shared with other
+!>  quantities in real space.
+!>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 February 2018. 11 March 2026.
+!>  \date         20 February 2018. 24 September 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
+subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
     ng, kgv, phase, conj, ns, inds,                                      &
     mxdscr,mxdgve, mxdnst)
 
@@ -34,6 +38,8 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
 ! Modified, documentation, January 2020. JLM
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, calls gvec_mesh_set. 11 March 2026. JLM
+! Modified, kmscr(4:7) and idshift moved to size_kmscr,
+!           kmax is input.  24 September 2026. JLM            WARNING NEW API
 
   implicit none
 
@@ -55,11 +61,8 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
   integer, intent(in)                ::  inds(mxdgve)                    !<  star to which g-vector n belongs
   integer, intent(in)                ::  ns                              !<  number os stars with length less than gmax
 
-  integer, intent(in)                ::  idshift                         !<  shift of the fft mesh, used /= 0 only in highly banked memory.
-
-! input and output
-
-  integer, intent(inout)             ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size (from size_kmscr)
+  integer, intent(in)                ::  kmax(3)                         !<  max value of |kgv(i,n)|
 
 ! output
 
@@ -68,39 +71,24 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
 
 ! local variables
 
-  integer        ::  mxdfft                                              !  array dimension for fft transform
-  integer        ::  mxdwrk                                              !  array dimension for fft transform workspace
-
   integer        ::  id,n1,n2,n3
-  integer        ::  nsfft(3)
 
   real(REAL64)   ::  adot(3,3)                                           !  unused in gvec_mesh_set
-  integer        ::  kmax(3)                                             !  max value of |kgv(i,n)|
-
-
 
 ! constants
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  real(REAL64), parameter  :: SMALL = 1.0E-9_REAL64
 
 ! counters
 
   integer    ::  i, j, k, ijk
 
 
-! compatibility with new gvec_mesh_set, adot not used, kmax recalculated to avoid new API
+! compatibility with gvec_mesh_set, adot not used
 
   adot(:,:) = ZERO
   do i = 1,3
     adot(i,i) = UM
-  enddo
-
-  do i = 1,3
-    kmax(i) = 0
-    do j = 1,ng
-      if(iabs(kgv(i,j)) > kmax(i)) kmax(i) = iabs(kgv(i,j))
-    enddo
   enddo
 
 ! printout local potential
@@ -113,30 +101,12 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
     write(6,*)
   endif
 
-! find n for fast fourier transform
-! ni is the number of points used in direction i.
+! fft mesh calculated by size_kmscr
 
-  call size_fft(kmscr, nsfft, mxdfft, mxdwrk)
-
-  if(mxdfft > mxdscr) then
-    write(6,*)
-    write(6,'("   STOPPED in pot_local.  mxdfft = ",i8,                  &
-          & " is greater than mxdscr = ",i8)') mxdwrk, mxdscr
-
-    stop
-
-  endif
-
-  n1 = nsfft(1)
-  n2 = nsfft(2)
-  n3 = nsfft(3)
-!  id = nsfft(1) + 1
-  id = nsfft(1) + idshift
-
-  kmscr(4) = n1
-  kmscr(5) = n2
-  kmscr(6) = n3
-  kmscr(7) = id
+  n1 = kmscr(4)
+  n2 = kmscr(5)
+  n3 = kmscr(6)
+  id = kmscr(7)
 
   if (ipr /= 0) then
     write(6,*)
@@ -144,11 +114,12 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,        &
   endif
 
 ! initialize charge density array and enter symmetrized charge.
+! gvec_mesh_set checks that the mesh fits in vscr
 
   call gvec_mesh_set(ipr, 'potential', adot, veff,                       &
     vscr, id,n1,n2,n3, .FALSE.,                                          &
     ng, kgv, phase, conj, inds, kmax,                                    &
-    mxdgve, mxdnst, mxdfft)
+    mxdgve, mxdnst, mxdscr)
 
   vmax = vscr(1)
   vmin = vmax

@@ -48,6 +48,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! Modified, bug correction, Jan 2022. CLR.
 ! Modified, indentation, documentaion, 29 September 2022. JLM
 ! Modified, ao_int_GetS12, indentation, 8 October 2024. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
   implicit none
 
@@ -247,24 +248,16 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! calculates local potential in fft mesh
 
 
-  if(flgdal == 'DUAL') then
-    kmscr(1) = kmax(1)/2 + 2
-    kmscr(2) = kmax(2)/2 + 2
-    kmscr(3) = kmax(3)/2 + 2
-  else
-    kmscr(1) = kmax(1)
-    kmscr(2) = kmax(2)
-    kmscr(3) = kmax(3)
-  endif
+  idshift = 0
+  call size_kmscr(kmax, flgdal, 2, idshift, kmscr)
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
 
   ipr = 1
-  idshift = 0
 
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
 

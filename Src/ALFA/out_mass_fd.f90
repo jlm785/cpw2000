@@ -35,6 +35,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 ! Adapted from old out_effective_mass and out_psi_test.  8 November 2023. JLM
 ! imethod, 25 March 2025. JLM
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
+! Modified size_kmscr. 24 September 2026. JLM+claude
 
   implicit none
 
@@ -177,15 +178,8 @@ subroutine out_mass_fd(ioreplay,                                         &
 ! calculates local potential in fft mesh
 
 
-  if(flgdal == 'DUAL') then
-    kmscr(1) = kmax(1)/2 + 2
-    kmscr(2) = kmax(2)/2 + 2
-    kmscr(3) = kmax(3)/2 + 2
-  else
-    kmscr(1) = kmax(1)
-    kmscr(2) = kmax(2)
-    kmscr(3) = kmax(3)
-  endif
+  idshift = 0
+  call size_kmscr(kmax, flgdal, 2, idshift, kmscr)
 
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
 
@@ -193,8 +187,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 
   ipr = 1
 
-  idshift = 0
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, idshift,            &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
 
