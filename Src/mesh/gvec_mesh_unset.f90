@@ -25,6 +25,7 @@ subroutine gvec_mesh_unset(ipr, purpose, adot, den,                      &
     mxdgve, mxdnst, mxdscr)
 
 ! Written inverting mesh_set. 11 march 2026. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -51,7 +52,10 @@ subroutine gvec_mesh_unset(ipr, purpose, adot, den,                      &
 
   real(REAL64), intent(in)           ::  rhomsh(mxdscr)                  !<  density or other quantity on regular mesh in real space
 
-  integer, intent(in)                ::  id,n1,n2,n3                     !<  packing of rhomsh(id,n2,n3), id >= n1
+  integer, intent(in)                ::  id                              !<  first dimension of rhomsh(id,n2,n3), id >= n1
+  integer, intent(in)                ::  n1                              !<  number of mesh points in direction 1
+  integer, intent(in)                ::  n2                              !<  number of mesh points in direction 2
+  integer, intent(in)                ::  n3                              !<  number of mesh points in direction 3
 
   logical, intent(in)                ::  lvol                            !<  if true scales result by volume
 

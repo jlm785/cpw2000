@@ -13,8 +13,13 @@
 
 !>  Writes the file with the band information for later calculation of 
 !>  the density of states or optical response
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         13 December 2020.
+!>  \copyright    GNU Public License v2
 
-  subroutine dos_read_data(filename, io, title, subtitle,                &
+subroutine dos_read_data(filename, io, title, subtitle,                  &
     lscl, lso, identif,                                                  &
     nrk, nx, ny, nz, ztot, adot, ntrans, mtrx,                           &
     nband, rk, wgk, indk, kmap, e_of_k, e_of_k_so,                       &
@@ -22,9 +27,8 @@
 
 
 ! Reverse of out_dos_write, 13 December 2020. JLM
-! copyright  Jose Luis Martins/Carlos Loia Reis/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -36,7 +40,9 @@
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for the number of bands
 
   integer, intent(in)                ::  nrk                             !<  number of irreducible k-points
-  integer, intent(in)                ::  nx, ny, nz                      !<  original k-point mesh
+  integer, intent(in)                ::  nx                              !<  original k-point mesh, direction 1
+  integer, intent(in)                ::  ny                              !<  original k-point mesh, direction 2
+  integer, intent(in)                ::  nz                              !<  original k-point mesh, direction 3
 
   character(len=*), intent(in)       ::  filename                        !<  file that should be written
   integer, intent(in)                ::  io                              !<  tape numbers
@@ -151,4 +157,5 @@
   close(unit=io)
 
   return
-  end subroutine dos_read_data
+
+end subroutine dos_read_data

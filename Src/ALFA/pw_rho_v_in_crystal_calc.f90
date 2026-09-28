@@ -42,9 +42,11 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified, size of author, 13 January 2024.
 ! Modified, back compatibility with old files. adjustl. 23 february 2024. JLM
 ! Modified, printing of the information about the xc functional. 25 November 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   implicit none
+
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
 ! input
@@ -86,8 +88,12 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   real(REAL64), intent(out)          ::  teleck                          !<  electronic temperature (in Kelvin)
 
   integer, intent(out)               ::  nband                           !<  target for number of bands
-  integer, intent(out)               ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
-  real(REAL64), intent(out)          ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
+  integer, intent(out)               ::  nx                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 1
+  integer, intent(out)               ::  ny                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 2
+  integer, intent(out)               ::  nz                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 3
+  real(REAL64), intent(out)          ::  sx                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 1
+  real(REAL64), intent(out)          ::  sy                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 2
+  real(REAL64), intent(out)          ::  sz                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 3
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
   real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -306,4 +312,4 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 
   return
 
-  end subroutine pw_rho_v_in_crystal_calc
+end subroutine pw_rho_v_in_crystal_calc

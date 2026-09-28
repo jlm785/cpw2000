@@ -26,6 +26,7 @@ subroutine out_band_oscillator_range(ioreplay, lso,                      &
             mxdbnd)
 
 ! Written July 2, 2014. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -44,8 +45,10 @@ subroutine out_band_oscillator_range(ioreplay, lso,                      &
 
 ! output
 
-  integer, intent(out)               ::  ninitbeg, ninitend              !<  begin and end of initial state index
-  integer, intent(out)               ::  nfinalbeg, nfinalend            !<  begin and end of final state index
+  integer, intent(out)               ::  ninitbeg                        !<  first index of the initial states
+  integer, intent(out)               ::  ninitend                        !<  last index of the initial states
+  integer, intent(out)               ::  nfinalbeg                       !<  first index of the final states
+  integer, intent(out)               ::  nfinalend                       !<  last index of the final states
   logical, intent(out)               ::  lpair                           !<  prints the oscillator strengths for pairs of bands
   logical, intent(out)               ::  lexcit                          !<  prints the oscillator strengths by excitation energies
 

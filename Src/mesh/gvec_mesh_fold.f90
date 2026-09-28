@@ -26,6 +26,7 @@ subroutine gvec_mesh_fold(den, chd, id,n1,n2,n3,                         &
 ! Written September 30, 2015 from v_hartree_xc
 ! Modified 12 December 2019, documentation.  JLM
 ! Name of subroutine. Indentation. 10 March 2026. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -36,7 +37,10 @@ subroutine gvec_mesh_fold(den, chd, id,n1,n2,n3,                         &
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdfft                          !<  array dimension for chd
 
-  integer, intent(in)                ::  id, n1, n2, n3                  !<  dimensions of mesh
+  integer, intent(in)                ::  id                              !<  first dimension of the mesh array (id >= n1)
+  integer, intent(in)                ::  n1                              !<  mesh dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  mesh dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  mesh dimension in direction 3
   complex(REAL64), intent(in)        ::  chd(mxdfft)                     !<  density or other quantity on regular mesh in G-space
 
   integer, intent(in)                ::  ng                              !<  size of g-space

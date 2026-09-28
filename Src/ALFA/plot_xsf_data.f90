@@ -13,15 +13,17 @@
 
 !>  writes function values on a grid in a xsf
 !>  input file for later plot of a isosurface vesta or xcrysden
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         1 February 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_xsf_data(iotape, lvesta, adot, chd, id, n1,n2,n3)
 
-! Written 1 February 2021. JLM
-! Adapted from rho_contour3D
+! Written 1 February 2021. Adapted from rho_contour3D. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! copyright  J.L.Martins, INESC-MN.
-
-! version 4.99
 
   implicit none
 
@@ -29,7 +31,10 @@ subroutine plot_xsf_data(iotape, lvesta, adot, chd, id, n1,n2,n3)
 
 ! input:
 
-  integer, intent(in)                ::  id, n1,n2,n3                    !<  dimensions of array chd
+  integer, intent(in)                ::  id                              !<  first dimension of array chd (id >= n1)
+  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
 
   integer, intent(in)                ::  iotape                          !<  tape number
   logical, intent(in)                ::  lvesta                          !<  indicates that the xsf file follows the vesta orientation
@@ -101,5 +106,6 @@ subroutine plot_xsf_data(iotape, lvesta, adot, chd, id, n1,n2,n3)
   write(iotape,*) 'END_BLOCK_DATAGRID_3D'
 
   return
+
 end subroutine plot_xsf_data
 

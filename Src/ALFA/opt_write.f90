@@ -13,6 +13,11 @@
 
 !>  writes to files the several optical functions  
 !>  derived from the complex dielectric function
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.13
+!>  \date         before 20 October 2020.
+!>  \copyright    GNU Public License v2
 
 
 subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
@@ -20,9 +25,8 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
 
 ! Written by Jose Luis Martins extracting previous code
 ! by Carlos Loia Reis. 20 October 2020
-! copyright  Carlos Loia Reis/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.98
 
   implicit none
 
@@ -30,7 +34,8 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
 
 ! input
 
-  integer, intent(in)              ::  ix, iy                            !<  tensor components
+  integer, intent(in)              ::  ix                                !<  first tensor component
+  integer, intent(in)              ::  iy                                !<  second tensor component
 
   integer, intent(in)              ::  iotape                            !<  tape number
   character(len=50), intent(in)    ::  title                             !<  title for plots
@@ -38,7 +43,8 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
 
   integer, intent(in)              ::  nhist                             !<  number of histogram points
   real(REAL64), intent(in)         ::  ehist(nhist)                      !<  energies    
-  real(REAL64), intent(in)         ::  e_re(nhist), e_im(nhist)          !<  real and imaginary parts of the dielectric function
+  real(REAL64), intent(in)         ::  e_re(nhist)                       !<  real part of the dielectric function
+  real(REAL64), intent(in)         ::  e_im(nhist)                       !<  imaginary part of the dielectric function
 
   real(REAL64), intent(in)         ::  vcell                             !<  volume of primitive cell
   real(REAL64), intent(in)         ::  ztot                              !<  total number of electrons
@@ -225,6 +231,7 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
   deallocate(n_im)
 
   return
+
 end subroutine opt_write
 
 

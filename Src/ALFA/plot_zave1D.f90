@@ -11,18 +11,22 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  calcultes a function in real space, averages in the "xy" direction
-!>  and plots it in the "z"direction.
+!>  Averages in the "xy" direction a function in real space,
+!>  represented on a regular mesh.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         June 4, 2014.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_zave1D(ave, func, nplane, id, n1,n2,n3, ng, kgv)
 
 ! Writen June 4, 2014.jlm
 ! Modified, documentation, name 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
-! version 4.99
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -32,7 +36,10 @@ subroutine plot_zave1D(ave, func, nplane, id, n1,n2,n3, ng, kgv)
   integer, intent(in)                ::  kgv(3,ng)                       !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
   complex(REAL64), intent(in)        ::  func(ng)                        !<  function in reciprocal space
   integer, intent(in)                ::  nplane                          !<  number of atomic planes
-  integer, intent(in)                ::  id, n1, n2, n3                  !<  dimensions for the FFT
+  integer, intent(in)                ::  id                              !<  first dimension of the fft array (id >= n1)
+  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
 
 ! output
 

@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  finds the fermi level and intrinsic carrier concentration
-!>  and prints them to the standard output
+!>  Finds the fermi level and intrinsic carrier concentration
+!>  and prints them to the standard output.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         5 December 2013, 20 October 2020.
+!>  \copyright    GNU Public License v2
 
 subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
       efguess, vcell, nvbm, ncbm, xmu, xmdosv, xmdosc, xni)
@@ -21,9 +26,8 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 ! copyright Jose Luis Martins / INESC-MN
 ! Modified, documentation, 19 September 2020. JLM
 ! Modified, Fermi level and effective masses. 20 October 2020. JLM
-! copyright  J.L.Martins, INESC-MN.
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.98 of cpw
 
   implicit none
 
@@ -43,9 +47,11 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 
 ! output
 
-  integer, intent(out)             ::  nvbm, ncbm                        !<  approximate indices for conduction and valence band
+  integer, intent(out)             ::  nvbm                              !<  approximate index for the valence band
+  integer, intent(out)             ::  ncbm                              !<  approximate index for the conduction band
   real(REAL64), intent(out)        ::  xmu                               !<  electron chemical potential, AKA Fermi level
-  real(REAL64), intent(out)        ::  xmdosv, xmdosc                    !<  dos effective masses for valence and conduction
+  real(REAL64), intent(out)        ::  xmdosv                            !<  dos effective mass for the valence band
+  real(REAL64), intent(out)        ::  xmdosc                            !<  dos effective mass for the conduction band
   real(REAL64), intent(out)        ::  xni                               !<  intrinsic carrier concentration
 
 ! local variables
@@ -208,8 +214,8 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
     xl = ehist(n)
     m = n
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xl,nvbm,ncbm,           &
-                                 nhist,ehist,dhist)
+    call dos_carrier_conc(xn, xp, dxndef, dxpdef, tau, xl, nvbm, ncbm,   &
+                                 nhist, ehist, dhist)
 
     if(xp > xn) exit
 
@@ -218,8 +224,8 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   do n = m,nhist
     xh = ehist(n)
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,xh,nvbm,ncbm,          &
-                                  nhist,ehist,dhist)
+    call dos_carrier_conc(xn, xp, dxndef, dxpdef, tau, xh, nvbm, ncbm,   &
+                                  nhist, ehist, dhist)
 
     if(xp < xn) exit
 
@@ -229,8 +235,8 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   dx = abs(xh - xl) / 2
   dxold = dx
 
-  call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,            &
-                                  nhist,ehist,dhist)
+  call dos_carrier_conc(xn, xp, dxndef, dxpdef, tau, ef, nvbm, ncbm,     &
+                                  nhist, ehist, dhist)
   f = xn - xp
   df = dxndef - dxpdef
 
@@ -262,8 +268,8 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 
     if (abs(dx) < EPS*EPS) exit
 
-    call dos_carrier_conc(xn,xp,dxndef,dxpdef,tau,ef,nvbm,ncbm,          &
-                                  nhist,ehist,dhist)
+    call dos_carrier_conc(xn, xp, dxndef, dxpdef, tau, ef, nvbm, ncbm,   &
+                                  nhist, ehist, dhist)
     f = xn - xp
     df = dxndef - dxpdef
     if (f < zero) then
@@ -327,4 +333,5 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
   write(6,*)
 
   return
+
 end subroutine dos_f_level

@@ -26,6 +26,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
 ! Breakup of cpw_pp_band_dos_opt. 20 January 2022. JLM
 ! Remove iguess. 11 November 2023. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   use cpw_variables
@@ -60,8 +61,8 @@ subroutine cpw_pp_band(ioreplay,                                         &
   integer                 ::  imeth, idiag
 
 
-  real(real64)            :: epspsi                                      !  accuracy of eigenvalues
-  integer                 :: icmax                                       !  maximum number of iterations for diagonalization
+  real(real64)            :: epspsi                                      !<  accuracy of eigenvalues
+  integer                 :: icmax                                       !<  maximum number of iterations for diagonalization
 
   character(len=1)        ::  yesno
 

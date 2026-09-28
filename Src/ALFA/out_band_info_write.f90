@@ -29,6 +29,7 @@ subroutine out_band_info_write(filename, io,                             &
 ! Date unknown.
 ! Modified, documentation 29 May 2020. JLM
 ! Modiified to write information to QtBandViewer June 2021. CLR
+! Documentation, missing declaration. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -55,7 +56,7 @@ subroutine out_band_info_write(filename, io,                             &
   integer, intent(in)                ::  nbaslcao                   !<  number of atomic orbitals
   integer, intent(in)                ::  infolcao(5,nbaslcao)       !<  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
   real(REAL64), intent(in)           ::  basxpsi(nbaslcao,neig,nrk) !<  |<bas|psi>|^2 for each k
-  real(REAL64), intent(in)           ::  pkn(nrk,neig)
+  real(REAL64), intent(in)           ::  pkn(nrk,neig)              !<  weight of the unfolded band for each k
 
   integer, intent(in)                ::  nvert                      !<  number of vertical lines in plot
   real(REAL64), intent(in)           ::  xcvert(nvert)              !<  x coordinate of vertical line
@@ -68,8 +69,8 @@ subroutine out_band_info_write(filename, io,                             &
   integer, intent(in)                ::  ntype                      !<  number of types of atoms
   character(len=2)                   ::  nameat(ntype)              !<  chemical symbol for the type i
 
-  real(REAL64), intent(in)           ::  rk(3,nrk)
-  real(REAL64), intent(in)           ::  rk_fld(3,nrk)
+  real(REAL64), intent(in)           ::  rk(3,nrk)                  !<  coordinates of the k-points
+  real(REAL64), intent(in)           ::  rk_fld(3,nrk)              !<  coordinates of the folded k-points
 
 ! counters
 

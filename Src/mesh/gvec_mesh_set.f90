@@ -28,6 +28,7 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 ! Modified 12 September 2019, documentation test of mxdfft.  JLM
 ! Modified ipr, icheck, 13 February 2021. JLM
 ! Name. n1,n2,n3, lvol. 11 March 2026. JLM                       WARNING NEW API
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -52,7 +53,10 @@ subroutine gvec_mesh_set(ipr, purpose, adot, den,                        &
 
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  density or other quantity in prototype G-vector
 
-  integer, intent(in)                ::  id,n1,n2,n3                     !<  packing of rhomsh(id,n2,n3), id >= n1
+  integer, intent(in)                ::  id                              !<  first dimension of rhomsh(id,n2,n3), id >= n1
+  integer, intent(in)                ::  n1                              !<  number of mesh points in direction 1
+  integer, intent(in)                ::  n2                              !<  number of mesh points in direction 2
+  integer, intent(in)                ::  n3                              !<  number of mesh points in direction 3
 
   logical, intent(in)                ::  lvol                            !<  if true scales result by volume
 

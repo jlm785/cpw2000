@@ -25,6 +25,7 @@ subroutine pw2o_qe_convert_crys_struct(nat, iqe, rat_qe, avec_qe,        &
     mxdtyp, mxdatm, mxdnat)
 
 ! Extracted from the write_pwscf_in subroutine. 24 February 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -49,8 +50,12 @@ subroutine pw2o_qe_convert_crys_struct(nat, iqe, rat_qe, avec_qe,        &
   integer, intent(out)               ::  iqe                             !<  type of Bravais lattice for QE
   real(REAL64), intent(out)          ::  rat_qe(3,mxdnat)                !<  atom positions for QE
   real(REAL64), intent(out)          ::  avec_qe(3,3)                    !<  lattice vectors for QE
-  real(REAL64), intent(out)          ::  aa, bb, cc                      !<  lattice constants for QE
-  real(REAL64), intent(out)          ::  cosbc, cosac, cosab             !<  cosines of lattice angles for QE
+  real(REAL64), intent(out)          ::  aa                              !<  lattice constant a for QE
+  real(REAL64), intent(out)          ::  bb                              !<  lattice constant b for QE
+  real(REAL64), intent(out)          ::  cc                              !<  lattice constant c for QE
+  real(REAL64), intent(out)          ::  cosbc                           !<  cosine of angle between b and c for QE
+  real(REAL64), intent(out)          ::  cosac                           !<  cosine of angle between a and c for QE
+  real(REAL64), intent(out)          ::  cosab                           !<  cosine of angle between a and b for QE
   integer, intent(out)               ::  ibravais                        !<  Bravais lattice ic cpw2000
   real(REAL64), intent(out)          ::  avec(3,3)                       !<  lattice vectors (with conventional orientation)
 

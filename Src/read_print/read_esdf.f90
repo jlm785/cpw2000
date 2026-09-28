@@ -41,6 +41,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! Modified, documentation, kplusg,August 10 2019. JLM
 ! Modified, icdiagmax, indentation. 14 May 2025. JLM
 ! Modified, filenames for pseudo and saving psi to disk. 10 October 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   use esdf
@@ -79,8 +80,12 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
 
-  integer, intent(out)               ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(out)          ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+  integer, intent(out)               ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
+  integer, intent(out)               ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
+  integer, intent(out)               ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
+  real(REAL64), intent(out)          ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
+  real(REAL64), intent(out)          ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
+  real(REAL64), intent(out)          ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
 
   integer, intent(out)               ::  nbandin                         !<  target for number of bands
   logical, intent(out)               ::  lbz                             !<  indicates if Brillouin Zone data was successfully read.

@@ -12,15 +12,19 @@
 !------------------------------------------------------------!
 
 !>  Provides a very ROUGH estimate of the optical gap and square oscillator strength
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         16 October 2020, 14 December 2020.
+!>  \copyright    GNU Public License v2
 
 subroutine opt_rad_rough_pcvsq(filegrid, io_grid, egapopt, pcvsq, nvtc, nx,ny,nz)
 
 
 ! Written 16 October 2020. JLM
 ! Modified, use of files. 14 December 2020. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -29,7 +33,9 @@ subroutine opt_rad_rough_pcvsq(filegrid, io_grid, egapopt, pcvsq, nvtc, nx,ny,nz
 
 ! input
 
-  integer, intent(in)                ::  nx,ny,nz                        !<  grid size
+  integer, intent(in)                ::  nx                              !<  grid size, direction 1
+  integer, intent(in)                ::  ny                              !<  grid size, direction 2
+  integer, intent(in)                ::  nz                              !<  grid size, direction 3
   integer, intent(in)                ::  nvtc                            !<  number of valence bands times number of conduction bands
 
   character(len=16), intent(in)      ::  filegrid                        !<  file with grid data
@@ -127,4 +133,5 @@ subroutine opt_rad_rough_pcvsq(filegrid, io_grid, egapopt, pcvsq, nvtc, nx,ny,nz
   deallocate(fkgrid_32)
 
   return
+
 end subroutine opt_rad_rough_pcvsq

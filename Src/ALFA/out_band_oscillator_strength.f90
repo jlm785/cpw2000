@@ -29,6 +29,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
 ! Modified, 4 March 2020, documentation. JLM
 ! Modified, name, indentation, new grouping of excitation levels. 16 May 2024. JLM
 ! Modified to be more flexible. 14 May 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Modified to allow values in a given direction. 23 October2025. JLM
 ! Modified, includes spin degeneracy in sumations. Correct factor in F_xyz. 3 November2025. JLM
 
@@ -53,8 +54,10 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
   logical, intent(in)                ::  lxyz                            !<  prints osc. str. in x y z directions.  Otherwise in rdircar direction
   real(REAL64), intent(in)           ::  rdircar(3)                      !<  choice of direction (cartesian coordinates)
 
-  integer, intent(in)                ::  ninitbeg, ninitend              !<  begin and end of initial state index
-  integer, intent(in)                ::  nfinalbeg, nfinalend            !<  begin and end of final state index
+  integer, intent(in)                ::  ninitbeg                        !<  first index of the initial states
+  integer, intent(in)                ::  ninitend                        !<  last index of the initial states
+  integer, intent(in)                ::  nfinalbeg                       !<  first index of the final states
+  integer, intent(in)                ::  nfinalend                       !<  last index of the final states
 
 ! local allocatable arrays
 

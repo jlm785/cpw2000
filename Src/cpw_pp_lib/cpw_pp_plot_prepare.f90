@@ -25,6 +25,7 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 
 ! written 13 March 2025. JLM
 ! core kinetic energy density. 15 April 2026. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   use cpw_variables
@@ -41,13 +42,13 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 !  type(spaceg_t)                     ::  spaceg_                         !<  space group information
 !  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
   type(strfac_t)                     ::  strfac_                         !<  structure factors
-  type(chdens_t)                     ::  chdens_                         !  charge densities
+  type(chdens_t)                     ::  chdens_                         !<  charge densities (converted)
   type(vcomp_t)                      ::  vcomp_                          !<  local potential contributions
 
   type(dims_t)                       ::  dims_in_                        !<  input array dimensions
 
   type(recip_t)                      ::  recip_in_                       !<  input reciprocal space information
-  type(chdens_t)                     ::  chdens_in_                      !  charge densities
+  type(chdens_t)                     ::  chdens_in_                      !<  input charge densities
   type(vcomp_t)                      ::  vcomp_in_                       !<  input local potential contributions
 
 ! local variables

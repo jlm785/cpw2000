@@ -27,6 +27,7 @@ subroutine gvec_mesh_unfold(deng, chd, id,n1,n2,n3, lwrap,               &
 ! Modified 12 December 2019.  Documentation.  JLM
 ! Name of subroutine. Indentation. 10 March 2026. JLM
 ! make it the inverse of gvec_mesh_fold. 11 march 2026. JLM     WARNING  NEW API AND BEHAVIOUR
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -40,7 +41,10 @@ subroutine gvec_mesh_unfold(deng, chd, id,n1,n2,n3, lwrap,               &
 
   complex(REAL64), intent(in)        ::  deng(mxdgve)                    !<  density or other quantity in G-vector
   logical, intent(in)                ::  lwrap                           !<  indicates if it should wrap around wrong results will be obtained with inconsistent choice.
-  integer, intent(in)                ::  id, n1, n2, n3                  !<  dimensions of mesh
+  integer, intent(in)                ::  id                              !<  first dimension of the mesh array (id >= n1)
+  integer, intent(in)                ::  n1                              !<  mesh dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  mesh dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  mesh dimension in direction 3
 
   integer, intent(in)                ::  ng                              !<  size of g-space
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates

@@ -13,6 +13,11 @@
 
 !>  Performs the calculation of the dielectric tensor (independent electron approximation)
 !>  and related optical functions, and calls subroutines for output file printing.
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         July 2020, 12 december 2020.
+!>  \copyright    GNU Public License v2
 
 
 subroutine opt_calc_quad(ispin, adot, filegrid, io_grid, ninter, ehist, e_re, e_im,    &
@@ -22,9 +27,8 @@ subroutine opt_calc_quad(ispin, adot, filegrid, io_grid, ninter, ehist, e_re, e_
 ! Modified, documentation, 20 September 2020. JLM
 ! Modified, output, egrid, 18 October 2020. JLM
 ! Modified, uses files to avoid exceeding RAM. 12 december 2020. JLM
-! copyright  Carlos Loia Reis/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -33,7 +37,9 @@ subroutine opt_calc_quad(ispin, adot, filegrid, io_grid, ninter, ehist, e_re, e_
 
 ! input
 
-  integer, intent(in)                ::  nx,ny,nz                        !<  grid size
+  integer, intent(in)                ::  nx                              !<  grid size, direction 1
+  integer, intent(in)                ::  ny                              !<  grid size, direction 2
+  integer, intent(in)                ::  nz                              !<  grid size, direction 3
   integer, intent(in)                ::  nhist                           !<  energy values in histograms
   integer, intent(in)                ::  nvtc                            !<  number of valence bands times number of conduction bands
 
@@ -48,7 +54,8 @@ subroutine opt_calc_quad(ispin, adot, filegrid, io_grid, ninter, ehist, e_re, e_
 
 ! output
 
-  real(REAL64), intent(out)          ::  e_re(nhist), e_im(nhist)        !<  real and imaginary parts of the dielectric function
+  real(REAL64), intent(out)          ::  e_re(nhist)                     !<  real part of the dielectric function
+  real(REAL64), intent(out)          ::  e_im(nhist)                     !<  imaginary part of the dielectric function
 
 ! local allocatable arrays
 

@@ -12,6 +12,11 @@
 !------------------------------------------------------------!
 
 !>  Fills the e (eigenvalue difference) and fk (dipole) in grid
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         July 2020, 11 December 2020.
+!>  \copyright    GNU Public License v2
 
 
 subroutine opt_set_in_grid(ix,iy, adot, fileunsym, io_unsym, filetmp, io_tmp, filegrid, io_grid, &
@@ -21,9 +26,8 @@ subroutine opt_set_in_grid(ix,iy, adot, fileunsym, io_unsym, filetmp, io_tmp, fi
 ! Modified, documentation, 20 September 2020. JLM
 ! Modified, merged two subroutines. 20 October 2020. JLM
 ! Modified, use of files to avoid exceeding RAM. 11 december 2020. JLM
-! copyright  Carlos Loia Reis/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -32,7 +36,8 @@ subroutine opt_set_in_grid(ix,iy, adot, fileunsym, io_unsym, filetmp, io_tmp, fi
 
 ! input
   
-  integer, intent(in)                ::  ix, iy                          !<  tensor component(s) to 
+  integer, intent(in)                ::  ix                              !<  first tensor component
+  integer, intent(in)                ::  iy                              !<  second tensor component
   
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   
@@ -47,7 +52,9 @@ subroutine opt_set_in_grid(ix,iy, adot, fileunsym, io_unsym, filetmp, io_tmp, fi
   integer, intent(in)                ::  nval                            !<  number of valence bands
   integer, intent(in)                ::  ncond                           !<  number of conduction
 
-  integer, intent(in)                ::  nx,ny,nz                        !<  grid size
+  integer, intent(in)                ::  nx                              !<  grid size, direction 1
+  integer, intent(in)                ::  ny                              !<  grid size, direction 2
+  integer, intent(in)                ::  nz                              !<  grid size, direction 3
  
 ! local allocatable arrays
     

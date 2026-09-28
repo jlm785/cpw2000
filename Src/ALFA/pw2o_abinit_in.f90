@@ -27,6 +27,7 @@ subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
 ! Documentation, 12 february 2021. JLM
 ! Removed unused variables, 14 November 2024. JLM
 ! Cleanup, change of name, 25 February 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -47,7 +48,9 @@ subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
 
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
 
-  integer, intent(in)                ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
+  integer, intent(in)                ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
+  integer, intent(in)                ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
+  integer, intent(in)                ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
 
 ! local:
 

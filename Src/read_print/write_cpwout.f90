@@ -20,10 +20,10 @@
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
-  adot, ntype, natom, nameat, rat, atmass, alatt,                        &
-  emax, nbandin, nx,ny,nz, sx,sy,sz,                                     &
-  lkeat, ltbl,                                                           &
-  mxdtyp, mxdatm)
+    adot, ntype, natom, nameat, rat, atmass, alatt,                      &
+    emax, nbandin, nx,ny,nz, sx,sy,sz,                                   &
+    lkeat, ltbl,                                                         &
+    mxdtyp, mxdatm)
 
 ! Adapted June 2017. JLM
 ! Bug squashed (metadata not from rede) September 2017.
@@ -31,6 +31,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Modified, option to write wave-functions to disk, filename of pseudopotentials. 12 October 2025. JLM
 ! Adds more options for xc functionals. 22 November 2025. JLM
 ! New date format. 2 december 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -62,8 +63,12 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
   integer, intent(in)                ::  nbandin                         !<  target for number of bands
 
-  integer, intent(in)                ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(in)           ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+  integer, intent(in)                ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
+  integer, intent(in)                ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
+  integer, intent(in)                ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
+  real(REAL64), intent(in)           ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
+  real(REAL64), intent(in)           ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
+  real(REAL64), intent(in)           ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
 
   logical, intent(in)                ::  lkeat                           !<  sets the keating option
   logical, intent(in)                ::  ltbl                            !<  toggles XC between TBL and CA

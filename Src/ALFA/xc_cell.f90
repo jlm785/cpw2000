@@ -35,6 +35,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 ! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
 ! Thomas-Fermi-von Weizsaker for tau. 12 May 2026. JLM
 ! replace dble, 18 August 2026. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -49,8 +50,11 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
   real(REAL64), intent(in)           ::  tblaha                          !<  Tran-Blaha constant, if negative calculates it...
   logical, intent(in)                ::  lkincalc                        !<  Indicates that the kinetic energy density has been calculated.
 
-  integer, intent(in)                ::  id1, id2                        !<  first and second dimension of the fft array
-  integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
+  integer, intent(in)                ::  id1                             !<  first dimension of the fft array
+  integer, intent(in)                ::  id2                             !<  second dimension of the fft array
+  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
   real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
   real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) [total for lxcmggavxc, correction for lxcmgga]
   real(REAL64), intent(in)           ::  lapmsh(id1,id2,n3)              !<  Laplacian of charge density (1/bohr^5)
@@ -516,10 +520,15 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
 
   integer, intent(in)                ::  mxdnn                           !<  Lagrange interpolation uses at most 2*mxdnn+1 points
 
-  integer, intent(in)                ::  id1, id2                        !<  first and second dimensions of the fft array
-  integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
+  integer, intent(in)                ::  id1                             !<  first dimension of the fft array
+  integer, intent(in)                ::  id2                             !<  second dimension of the fft array
+  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
 
-  integer, intent(in)                ::  i1, i2, i3                      !<  target point in the array
+  integer, intent(in)                ::  i1                              !<  index in direction 1 of the target point in the array
+  integer, intent(in)                ::  i2                              !<  index in direction 2 of the target point in the array
+  integer, intent(in)                ::  i3                              !<  index in direction 3 of the target point in the array
   real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
   real(REAL64), intent(in)           ::  bdot(3,3)                       !<  bdot/2*pi**2
 

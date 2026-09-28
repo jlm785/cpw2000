@@ -13,17 +13,21 @@
 
 !>  finds a reasonable scale for the energy range of
 !>  the relevant joint density of sates and the relevant band pairs
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         9 December 2013, 14 December 2020.
+!>  \copyright    GNU Public License v2
 
-  subroutine opt_rad_plot_range(filegrid, io_grid, nhtarg,               &
+subroutine opt_rad_plot_range(filegrid, io_grid, nhtarg,                 &
     erange, nrange, emin, deltae, nhist, nx,ny,nz, nvtc)
 
 ! Written December 9, 2013.
 ! Modified, documentation, 19 September 2020. JLM
 ! Modified, egrid, 18 October 2020. JLM
 ! Modified, using files, 14 December 2020. JLM
-! copyright  J.L.Martins, INESC-MN.
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99 of cpw
 
   implicit none
 
@@ -33,7 +37,9 @@
 ! input:
 
   integer, intent(in)                ::  nvtc                            !<  size of number of pairs of bands
-  integer, intent(in)                ::  nx,ny,nz                        !<  number of k-points in each direction in regular grid
+  integer, intent(in)                ::  nx                              !<  number of k-points in regular grid, direction 1
+  integer, intent(in)                ::  ny                              !<  number of k-points in regular grid, direction 2
+  integer, intent(in)                ::  nz                              !<  number of k-points in regular grid, direction 3
 
   character(len=16), intent(in)      ::  filegrid                        !<  file with grid data
   integer, intent(in)                ::  io_grid                         !<  tape number for grid
@@ -124,4 +130,5 @@
   nhist = nint((emax-emin)/deltae) + 1
 
   return
+
 end subroutine opt_rad_plot_range

@@ -11,22 +11,25 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  prints the calculated k-points for integration
-!>over the brillouin zone. periodic mesh.
+!>  Prints the calculated k-points for integration
+!>  over the brillouin zone. Periodic mesh.
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         12 November 2020.
+!>  \copyright    GNU Public License v2
 
 subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                &
-  adot,                                                                  &
-  nrk, rk, wgk, dkg,                                                     &
-  mxdnrk)
+    adot,                                                                &
+    nrk, rk, wgk, dkg,                                                   &
+    mxdnrk)
 
-! Extracted from int_pnt. 12 Novenber 2020. JLM
-! copyright  J.L.Martins, INESC-MN.
+! Extracted from int_pnt. 12 November 2020. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 ! nx, ny, and nz are the number of points in the three
 ! directions dermined by the lattice wave vectors. sx, sy, and
 ! sz shifts the grid of integration points from the origin.
-
-! version 4.99
 
   implicit none
   
@@ -37,8 +40,12 @@ subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                &
   integer, intent(in)             ::  mxdnrk                             !<  size of k-points
 
   integer, intent(in)             ::  nbandi                             !<  number of bands for every k-point
-  integer, intent(in)             ::  nx,ny,nz                           !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(in)        ::  sx,sy,sz                           !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS)
+  integer, intent(in)             ::  nx                                 !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
+  integer, intent(in)             ::  ny                                 !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
+  integer, intent(in)             ::  nz                                 !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
+  real(REAL64), intent(in)        ::  sx                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 1
+  real(REAL64), intent(in)        ::  sy                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 2
+  real(REAL64), intent(in)        ::  sz                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 3
   integer, intent(in)             ::  ipr                                !<  controls printing (0,1,2). Higher value for more details
   real(REAL64), intent(in)        ::  adot(3,3)                          !<  metric in direct space
 

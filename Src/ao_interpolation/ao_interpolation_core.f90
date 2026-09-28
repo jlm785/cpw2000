@@ -11,12 +11,18 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
+!>  Driver for the calculation of the band structure
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         Before October 2018. October 2024.
+!>  \copyright    GNU Public License v2
+
+subroutine ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
 ! cleaned in October 2024, JLM.  Needs some further simplification and clear documentation
 ! ao_int_OrthoH and ao_int_GetHpw are only called once and subroutine or calling subroutine
 ! have few executable lines.
-
-subroutine ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
   implicit none
 
@@ -34,8 +40,8 @@ subroutine ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
 ! work arrays
 
-  complex(REAL64), intent(out)       ::  wrk(nband,nband)
-  real(REAL64), intent(out)          ::  ev_wrk(nband)
+  complex(REAL64), intent(out)       ::  wrk(nband,nband)               !<  work array
+  real(REAL64), intent(out)          ::  ev_wrk(nband)                  !<  work array for eigenvalues
 
 ! local variables
 

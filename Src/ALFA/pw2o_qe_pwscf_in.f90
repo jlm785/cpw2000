@@ -28,6 +28,7 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
 ! Bravais lattice for phonon calculations. 23 january 2022. JLM
 ! Removed unused variables, 14 November 2024. JLM
 ! Extracted pw2o_qe_convert_crys_struct. 25 February 2025. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -51,8 +52,12 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
   real(REAL64), intent(in)           ::  emax                            !< kinetic energy cutoff of plane wave expansion (Hartree).
   integer, intent(in)                ::  nbandin                         !< target for number of bands
 
-  integer, intent(in)                ::  nx, ny, nz                      !< size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(in)           ::  sx, sy, sz                      !< offset of the integration mesh (usually 0.5)
+  integer, intent(in)                ::  nx                              !< size of the integration mesh in k-space (nx*ny*nz), direction 1
+  integer, intent(in)                ::  ny                              !< size of the integration mesh in k-space (nx*ny*nz), direction 2
+  integer, intent(in)                ::  nz                              !< size of the integration mesh in k-space (nx*ny*nz), direction 3
+  real(REAL64), intent(in)           ::  sx                              !< offset of the integration mesh (usually 0.5), direction 1
+  real(REAL64), intent(in)           ::  sy                              !< offset of the integration mesh (usually 0.5), direction 2
+  real(REAL64), intent(in)           ::  sz                              !< offset of the integration mesh (usually 0.5), direction 3
 
 ! allocatable array
 

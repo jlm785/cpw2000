@@ -43,6 +43,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, filenames for pseudos. 10 October 2025. JLM
 ! Modified, preliminary modifications for more than one basis set. 18 February 2026. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -79,8 +80,12 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   real(REAL64), intent(in)           ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
   integer, intent(in)                ::  nband                           !<  target for number of bands
-  integer, intent(in)                ::  nx,ny,nz                        !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
-  real(REAL64), intent(in)           ::  sx,sy,sz                        !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
+  integer, intent(in)                ::  nx                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 1
+  integer, intent(in)                ::  ny                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 2
+  integer, intent(in)                ::  nz                              !<  divisions of Brillouin zone for integration (Monkhorst-Pack), direction 3
+  real(REAL64), intent(in)           ::  sx                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 1
+  real(REAL64), intent(in)           ::  sy                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 2
+  real(REAL64), intent(in)           ::  sz                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 3
   real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 

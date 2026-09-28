@@ -15,18 +15,21 @@
 !>  c0(i) is the corner and two vectors
 !>  vx(i) and vy(i) give two sides. these are all given in units
 !>  of the lattice basis vectors.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         11 February 2008, 4 February 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_get_plane(ioreplay, adot,                                &
              nx, ny, c0, dx,dy, xscale,yscale)
 
 ! Writen 5 June 2014 fom older code of February 11,2008. JLM
 ! Documentation, name, 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+
 
   implicit none
-
-! version 4.99
-
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
@@ -36,13 +39,16 @@ subroutine plot_get_plane(ioreplay, adot,                                &
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
-  integer, intent(in)                ::  nx, ny                          !<  Dimensions of grid in plane
+  integer, intent(in)                ::  nx                              !<  number of grid points in the first direction of the plane
+  integer, intent(in)                ::  ny                              !<  number of grid points in the second direction of the plane
 
 ! output
 
   real(REAL64), intent(out)         ::  c0(3)                            !<  corner (origin) of plane
-  real(REAL64), intent(out)         ::  dx(3),dy(3)                      !<  step vectors that define the plane (lattice coordinates)
-  real(REAL64), intent(out)         ::  xscale,yscale                    !<  aspect ratio of plot (either xscale or yscale = 1)
+  real(REAL64), intent(out)         ::  dx(3)                            !<  step vector in the first direction of the plane (lattice coordinates)
+  real(REAL64), intent(out)         ::  dy(3)                            !<  step vector in the second direction of the plane (lattice coordinates)
+  real(REAL64), intent(out)         ::  xscale                           !<  x scale of plot (either xscale or yscale = 1)
+  real(REAL64), intent(out)         ::  yscale                           !<  y scale of plot (either xscale or yscale = 1)
 
 ! other variables
 

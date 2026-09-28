@@ -13,6 +13,11 @@
 
 !>  prepares a file to be used  with gnuplot
 !>  with a two dimensional contour plot
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         before 27 May 2014, 4 February 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
        ro,nx,ny,xscale,yscale)
@@ -20,9 +25,7 @@ subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
 ! modified, f90, subroutine, 27 May 2014. JLM
 ! Modified, documentation, close correct unit, 11 June 2020. JLM
 ! Name, 4 february 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
-
-! version 4.99
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -36,10 +39,12 @@ subroutine plot_2D_gnuplot(ioreplay,filename,io,                  &
   character(len=*), intent(in)       ::  filename                        !<  file to be written
   integer, intent(in)                ::  io                              !<  tape number 
 
-  integer, intent(in)                ::  nx, ny                          !<  Dimensions of grid in plane
+  integer, intent(in)                ::  nx                              !<  number of grid points in the first direction of the plane
+  integer, intent(in)                ::  ny                              !<  number of grid points in the second direction of the plane
 
   real(REAL64), intent(in)           ::  ro(nx,ny)                       !<  charge density interpolated on the planar grid
-  real(REAL64), intent(in)           ::  xscale,yscale                   !<  aspect ratio of plot
+  real(REAL64), intent(in)           ::  xscale                          !<  x scale of plot (aspect ratio)
+  real(REAL64), intent(in)           ::  yscale                          !<  y scale of plot (aspect ratio)
 
 ! other variables
 

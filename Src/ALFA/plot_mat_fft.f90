@@ -13,30 +13,38 @@
 
 !>  the matrix for the contour plot is generated
 !>  by a super-quadratic interpolation in the fft mesh
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         before 27 May 2014, 4 February 2021.
+!>  \copyright    GNU Public License v2
 
 subroutine plot_mat_fft(rhopl,nx,ny,chd,id,n1,n2,n3,c0,dx,dy)
 
 ! Modified, f90, 27 May 2014. JLM
 ! Modified, quad_3D32pt, 18 october 2020. JLM
 ! Documentation, name, 4 february 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+
 
   implicit none
-
-! version 4.99
-
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
 
 ! input
 
-  integer, intent(in)                ::  nx, ny                          !<  Dimensions of grid in plane
-  integer, intent(in)                ::  id, n1, n2, n3                  !<  Dimensions of fft grid
+  integer, intent(in)                ::  nx                              !<  number of grid points in the first direction of the plane
+  integer, intent(in)                ::  ny                              !<  number of grid points in the second direction of the plane
+  integer, intent(in)                ::  id                              !<  first dimension of the fft array (id >= n1)
+  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
+  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
+  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
 
   complex(REAL64), intent(in)        ::  chd(id,n2,n3)                   !<  charge density on FFT grid
 
   real(REAL64), intent(in)           ::  c0(3)                           !<  corner (origin) of plane
-  real(REAL64), intent(in)           ::  dx(3),dy(3)                     !<  step vectors that define the plane (lattice coordinates)
+  real(REAL64), intent(in)           ::  dx(3)                           !<  step vector in the first direction of the plane (lattice coordinates)
+  real(REAL64), intent(in)           ::  dy(3)                           !<  step vector in the second direction of the plane (lattice coordinates)
 
 ! output
 

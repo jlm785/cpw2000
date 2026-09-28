@@ -13,15 +13,19 @@
 
 !>  Expands the optical data from the irreducible grid to the full grid
 !>  Uses files to avoid exceeding RAM.
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.13
+!>  \date         23 October 2020, 11 December 2020.
+!>  \copyright    GNU Public License v2
 
 subroutine opt_grid_unsym(el, filedhdrk, io_dhdrk, fileunsym, io_unsym,      &
-  kmap, mtrx, neig, nx,ny,nz, nrk, mxdbnd)
+    kmap, mtrx, neig, nx,ny,nz, nrk, mxdbnd)
 
 ! Extracted from previous code. 23 October 2020. JLM
 ! Modified to use files to avoid exceeding RAM.  11 December 2020. JLM
-! copyright  Carlos Loia Reis/INESC-MN
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -32,7 +36,9 @@ subroutine opt_grid_unsym(el, filedhdrk, io_dhdrk, fileunsym, io_unsym,      &
 
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for the number of bands
   integer, intent(in)                ::  nrk                             !<  number of irreducible k-points
-  integer, intent(in)                ::  nx,ny,nz                        !<  grid size
+  integer, intent(in)                ::  nx                              !<  grid size, direction 1
+  integer, intent(in)                ::  ny                              !<  grid size, direction 2
+  integer, intent(in)                ::  nz                              !<  grid size, direction 3
 
   real(REAL64), intent(in)           ::  el(mxdbnd,nrk)                  !<  eigenvalues in Hartree
 
@@ -118,5 +124,6 @@ subroutine opt_grid_unsym(el, filedhdrk, io_dhdrk, fileunsym, io_unsym,      &
   close(unit = io_unsym)
 
   return
+
 end subroutine opt_grid_unsym
  

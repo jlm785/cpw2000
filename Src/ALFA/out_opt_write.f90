@@ -12,17 +12,20 @@
 !------------------------------------------------------------!
 
 !>  Writes the files with the oscillator strengths for later processing.
+!>
+!>  \author       Carlos Loia Reis, José Luís Martins
+!>  \version      5.13
+!>  \date         7 December 2020.
+!>  \copyright    GNU Public License v2
 
-  subroutine out_opt_write(title, subtitle, identif,                     &
+subroutine out_opt_write(title, subtitle, identif,                       &
     neig, nval, ztot, adot, ntrans, mtrx,                                &
     nrk, rk, wght, indk, kmap,                                           &
     mxdbnd, mxdpnt, nx,ny,nz)
 
 ! Extracted from out_opt_ie, 7 December 2020. JLM
+! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 
-! copyright  Carlos Loia Reis/Jose Luis Martins/INESC-MN
-
-! version 4.99
 
   implicit none
 
@@ -32,7 +35,9 @@
 ! input
 
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for the number of bands
-  integer, intent(in)                ::  nx,ny,nz                        !<  k-point mesh size
+  integer, intent(in)                ::  nx                              !<  k-point mesh size, direction 1
+  integer, intent(in)                ::  ny                              !<  k-point mesh size, direction 2
+  integer, intent(in)                ::  nz                              !<  k-point mesh size, direction 3
   integer, intent(in)                ::  mxdpnt                          !<  dimensions for dos k-points
 
   character(len=50), intent(in)      ::  title                           !<  title for plots
@@ -90,4 +95,5 @@
   close(io21)
 
   return
-  end subroutine out_opt_write
+
+end subroutine out_opt_write
