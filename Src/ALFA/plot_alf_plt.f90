@@ -11,13 +11,18 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  quick and dirty ascii contour plot
+!>  Quick and dirty ascii contour plot.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         before 11 february 2008, 4 February 2021.
+!>  \copyright    GNU Public License v2
 
-subroutine plot_alf_plt(ro,nx,ny)
+subroutine plot_alf_plt(ro, nx, ny)
 
 ! Modified, f90, 27 May 2014. JLM
 ! Modified, documentation name, 4 February 2021. JLM
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -28,7 +33,8 @@ subroutine plot_alf_plt(ro,nx,ny)
 
 ! input
 
-  integer, intent(in)                ::  nx, ny                          !<  Dimensions of grid in plane
+  integer, intent(in)                ::  nx                              !<  number of grid points in the first direction of the plane
+  integer, intent(in)                ::  ny                              !<  number of grid points in the second direction of the plane
 
   real(REAL64), intent(in)           ::  ro(nx,ny)                       !<  function interpolated on the planar grid
 
@@ -103,4 +109,4 @@ subroutine plot_alf_plt(ro,nx,ny)
 
   return
 
-  end subroutine plot_alf_plt
+end subroutine plot_alf_plt

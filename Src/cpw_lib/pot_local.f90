@@ -40,6 +40,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
 ! Modified, calls gvec_mesh_set. 11 March 2026. JLM
 ! Modified, kmscr(4:7) and idshift moved to size_kmscr,
 !           kmax is input.  24 September 2026. JLM            WARNING NEW API
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -67,7 +68,8 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
 ! output
 
   real(REAL64),  intent(out)         ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
-  real(REAL64),  intent(out)         ::  vmax, vmin                      !<  maximum and minimum values of vscr
+  real(REAL64),  intent(out)         ::  vmax                            !<  maximum value of vscr
+  real(REAL64),  intent(out)         ::  vmin                            !<  minimum value of vscr
 
 ! local variables
 

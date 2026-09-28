@@ -18,7 +18,7 @@
 !>  \date         15 january 1999, 21 February 2024.
 !>  \copyright    GNU Public License v2
 
-  subroutine print_energy(ipr, entype, energy, force, stress,            &
+subroutine print_energy(ipr, entype, energy, force, stress,              &
       adot, ntype, natom, nameat,                                        &
       mxdtyp, mxdatm)
 
@@ -26,6 +26,7 @@
 ! modified for f90, 21 October 2015. JLM
 ! Modified, documentation, June 2019. JLM
 ! Modified, ipr, indentation, 21 February 2024. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -44,7 +45,7 @@
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
 
-  real(REAL64), intent(in)            ::  energy                         !<  energy
+  real(REAL64), intent(in)            ::  energy                         !<  value of the energy contribution
   real(REAL64), intent(in)            ::  force(3,mxdatm,mxdtyp)         !<  k-th component (in contravariant lattice coordinates)  of the force of the n-th atom of type i
   real(REAL64), intent(in)            ::  stress(3,3)                    !<  stress tensor (in contravariant lattice coordinates)
 

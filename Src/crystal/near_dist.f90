@@ -11,75 +11,81 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     closest distance between atoms taking into account periodicity
+!>  Closest distance between atoms taking into account periodicity.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         30 November 2016.
+!>  \copyright    GNU Public License v2
 
-       subroutine near_dist(distmin,adot,r0,r1)
+subroutine near_dist(distmin, adot, r0, r1)
 
-!      Written 30 November 2016.  JLM
-!      Modified, documentation, August 2019. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 30 November 2016.  JLM
+! Modified, documentation, August 2019. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94
 
+  implicit none
 
-       implicit none
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+! input
 
-!      input
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  real(REAL64), intent(in)           ::  r0(3)                           !<  position of the first atom (lattice coordinates)
+  real(REAL64), intent(in)           ::  r1(3)                           !<  position of the second atom (lattice coordinates)
 
-       real(REAL64), intent(in)           ::  adot(3,3)                  !<  metric in direct space
-       real(REAL64), intent(in)           ::  r0(3), r1(3)               !<  positions
+! output
 
-!      output
+  real(REAL64), intent(out)          ::  distmin                         !<  closest distance between images
 
-       real(REAL64), intent(out)          ::  distmin                    !<  closest distance between images
+! local variables
 
-!      local variables
+  real(REAL64)    ::  xk(3), zk(3), dist
 
-       real(REAL64)    ::  xk(3), zk(3), dist
+! parameters
 
-!      parameters
+  real(REAL64), parameter :: ZERO = 0.0_REAL64
 
-       real(REAL64), parameter :: ZERO = 0.0_REAL64
+! counters
 
-!      counters
+  integer i, j, k1, k2, k3
 
-       integer i, j, k1, k2, k3
+  do i = 1,3
+    xk(i) = r1(i) - r0(i)
+    xk(i) = xk(i) - nint(xk(i))
+  enddo
 
-       do i = 1,3
-         xk(i) = r1(i) - r0(i)
-         xk(i) = xk(i) - nint(xk(i))
-       enddo
-       
-       distmin = ZERO
-       do i = 1,3
-       do j = 1,3
-         distmin = distmin + xk(i)*adot(i,j)*xk(j)
-       enddo
-       enddo
+  distmin = ZERO
+  do i = 1,3
+  do j = 1,3
+    distmin = distmin + xk(i)*adot(i,j)*xk(j)
+  enddo
+  enddo
 
-       do k1 = -1,1
-       do k2 = -1,1
-       do k3 = -1,1
+  do k1 = -1,1
+  do k2 = -1,1
+  do k3 = -1,1
 
-         zk(1) = xk(1) + k1
-         zk(2) = xk(2) + k2
-         zk(3) = xk(3) + k3
+    zk(1) = xk(1) + k1
+    zk(2) = xk(2) + k2
+    zk(3) = xk(3) + k3
 
-         dist = ZERO
-         do i = 1,3
-         do j = 1,3
-           dist = dist + zk(i)*adot(i,j)*zk(j)
-         enddo
-         enddo
+    dist = ZERO
+    do i = 1,3
+    do j = 1,3
+      dist = dist + zk(i)*adot(i,j)*zk(j)
+    enddo
+    enddo
 
-         if(dist < distmin) distmin = dist
+    if(dist < distmin) distmin = dist
 
-       enddo
-       enddo
-       enddo
-       
-       return
-       end subroutine near_dist
+  enddo
+  enddo
+  enddo
+
+  return
+
+end subroutine near_dist
 

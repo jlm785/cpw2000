@@ -30,6 +30,7 @@ subroutine out_band_fold_xmgrace(filename, io,                           &
 ! modified title, style, 6 August 2014. JLM
 ! Modified, documentation, first line for KDE recognition. 20 January 2022. JLM
 ! Modified, indentation, increase dimension of label. 17 September 2025. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -47,7 +48,7 @@ subroutine out_band_fold_xmgrace(filename, io,                           &
   character(len=140), intent(in)     ::  subtitle                        !<  subtitle for plots
   integer, intent(in)                ::  nstyle                          !<  choice of plot style
 
-  real(REAL64), intent(in)           ::  pkn(nrk,neig)
+  real(REAL64), intent(in)           ::  pkn(nrk,neig)                   !<  weight of the unfolded band for each k
 
   real(REAL64), intent(in)           ::  xk(nrk)                         !<  x coordinate of k-point in plot
   real(REAL64), intent(in)           ::  e_of_k(neig,nrk)                !<  band energies of k-point in plot

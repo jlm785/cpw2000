@@ -22,6 +22,7 @@ subroutine atom_p_tbl_config(name, ncore, nval, no, lo, zo, jhard)
 
 ! cleanup and new interface, July 2019. JLM
 ! jhard replace nval2. 21 December 2021. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -37,7 +38,8 @@ subroutine atom_p_tbl_config(name, ncore, nval, no, lo, zo, jhard)
 
   integer, intent(out)              ::  ncore                            !<  canonical number of core orbitals
   integer, intent(out)              ::  nval                             !<  canonical number of interesting valence orbitals
-  integer, intent(out)              ::  no(lc+1), lo(lc+1)               !<  configuration
+  integer, intent(out)              ::  no(lc+1)                         !<  principal quantum number of the orbitals in the configuration
+  integer, intent(out)              ::  lo(lc+1)                         !<  angular momentum of the orbitals in the configuration
   real(REAL64), intent(out)         ::  zo(lc+1)                         !<  occupation
 
   real(REAL64), parameter    ::  ONE = 1.0_REAL64

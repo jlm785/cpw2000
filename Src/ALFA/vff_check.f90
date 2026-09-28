@@ -23,6 +23,7 @@ subroutine vff_check(iowrite, nbond, ibond, nangl, iangl,                &
 
 ! Written November 2020. J.L.Martins, C.S.Loia
 ! Indentation, 5 June 2024. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -41,7 +42,7 @@ subroutine vff_check(iowrite, nbond, ibond, nangl, iangl,                &
   integer, intent(in)       :: iangl(3,6*natotal)                        !<  atoms that define the
 
   real(REAL64), intent(in)  :: dist((mxdtyp*(mxdtyp+1))/2)               !<  equilibrium distance for bond.  It is < 0 if bond is not allowed
-  integer, intent(in)       :: ityp(natotal)
+  integer, intent(in)       :: ityp(natotal)                             !<  type of atom i
   character(len=2),intent(in) :: nameat(mxdtyp)                          !<  chemical symbol of type of atom
 
 ! parameters

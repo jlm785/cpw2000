@@ -38,6 +38,7 @@ subroutine out_opt(diag_type, lworkers,                                  &
 ! Modified allk, details of workers, 7 December 2020. JLM
 ! Modified iguess, 12 November 2023. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -194,7 +195,7 @@ subroutine out_opt(diag_type, lworkers,                                  &
 
   integer                            ::  nder
 
-  integer                            ::  icmax                           !  maximum value of outer iteration
+  integer                            ::  icmax                           !<  maximum value of outer iteration
   integer                            ::  iguess                          !  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
   integer                            ::  ifail                           !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
 

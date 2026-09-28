@@ -33,6 +33,7 @@ subroutine move_restart_in(flgcal, io7, filename,                        &
 ! Modified 6 January 2017, f90. JLM
 ! Modified, documentation, August 2019. JLM
 ! Filename, indentation, 31 March 2026. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -53,7 +54,7 @@ subroutine move_restart_in(flgcal, io7, filename,                        &
 
 ! input and output
 
-  character(len=6), intent(inout)    ::  flgcal
+  character(len=6), intent(inout)    ::  flgcal                          !<  type of calculation
 
 ! output
 

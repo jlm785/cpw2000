@@ -35,6 +35,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
 ! Modified, psi_convert. 2 November 2025. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -89,7 +90,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 
 ! output
 
-  real(REAL64)                       ::  ei(mxdbnd)
+  real(REAL64)                       ::  ei(mxdbnd)                      !<  eigenvalue no. i. (hartree)
   complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  wavevector
   complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)             !<  |hpsi> =  V_NL |psi>
   integer, intent(out)               ::  mtxd                            !<  dimension of the hamiltonian

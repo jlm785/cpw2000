@@ -11,16 +11,20 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Interpolates from one grid to an uniform grid using 
+!>  Interpolates from one grid to an uniform grid using
 !>  Neville's algorithm for Lagrange interpolation.
 !>  Based on the Numerical Recipes algorithm (recurrence on differences).
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         23 April 2018.
+!>  \copyright    GNU Public License v2
 
-  subroutine grid_interp(xin,fin,nin,xgmin,xgmax,ng,fg,nordp1,dymax)
+subroutine grid_interp(xin, fin, nin, xgmin, xgmax, ng, fg, nordp1, dymax)
 
 ! Written 23 April 2018 by J. L. Martins
-! copyright  Jose Luis Martins/INESC-MN
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
-! version 4.98
 
   implicit none
 
@@ -34,7 +38,8 @@
   real(REAL64), intent(in)          ::  xin(nin)                         !<  points on the input grid, x(i) > x(i-1)
   real(REAL64), intent(in)          ::  fin(nin)                         !<  f(x(i))
 
-  real(REAL64), intent(in)          ::  xgmin, xgmax                     !<  first and last points on the uniform grid
+  real(REAL64), intent(in)          ::  xgmin                            !<  first point on the uniform grid
+  real(REAL64), intent(in)          ::  xgmax                            !<  last point on the uniform grid
   integer, intent(in)               ::  ng                               !<  number of points in the uniform grid
 
   integer, intent(in)               ::  nordp1                           !<  norder of Lagrange interpolation + 1
@@ -200,4 +205,5 @@
   deallocate(cmj,dmj)
 
   return
-  end subroutine grid_interp
+
+end subroutine grid_interp

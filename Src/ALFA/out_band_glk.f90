@@ -55,6 +55,7 @@ subroutine out_band_glk(title, subtitle,                                 &
 ! Modified, rk in out_band_eref, 13 August 2025. JLM
 ! Increase dimension of label. 17 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
 
@@ -87,7 +88,7 @@ subroutine out_band_glk(title, subtitle,                                 &
   real(REAL64), intent(in)           ::  epspsi                          !<  requested precision of the eigenvectors
   integer, intent(in)                ::  icmax                           !<  maximum number of iterations for diagonalization
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
-  real(REAL64), intent(in)           ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   integer, intent(in)                ::  ntype                           !<  number of types of atoms

@@ -27,6 +27,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 ! Written by Carlos Lois Reis at an unknown date.
 ! Documentation, indentation, 7 October 2024. JLM
 ! Modified, length of label. 24 September 2025. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
   use NonOrthoInterp
 
@@ -34,7 +35,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 
   integer, parameter            :: REAL64 = selected_real_kind(12)
 
-  type (noiData_t) :: mtb
+  type (noiData_t) :: mtb                                                !<  see NonOrthoInterp
 
 ! input
 

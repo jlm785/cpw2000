@@ -11,14 +11,18 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Gets the range of bands within plotting range
+!>  Gets the range of bands within plotting range.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         18 October 2020.
+!>  \copyright    GNU Public License v2
 
-subroutine dos_jminmax(nx,egrid,nhist,ehist,ezero,lper,jmin,jmax,mxdbnd)
+subroutine dos_jminmax(nx, egrid, nhist, ehist, ezero, lper, jmin, jmax, mxdbnd)
 
 ! Written 18 October 2020 based on earlier code. JLM
-! copyright  J.L.Martins, INESC-MN.
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
-! version 4.98  
 
   implicit none
 
@@ -37,7 +41,8 @@ subroutine dos_jminmax(nx,egrid,nhist,ehist,ezero,lper,jmin,jmax,mxdbnd)
 
 ! output:
 
-  integer, intent(out)            ::  jmin, jmax                         !<  range of bands
+  integer, intent(out)            ::  jmin                               !<  first band of the range
+  integer, intent(out)            ::  jmax                               !<  last band of the range
 
 ! local variables
 
@@ -101,4 +106,5 @@ subroutine dos_jminmax(nx,egrid,nhist,ehist,ezero,lper,jmin,jmax,mxdbnd)
   enddo
 
   return
+
 end subroutine dos_jminmax

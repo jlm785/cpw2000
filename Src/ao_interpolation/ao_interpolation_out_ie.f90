@@ -27,12 +27,13 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 
 ! Written November 2018. CLR
 ! Modified, indentation, documentation, ao_int_, 8 October 2024. JLM
+! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 
 
   use NonOrthoInterp
 
   implicit none
-  type(noiData_t)                    :: noiData
+  type(noiData_t)                    :: noiData                          !<  see NonOrthoInterp
 
   integer, parameter                 :: REAL64 = selected_real_kind(12)
 
