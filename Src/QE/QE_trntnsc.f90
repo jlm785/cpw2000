@@ -11,8 +11,8 @@
 !------------------------------------------------------------!
 
 !> Transforms a COMPLEX tensor (like the dynamical matrix) from
-!> crystal to cartesian axis (\(\text{iflg}\geq 1\)) or viceversa
-!> (\(\text{iflg} \leq -1\)).
+!> crystal to cartesian axis (\p iflg >= 1) or viceversa
+!> (\p iflg <= -1).
 !>
 !>  \author       Marsamos, Fabrizio2 Quantum Espresso, Adapted by Jose Luis Martins
 !>  \version      5.06
@@ -20,6 +20,7 @@
 !>  \copyright    GNU Public License v2
 
 ! adapted by Jose Luis Martins, INESC MN, 22 November 2022.
+! Documentation, Doxygen commands instead of LaTeX. 28 September 2026. JLM+claude
 
 subroutine QE_trntnsc (phi, avec, bvec, iflg)
 !

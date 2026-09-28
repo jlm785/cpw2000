@@ -21,6 +21,7 @@
 subroutine sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
 
 ! information taken from http://img.chem.ucl.ac.uk/sgp/large/sgp.htm
+! Documentation, Markdown table instead of LaTeX. 28 September 2026. JLM+claude
 
   implicit none
 
@@ -30,27 +31,20 @@ subroutine sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
 
   integer, intent(in)               ::  ibravais                         !<  bravais lattice (1=sc,2=fcc,3=bcc,4=st,5=ct,6=so,7=bco,8=fco,9=bco,10=hex,11=romb,12=sm,13=cm,14=tri)
   integer, intent(in)               ::  code_group                       !<  point group
-  !! 1  & C_1 & 12 & C_2v & 23 & D_6h \\
-  !! \hline
-  !! 2  & C_i & 13 & C_3v & 24 & D_2d \\
-  !! \hline
-  !! 3  & C_s & 14 & C_4v & 25 & D_3d \\
-  !! \hline
-  !! 4  & C_2 & 15 & C_6v & 26 & S_4  \\
-  !! \hline
-  !! 5  & C_3 & 16 & C_2h & 27 & S_6  \\
-  !! \hline
-  !! 6  & C_4 & 17 & C_3h & 28 & T    \\
-  !! \hline
-  !! 7  & C_6 & 18 & C_4h & 29 & T_h  \\
-  !! \hline
-  !! 8  & D_2 & 19 & C_6h & 30 & T_d  \\
-  !! \hline
-  !! 9  & D_3 & 20 & D_2h & 31 & O    \\
-  !! \hline
-  !! 10 & D_4 & 21 & D_3h & 32 & O_h  \\
-  !! \hline
-  !! 11 & D_6 & 22 & D_4h &    &      \\
+  !!
+  !! | code | group | code | group | code | group |
+  !! | ---- | ----- | ---- | ----- | ---- | ----- |
+  !! | 1    | C_1   | 12   | C_2v  | 23   | D_6h  |
+  !! | 2    | C_i   | 13   | C_3v  | 24   | D_2d  |
+  !! | 3    | C_s   | 14   | C_4v  | 25   | D_3d  |
+  !! | 4    | C_2   | 15   | C_6v  | 26   | S_4   |
+  !! | 5    | C_3   | 16   | C_2h  | 27   | S_6   |
+  !! | 6    | C_4   | 17   | C_3h  | 28   | T     |
+  !! | 7    | C_6   | 18   | C_4h  | 29   | T_h   |
+  !! | 8    | D_2   | 19   | C_6h  | 30   | T_d   |
+  !! | 9    | D_3   | 20   | D_2h  | 31   | O     |
+  !! | 10   | D_4   | 21   | D_3h  | 32   | O_h   |
+  !! | 11   | D_6   | 22   | D_4h  |      |       |
 
   integer, intent(in)               ::  ntrans                           !<  number of symmetry operations in the factor group
   integer, intent(in)               ::  mtrx(3,3,48)                     !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
@@ -1033,4 +1027,5 @@ subroutine sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
   write(io,*)
 
   return
+
 end subroutine sym_space_group_name

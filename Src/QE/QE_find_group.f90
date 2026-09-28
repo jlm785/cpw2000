@@ -10,11 +10,11 @@
 !                                                            !
 !------------------------------------------------------------!
 
-!> Given a group of \(\text{nrot}\) rotation matrices \(\text{smat}\) (in
+!> Given a group of \p nrot rotation matrices \p smat (in
 !> cartesian coordinates) this routine finds the name of the point group.
 !> It assumes but does not check that:
 !>
-!> the \(\text{nrot}\) matrices \(\text{smat}\) are actually a group;
+!> the \p nrot matrices \p smat are actually a group;
 !> the group is one of the 32 point groups.
 !>
 !>  \author       Fabrizio2 Quantum Espresso, Adapted by Jose Luis Martins
@@ -23,6 +23,7 @@
 !>  \copyright    GNU Public License v2
 
 ! adapted by Jose Luis Martins, INESC MN, 22 November 2022.
+! Documentation, Doxygen commands instead of LaTeX. 28 September 2026. JLM+claude
 
 !
 !---------------------------------------------------------------------------
