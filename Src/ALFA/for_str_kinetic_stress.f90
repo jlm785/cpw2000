@@ -16,7 +16,7 @@
 !>
 !>  \author       Sverre Froyen, Jose Luis Martins
 !>  \version      5.13
-!>  \date         August 14 1987,  10 March 2026.
+!>  \date         January 22 1988,  January 2020.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_kinetic_stress(strkin,                                &

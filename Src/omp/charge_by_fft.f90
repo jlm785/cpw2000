@@ -34,7 +34,7 @@ subroutine charge_by_fft(mtxd, neig, occ_x_wgk, isort, psi, denk,        &
 ! Modified, documentation, January 2020. JLM
 ! Modified, initialization of denk, 29 November 2021. JLM
 ! Indentation, name of mesh_fold, star_of_g. 10 March 2026. JLM
-! Changed the name of occup to occ_x_wkg. 28 September 2026. JLM+claude
+! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
 
 
   implicit none

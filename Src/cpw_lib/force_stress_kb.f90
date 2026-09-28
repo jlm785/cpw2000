@@ -38,6 +38,7 @@
 ! Modified, documentation, January 2020. JLM
 ! Modified, indentation, remove print, 21 February 2024. JLM
 ! Modified, option to read wave-functions from disk. 12 October 2025. JLM
+! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
 
 
   implicit none
