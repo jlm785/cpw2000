@@ -20,7 +20,7 @@
 !>  \date         August 14 1987,  10 March 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine charge_by_fft(mtxd, neig, occp, isort, psi, denk,             &
+subroutine charge_by_fft(mtxd, neig, occ_x_wgk, isort, psi, denk,        &
      ng, kgv, phase, conj, ns, inds, kmax, mstar,                        &
      mxddim, mxdbnd, mxdgve, mxdnst)
 
@@ -34,6 +34,7 @@ subroutine charge_by_fft(mtxd, neig, occp, isort, psi, denk,             &
 ! Modified, documentation, January 2020. JLM
 ! Modified, initialization of denk, 29 November 2021. JLM
 ! Indentation, name of mesh_fold, star_of_g. 10 March 2026. JLM
+! Changed the name of occup to occ_x_wkg. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -49,7 +50,7 @@ subroutine charge_by_fft(mtxd, neig, occp, isort, psi, denk,             &
 
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   integer, intent(in)                ::  neig                            !<  number of eigenvectors
-  real(REAL64), intent(in)           ::  occp(mxdbnd)                    !<  fractional ocupation of level j
+  real(REAL64), intent(in)           ::  occ_x_wgk(mxdbnd)               !<  occupation*k-weight*spin deg. of eigenvector j
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
 
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  |psi>
@@ -108,8 +109,8 @@ subroutine charge_by_fft(mtxd, neig, occp, isort, psi, denk,             &
     jmin = 0
     jmax = 0
     do i=1,neig
-      if (abs(occp(i)) > SMALL .and. jmin == 0) jmin = i
-      if (abs(occp(i)) > SMALL .and. jmin /= 0) jmax = i
+      if (abs(occ_x_wgk(i)) > SMALL .and. jmin == 0) jmin = i
+      if (abs(occ_x_wgk(i)) > SMALL .and. jmin /= 0) jmax = i
     enddo
 
     if (jmin > 0) then
@@ -195,7 +196,7 @@ subroutine charge_by_fft(mtxd, neig, occp, isort, psi, denk,             &
 
 !$omp parallel do default(shared) private(i)
         do i=1,ntot
-          rhomsh(i) = rhomsh(i) + occp(j)*real(chd(i)*conjg(chd(i)),REAL64)
+          rhomsh(i) = rhomsh(i) + occ_x_wgk(j)*real(chd(i)*conjg(chd(i)),REAL64)
         enddo
 !$omp end parallel do
 

@@ -127,7 +127,7 @@
 
 ! allocatable variables
 
-  real(REAL64), allocatable          ::  occp(:)                         !  ocupation*weight*spin deg. of eigenvector j
+  real(REAL64), allocatable          ::  occ_x_wgk(:)                    !  occupation*k-weight*spin deg. of eigenvector j
 
   real(REAL64), allocatable          ::  floc(:,:,:)
   real(REAL64), allocatable          ::  funsym(:,:,:)
@@ -145,7 +145,7 @@
 
 
 
-  allocate(occp(mxdbnd))
+  allocate(occ_x_wgk(mxdbnd))
 
   allocate(floc(3,mxdatm,mxdtyp))
   allocate(funsym(3,mxdatm,mxdtyp))
@@ -264,11 +264,11 @@
 
     do j = 1,neig
       iel = iel + 1
-      occp(j) = 2*wgk(irk)*occ_allk(iel)
+      occ_x_wgk(j) = 2*wgk(irk)*occ_allk(iel)
     enddo
 !
     call for_str_kinetic_stress(strkin,                                  &
-        mtxd, rkpt, neig, occp,                                          &
+        mtxd, rkpt, neig, occ_x_wgk,                                     &
         isort_allk(:,irk) ,psi_allk(:,:,irkpsi),                         &
         kgv,                                                             &
         mxdgve, mxddim, mxdbnd)
@@ -280,7 +280,7 @@
     enddo
 
     call for_str_nl_kb(fnlkb, strnlkb,                                   &
-        mtxd, rkpt, neig, occp,                                          &
+        mtxd, rkpt, neig, occ_x_wgk,                                     &
         isort_allk(:,irk), psi_allk(:,:,irkpsi),                         &
         kgv,                                                             &
         nqnl, delqnl, vkb, nkb,                                          &
@@ -334,7 +334,7 @@
     enddo
   enddo
 
-  deallocate(occp)
+  deallocate(occ_x_wgk)
 
   deallocate(floc)
   deallocate(funsym)

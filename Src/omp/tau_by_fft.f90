@@ -19,7 +19,7 @@
 !>  \date         2 October 2015, 25 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
+subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
      rkpt, adot,                                                         &
      ng, kgv, phase, conj, ns, inds, kmax, mstar,                        &
      mxddim, mxdbnd, mxdgve, mxdnst)
@@ -31,6 +31,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 ! Remove the doubling of kinetic energy (as in libxc). 25 November 2025. JLM
 ! Name of star_of_g. 10 March 2026. JLM
 ! remove dble, 18 August 2026. JLM
+! renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -46,7 +47,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
 
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   integer, intent(in)                ::  neig                            !<  number of eigenvectors
-  real(REAL64), intent(in)           ::  occp(mxdbnd)                    !<  fractional ocupation of level j
+  real(REAL64), intent(in)           ::  occ_x_wgk(mxdbnd)               !<  occupation*k-weight*spin deg. of eigenvector j
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
 
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  |psi>
@@ -116,8 +117,8 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
     jmin = 0
     jmax = 0
     do i=1,neig
-      if (abs(occp(i)) > SMALL .and. jmin == 0) jmin = i
-      if (abs(occp(i)) > SMALL .and. jmin /= 0) jmax = i
+      if (abs(occ_x_wgk(i)) > SMALL .and. jmin == 0) jmin = i
+      if (abs(occ_x_wgk(i)) > SMALL .and. jmin /= 0) jmax = i
     enddo
 
     if (jmin > 0) then
@@ -216,7 +217,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occp, isort, psi,                &
         do i=1,ntot
           xp = conjg(chd(i,1))*chd(i,1) + conjg(chd(i,2))*chd(i,2)  &
                                         + conjg(chd(i,3))*chd(i,3)
-          taumsh(i) = taumsh(i) + occp(j)*real(xp,REAL64) / 2
+          taumsh(i) = taumsh(i) + occ_x_wgk(j)*real(xp,REAL64) / 2
         enddo
 !$omp end parallel do
 

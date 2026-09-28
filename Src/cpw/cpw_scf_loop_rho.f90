@@ -24,6 +24,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
       filename_)
 
 ! extracted from cpw_scf (it was too long), 12 may 2026. JLM
+! renamed occp to occ_x_wgk.  28 September 2026. JLM+claude
 
 
   use cpw_variables
@@ -57,7 +58,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
 
 ! allocatable arrays
 
-  real(REAL64), allocatable          ::  occp(:)                         !  ocupation*weight*spin deg. of eigenvector j
+  real(REAL64), allocatable          ::  occ_x_wgk(:)                    !  occupation*k-weight*spin deg. of eigenvector j
   complex(REAL64), allocatable       ::  denk(:)
 
   complex(REAL64), allocatable       ::  tauk(:)
@@ -78,7 +79,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
   integer       ::  irk, iel, i, j
 
   allocate(denk(dims_%mxdnst))
-  allocate(occp(dims_%mxdbnd))
+  allocate(occ_x_wgk(dims_%mxdbnd))
 
   if(lxctau) allocate(tauk(dims_%mxdnst))
 
@@ -106,14 +107,14 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
 
     do j = 1,neig
       iel = iel + 1
-      occp(j) = 2*kpoint_%wgk(irk)*psiallk_%occ_allk(iel)
-      ektot = ektot + occp(j)*ekl(iel)
+      occ_x_wgk(j) = 2*kpoint_%wgk(irk)*psiallk_%occ_allk(iel)
+      ektot = ektot + occ_x_wgk(j)*ekl(iel)
     enddo
 
 !   adds to total charge density
 
 
-    call charge_by_fft(mtxd, neig, occp,                                 &
+    call charge_by_fft(mtxd, neig, occ_x_wgk,                            &
         hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi), denk, &
         recip_%ng, recip_%kgv, recip_%phase , recip_%conj, recip_%ns,    &
         recip_%inds, recip_%kmax, recip_%mstar,                          &
@@ -125,7 +126,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
 
     if(lxctau) then
 
-      call tau_by_fft(tauk, mtxd, neig, occp,                            &
+      call tau_by_fft(tauk, mtxd, neig, occ_x_wgk,                       &
           hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),     &
           rkpt, crys_%adot,                                              &
           recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,   &
@@ -141,7 +142,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
   enddo
 
   deallocate(denk)
-  deallocate(occp)
+  deallocate(occ_x_wgk)
 
   if(lxctau) deallocate(tauk)
 

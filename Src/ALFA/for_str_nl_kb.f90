@@ -21,7 +21,7 @@
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
-    mtxd, rkpt, neig, occp,                                              &
+    mtxd, rkpt, neig, occ_x_wgk,                                         &
     isort, psi,                                                          &
     kgv,                                                                 &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -34,6 +34,7 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
 ! Modified, documentation, January 2020. JLM
 ! Added the f non-local contributions. 2 December 2021. JLM
 ! Corrected lmx bug. 12 April 2022. JLM
+! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
 
 
   implicit none
@@ -54,7 +55,7 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
   integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
-  real(REAL64), intent(in)           ::  occp(mxdbnd)                    !<  fractional ocupation of level j
+  real(REAL64), intent(in)           ::  occ_x_wgk(mxdbnd)               !<  occupation*k-weight*spin deg. of eigenvector j
 
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  component j of vector i
@@ -350,18 +351,18 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
         do i = 1,nanl
 
 
-          enl = occp(n) * xnlkb(i) * real(dhd(1,i,n)*conjg(dhd(1,i,n)))
+          enl = occ_x_wgk(n) * xnlkb(i) * real(dhd(1,i,n)*conjg(dhd(1,i,n)))
 
           enonlo = enonlo + enl
 
-          fnlkb(1,kk,k) = fnlkb(1,kk,k) + 2 * occp(n) * xnlkb(i) *       &
+          fnlkb(1,kk,k) = fnlkb(1,kk,k) + 2 * occ_x_wgk(n) * xnlkb(i) *  &
                     real(dhd(2,i,n)*conjg(dhd(1,i,n)),REAL64)
-          fnlkb(2,kk,k) = fnlkb(2,kk,k) + 2 * occp(n) * xnlkb(i) *       &
+          fnlkb(2,kk,k) = fnlkb(2,kk,k) + 2 * occ_x_wgk(n) * xnlkb(i) *  &
                     real(dhd(3,i,n)*conjg(dhd(1,i,n)),REAL64)
-          fnlkb(3,kk,k) = fnlkb(3,kk,k) + 2 * occp(n) * xnlkb(i) *       &
+          fnlkb(3,kk,k) = fnlkb(3,kk,k) + 2 * occ_x_wgk(n) * xnlkb(i) *  &
                     real(dhd(4,i,n)*conjg(dhd(1,i,n)),REAL64)
 
-          fac = 8*PI*PI * occp(n) * xnlkb(i)
+          fac = 8*PI*PI * occ_x_wgk(n) * xnlkb(i)
           strnlkb(1,1) = strnlkb(1,1) + enl * adot(1,1) -                &
                    fac* real(dhd(5,i,n)*conjg(dhd(1,i,n)),REAL64)
           strnlkb(2,2) = strnlkb(2,2) + enl * adot(2,2) -                &
@@ -398,4 +399,5 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
   enddo
 
   return
-  end subroutine for_str_nl_kb
+
+end subroutine for_str_nl_kb
