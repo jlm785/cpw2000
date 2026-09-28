@@ -11,29 +11,36 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       SUBROUTINE CFFT_FINISH(PLAN2,PLAN3)
-!
-!      INTERFACE SUBROUTINE FOR MKL_DFTI SUBROUTINES
-!      CLEARS THE 
-!
-!      UNUSED: PLAN2, PLAN3
-!      DATA IS TRANSFERED THROUGH HAND OF MKL_HANDLE MODULE
-!
-!
-!      WRITTEN MARCH 16 2010
-!      COPYRIGHT INESC-MN/JOSE LUIS MARTINS
-!
-!      VERSION 4.50
-!
-       USE MKL_DFTI
-       USE MKL_HANDLE     
-       IMPLICIT NONE
-!
-       INTEGER PLAN2
-       INTEGER*8 PLAN3
-       INTEGER STATUS
+!>  Interface subroutine for the Intel MKL library DFTI modules.
+!>  Frees the descriptor stored in the mkl_handle module.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         16 March 2010.
+!>  \copyright    GNU Public License v2
 
-       Status = DftiFreeDescriptor(hand) 
- 
-       RETURN
-       END
+SUBROUTINE CFFT_FINISH(PLAN2, PLAN3)
+!
+! INTERFACE SUBROUTINE FOR MKL_DFTI SUBROUTINES
+! CLEARS THE
+!
+! UNUSED: PLAN2, PLAN3
+! DATA IS TRANSFERED THROUGH HAND OF MKL_HANDLE MODULE
+!
+!
+! WRITTEN MARCH 16 2010
+! INDENTATION. 28 SEPTEMBER 2026. JLM+CLAUDE
+!
+  USE MKL_DFTI
+  USE MKL_HANDLE
+  IMPLICIT NONE
+!
+  INTEGER PLAN2
+  INTEGER*8 PLAN3
+  INTEGER STATUS
+
+  Status = DftiFreeDescriptor(hand)
+
+  RETURN
+
+END SUBROUTINE CFFT_FINISH

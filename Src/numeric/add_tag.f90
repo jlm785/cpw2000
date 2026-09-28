@@ -11,57 +11,62 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     adds a tag to a string
+!>  Adds a tag to a string.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         8 August 2017.
+!>  \copyright    GNU Public License v2
 
-       subroutine add_tag(str,tagid,tag)
+subroutine add_tag(str, tagid, tag)
 
-!      Written 8 August 2017.
-!      Modified documentation august 2019.  JLM
-!      Copyright José Luís Martins, INESC-MN.
+! Written 8 August 2017.
+! Modified documentation august 2019.  JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94
 
-       implicit none
+  implicit none
 
-!      input
+! input
 
-       character(len=*), intent(in)       ::  tagid                      !<  identifier od the tag
-       character(len=*), intent(in)       ::  tag                        !<  tag to be added
+  character(len=*), intent(in)       ::  tagid                           !<  identifier od the tag
+  character(len=*), intent(in)       ::  tag                             !<  tag to be added
 
-!      input and output
+! input and output
 
-       character(len=*), intent(inout)    ::  str                        !<  string to be modified by adding tag
+  character(len=*), intent(inout)    ::  str                             !<  string to be modified by adding tag
 
-!      local variables
+! local variables
 
-       integer   ::   ls, lslast
-       integer   ::   ltagid, ltagidlast
-       integer   ::   ltag, ltaglast
-       integer   ::   lfree, l1, l2
+  integer   ::   ls, lslast
+  integer   ::   ltagid, ltagidlast
+  integer   ::   ltag, ltaglast
+  integer   ::   lfree, l1, l2
 
-!      counters
-!      parameters
+! counters
+! parameters
 
-       character(len=1)     ::  tagchar = '#'
-       ls = len(str)
-       lslast = len(trim(str))
+  character(len=1)     ::  tagchar = '#'
+  ls = len(str)
+  lslast = len(trim(str))
 
-       ltagid = len(trim(adjustl(tagid)))
-       ltagidlast = len(trim(tagid))
+  ltagid = len(trim(adjustl(tagid)))
+  ltagidlast = len(trim(tagid))
 
-       ltag = len(trim(adjustl(tag)))
-       ltaglast = len(trim(tag))
+  ltag = len(trim(adjustl(tag)))
+  ltaglast = len(trim(tag))
 
-       lfree = ls - lslast
-       if(lfree > ltag + ltagid + 3) then
-         str(lslast+3:lslast+3) = tagchar
-         l1 = lslast + 3
-         l2 = ltagidlast - ltagid
-         str(l1+1:l1+ltagid) = tagid(l2+1:l2+ltagid)
-         l1 = lslast + ltagid + 4
-         l2 = ltaglast - ltag
-         str(l1+1:l1+ltag) = tag(l2+1:l2+ltag)
-       endif
+  lfree = ls - lslast
+  if(lfree > ltag + ltagid + 3) then
+    str(lslast+3:lslast+3) = tagchar
+    l1 = lslast + 3
+    l2 = ltagidlast - ltagid
+    str(l1+1:l1+ltagid) = tagid(l2+1:l2+ltagid)
+    l1 = lslast + ltagid + 4
+    l2 = ltaglast - ltag
+    str(l1+1:l1+ltag) = tag(l2+1:l2+ltag)
+  endif
 
-       return
-       end subroutine add_tag
+  return
+
+end subroutine add_tag

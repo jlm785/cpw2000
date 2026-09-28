@@ -11,47 +11,51 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the Fermi-Dirac function
-!>     fd = 1/(exp(e)+1) and its derivative
-!>     15 digit accuracy tested against Mathematica
+!>  Calculates the Fermi-Dirac function
+!>  fd = 1/(exp(e)+1) and its derivative.
+!>  15 digit accuracy tested against Mathematica.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         17 June 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine fermi_dirac(en,fd,dfdden)
+subroutine fermi_dirac(en, fd, dfdden)
 
-!      written 17 June 2014.
-!      Modified documentation august 2019.  JLM
-!      copyright Jose Luis Martins / INESC-MN
+! written 17 June 2014.
+! Modified documentation august 2019.  JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94
 
-       implicit none
-       integer, parameter  :: REAL64 = selected_real_kind(12)
+  implicit none
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-!      input
+! input
 
-       real(REAL64), intent(in)         ::  en                           !<  energy minus chemical potential
+  real(REAL64), intent(in)         ::  en                                !<  energy minus chemical potential
 
-!      output
+! output
 
-       real(REAL64), intent(out)        ::  fd                           !<  Fermi-Dirac function 1/(exp(e)+1)
-       real(REAL64), intent(out)        ::  dfdden                       !<  d fd / d en
+  real(REAL64), intent(out)        ::  fd                                !<  Fermi-Dirac function 1/(exp(e)+1)
+  real(REAL64), intent(out)        ::  dfdden                            !<  d fd / d en
 
-!      constants
+! constants
 
-       real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
-       if(abs(en) < 25) then
-         fd = UM / (exp(en) + UM)
-         dfdden = -fd*fd * exp(en)
-       else
-         if(en > ZERO) then
-           fd = exp(-en)*(UM-exp(-en))
-           dfdden = -exp(-en)*(UM-2*exp(-en))
-         else
-           fd = UM - exp(en)
-           dfdden = - exp(en)*(UM-2*exp(en))
-         endif
-       endif
+  if(abs(en) < 25) then
+    fd = UM / (exp(en) + UM)
+    dfdden = -fd*fd * exp(en)
+  else
+    if(en > ZERO) then
+      fd = exp(-en)*(UM-exp(-en))
+      dfdden = -exp(-en)*(UM-2*exp(-en))
+    else
+      fd = UM - exp(en)
+      dfdden = - exp(en)*(UM-2*exp(en))
+    endif
+  endif
 
-       return
+  return
 
-       end
+end subroutine fermi_dirac

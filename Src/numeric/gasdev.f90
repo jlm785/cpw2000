@@ -11,92 +11,96 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Pseudo-random number generator adapted from numerical recipes
-!>     Returns a normally distrubuted deviate with zero mean and
-!>     unit variance
+!>  Pseudo-random number generator adapted from numerical recipes.
+!>  Returns a normally distributed deviate with zero mean and
+!>  unit variance.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         6 January 2017.
+!>  \copyright    GNU Public License v2
 
-       function gasdev(iseed)
+function gasdev(iseed)
 
-!      Written 6 January 2017, from embedded code. JLM
+! Written 6 January 2017, from embedded code. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-!      version 4.94 of pw
-!      version 1.5 of md
+  implicit none
 
-       implicit none
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-       integer, parameter  :: REAL64 = selected_real_kind(12)
+! input and output
 
-!      input and output
+  integer, intent(inout)      :: iseed                                   !< random number generator seed
 
-       integer, intent(inout)      :: iseed                              !< random number generator seed
+! output
 
-!      output
+  real(REAL64)   :: gasdev                                               !< pseudo-random number
 
-       real(REAL64)   :: gasdev                                          !< pseudo-random number
+! local variables
 
-!      local variables
+  real(REAL64)         ::  v1, v2, r, fac
+  real(REAL64)         ::  rnd
+  integer              ::  kk
+  logical              ::  lexit
+  real(REAL64), save   ::  gset
+  integer, save        ::  iset = 0
 
-       real(REAL64)         ::  v1, v2, r, fac
-       real(REAL64)         ::  rnd
-       integer              ::  kk
-       logical              ::  lexit
-       real(REAL64), save   ::  gset
-       integer, save        ::  iset = 0
+! constants
 
-!      constants
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
-       real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+! portable random number generator (ran0 from numerical recipes 2)
+! use for less than 500000 calls
 
-!      portable random number generator (ran0 from numerical recipes 2)
-!      use for less than 500000 calls
+  integer, parameter       ::  IA = 16807, IM = 2147483647
+  integer, parameter       ::  IQ = 127773, IR = 2836
 
-       integer, parameter       ::  IA = 16807, IM = 2147483647
-       integer, parameter       ::  IQ = 127773, IR = 2836
+! counters
 
-!      counters
+  integer       ::  ii
 
-       integer       ::  ii
+  if (iset == 0) then
 
-       if (iset == 0) then
+    do ii = 1,1000
 
-         do ii = 1,1000
+      kk = iseed/IQ
+      iseed = IA*(iseed - kk*IQ) - IR*kk
+      if(iseed < 0) iseed = iseed + IM
+      rnd = (iseed*UM) / (IM*UM)
+      v1 = 2*rnd - UM
+      kk = iseed/IQ
+      iseed = IA*(iseed-kk*IQ) - IR*kk
+      if(iseed < 0) iseed = iseed + IM
+      rnd = (iseed*UM) / (IM*UM)
+      v2 = 2*rnd - UM
+      r = v1*v1 + v2*v2
+      lexit = .FALSE.
+      if(r < UM .and. r /= ZERO) then
+        lexit = .TRUE.
+        exit
+      endif
+    enddo
 
-           kk = iseed/IQ
-           iseed = IA*(iseed - kk*IQ) - IR*kk
-           if(iseed < 0) iseed = iseed + IM
-           rnd = (iseed*UM) / (IM*UM)
-           v1 = 2*rnd - UM
-           kk = iseed/IQ
-           iseed = IA*(iseed-kk*IQ) - IR*kk
-           if(iseed < 0) iseed = iseed + IM
-           rnd = (iseed*UM) / (IM*UM)
-           v2 = 2*rnd - UM
-           r = v1*v1 + v2*v2
-           lexit = .FALSE.
-           if(r < UM .and. r /= ZERO) then
-             lexit = .TRUE.
-             exit
-           endif
-         enddo
+    if(.not. lexit) then
+      write(6,'("   STOPPED in gasdev:   bad random numbers?")')
 
-         if(.not. lexit) then
-           write(6,'("   STOPPED in gasdev:   bad random numbers?")')
+      stop
 
-           stop
+    endif
 
-         endif
+    fac = sqrt(-2*log(r)/r)
+    gset = v1*fac
+    gasdev = v2*fac
+    iset = 1
+  else
+    gasdev = gset
+    iset = 0
+  endif
 
-         fac = sqrt(-2*log(r)/r)
-         gset = v1*fac
-         gasdev = v2*fac
-         iset = 1
-       else
-         gasdev = gset
-         iset = 0
-       endif
+  return
 
-       return
-       end function gasdev
+end function gasdev
 
 

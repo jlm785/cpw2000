@@ -11,24 +11,29 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       subroutine zedate(bdate)
+!>  Gets the date (day-month-year).
+!>  Dummy version.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         21 October 2003, 11 September 2015.
+!>  \copyright    GNU Public License v2
 
-!      Gets the date (day-month-year)
-!      Dummy version
+subroutine zedate(bdate)
 
-!      Written 21 october 2003
-!      Modified 11 September 2015. f90. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 21 october 2003
+! Modified 11 September 2015. f90. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.60
 
-       implicit none
+  implicit none
 
-!      output
+! output
 
-       character(len=9), intent(out)      ::  bdate                      !  date the subroutine was called
+  character(len=9), intent(out)      ::  bdate                           !<  dummy date the subroutine was called
 
-       bdate = 'TODAY    '
-       
-       return
-       end
+  bdate = 'TODAY    '
+
+  return
+
+end subroutine zedate

@@ -11,39 +11,42 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Reads the file with the data to interface with kdotp
-!>     and reports the dimension of the hamiltonian
+!>  Reads the file with the data to interface with kdotp
+!>  and reports the dimension of the hamiltonian.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         3 May 2014, 15 June 2020.
+!>  \copyright    GNU Public License v2
 
-       subroutine kdotp_in_size(filename,iotape,mxdbnd)
+subroutine kdotp_in_size(filename, iotape, mxdbnd)
 
-
-!      Written May 3, 2014, from the writing subroutine. jlm
-!      Modified, name, documnetation, 15 June 20120. JLM
-!      copyright  Jose Luis Martins/INESC-MN
-
-!      version 4.98
-
-       implicit none
-
-!       integer, parameter          :: REAL64 = selected_real_kind(12)
-
-!      input
-
-       character(len=*), intent(in)       ::  filename                   !<  file to be written
-       integer, intent(in)                ::  iotape                     !<  tape number 
-
-!      output
-
-       integer, intent(out)               ::  mxdbnd                     !<  array dimension for the number of bands
+! Written May 3, 2014, from the writing subroutine. jlm
+! Modified, name, documnetation, 15 June 20120. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-       open(unit=iotape,file=filename,form='formatted',status='old')
+  implicit none
 
-       read(iotape,*) mxdbnd
+!  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  character(len=*), intent(in)       ::  filename                        !<  file to be written
+  integer, intent(in)                ::  iotape                          !<  tape number
+
+! output
+
+  integer, intent(out)               ::  mxdbnd                          !<  array dimension for the number of bands
 
 
-       close(unit=iotape)
+  open(unit=iotape,file=filename,form='formatted',status='old')
 
-       return
+  read(iotape,*) mxdbnd
 
-       end subroutine kdotp_in_size
+
+  close(unit=iotape)
+
+  return
+
+end subroutine kdotp_in_size

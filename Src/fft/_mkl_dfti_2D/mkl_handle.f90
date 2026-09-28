@@ -1,7 +1,14 @@
-      module mkl_handle
+!>  Module with the handle of the Intel MKL library DFTI descriptor.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         16 March 2010.
+!>  \copyright    GNU Public License v2
 
-      use mkl_dfti
+module mkl_handle
 
-      type(DFTI_DESCRIPTOR), POINTER :: hand
+  use mkl_dfti
 
-      end
+  type(DFTI_DESCRIPTOR), POINTER :: hand
+
+end module mkl_handle

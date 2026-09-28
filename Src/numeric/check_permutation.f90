@@ -11,74 +11,78 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     checks if indx is a permutation
+!>  Checks if indx is a permutation.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         June 2017.
+!>  \copyright    GNU Public License v2
 
-       subroutine check_permutation(indx,ntype,lperm)
+subroutine check_permutation(indx, ntype, lperm)
 
-!      written June 2017. JLM
-!      Copyright INESC-MN/Jose Luis Martins
+! written June 2017. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94 of pw
-!      version 1.5 of md
 
-       implicit none
+  implicit none
 
-!      input
+! input
 
-       integer, intent(in)                ::  ntype                      !> number of types of atoms
-       integer, intent(in)                ::  indx(ntype)                !> data to be checked
+  integer, intent(in)                ::  ntype                           !< number of types of atoms
+  integer, intent(in)                ::  indx(ntype)                     !< data to be checked
 
-!      output
+! output
 
-       logical, intent(out)               ::  lperm                      !> indicates if data is a permutation.
+  logical, intent(out)               ::  lperm                           !< indicates if data is a permutation.
 
-!      local variables
+! local variables
 
-       logical, allocatable               ::  lpres(:)
+  logical, allocatable               ::  lpres(:)
 
-!      counters
+! counters
 
-       integer     ::  nt
+  integer     ::  nt
 
-       lperm = .TRUE.
-       
-!      checks range
+  lperm = .TRUE.
 
-       do nt = 1,ntype
-         if(indx(nt) < 1 .OR. indx(nt) > ntype) then
-           lperm = .FALSE.
+! checks range
 
-           exit
+  do nt = 1,ntype
+    if(indx(nt) < 1 .OR. indx(nt) > ntype) then
+      lperm = .FALSE.
 
-         endif
-       enddo
+      exit
 
-       if(lperm) then
+    endif
+  enddo
 
-         allocate(lpres(ntype))
+  if(lperm) then
 
-         do nt = 1,ntype
-           lpres(nt) = .FALSE.
-         enddo
+    allocate(lpres(ntype))
 
-         do nt = 1,ntype
-           lpres(indx(nt)) = .TRUE.
-         enddo
+    do nt = 1,ntype
+      lpres(nt) = .FALSE.
+    enddo
 
-         do nt = 1,ntype
+    do nt = 1,ntype
+      lpres(indx(nt)) = .TRUE.
+    enddo
 
-           if(.NOT. lpres(nt)) then
-             lperm = .FALSE.
+    do nt = 1,ntype
 
-             exit
+      if(.NOT. lpres(nt)) then
+        lperm = .FALSE.
 
-           endif
-         enddo
+        exit
 
-         deallocate(lpres)
+      endif
+    enddo
 
-       endif
+    deallocate(lpres)
 
-       return
-       end subroutine check_permutation
+  endif
+
+  return
+
+end subroutine check_permutation
 

@@ -11,25 +11,30 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       subroutine zeelap(el_time)
+!>  Gets the elapsed time since midnight.
+!>  Dummy version.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         2 May 2006, 11 September 2015.
+!>  \copyright    GNU Public License v2
 
-!      gets the elapsed time since midnight
-!      Dummy version
+subroutine zeelap(el_time)
 
-!      Written 2 may 2006
-!      Modified 11 September 2015. f90. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 2 may 2006
+! Modified 11 September 2015. f90. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.60
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  implicit none
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      output
+! output
 
-       real(REAL64), intent(out)          ::  el_time                    !  elapsed time since midnight
+  real(REAL64), intent(out)          ::  el_time                         !<  dummy elapsed time since midnight
 
-       el_time = 0.0
+  el_time = 0.0
 
-       return
-       end
+  return
+
+end subroutine zeelap

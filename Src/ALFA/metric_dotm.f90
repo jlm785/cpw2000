@@ -11,51 +11,56 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     multiplies integer matrices 3x3
+!>  Multiplies integer matrices 3x3.
+!>
+!>  \author       Alvaro Ladeira, José Luís Martins
+!>  \version      5.13
+!>  \date         1999, 3 June 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine metric_dotM(Prod,M1,M2)
+subroutine metric_dotM(Prod, M1, M2)
 
-!      Prod = M1*M2
+! Prod = M1*M2
 
-!      input:
-!      M1         first matrix
-!      M2         second matrix
+! input:
+! M1         first matrix
+! M2         second matrix
 
-!      output:
-!      Prod       product matrix
+! output:
+! Prod       product matrix
 
-!      written by Alvaro Ladeira, 1999
-!      modified, f90, 3 June 2014. JLM
-!      Modified documentation, August 2019.
-!      copyright Alvaro Ladeira/Jose Luis Martins/INESC-MN
+! written by Alvaro Ladeira, 1999
+! modified, f90, 3 June 2014. JLM
+! Modified documentation, August 2019.
+! Indentation. 28 September 2026. JLM+claude
 
-!      send comments/bug reports to jlmartins@inesc-mn.pt
+! send comments/bug reports to jlmartins@inesc-mn.pt
 
-!      version 4.94 
 
-       implicit none
+  implicit none
 
-!      input
+! input
 
-       integer, intent(in)     ::  M1(3,3)                               !<  first matrix
-       integer, intent(in)     ::  M2(3,3)                               !<  second matrix
+  integer, intent(in)     ::  M1(3,3)                                    !<  first matrix
+  integer, intent(in)     ::  M2(3,3)                                    !<  second matrix
 
-!      output
+! output
 
-       integer, intent(out)    ::  Prod(3,3)                             !<  Prod = M1 M2
+  integer, intent(out)    ::  Prod(3,3)                                  !<  Prod = M1 M2
 
-!      counters
+! counters
 
-       integer i,j,k
+  integer i,j,k
 
-       do i=1,3
-          do j=1,3
-             Prod(i,j)=0
-             do k=1,3
-                Prod(i,j) = Prod(i,j) + M1(i,k)*M2(k,j)
-             enddo
-          enddo
-       enddo
+  do i=1,3
+     do j=1,3
+        Prod(i,j)=0
+        do k=1,3
+           Prod(i,j) = Prod(i,j) + M1(i,k)*M2(k,j)
+        enddo
+     enddo
+  enddo
 
-       return
-       end subroutine metric_dotM
+  return
+
+end subroutine metric_dotM

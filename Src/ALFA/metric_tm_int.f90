@@ -11,112 +11,116 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     performs elementary transformations on a matrix (integer G)
+!>  Performs elementary transformations on a matrix (integer G).
+!>
+!>  iop = 0 : initializes Mtotal = identity
+!>  iop = 2 : returns in M the value of Mtotal
+!>  iop = 1 : transforms G <- M G M^T
+!>            updates Mtotal <- M Mtotal
+!>
+!>  \author       Alvaro Ladeira, José Luís Martins
+!>  \version      5.13
+!>  \date         1999, 3 June 2014.
+!>  \copyright    GNU Public License v2
 
-!>     iop = 0 : initializes Mtotal = identity
-!>     iop = 2 : returns in M the value of Mtotal
-!>     iop = 1 : transforms G <- M G M^T
-!>               updates Mtotal <- M Mtotal
+subroutine metric_Tm_int(iop, G, M)
 
-      subroutine metric_Tm_int(iop,G,M)
+! G is integer, M integer
 
+! input:
+! iop         indicates if we are initializing, calculating
+!             or recovering the final result
+! G           metric matrix
+! M           transform matrix
 
-!     G is integer, M integer
+! output:
+! G           transformed metric matrix (iop=1)
+! M           total transformation (iop=2)
 
-!     input:
-!     iop         indicates if we are initializing, calculating
-!                 or recovering the final result
-!     G           metric matrix
-!     M           transform matrix
+! SAVED: Mtotal
 
-!     output:
-!     G           transformed metric matrix (iop=1)
-!     M           total transformation (iop=2)
+! written by Alvaro Ladeira, 1999
+! modified, f90, 3 June 2014. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!     SAVED: Mtotal
+! send comments/bug reports to jlmartins@inesc-mn.pt
 
-!     written by Alvaro Ladeira, 1999
-!     modified, f90, 3 June 2014. JLM
-!     copyright Alvaro Ladeira/Jose Luis Martins/INESC-MN
+  implicit none
 
-!     send comments/bug reports to jlmartins@inesc-mn.pt
+  integer, parameter          :: INT64 = selected_int_kind(15)
 
-      implicit none
+! input
 
-      integer, parameter          :: INT64 = selected_int_kind(15)
+  integer, intent(in)            ::  iop                                 !<  type of operation see above.
 
-!     input
+! input and output
 
-      integer, intent(in)            ::  iop                             !<  type of operation see above.
+  integer(INT64), intent(inout)  ::  G(3,3)                              !<  metric matrix
+  integer, intent(inout)         ::  M(3,3)                              !<  transform matrix
 
-!     input and output
+! local variables
 
-      integer(INT64), intent(inout)  ::  G(3,3)                          !<  metric matrix 
-      integer, intent(inout)         ::  M(3,3)                          !<  transform matrix
+  integer(INT64)     ::  AdotB(3,3)
+  integer            ::  MdotM(3,3)
 
-!     local variables
+  integer, save      ::  Mtotal(3,3)
 
-      integer(INT64)     ::  AdotB(3,3)
-      integer            ::  MdotM(3,3)
+! counters
 
-      integer, save      ::  Mtotal(3,3)
+  integer i,j,k
 
-!     counters
+  If( iop == 0 ) then
 
-      integer i,j,k
+    do i=1,3
+      do j=1,3
+        Mtotal(j,i) = 0
+      enddo
+      Mtotal(i,i) = 1
+    enddo
 
-      If( iop == 0 ) then
+  ElseIf( iop == 1 ) then
 
-        do i=1,3
-          do j=1,3
-            Mtotal(j,i) = 0
+    do i=1,3
+       do j=1,3
+          MdotM(i,j)=0
+          do k=1,3
+             MdotM(i,j) = MdotM(i,j) + M(i,k)*Mtotal(k,j)
           enddo
-          Mtotal(i,i) = 1
-        enddo
+       enddo
+    enddo
+    do i=1,3
+       do j=1,3
+          Mtotal(i,j) = MdotM(i,j)
+       enddo
+    enddo
 
-      ElseIf( iop == 1 ) then
-
-        do i=1,3
-           do j=1,3
-              MdotM(i,j)=0
-              do k=1,3
-                 MdotM(i,j) = MdotM(i,j) + M(i,k)*Mtotal(k,j)
-              enddo
-           enddo
-        enddo
-        do i=1,3
-           do j=1,3
-              Mtotal(i,j) = MdotM(i,j)
-           enddo
-        enddo
-
-        do i=1,3
-           do j=1,3
-              AdotB(i,j)=0
-              do k=1,3
-                 AdotB(i,j) = AdotB(i,j) + M(i,k)*G(k,j)
-              enddo
-           enddo
-        enddo
-        do i=1,3
-           do j=1,3
-              G(i,j)=0
-              do k=1,3
-                 G(i,j) = G(i,j) + AdotB(i,k)*M(j,k)
-              enddo
-           enddo
-        enddo
-      
-      ElseIf( iop == 2 ) then
-
-        do i=1,3
-          do j=1,3
-            M(j,i) = Mtotal(j,i)
+    do i=1,3
+       do j=1,3
+          AdotB(i,j)=0
+          do k=1,3
+             AdotB(i,j) = AdotB(i,j) + M(i,k)*G(k,j)
           enddo
-        enddo
-      EndIf
+       enddo
+    enddo
+    do i=1,3
+       do j=1,3
+          G(i,j)=0
+          do k=1,3
+             G(i,j) = G(i,j) + AdotB(i,k)*M(j,k)
+          enddo
+       enddo
+    enddo
 
-      return
+  ElseIf( iop == 2 ) then
 
-      end subroutine metric_Tm_int
+    do i=1,3
+      do j=1,3
+        M(j,i) = Mtotal(j,i)
+      enddo
+    enddo
+  EndIf
+
+  return
+
+end subroutine metric_Tm_int
 

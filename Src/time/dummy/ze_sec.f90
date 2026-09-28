@@ -11,25 +11,30 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-       subroutine zesec(tback)
+!>  Gets cpu time in seconds.
+!>  Dummy version.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         21 October 2003, 11 September 2015.
+!>  \copyright    GNU Public License v2
 
-!      Gets cpu time in seconds
-!      Dummy version
+subroutine zesec(tback)
 
-!      Written 21 october 2003
-!      Modified 11 September 2015. f90. JLM
-!      copyright INESC-MN/Jose Luis Martins
+! Written 21 october 2003
+! Modified 11 September 2015. f90. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.60
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  implicit none
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      output
+! output
 
-       real(REAL64), intent(out)          ::  tback                    !  cpu time in seconds
+  real(REAL64), intent(out)          ::  tback                         !<  dummy cpu time in seconds
 
-       tback = 0.0
+  tback = 0.0
 
-       return
-       end
+  return
+
+end subroutine zesec
