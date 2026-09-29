@@ -11,91 +11,96 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     interface with lapack.
-!>     diagonalizes the Hamiltonian matrix 
+!>  Interface with lapack.
+!>  diagonalizes the Hamiltonian matrix.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         June 2012, 7 January 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine diag_c16(neig,ham,ev,vec,mxdbnd,info)
+subroutine diag_c16(neig, ham, ev, vec, mxdbnd, info)
 
-!      Written June 2012. jlm
-!      copyright INESC-MN/Jose Luis Martins
-!      Modified, documentation, January 2020. JLM
-!      Modified 7 January 2014, style. jlm
+! Written June 2012. jlm
+! Modified, documentation, January 2020. JLM
+! Modified 7 January 2014, style. jlm
+! Indentation. 28 September 2026. JLM+claude
 
-       implicit none
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  implicit none
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
 
-!      input
+! input
 
-       integer, intent(in)                ::  mxdbnd                     !<  array dimension for number of bands
-       integer, intent(in)                ::  neig                       !<  number of bands (matrix size) ( <= mxdbnd) 
-       complex(REAL64), intent(in)        ::  ham(mxdbnd,mxdbnd)         !<  <Psi_i|H|Psi_j>
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  neig                            !<  number of bands (matrix size) ( <= mxdbnd)
+  complex(REAL64), intent(in)        ::  ham(mxdbnd,mxdbnd)              !<  <Psi_i|H|Psi_j>
 
-!      output
+! output
 
-       real(REAL64), intent(out)          ::  ev(mxdbnd)                 !<  eigenvalues
-       complex(REAL64), intent(out)       ::  vec(mxdbnd,mxdbnd)         !<  eigenvector
+  real(REAL64), intent(out)          ::  ev(mxdbnd)                      !<  eigenvalues
+  complex(REAL64), intent(out)       ::  vec(mxdbnd,mxdbnd)              !<  eigenvector
 
-       integer, intent(out)               ::  info                       !<  if info /=0 subroutine returned with error
+  integer, intent(out)               ::  info                            !<  if info /=0 subroutine returned with error
 
-!      local variables and arrays
+! local variables and arrays
 
-       integer    ::  lwork,liwork,lrwork
-       complex(REAL64), allocatable    :: work(:)
-       real(REAL64), allocatable       :: rwork(:)
-       integer, allocatable            :: iwork(:)
+  integer    ::  lwork,liwork,lrwork
+  complex(REAL64), allocatable    :: work(:)
+  real(REAL64), allocatable       :: rwork(:)
+  integer, allocatable            :: iwork(:)
 
-!      counters
+! counters
 
-       integer i,j
+  integer i,j
 
-       do i=1,neig
-       do j=1,neig
-         vec(j,i) = ham(j,i)
-       enddo
-       enddo
+  do i=1,neig
+  do j=1,neig
+    vec(j,i) = ham(j,i)
+  enddo
+  enddo
 
-!      finds the dimension of work arrays
+! finds the dimension of work arrays
 
-       allocate(work(2),rwork(2),iwork(2))
+  allocate(work(2),rwork(2),iwork(2))
 
-       lwork = -1
-       liwork = -1
-       lrwork = -1
-       call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work,lwork,rwork, &
-     &              lrwork, iwork, liwork, info )
+  lwork = -1
+  liwork = -1
+  lrwork = -1
+  call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork,     &
+      lrwork, iwork, liwork, info )
 
-       if( info /= 0) then
-          write(6,*)
-          write(6,*)'    ERROR    diag_c16 FAILED A, info = ',info
-          write(6,*)
+  if( info /= 0) then
+     write(6,*)
+     write(6,*)'    ERROR    diag_c16 FAILED A, info = ',info
+     write(6,*)
 
-          return
+     return
 
-       endif
+  endif
 
-       lwork = int( work( 1 ) ) 
-       lrwork = int( rwork( 1 ) ) 
-       liwork = iwork( 1 )
+  lwork = int( work( 1 ) )
+  lrwork = int( rwork( 1 ) )
+  liwork = iwork( 1 )
 
-       deallocate(work,rwork,iwork)
+  deallocate(work,rwork,iwork)
 
-       allocate(work(lwork),rwork(lrwork),iwork(liwork))
+  allocate(work(lwork),rwork(lrwork),iwork(liwork))
 
-       call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work,lwork,rwork, &
-     &              lrwork, iwork, liwork, info )
+  call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork,     &
+      lrwork, iwork, liwork, info )
 
-       deallocate(work,rwork,iwork)
+  deallocate(work,rwork,iwork)
 
-       if( info /= 0) then
-          write(6,*)
-          write(6,*)'    ERROR    diag_c16 FAILED B, info = ',info
-          write(6,*)
+  if( info /= 0) then
+     write(6,*)
+     write(6,*)'    ERROR    diag_c16 FAILED B, info = ',info
+     write(6,*)
 
-          return
+     return
 
-       endif
+  endif
 
-       return
+  return
 
-       end subroutine diag_c16
+end subroutine diag_c16

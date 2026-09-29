@@ -11,150 +11,155 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Given a basis |bas> and the product of the hamiltonian on the basis,
-!>     Calculates the energies and eigenvectors |psibas> of the wave-function
-!>     in the basis |bas>
-!>     If requested calculates also |psi> and H |psi>
+!>  Given a basis |bas> and the product of the hamiltonian on the basis,
+!>  Calculates the energies and eigenvectors |psibas> of the wave-function
+!>  in the basis |bas>
+!>  If requested calculates also |psi> and H |psi>
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         2 June 2020.
+!>  \copyright    GNU Public License v2
 
-       subroutine hk_from_bas_diag(mtxd, nbasorb, neig, ndeg,            &
-     & lortho, lbas, lpsi, lhpsi,                                        &
-     & bas, hbas, ei, psibas, psi, hpsi,                                 &
-     & mxddim, mxdorb, mxdbnd)
+subroutine hk_from_bas_diag(mtxd, nbasorb, neig, ndeg,                   &
+    lortho, lbas, lpsi, lhpsi,                                           &
+    bas, hbas, ei, psibas, psi, hpsi,                                    &
+    mxddim, mxdorb, mxdbnd)
 
-!      Adapted from h_kb_dia_ao.f90, 2 June 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+! Adapted from h_kb_dia_ao.f90, 2 June 2020. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.98
 
-       implicit none
+  implicit none
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      input
+! input
 
-       integer, intent(in)                ::  mxddim                     !<  array dimension of plane-waves
-       integer, intent(in)                ::  mxdbnd                     !<  array dimension for number of bands
-       integer, intent(in)                ::  mxdorb                     !<  array dimension for number of orbitals
+  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  mxdorb                          !<  array dimension for number of orbitals
 
-       integer, intent(in)                ::  mtxd                       !<  dimension of the PW hamiltonian
-       integer, intent(in)                ::  nbasorb                    !<  dimension of the atomic orbital hamiltonian
+  integer, intent(in)                ::  mtxd                            !<  dimension of the PW hamiltonian
+  integer, intent(in)                ::  nbasorb                         !<  dimension of the atomic orbital hamiltonian
 
-       integer, intent(in)                ::  neig                       !<  number of eigenvectors
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors
 
-       logical, intent(in)                ::  lortho                     !<  indicates if bas is othogonal
-       logical, intent(in)                ::  lbas                       !<  indicates if |psi> in the |Bas> basis should be calculated
-       logical, intent(in)                ::  lpsi                       !<  indicates if |psi> in PW basis should be calculated
-       logical, intent(in)                ::  lhpsi                      !<  indicates if H |psi> in PW basis should be calculated
+  logical, intent(in)                ::  lortho                          !<  indicates if bas is othogonal
+  logical, intent(in)                ::  lbas                            !<  indicates if |psi> in the |Bas> basis should be calculated
+  logical, intent(in)                ::  lpsi                            !<  indicates if |psi> in PW basis should be calculated
+  logical, intent(in)                ::  lhpsi                           !<  indicates if H |psi> in PW basis should be calculated
 
-       complex(REAL64), intent(in)        ::  bas(mxddim,mxdorb)         !<  | bas >  atomic-orbital wave-functions
-       complex(REAL64), intent(in)        ::  hbas(mxddim,mxdorb)        !<  H | bas >
+  complex(REAL64), intent(in)        ::  bas(mxddim,mxdorb)              !<  | bas >  atomic-orbital wave-functions
+  complex(REAL64), intent(in)        ::  hbas(mxddim,mxdorb)             !<  H | bas >
 
-!      output
+! output
 
-       integer, intent(out)               ::  ndeg                       !<  number of eigenvectors including degeneracy
-       real(REAL64), intent(out)          ::  ei(mxdbnd)                 !<  eigenvalues (Hartree)
+  integer, intent(out)               ::  ndeg                            !<  number of eigenvectors including degeneracy
+  real(REAL64), intent(out)          ::  ei(mxdbnd)                      !<  eigenvalues (Hartree)
 
-       complex(REAL64), intent(out)       ::  psibas(mxdorb,mxdbnd)      !<  | psi > expanded in |bas>
-       complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)         !<  | psi > component j of eigenvector i
-       complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)        !<  H | psi >
+  complex(REAL64), intent(out)       ::  psibas(mxdorb,mxdbnd)           !<  | psi > expanded in |bas>
+  complex(REAL64), intent(out)       ::  psi(mxddim,mxdbnd)              !<  | psi > component j of eigenvector i
+  complex(REAL64), intent(out)       ::  hpsi(mxddim,mxdbnd)             !<  H | psi >
 
-!      local allocatable arrays
+! local allocatable arrays
 
-       real(REAL64), allocatable          ::  eg(:)                     !  eigenvalues
-       complex(REAL64), allocatable       ::  vec(:,:)                  !  wavefunctions in atomic basis
+  real(REAL64), allocatable          ::  eg(:)                          !  eigenvalues
+  complex(REAL64), allocatable       ::  vec(:,:)                       !  wavefunctions in atomic basis
 
-       complex(REAL64), allocatable       ::  hamsm(:,:)                !  atomic orbital (small) hamiltonian
-       complex(REAL64), allocatable       ::  ovsm(:,:)                 !  overlap matrix
+  complex(REAL64), allocatable       ::  hamsm(:,:)                     !  atomic orbital (small) hamiltonian
+  complex(REAL64), allocatable       ::  ovsm(:,:)                      !  overlap matrix
 
-!      local variables
+! local variables
 
-       real(REAL64)  ::  epsa, diff
+  real(REAL64)  ::  epsa, diff
 
-       integer       ::  info
+  integer       ::  info
 
-!      constants
+! constants
 
-       real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-       complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
-       complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
+  real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
 
-       real(REAL64), parameter :: EPS = 0.0001_REAL64
+  real(REAL64), parameter :: EPS = 0.0001_REAL64
 
-!      counters
+! counters
 
-       integer       ::  i
+  integer       ::  i
 
-       allocate(hamsm(mxdorb,mxdorb))
+  allocate(hamsm(mxdorb,mxdorb))
 
-       call zgemm('c','n',nbasorb,nbasorb,mtxd,C_UM,hbas,mxddim,         &
-     &          bas,mxddim,C_ZERO,hamsm,mxdorb)
+  call zgemm('c', 'n', nbasorb, nbasorb, mtxd, C_UM, hbas, mxddim,       &
+      bas, mxddim, C_ZERO, hamsm, mxdorb)
 
-       allocate(vec(mxdorb,mxdorb))
-       allocate(eg(mxdorb))
+  allocate(vec(mxdorb,mxdorb))
+  allocate(eg(mxdorb))
 
-       if(lortho) then
-         call diag_c16(nbasorb,hamsm,eg,vec,mxdorb,info)
+  if(lortho) then
+    call diag_c16(nbasorb, hamsm, eg, vec, mxdorb, info)
 
-  
-         if(info /= 0) stop
 
-       else
-         allocate(ovsm(mxdorb,mxdorb))
-         call zgemm('c','n',nbasorb,nbasorb,mtxd,C_UM,bas,mxddim,         &
-     &          bas,mxddim,C_ZERO,ovsm,mxdorb)
+    if(info /= 0) stop
 
-         call diag_c16_gen(nbasorb,hamsm,ovsm,eg,vec,mxdorb,info)
- 
-  
-         if(info /= 0) stop
+  else
+    allocate(ovsm(mxdorb,mxdorb))
+    call zgemm('c', 'n', nbasorb, nbasorb, mtxd, C_UM, bas, mxddim,      &
+        bas, mxddim, C_ZERO, ovsm, mxdorb)
 
-        deallocate(ovsm)
-       endif
+    call diag_c16_gen(nbasorb, hamsm, ovsm, eg, vec, mxdorb, info)
 
-       deallocate(hamsm)
 
-!      recalculates ndeg taking into account degeneracies
+    if(info /= 0) stop
 
-       epsa = max(EPS,abs((eg(neig)-eg(1))/(50*neig*UM)))
-       ndeg = neig
-       do i = neig+1,nbasorb
-         diff = abs(eg(i) - eg(i-1))
+   deallocate(ovsm)
+  endif
 
-         if(diff > epsa) exit
+  deallocate(hamsm)
 
-         ndeg = i
-       enddo
+! recalculates ndeg taking into account degeneracies
 
-       if(ndeg > mxdbnd) ndeg = mxdbnd
+  epsa = max(EPS,abs((eg(neig)-eg(1))/(50*neig*UM)))
+  ndeg = neig
+  do i = neig+1,nbasorb
+    diff = abs(eg(i) - eg(i-1))
 
-       do i = 1,ndeg
-         ei(i) = eg(i)
-       enddo
+    if(diff > epsa) exit
 
-!      wave-function in |bas>
+    ndeg = i
+  enddo
 
-       if(lbas) then
-         do i = 1,ndeg
-           call zcopy(nbasorb,vec(:,i),1,psibas(:,i),1)
-         enddo
-       endif
+  if(ndeg > mxdbnd) ndeg = mxdbnd
 
-!      |psi> wave-function in plane-waves
+  do i = 1,ndeg
+    ei(i) = eg(i)
+  enddo
 
-       if(lpsi) then
-         call zgemm('n','n',mtxd,ndeg,nbasorb,C_UM,bas,mxddim,           &
-     &            vec,mxdorb,C_ZERO,psi,mxddim)
-       endif
+! wave-function in |bas>
 
-!      H |psi> in plane-waves
+  if(lbas) then
+    do i = 1,ndeg
+      call zcopy(nbasorb, vec(:,i), 1, psibas(:,i), 1)
+    enddo
+  endif
 
-       if(lhpsi) then
-         call zgemm('n','n',mtxd,ndeg,nbasorb,C_UM,hbas,mxddim,          &
-     &            vec,mxdorb,C_ZERO,hpsi,mxddim)
-       endif
+! |psi> wave-function in plane-waves
 
-       deallocate(vec)
-       deallocate(eg)
+  if(lpsi) then
+    call zgemm('n', 'n', mtxd, ndeg, nbasorb, C_UM, bas, mxddim,         &
+        vec, mxdorb, C_ZERO, psi, mxddim)
+  endif
 
-       return
-       end subroutine hk_from_bas_diag
+! H |psi> in plane-waves
+
+  if(lhpsi) then
+    call zgemm('n', 'n', mtxd, ndeg, nbasorb, C_UM, hbas, mxddim,        &
+        vec, mxdorb, C_ZERO, hpsi, mxddim)
+  endif
+
+  deallocate(vec)
+  deallocate(eg)
+
+  return
+
+end subroutine hk_from_bas_diag

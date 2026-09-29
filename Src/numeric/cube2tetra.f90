@@ -11,169 +11,174 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     given a unit cube and a point y inside the cube chooses 
-!>     4 tetrahedral corners iq and weights z such that
-!>     y(i) = sum_j=0,3  z(j) iq(j,i)
-!>     Uses only 5 tetrhedra.
+!>  Given a unit cube and a point y inside the cube chooses
+!>  4 tetrahedral corners iq and weights z such that
+!>  y(i) = sum_j=0,3  z(j) iq(j,i)
+!>  Uses only 5 tetrhedra.
+!>
+!>  \author       José Luís Martins, Carlos Loia Reis
+!>  \version      5.13
+!>  \date         2 April 2019.
+!>  \copyright    GNU Public License v2
 
-       subroutine cube2tetra(y,z,iq)
+subroutine cube2tetra(y, z, iq)
 
-!      written  2 April 2019.
+! written  2 April 2019.
+! Indentation. 28 September 2026. JLM+claude
 
-!      copyright  J.L.Martins, CL Reis, INESC-MN.
 
-       implicit none
-       
-       integer, parameter  :: REAL64 = selected_real_kind(12)
+  implicit none
 
-!      input
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-       real(REAL64), intent(in)        ::  y(3)                          !<  coordinates in the cube  0<= y <= 1
+! input
 
-!      output
+  real(REAL64), intent(in)        ::  y(3)                               !<  coordinates in the cube  0<= y <= 1
 
-       real(REAL64), intent(out)       ::  z(0:3)                        !<  coordinates in the tetrahedra  0<= z <= 1,  sum z = 1
-       integer, intent(out)            ::  iq(0:3,3)                     !<  identification of tetrahedra corner iq(i,.) = 0,1
+! output
 
-!      local
+  real(REAL64), intent(out)       ::  z(0:3)                             !<  coordinates in the tetrahedra  0<= z <= 1,  sum z = 1
+  integer, intent(out)            ::  iq(0:3,3)                          !<  identification of tetrahedra corner iq(i,.) = 0,1
 
-       real(REAL64)          ::  t(3), tc
+! local
 
-!      constants
+  real(REAL64)          ::  t(3), tc
 
-       real(REAL64), parameter :: ZERO = 0.0_REAL64 , UM = 1.0_REAL64
-       real(REAL64), parameter :: EPS = 100*EPSILON(UM)
+! constants
 
-!      counters
+  real(REAL64), parameter :: ZERO = 0.0_REAL64 , UM = 1.0_REAL64
+  real(REAL64), parameter :: EPS = 100*EPSILON(UM)
 
-       integer            ::  i, j
+! counters
 
-!      checks input
+  integer            ::  i, j
 
-       do j = 1,3
-         if(y(j) < ZERO - EPS .or. y(j) > UM + EPS) then
+! checks input
 
-           write(6,'(4x,"stopped in cube2tetra, y(",i1,") = ",e25.17)')  &
-     &             j, y(j)
+  do j = 1,3
+    if(y(j) < ZERO - EPS .or. y(j) > UM + EPS) then
 
-           stop
+      write(6,'(4x,"stopped in cube2tetra, y(",i1,") = ",e25.17)')       &
+              j, y(j)
 
-         endif
-       enddo
+      stop
 
-       do i = 1,3
-         t(i) = UM - y(i)
-       enddo
-         
-!      nearest corner t coordinate, octante
+    endif
+  enddo
 
-       if(y(1) + y(2) + y(3) < UM) then
+  do i = 1,3
+    t(i) = UM - y(i)
+  enddo
 
-         iq(0,1) = 0
-         iq(0,2) = 0
-         iq(0,3) = 0
+! nearest corner t coordinate, octante
 
-         z(1) = y(1)
-         z(2) = y(2)
-         z(3) = y(3)
+  if(y(1) + y(2) + y(3) < UM) then
 
-         do j = 1,3
-           do i = 1,3
-             iq(j,i) = iq(0,i)
-           enddo
-           iq(j,j) = 1 - iq(0,j)
-         enddo
+    iq(0,1) = 0
+    iq(0,2) = 0
+    iq(0,3) = 0
 
-       elseif(y(1) + t(2) + t(3) < UM) then
+    z(1) = y(1)
+    z(2) = y(2)
+    z(3) = y(3)
 
-         iq(0,1) = 0
-         iq(0,2) = 1
-         iq(0,3) = 1
+    do j = 1,3
+      do i = 1,3
+        iq(j,i) = iq(0,i)
+      enddo
+      iq(j,j) = 1 - iq(0,j)
+    enddo
 
-         z(1) = y(1)
-         z(2) = t(2)
-         z(3) = t(3)
+  elseif(y(1) + t(2) + t(3) < UM) then
 
-         do j = 1,3
-           do i = 1,3
-             iq(j,i) = iq(0,i)
-           enddo
-           iq(j,j) = 1 - iq(0,j)
-         enddo
+    iq(0,1) = 0
+    iq(0,2) = 1
+    iq(0,3) = 1
 
-       elseif(t(1) + y(2) + t(3) < UM) then
+    z(1) = y(1)
+    z(2) = t(2)
+    z(3) = t(3)
 
-         iq(0,1) = 1
-         iq(0,2) = 0
-         iq(0,3) = 1
+    do j = 1,3
+      do i = 1,3
+        iq(j,i) = iq(0,i)
+      enddo
+      iq(j,j) = 1 - iq(0,j)
+    enddo
 
-         
-         z(1) = t(1)
-         z(2) = y(2)
-         z(3) = t(3)
+  elseif(t(1) + y(2) + t(3) < UM) then
 
-         do j = 1,3
-           do i = 1,3
-             iq(j,i) = iq(0,i)
-           enddo
-           iq(j,j) = 1 - iq(0,j)
-         enddo
+    iq(0,1) = 1
+    iq(0,2) = 0
+    iq(0,3) = 1
 
-       elseif(t(1) + t(2) + y(3) < UM) then
 
-         iq(0,1) = 1
-         iq(0,2) = 1
-         iq(0,3) = 0
+    z(1) = t(1)
+    z(2) = y(2)
+    z(3) = t(3)
 
-         
-         z(1) = t(1)
-         z(2) = t(2)
-         z(3) = y(3)
+    do j = 1,3
+      do i = 1,3
+        iq(j,i) = iq(0,i)
+      enddo
+      iq(j,j) = 1 - iq(0,j)
+    enddo
 
-         do j = 1,3
-           do i = 1,3
-             iq(j,i) = iq(0,i)
-           enddo
-           iq(j,j) = 1 - iq(0,j)
-         enddo
+  elseif(t(1) + t(2) + y(3) < UM) then
 
-       else
+    iq(0,1) = 1
+    iq(0,2) = 1
+    iq(0,3) = 0
 
-         iq(0,1) = 1
-         iq(0,2) = 1
-         iq(0,3) = 1
 
-         do j = 1,3
-           do i = 1,3
-             iq(j,i) = 0
-           enddo
-           iq(j,j) = 1
-         enddo
+    z(1) = t(1)
+    z(2) = t(2)
+    z(3) = y(3)
 
-         tc = UM - (y(1) + y(2) + y(3))
-         do i = 1,3
-           z(i) = tc/2 + y(i)
-         enddo
+    do j = 1,3
+      do i = 1,3
+        iq(j,i) = iq(0,i)
+      enddo
+      iq(j,j) = 1 - iq(0,j)
+    enddo
 
-       endif
+  else
 
-       z(0) = UM - (z(1) + z(2) + z(3))
+    iq(0,1) = 1
+    iq(0,2) = 1
+    iq(0,3) = 1
 
-!      checks roundoff of the output
+    do j = 1,3
+      do i = 1,3
+        iq(j,i) = 0
+      enddo
+      iq(j,j) = 1
+    enddo
 
-       do j = 0,3
-         if(z(j) < ZERO - 10*EPS .or. z(j) > UM + 10*EPS) then
+    tc = UM - (y(1) + y(2) + y(3))
+    do i = 1,3
+      z(i) = tc/2 + y(i)
+    enddo
 
-           write(6,'(4x,"stopped in cube2tetra, z(",i1,") = ",e25.17)')  &
-     &             j, z(j)
+  endif
 
-           stop
+  z(0) = UM - (z(1) + z(2) + z(3))
 
-         endif
+! checks roundoff of the output
 
-         if(z(j) < ZERO) z(j) = ZERO
-         if(z(j) > UM) z(j) = UM
+  do j = 0,3
+    if(z(j) < ZERO - 10*EPS .or. z(j) > UM + 10*EPS) then
 
-       enddo
+      write(6,'(4x,"stopped in cube2tetra, z(",i1,") = ",e25.17)')       &
+              j, z(j)
 
-       end subroutine cube2tetra
+      stop
+
+    endif
+
+    if(z(j) < ZERO) z(j) = ZERO
+    if(z(j) > UM) z(j) = UM
+
+  enddo
+
+end subroutine cube2tetra

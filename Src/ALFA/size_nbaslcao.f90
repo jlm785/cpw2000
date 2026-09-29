@@ -11,50 +11,54 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     calculates the size of the atomic orbitals basis set.
+!>  Calculates the size of the atomic orbitals basis set.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         21 April 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine size_nbaslcao(ntype,natom,norbat,lorb,nbaslcao,        &
-     & mxdtyp,mxdlao)
+subroutine size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,           &
+    mxdtyp, mxdlao)
 
-!      written April 21, 2014. JLM
-!      Modified, documentation, January 2020. JLM
-!      copyright  Jose Luis Martins/INESC-MN
+! written April 21, 2014. JLM
+! Modified, documentation, January 2020. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94
 
-       implicit none
+  implicit none
 
-!      input
+! input
 
-       integer, intent(in)                ::  mxdtyp                     !<  array dimension of types of atoms
-       integer, intent(in)                ::  mxdlao                     !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
 
-       integer, intent(in)                ::  norbat(mxdtyp)             !<  number of atomic orbitals for atom k
-       integer, intent(in)                ::  lorb(mxdlao,mxdtyp)        !<  angular momentum of orbital n of atom k
+  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
 
-       integer, intent(in)                ::  ntype                      !<  number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !<  number of atoms of type i
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
 
-!      output
+! output
 
-       integer, intent(out)               ::  nbaslcao                   !<  number of vectors in atomic orbital basis
+  integer, intent(out)               ::  nbaslcao                        !<  number of vectors in atomic orbital basis
 
-!      local variables
+! local variables
 
-       integer   ::  ind
+  integer   ::  ind
 
-!      counters
+! counters
 
-       integer         ::  nt, j
+  integer         ::  nt, j
 
-       ind = 0
-       do nt=1,ntype
-         do j=1,norbat(nt)
-           ind = ind + (2*lorb(j,nt)+1)*natom(nt)
-         enddo
-       enddo
-       nbaslcao = ind
+  ind = 0
+  do nt=1,ntype
+    do j=1,norbat(nt)
+      ind = ind + (2*lorb(j,nt)+1)*natom(nt)
+    enddo
+  enddo
+  nbaslcao = ind
 
-       return
-       
-       end subroutine size_nbaslcao
+  return
+
+end subroutine size_nbaslcao

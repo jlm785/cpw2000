@@ -11,74 +11,79 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     writes the density of states and integrated density of states
-!>     to a file. 
-!>     It is commented for gnuplot or xmgrace!
+!>  Writes the density of states and integrated density of states
+!>  to a file.
+!>  It is commented for gnuplot or xmgrace!
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         7 December 2013.
+!>  \copyright    GNU Public License v2
 
-       subroutine dos_print_file(filename,nhist,ehist,dhist,chist,       &
-     &    lidos,ezero,efguess,vcell,ztot)
+subroutine dos_print_file(filename, nhist, ehist, dhist, chist,          &
+    lidos, ezero, efguess, vcell, ztot)
 
-!      written December 7 , 2013 from old code. jlm
-!      Modified, documentation, 19 September 2020. JLM
-!      copyright  J.L.Martins, INESC-MN.
+! written December 7 , 2013 from old code. jlm
+! Modified, documentation, 19 September 2020. JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.53 of cpw
 
-       implicit none
+  implicit none
 
-       integer, parameter  :: REAL64 = selected_real_kind(12)
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-!      input:
+! input:
 
-       character(len=*) , intent(in)   ::  filename                      !<  input file name
-       integer, intent(in)             ::  nhist                         !<  number of points in histograms
-       real(REAL64), intent(in)        ::  ehist(nhist)                  !<  energies of the histogram
-       real(REAL64), intent(in)        ::  dhist(nhist)                  !<  density of states
-       real(REAL64), intent(in)        ::  chist(nhist)                  !<  integrated density of states
-       logical, intent(in)             ::  lidos                         !<  true if integrated density of states is to be computed.
-       real(REAL64), intent(in)        ::  ezero                         !<  position of internal neutral level
-       real(REAL64), intent(in)        ::  efguess                       !<  estimate of the Fermi energy
-       real(REAL64), intent(in)        ::  vcell                         !<  unit cell volume (in atomic units)
-       real(REAL64), intent(in)        ::  ztot                          !<  total charge density (electrons/cell)
+  character(len=*) , intent(in)   ::  filename                           !<  input file name
+  integer, intent(in)             ::  nhist                              !<  number of points in histograms
+  real(REAL64), intent(in)        ::  ehist(nhist)                       !<  energies of the histogram
+  real(REAL64), intent(in)        ::  dhist(nhist)                       !<  density of states
+  real(REAL64), intent(in)        ::  chist(nhist)                       !<  integrated density of states
+  logical, intent(in)             ::  lidos                              !<  true if integrated density of states is to be computed.
+  real(REAL64), intent(in)        ::  ezero                              !<  position of internal neutral level
+  real(REAL64), intent(in)        ::  efguess                            !<  estimate of the Fermi energy
+  real(REAL64), intent(in)        ::  vcell                              !<  unit cell volume (in atomic units)
+  real(REAL64), intent(in)        ::  ztot                               !<  total charge density (electrons/cell)
 
-!      counters
+! counters
 
-       integer     :: i
+  integer     :: i
 
-!      constants
+! constants
 
-       real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
 
-!      printout to filename
+! printout to filename
 
-       open(unit=15,file=filename,form='formatted')
+  open(unit=15,file=filename,form='formatted')
 
-       write(15,'("#")')
-       write(15,'("# ",f14.5,"  ezero (localization of average ",        &
-     &    "internal potential)")') -ezero
-       write(15,'("# ",f14.5,"  efguess (Fermi level estimate)")')       &
-     &          efguess
-       write(15,'("# ",f14.5,"  vcell (cell volume a.u. )")') vcell
-       write(15,'("# ",f14.5,"  ztot (electrons/cell )")') ztot
-       write(15,'("# ",l5,"  Integrated DOS available")') lidos
-       write(15,'("#")')
-       write(15,'("#   Energy in eV")')
-       write(15,'("#   Density of States  (DOS) in el/cell/eV")')
-       if(lidos) then
-         write(15,'("#   Integrated DOS in el/cell")')
-         write(15,'("#")')
-         do i=1,nhist
-           write(15,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE,    &
-     &             chist(i)
-         enddo
-       else
-         write(15,'("#")')
-         do i=1,nhist
-           write(15,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE
-         enddo
-       endif
+  write(15,'("#")')
+  write(15,'("# ",f14.5,"  ezero (localization of average ",        &
+      &    "internal potential)")') -ezero
+  write(15,'("# ",f14.5,"  efguess (Fermi level estimate)")')            &
+           efguess
+  write(15,'("# ",f14.5,"  vcell (cell volume a.u. )")') vcell
+  write(15,'("# ",f14.5,"  ztot (electrons/cell )")') ztot
+  write(15,'("# ",l5,"  Integrated DOS available")') lidos
+  write(15,'("#")')
+  write(15,'("#   Energy in eV")')
+  write(15,'("#   Density of States  (DOS) in el/cell/eV")')
+  if(lidos) then
+    write(15,'("#   Integrated DOS in el/cell")')
+    write(15,'("#")')
+    do i=1,nhist
+      write(15,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE,         &
+              chist(i)
+    enddo
+  else
+    write(15,'("#")')
+    do i=1,nhist
+      write(15,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE
+    enddo
+  endif
 
-       close(unit=15)
+  close(unit=15)
 
-       return
-       end subroutine dos_print_file
+  return
+
+end subroutine dos_print_file

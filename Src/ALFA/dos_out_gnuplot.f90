@@ -11,120 +11,125 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     writes the density of states and integrated density of states 
-!>     to a file to be plotted by gnuplot.
+!>  Writes the density of states and integrated density of states
+!>  to a file to be plotted by gnuplot.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         12 June 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine dos_out_gnuplot(ioreplay,filename,                     &
-     &               nhist,ehist,dhist,chist,lidos,lask)
+subroutine dos_out_gnuplot(ioreplay, filename,                           &
+    nhist, ehist, dhist, chist, lidos, lask)
 
-!      adapted June 12 , 2014. JLM
-!      Modified, documentation, 19 September 2020. JLM
-!      copyright  J.L.Martins, INESC-MN.
-
-!      version 4.53 of cpw
-
-       implicit none
-
-       integer, parameter  :: REAL64 = selected_real_kind(12)
-
-!      input:
-
-       integer, intent(in)             :: ioreplay                       !<  tape number for reproducing calculations
-
-       character(len=*) , intent(in)   ::  filename                      !<  input file
-       integer, intent(in)             ::  nhist                         !<  number of points in histograms
-       real(REAL64), intent(in)        ::  ehist(nhist)                  !<  energies of the histogram
-       real(REAL64), intent(in)        ::  dhist(nhist)                  !<  density of states
-       real(REAL64), intent(in)        ::  chist(nhist)                  !<  integrated density of states
-       logical, intent(in)             ::  lidos                         !<  true if integrated density of states is to be computed.
-       logical, intent(in)             ::  lask                          !<  if true asks interactively for a plot to be displayed
-
-!      local variables
-
-       real(REAL64)      ::  ar, br
-       real(REAL64)      ::  emin,emax
-       character(len=1)  ::  yesno
-       integer           ::  ixe, io
-
-!      counters
-
-       integer     ::  i
-
-!      constants
-
-       real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+! adapted June 12 , 2014. JLM
+! Modified, documentation, 19 September 2020. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-!      finds nice plotrange
+  implicit none
 
-       ar = (ehist(nhist)-ehist(1))*HARTREE / 10
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-       call plot_step(ar,br)
+! input:
 
-       br = br/HARTREE
+  integer, intent(in)             :: ioreplay                            !<  tape number for reproducing calculations
 
-       ixe = int(ehist(1)/br)
-       emin = br*(ixe-1)*HARTREE
-       ixe = int(ehist(nhist)/br)
-       emax = br*(ixe)*HARTREE
+  character(len=*) , intent(in)   ::  filename                           !<  input file
+  integer, intent(in)             ::  nhist                              !<  number of points in histograms
+  real(REAL64), intent(in)        ::  ehist(nhist)                       !<  energies of the histogram
+  real(REAL64), intent(in)        ::  dhist(nhist)                       !<  density of states
+  real(REAL64), intent(in)        ::  chist(nhist)                       !<  integrated density of states
+  logical, intent(in)             ::  lidos                              !<  true if integrated density of states is to be computed.
+  logical, intent(in)             ::  lask                               !<  if true asks interactively for a plot to be displayed
 
-!      printout to filename
+! local variables
 
-       io = 15
-       open(unit=io,file=filename,form='formatted')
+  real(REAL64)      ::  ar, br
+  real(REAL64)      ::  emin,emax
+  character(len=1)  ::  yesno
+  integer           ::  ixe, io
+
+! counters
+
+  integer     ::  i
+
+! constants
+
+  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
 
 
-       write(io,*) "set terminal wxt enhanced"
-       write(io,*)
-       write(io,*) "set title  'Density of States' font 'Helvetica-Bold' "
-       write(io,*) "set ylabel 'DOS (el/cell/eV)' font  'Helvetica-Bold' "
-       write(io,*) "set xlabel 'Energy (eV)' font 'Helvetica-Bold' "
-       write(io,*) "set xrange [ ",emin," : ",emax," ] " 
-       write(io,*) "set border lw 3"
-       write(io,*) "set xtics font 'Helvetica-Bold' "
-       write(io,*) "set ytics font 'Helvetica-Bold' "
-       write(io,*) "plot '-'  u 1:2 w lines title 'DOS'; pause -1 "
-       write(io,*)
-       if(lidos) then
-         do i=1,nhist
-           write(io,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE,    &
-     &             chist(i)
-         enddo
-       else
-         do i=1,nhist
-           write(io,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE
-         enddo
-       endif
-       write(io,*)
+! finds nice plotrange
 
-       close(unit=io)
+  ar = (ehist(nhist)-ehist(1))*HARTREE / 10
 
-       write(6,*)
-       write(6,*) '  The density of States plot is in ',filename
-       write(6,*)
+  call plot_step(ar, br)
 
-!      asks whether a figure should be displayed on screen
+  br = br/HARTREE
 
-       if(lask) then
-         write(6,*)
-         write(6,*) '  Do you want to see the plot now? (y/n)'
-         write(6,*)
-       
-         read(5,*) yesno
-         write(ioreplay,*) yesno,'   see plot'
+  ixe = int(ehist(1)/br)
+  emin = br*(ixe-1)*HARTREE
+  ixe = int(ehist(nhist)/br)
+  emax = br*(ixe)*HARTREE
 
-         if(yesno == 'y' .or. yesno == 'Y') then
+! printout to filename
 
-           write(6,*)
-           write(6,*) '  Hit return to continue '
-           write(6,*)
+  io = 15
+  open(unit=io,file=filename,form='formatted')
 
-!           call system("gnuplot " // filename // "  2> /dev/null ")
-           call execute_command_line("gnuplot " // filename // "  2> /dev/null ")
 
-         endif
+  write(io,*) "set terminal wxt enhanced"
+  write(io,*)
+  write(io,*) "set title  'Density of States' font 'Helvetica-Bold' "
+  write(io,*) "set ylabel 'DOS (el/cell/eV)' font  'Helvetica-Bold' "
+  write(io,*) "set xlabel 'Energy (eV)' font 'Helvetica-Bold' "
+  write(io,*) "set xrange [ ",emin," : ",emax," ] "
+  write(io,*) "set border lw 3"
+  write(io,*) "set xtics font 'Helvetica-Bold' "
+  write(io,*) "set ytics font 'Helvetica-Bold' "
+  write(io,*) "plot '-'  u 1:2 w lines title 'DOS'; pause -1 "
+  write(io,*)
+  if(lidos) then
+    do i=1,nhist
+      write(io,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE,         &
+              chist(i)
+    enddo
+  else
+    do i=1,nhist
+      write(io,'(2x,3f15.8)') ehist(i)*HARTREE,dhist(i)/HARTREE
+    enddo
+  endif
+  write(io,*)
 
-       endif
-      
-       return
-       end subroutine dos_out_gnuplot
+  close(unit=io)
+
+  write(6,*)
+  write(6,*) '  The density of States plot is in ',filename
+  write(6,*)
+
+! asks whether a figure should be displayed on screen
+
+  if(lask) then
+    write(6,*)
+    write(6,*) '  Do you want to see the plot now? (y/n)'
+    write(6,*)
+
+    read(5,*) yesno
+    write(ioreplay,*) yesno,'   see plot'
+
+    if(yesno == 'y' .or. yesno == 'Y') then
+
+      write(6,*)
+      write(6,*) '  Hit return to continue '
+      write(6,*)
+
+!      call system("gnuplot " // filename // "  2> /dev/null ")
+      call execute_command_line("gnuplot " // filename // "  2> /dev/null ")
+
+    endif
+
+  endif
+
+  return
+
+end subroutine dos_out_gnuplot

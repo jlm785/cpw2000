@@ -11,108 +11,113 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     interface with lapack.
-!>     diagonalizes the Hamiltonian matrix in a non-orthogonal basis
+!>  Interface with lapack.
+!>  diagonalizes the Hamiltonian matrix in a non-orthogonal basis.
+!>
+!>  \author       José Luís Martins, Carlos Loia Reis
+!>  \version      5.13
+!>  \date         June 2012, March 2020.
+!>  \copyright    GNU Public License v2
 
-       subroutine diag_c16_gen(neig,ham,sm,ev,vec,mxdbnd,info)
+subroutine diag_c16_gen(neig, ham, sm, ev, vec, mxdbnd, info)
 
-!      written June 2012. jlm
-!      modified by CLR for the generalized eigenvalue problem, March 2020
-!      copyright inesc-mn/jose luis martins/Carlos Loia Reis
+! written June 2012. jlm
+! modified by CLR for the generalized eigenvalue problem, March 2020
 !
+! Indentation. 28 September 2026. JLM+claude
 
-       implicit none
+  implicit none
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-      
-!      input
 
-       integer, intent(in)               ::  mxdbnd                      !<  array dimension for number of bands
+! input
 
-       integer, intent(in)               ::  neig                        !<  number of bands
+  integer, intent(in)               ::  mxdbnd                           !<  array dimension for number of bands
 
-       complex(REAL64), intent(in)       ::  ham(mxdbnd,mxdbnd)          !<  <Psi_i|H|Psi_j>
-       complex(REAL64), intent(in)       ::  sm(mxdbnd,mxdbnd)           !<  <Psi_i|Psi_j>
+  integer, intent(in)               ::  neig                             !<  number of bands
 
-!      output
+  complex(REAL64), intent(in)       ::  ham(mxdbnd,mxdbnd)               !<  <Psi_i|H|Psi_j>
+  complex(REAL64), intent(in)       ::  sm(mxdbnd,mxdbnd)                !<  <Psi_i|Psi_j>
 
-       real(REAL64), intent(out)         ::  ev(mxdbnd)                  !<  eigenvalues
-       complex(REAL64), intent(out)      ::  vec(mxdbnd,mxdbnd)          !<  eigenvector
+! output
 
-       integer, intent(out)               ::  info                       !<  if info /=0 subroutine returned with error
+  real(REAL64), intent(out)         ::  ev(mxdbnd)                       !<  eigenvalues
+  complex(REAL64), intent(out)      ::  vec(mxdbnd,mxdbnd)               !<  eigenvector
 
-!      local variables
+  integer, intent(out)               ::  info                            !<  if info /=0 subroutine returned with error
 
-       complex(REAL64), allocatable    :: work(:)
-       complex(REAL64), allocatable    :: S(:,:)
+! local variables
 
-       real(REAL64), allocatable    :: rwork(:)
-       integer, allocatable    :: iwork(:)
+  complex(REAL64), allocatable    :: work(:)
+  complex(REAL64), allocatable    :: S(:,:)
 
-       integer    ::  lwork,liwork,lrwork
-       integer itype
+  real(REAL64), allocatable    :: rwork(:)
+  integer, allocatable    :: iwork(:)
 
-!      counters
+  integer    ::  lwork,liwork,lrwork
+  integer itype
 
-       integer i,j
-        
-       allocate(S(mxdbnd,mxdbnd))
+! counters
 
-       do i=1,neig
-       do j=1,neig
-         vec(j,i) = ham(j,i)
-         S(j,i) = sm(j,i)
-       enddo
-       enddo
+  integer i,j
 
-!      finds the dimension of work arrays
+  allocate(S(mxdbnd,mxdbnd))
 
-       allocate(work(2),rwork(2),iwork(2))
+  do i=1,neig
+  do j=1,neig
+    vec(j,i) = ham(j,i)
+    S(j,i) = sm(j,i)
+  enddo
+  enddo
 
-       lwork = -1
-       liwork = -1
-       lrwork = -1
-       
-       itype = 1
-       
-       call zhegvd (itype, 'V', 'L', neig, vec, mxdbnd, S, mxdbnd, ev,   &
-     &      work, lwork, rwork, lrwork, iwork, liwork, info )
+! finds the dimension of work arrays
 
-       if( info /= 0) then
-          write(6,*)
-          write(6,*)'    ERROR    diag_c16_gen FAILED A, info = ',info
-          write(6,*)
+  allocate(work(2),rwork(2),iwork(2))
 
-          return
+  lwork = -1
+  liwork = -1
+  lrwork = -1
 
-       endif
-       
-       lwork = int( work( 1 ) ) 
-       lrwork = int( rwork( 1 ) ) 
-       liwork = iwork( 1 )
+  itype = 1
 
-       deallocate(work,rwork,iwork)
+  call zhegvd (itype, 'V', 'L', neig, vec, mxdbnd, S, mxdbnd, ev,        &
+      work, lwork, rwork, lrwork, iwork, liwork, info )
 
-       allocate(work(lwork),rwork(lrwork),iwork(liwork))
+  if( info /= 0) then
+     write(6,*)
+     write(6,*)'    ERROR    diag_c16_gen FAILED A, info = ',info
+     write(6,*)
 
-      
-       itype = 1
+     return
 
-      call zhegvd (itype, 'V', 'L', neig, vec, mxdbnd, S, mxdbnd, ev,    &
-     &     work, lwork, rwork, lrwork, iwork, liwork, info )
+  endif
 
-       if( info /= 0) then
-          write(6,*)
-          write(6,*)'     ERROR   diag_c16_gen  FAILED    FAILED ', info
-          write(6,*)
+  lwork = int( work( 1 ) )
+  lrwork = int( rwork( 1 ) )
+  liwork = iwork( 1 )
 
-          return
-          
-       endif
+  deallocate(work,rwork,iwork)
 
-       deallocate(S)
+  allocate(work(lwork),rwork(lrwork),iwork(liwork))
 
-       return
 
-       end subroutine diag_c16_gen
+  itype = 1
+
+ call zhegvd (itype, 'V', 'L', neig, vec, mxdbnd, S, mxdbnd, ev,         &
+     work, lwork, rwork, lrwork, iwork, liwork, info )
+
+  if( info /= 0) then
+     write(6,*)
+     write(6,*)'     ERROR   diag_c16_gen  FAILED    FAILED ', info
+     write(6,*)
+
+     return
+
+  endif
+
+  deallocate(S)
+
+  return
+
+end subroutine diag_c16_gen

@@ -11,160 +11,165 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Generates a Maxwellian velocity distribution
-!>     from ran0 random numbers of Numerical Recipes.
-!>     uses simple pseudo-random numbers, do not
-!>     use for complex statistics!
+!>  Generates a Maxwellian velocity distribution
+!>  from ran0 random numbers of Numerical Recipes
+!>  (through the call to gasdev).
+!>  uses simple pseudo-random numbers, do not
+!>  use for complex statistics!
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         2 November 1993, 6 January 2017.
+!>  \copyright    GNU Public License v2
 
-       subroutine move_random_v_atom(iseed,tempk,vat,vadot,              &
-     & ntype,natom,atmass,adot,                                          &
-     & mxdtyp,mxdatm)
+subroutine move_random_v_atom(iseed, tempk, vat, vadot,                  &
+    ntype, natom, atmass, adot,                                          &
+    mxdtyp, mxdatm)
 
-!      Written November 2, 1993. jlm
-!      Modified 25 July 1995. jlm
-!      Modified 18 January 1999. jlm
-!      Modified 18 September 2002. jlm
-!      Modified 6 January 2017, f90. JLM
-!      Modified, documentation, June 2019. JLM
-!      Copyright inesc-mn/Jose Luis Martins
-
-!      version 4.94 of pw
-!      version 1.5 of md
-
-       implicit none
-
-       integer, parameter :: REAL64 = selected_real_kind(12)
-
-!      input
-
-       integer, intent(in)                ::  mxdtyp                     !< array dimension of types of atoms
-       integer, intent(in)                ::  mxdatm                     !< array dimension of number of atoms of a given type
-
-       real(REAL64), intent(in)           ::  tempk                      !< ionic temperature (in Kelvin)
-
-       integer, intent(in)                ::  ntype                      !< number of types of atoms
-       integer, intent(in)                ::  natom(mxdtyp)              !< number of atoms of type i
-       real(REAL64), intent(in)           ::  atmass(mxdtyp)             !< atomic mass of atoms of type i
-       real(REAL64), intent(in)           ::  adot(3,3)                  !< metric in real space
-
-!      input and output
- 
-       integer, intent(inout)             ::  iseed                      !< seed for rndom number generator
-
-!      output
-
-       real(REAL64), intent(out)          ::  vat(3,mxdatm,mxdtyp)       !< d rat / d t  velocity in lattice coordinates of atom j of type i
-       real(REAL64), intent(out)          ::  vadot(3,3)                 !< d adot / d t  rate of change of metric
-
-!      local variables
-
-       real(REAL64)         ::  avec(3,3),bvec(3,3)
-       real(REAL64)         ::  v1, v2, v3, fac
-       real(REAL64)         ::  gasdev
-       
-       real(REAL64)         ::  tmass,ptot(3),ekint
-
-       integer              ::  ntot
-
-!      constants
-
-       real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
-       real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
-       real(REAL64), parameter  ::  EV = 27.2116_REAL64
-       real(REAL64), parameter  ::  TAUTOK = 11604.9_REAL64 * EV
-
-       integer, parameter       ::  IM = 2147483647
-       integer, parameter       ::  MASK = 123459876
-
-!      counters
-
-       integer       ::  nt, i, j, k
+! Written November 2, 1993. jlm
+! Modified 25 July 1995. jlm
+! Modified 18 January 1999. jlm
+! Modified 18 September 2002. jlm
+! Modified 6 January 2017, f90. JLM
+! Modified, documentation, June 2019. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-       tmass = ZERO
-       ptot(1) = ZERO
-       ptot(2) = ZERO
-       ptot(3) = ZERO
+  implicit none
 
-       call adot_to_avec(adot,avec,bvec)
+  integer, parameter :: REAL64 = selected_real_kind(12)
 
-!      you may comment the next line if you have problems with ieor
+! input
+
+  integer, intent(in)                ::  mxdtyp                          !< array dimension of types of atoms
+  integer, intent(in)                ::  mxdatm                          !< array dimension of number of atoms of a given type
+
+  real(REAL64), intent(in)           ::  tempk                           !< ionic temperature (in Kelvin)
+
+  integer, intent(in)                ::  ntype                           !< number of types of atoms
+  integer, intent(in)                ::  natom(mxdtyp)                   !< number of atoms of type i
+  real(REAL64), intent(in)           ::  atmass(mxdtyp)                  !< atomic mass of atoms of type i
+  real(REAL64), intent(in)           ::  adot(3,3)                       !< metric in real space
+
+! input and output
+
+  integer, intent(inout)             ::  iseed                           !< seed for rndom number generator
+
+! output
+
+  real(REAL64), intent(out)          ::  vat(3,mxdatm,mxdtyp)            !< d rat / d t  velocity in lattice coordinates of atom j of type i
+  real(REAL64), intent(out)          ::  vadot(3,3)                      !< d adot / d t  rate of change of metric
+
+! local variables
+
+  real(REAL64)         ::  avec(3,3),bvec(3,3)
+  real(REAL64)         ::  v1, v2, v3, fac
+  real(REAL64)         ::  gasdev
+
+  real(REAL64)         ::  tmass,ptot(3),ekint
+
+  integer              ::  ntot
+
+! constants
+
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
+  real(REAL64), parameter  ::  EV = 27.2116_REAL64
+  real(REAL64), parameter  ::  TAUTOK = 11604.9_REAL64 * EV
+
+  integer, parameter       ::  IM = 2147483647
+  integer, parameter       ::  MASK = 123459876
+
+! counters
+
+  integer       ::  nt, i, j, k
 
 
-       iseed = ieor(iseed,MASK)
-       if(iseed > IM) iseed = mod(iseed,IM)
-       if(iseed == 0) iseed = MASK
+  tmass = ZERO
+  ptot(1) = ZERO
+  ptot(2) = ZERO
+  ptot(3) = ZERO
 
-       ntot = 0
+  call adot_to_avec(adot, avec, bvec)
 
-       do nt = 1,ntype
-         do j = 1,natom(nt)
- 
-!          random velocity
+! you may comment the next line if you have problems with ieor
 
-           do k = 1,3
 
-             vat(k,j,nt) = gasdev(iseed)*                                &
-     &                          sqrt(tempk/(atmass(nt)*TAUTOK))
-             ptot(k) = ptot(k) + atmass(nt)*vat(k,j,nt)
+  iseed = ieor(iseed,MASK)
+  if(iseed > IM) iseed = mod(iseed,IM)
+  if(iseed == 0) iseed = MASK
 
-           enddo
+  ntot = 0
 
-           tmass = tmass + atmass(nt)
-           ntot = ntot + 1
+  do nt = 1,ntype
+    do j = 1,natom(nt)
 
-         enddo
-       enddo
+!     random velocity
 
-!      total linear momentum is zero
+      do k = 1,3
 
-       ekint = ZERO
-       do nt = 1,ntype
-         do j = 1,natom(nt)
-           do k=1,3
-             vat(k,j,nt) = vat(k,j,nt) - ptot(k)/tmass
-             ekint = ekint + atmass(nt)*vat(k,j,nt)*vat(k,j,nt)/2
-           enddo
-         enddo
-       enddo
+        vat(k,j,nt) = gasdev(iseed)*                                     &
+                           sqrt(tempk/(atmass(nt)*TAUTOK))
+        ptot(k) = ptot(k) + atmass(nt)*vat(k,j,nt)
 
-       if(ntot > 1) then
-         fac = (ekint*2) / (3*ntot-3)*UM
-         fac = sqrt(tempk/(fac*TAUTOK))
-       else
-         fac = UM
-       endif
+      enddo
 
-!      changes to lattice coordinates and corrects by fac
+      tmass = tmass + atmass(nt)
+      ntot = ntot + 1
 
-       do nt = 1,ntype
-         do j = 1,natom(nt)
+    enddo
+  enddo
 
-           v1 = vat(1,j,nt)*bvec(1,1) + vat(2,j,nt)*bvec(2,1) +          &
-     &          vat(3,j,nt)*bvec(3,1)
-           v2 = vat(1,j,nt)*bvec(1,2) + vat(2,j,nt)*bvec(2,2) +          &
-     &          vat(3,j,nt)*bvec(3,2)
-           v3 = vat(1,j,nt)*bvec(1,3) + vat(2,j,nt)*bvec(2,3) +          &
-     &          vat(3,j,nt)*bvec(3,3)
+! total linear momentum is zero
 
-           vat(1,j,nt) = v1*fac/(2*PI)
-           vat(2,j,nt) = v2*fac/(2*PI)
-           vat(3,j,nt) = v3*fac/(2*PI)
+  ekint = ZERO
+  do nt = 1,ntype
+    do j = 1,natom(nt)
+      do k=1,3
+        vat(k,j,nt) = vat(k,j,nt) - ptot(k)/tmass
+        ekint = ekint + atmass(nt)*vat(k,j,nt)*vat(k,j,nt)/2
+      enddo
+    enddo
+  enddo
 
-         enddo
-       enddo
+  if(ntot > 1) then
+    fac = (ekint*2) / (3*ntot-3)*UM
+    fac = sqrt(tempk/(fac*TAUTOK))
+  else
+    fac = UM
+  endif
 
-!      vadot is initialized to zero
+! changes to lattice coordinates and corrects by fac
 
-       do i = 1,3
-       do j = 1,3
-         vadot(i,j) = ZERO
-       enddo
-       enddo
+  do nt = 1,ntype
+    do j = 1,natom(nt)
 
-       iseed = ieor(iseed,MASK)
+      v1 = vat(1,j,nt)*bvec(1,1) + vat(2,j,nt)*bvec(2,1) +               &
+           vat(3,j,nt)*bvec(3,1)
+      v2 = vat(1,j,nt)*bvec(1,2) + vat(2,j,nt)*bvec(2,2) +               &
+           vat(3,j,nt)*bvec(3,2)
+      v3 = vat(1,j,nt)*bvec(1,3) + vat(2,j,nt)*bvec(2,3) +               &
+           vat(3,j,nt)*bvec(3,3)
 
-       return
-       end subroutine move_random_v_atom
+      vat(1,j,nt) = v1*fac/(2*PI)
+      vat(2,j,nt) = v2*fac/(2*PI)
+      vat(3,j,nt) = v3*fac/(2*PI)
+
+    enddo
+  enddo
+
+! vadot is initialized to zero
+
+  do i = 1,3
+  do j = 1,3
+    vadot(i,j) = ZERO
+  enddo
+  enddo
+
+  iseed = ieor(iseed,MASK)
+
+  return
+
+end subroutine move_random_v_atom
 
 

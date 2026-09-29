@@ -11,54 +11,58 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Calculates the kinetic energy of the wave-functions
+!>  Calculates the kinetic energy of the wave-functions.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         18 February 1990, 18 October 2015.
+!>  \copyright    GNU Public License v2
 
-       subroutine kinetic_energy(neig,mtxd,ekpg,psi,ekpsi,               &
-     & mxddim,mxdbnd)
+subroutine kinetic_energy(neig, mtxd, ekpg, psi, ekpsi,                  &
+    mxddim, mxdbnd)
 
-!      written february 18 1990. jlm
-!      version 4.0. 15 october 93. jlm
-!      modified (f90) 14 January 2014. jlm
-!      icmplx removed, 18 October 2015. JLM
-!      copyright INESC-MN/Jose Luis Martins
-
-
-!      version 4.94
-
-       implicit none
-
-       integer, parameter          :: REAL64 = selected_real_kind(12)
-
-!      input
-
-       integer, intent(in)                ::  mxddim                     !<  array dimension of plane-waves
-       integer, intent(in)                ::  mxdbnd                     !<  array dimension for number of bands
-       integer, intent(in)                ::  neig                       !<  number of eigenvectors (requested on input, modified by degeneracies on output)
-       integer, intent(in)                ::  mtxd                       !<  dimension of the hamiltonian
-       real(REAL64), intent(in)           ::  ekpg(mxddim)               !<  kinetic energy (hartree) of k+g-vector of row/column i
-
-       complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)         !<  component j of eigenvector i
-
-!      output
-
-       real(REAL64), intent(out)          ::  ekpsi(mxdbnd)              !<  kinetic energy of eigenvector i. (Hartree)
-
-!      constants
-
-       real(REAL64), parameter  :: ZERO = 0.0_REAL64
-
-!      counters
-
-       integer    ::  i, j
+! written february 18 1990. jlm
+! version 4.0. 15 october 93. jlm
+! modified (f90) 14 January 2014. jlm
+! icmplx removed, 18 October 2015. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-       do i=1,neig
-         ekpsi(i) = ZERO
-         do j=1,mtxd
-           ekpsi(i) = ekpsi(i) + ekpg(j)*                              &
-     &        real(psi(j,i)*conjg(psi(j,i)),REAL64)
-         enddo
-       enddo
+  implicit none
 
-       return
-       end
+  integer, parameter          :: REAL64 = selected_real_kind(12)
+
+! input
+
+  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
+  integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
+  real(REAL64), intent(in)           ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
+
+  complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i
+
+! output
+
+  real(REAL64), intent(out)          ::  ekpsi(mxdbnd)                   !<  kinetic energy of eigenvector i. (Hartree)
+
+! constants
+
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64
+
+! counters
+
+  integer    ::  i, j
+
+
+  do i=1,neig
+    ekpsi(i) = ZERO
+    do j=1,mtxd
+      ekpsi(i) = ekpsi(i) + ekpg(j)*                                     &
+         real(psi(j,i)*conjg(psi(j,i)),REAL64)
+    enddo
+  enddo
+
+  return
+
+end subroutine kinetic_energy

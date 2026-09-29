@@ -11,129 +11,131 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>    indexes a real array by the heapsort method
-!>    adapted from http://rosettacode.org
-!>    see also W. H. Preuss et al. Numerical Recipes     
+!>  Indexes a real array by the heapsort method
+!>  adapted from http://rosettacode.org
+!>  see also W. H. Preuss et al. Numerical Recipes.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         24 June 2013.
+!>  \copyright    GNU Public License v2
 
-      subroutine sort(n,a,indx)
+subroutine sort(n, a, indx)
 
-!     written 24 June 2013. JLM
-!     Modified documentation August 2019.  JLM
-!     copyright  J.L.Martins, INESC-MN.
+! written 24 June 2013. JLM
+! Modified documentation August 2019.  JLM
+! Indentation. 28 September 2026. JLM+claude
 
-!      version 4.94
 
-      implicit none
-      integer, parameter  :: REAL64 = selected_real_kind(12)
+  implicit none
+  integer, parameter  :: REAL64 = selected_real_kind(12)
 
-!     input
+! input
 
-      integer, intent(in)        ::  n                                   !<  length of array
-      real(REAL64), intent(in)   ::  a(n)                                !<  array to be indexed
+  integer, intent(in)        ::  n                                       !<  length of array
+  real(REAL64), intent(in)   ::  a(n)                                    !<  array to be indexed
 
-!     output
+! output
 
-      integer, intent(out)       ::  indx(n)                             !<  index of array a
+  integer, intent(out)       ::  indx(n)                                 !<  index of array a
 
-!     local variables
+! local variables
 
-      integer    ::  iroot,ichild,istart,ibot,indxt,ic
+  integer    ::  iroot,ichild,istart,ibot,indxt,ic
 
-      if(n < 1) return
-      
-      do ichild=1,n
-        indx(ichild) = ichild
-      enddo
+  if(n < 1) return
 
-      if(n == 1) return
-      
-!     hiring phase
+  do ichild=1,n
+    indx(ichild) = ichild
+  enddo
 
-      ibot = n
-      
-      do istart = n/2,1,-1
-        indxt = indx(istart)
-        iroot = istart
+  if(n == 1) return
 
-!       long enough siftdown loop does not exceed ~log(n)/log(2)
+! hiring phase
 
-        do ic = 1,n+5
-          ichild = 2*iroot
-          if(ichild <= ibot) then
-            if(ichild < ibot) then
-              if(a(indx(ichild)) < a(indx(ichild+1)))                    &
-     &              ichild = ichild + 1
-            endif
+  ibot = n
 
-            if(a(indxt) < a(indx(ichild))) then
-              indx(iroot) = indx(ichild)
-              iroot = ichild
-            else
+  do istart = n/2,1,-1
+    indxt = indx(istart)
+    iroot = istart
 
-              exit
+!   long enough siftdown loop does not exceed ~log(n)/log(2)
 
-            endif
+    do ic = 1,n+5
+      ichild = 2*iroot
+      if(ichild <= ibot) then
+        if(ichild < ibot) then
+          if(a(indx(ichild)) < a(indx(ichild+1))) ichild = ichild + 1
+        endif
 
-          else
+        if(a(indxt) < a(indx(ichild))) then
+          indx(iroot) = indx(ichild)
+          iroot = ichild
+        else
 
-            exit
-
-          endif
-          
-        enddo
-        
-        indx(iroot) = indxt
-
-      enddo
-
-!     retirement and promotion phase
-
-      istart = 1
-      
-      do ibot = n-1,1,-1
-        indxt = indx(ibot+1)
-        indx(ibot+1) = indx(1)
-        if(ibot == 1) then
-            
           exit
 
         endif
 
-        iroot = istart
+      else
 
-!       long enough siftdown loop does not exceed ~log(n)/log(2)  (repeated...)
-        
-        do ic = 1,n+5
-          ichild = 2*iroot
-          if(ichild <= ibot) then
-            if(ichild < ibot) then
-              if(a(indx(ichild)) < a(indx(ichild+1)))                    &
-     &              ichild = ichild + 1
-            endif
+        exit
 
-            if(a(indxt) < a(indx(ichild))) then
-              indx(iroot) = indx(ichild)
-              iroot = ichild
-            else
+      endif
 
-              exit
+    enddo
 
-            endif
+    indx(iroot) = indxt
 
-          else
+  enddo
 
-            exit
+! retirement and promotion phase
 
-          endif
-          
-        enddo
-        
-        indx(iroot) = indxt
+  istart = 1
 
-      enddo
+  do ibot = n-1,1,-1
+    indxt = indx(ibot+1)
+    indx(ibot+1) = indx(1)
+    if(ibot == 1) then
 
-      indx(1) = indxt
+      exit
 
-      return
+    endif
 
-      end subroutine sort
+    iroot = istart
+
+!   long enough siftdown loop does not exceed ~log(n)/log(2)  (repeated...)
+
+    do ic = 1,n+5
+      ichild = 2*iroot
+      if(ichild <= ibot) then
+        if(ichild < ibot) then
+          if(a(indx(ichild)) < a(indx(ichild+1))) ichild = ichild + 1
+        endif
+
+        if(a(indxt) < a(indx(ichild))) then
+          indx(iroot) = indx(ichild)
+          iroot = ichild
+        else
+
+          exit
+
+        endif
+
+      else
+
+        exit
+
+      endif
+
+    enddo
+
+    indx(iroot) = indxt
+
+  enddo
+
+  indx(1) = indxt
+
+  return
+
+end subroutine sort

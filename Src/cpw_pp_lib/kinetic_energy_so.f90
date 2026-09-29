@@ -11,57 +11,60 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>     Calculates the kinetic energy of the wave-functions
-!>     spin-orbit version
+!>  Calculates the kinetic energy of the wave-functions
+!>  spin-orbit version.
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         18 February 1990, 30 June 2014.
+!>  \copyright    GNU Public License v2
 
-       subroutine kinetic_energy_so(neig,mtxd,ekpg,psi,ekpsi,            &
-     & mxddim,mxdbnd)
+subroutine kinetic_energy_so(neig, mtxd, ekpg, psi, ekpsi,               &
+    mxddim, mxdbnd)
+
+! written february 18 1990. jlm
+! version 4.0. 15 october 93. jlm
+! modified (f90) 14 January 2014. jlm
+! adapted to spin-orbit, 30 June 2014. JLM
+! Modified, documentation, 6 February 2020. JLM
+! Indentation. 28 September 2026. JLM+claude
 
 
-!      written february 18 1990. jlm
-!      version 4.0. 15 october 93. jlm
-!      modified (f90) 14 January 2014. jlm
-!      adapted to spin-orbit, 30 June 2014. JLM
-!      Modified, documentation, 6 February 2020. JLM
-!      copyright INESC-MN/Jose Luis Martins
+  implicit none
 
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
-!      version 4.94
+! input
 
-       implicit none
+  integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
+  integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
+  integer, intent(in)                ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
+  integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
+  real(REAL64), intent(in)           ::  ekpg(mxddim)                    !<  kinetic energy (hartree) of k+g-vector of row/column i
 
-       integer, parameter          :: REAL64 = selected_real_kind(12)
+  complex(REAL64), intent(in)        ::  psi(2*mxddim,2*mxdbnd)          !<  component j of eigenvector i
 
-!      input
+! output
 
-       integer, intent(in)                ::  mxddim                     !<  array dimension of plane-waves
-       integer, intent(in)                ::  mxdbnd                     !<  array dimension for number of bands
-       integer, intent(in)                ::  neig                       !<  number of eigenvectors (requested on input, modified by degeneracies on output)
-       integer, intent(in)                ::  mtxd                       !<  dimension of the hamiltonian
-       real(REAL64), intent(in)           ::  ekpg(mxddim)               !<  kinetic energy (hartree) of k+g-vector of row/column i
+  real(REAL64), intent(out)          ::  ekpsi(2*mxdbnd)                 !<  kinetic energy of eigenvector i. (Hartree)
 
-       complex(REAL64), intent(in)        ::  psi(2*mxddim,2*mxdbnd)     !<  component j of eigenvector i
+! constants
 
-!      output
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64
 
-       real(REAL64), intent(out)          ::  ekpsi(2*mxdbnd)            !<  kinetic energy of eigenvector i. (Hartree)
+! counters
 
-!      constants
+  integer    ::  i, j
 
-       real(REAL64), parameter  :: ZERO = 0.0_REAL64
+    do i=1,2*neig
+      ekpsi(i) = ZERO
+      do j=1,mtxd
+        ekpsi(i) = ekpsi(i) + ekpg(j)*                                   &
+           real(psi(2*j-1,i)*conjg(psi(2*j-1,i)) +                       &
+                psi(2*j  ,i)*conjg(psi(2*j  ,i)),REAL64)
+      enddo
+    enddo
 
-!      counters
+  return
 
-       integer    ::  i, j
-
-         do i=1,2*neig
-           ekpsi(i) = ZERO
-           do j=1,mtxd
-             ekpsi(i) = ekpsi(i) + ekpg(j)*                              &
-     &          real(psi(2*j-1,i)*conjg(psi(2*j-1,i)) +                  &
-     &               psi(2*j  ,i)*conjg(psi(2*j  ,i)),REAL64)
-           enddo
-         enddo
-
-       return
-       end subroutine kinetic_energy_so
+end subroutine kinetic_energy_so
