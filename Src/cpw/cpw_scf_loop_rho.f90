@@ -12,19 +12,22 @@
 !------------------------------------------------------------!
 
 !>  Loop over the k-points to calculate the charge density
+!>  and if required the "kinetic energy density".
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026.
+!>  \date         12 May 2026. 1 October 2026.
 !>  \copyright    GNU Public License v2
 
 
-subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
-      dims_, crys_, recip_, kpoint_, hamallk_, psiallk_, chdens_,        &
-      filename_)
+subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
+      kmscr, dtau_dbdot, mxdscr,                                         &
+      dims_, crys_, spaceg_, recip_, kpoint_, hamallk_, psiallk_,        &
+      chdens_, filename_)
 
 ! extracted from cpw_scf (it was too long), 12 may 2026. JLM
 ! renamed occp to occ_x_wgk.  28 September 2026. JLM+claude
+! tau_by_fft_stress. 1 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -34,6 +37,8 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
   type(dims_t)                       ::  dims_                           !<  array dimensions
 
   type(crys_t)                       ::  crys_                           !<  crystal structure
+
+  type(spaceg_t)                     ::  spaceg_                         !<  space group information
 
   type(recip_t)                      ::  recip_                          !<  reciprocal space information
 
@@ -51,17 +56,23 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
 
   real(REAL64), intent(in)           ::  ekl(dims_%mxdnrk*dims_%mxdbnd)  !<  kinetic energy of wave-function j, for all the k-points
   logical, intent(in)                ::  lxctau                          !<  calculate tau
+  logical, intent(in)                ::  lxcmgga                         !<  meta-GGA, also calculates dtau_dbdot (used in the stress)
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dbdot (vscr)
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+
 ! output
 
   real(REAL64), intent(out)          ::  ektot                           !<  electron kinetic energy (Hartree)
   complex(REAL64), intent(out)       ::  tau(dims_%mxdnst)               !<  "kinetic energy density"
+  real(REAL64), intent(out)          ::  dtau_dbdot(3,3,mxdscr)          !<  d tau / d bdot on the real space mesh of the potential (hartree/bohr^3), only for meta-GGA
 
 ! allocatable arrays
 
   real(REAL64), allocatable          ::  occ_x_wgk(:)                    !  occupation*k-weight*spin deg. of eigenvector j
   complex(REAL64), allocatable       ::  denk(:)
 
-  complex(REAL64), allocatable       ::  tauk(:)
+  complex(REAL64), allocatable       ::  tauk(:)                         !  contribution of k-point to tau
+  real(REAL64), allocatable          ::  dtau_k_dbdot(:,:,:)             !  contribution of k-point to dtau_dbdot
 
 ! local variables
 
@@ -72,7 +83,6 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
 ! parameters
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counters
 
@@ -81,7 +91,12 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
   allocate(denk(dims_%mxdnst))
   allocate(occ_x_wgk(dims_%mxdbnd))
 
-  if(lxctau) allocate(tauk(dims_%mxdnst))
+  if(lxctau) then
+    allocate(tauk(dims_%mxdnst))
+    if(lxcmgga) allocate(dtau_k_dbdot(3,3,mxdscr))
+  endif
+
+  if(lxctau .and. lxcmgga) dtau_dbdot(:,:,:) = ZERO
 
   ektot = zero
   iel = 0
@@ -124,14 +139,38 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
       chdens_%den(i) = chdens_%den(i) + denk(i)
     enddo
 
+!   adds to the kinetic energy density.  For meta-GGA also d tau / d bdot,
+!   that requires the sum over the full Brillouin zone mesh.
+
     if(lxctau) then
 
-      call tau_by_fft(tauk, mtxd, neig, occ_x_wgk,                       &
-          hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),     &
-          rkpt, crys_%adot,                                              &
-          recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,   &
-          recip_%inds, recip_%kmax, recip_%mstar,                        &
-          dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
+      if(lxcmgga) then
+
+        call tau_by_fft_stress(tauk, .TRUE., kmscr, dtau_k_dbdot,        &
+            kpoint_%nx, kpoint_%ny, kpoint_%nz,                          &
+            kpoint_%sx, kpoint_%sy, kpoint_%sz,                          &
+            mtxd, neig, occ_x_wgk,                                       &
+            hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),   &
+            rkpt, irk, crys_%adot,                                       &
+            spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                   &
+            kpoint_%nrk, kpoint_%rk, kpoint_%wgk, kpoint_%kmap,          &
+            recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns, &
+            recip_%inds, recip_%kmax, recip_%mstar,                      &
+            dims_%mxddim, dims_%mxdbnd, dims_%mxdnrk,                    &
+            dims_%mxdgve, dims_%mxdnst, mxdscr)
+
+        dtau_dbdot(:,:,:) = dtau_dbdot(:,:,:) + dtau_k_dbdot(:,:,:)
+
+      else
+
+        call tau_by_fft(tauk, mtxd, neig, occ_x_wgk,                     &
+            hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),   &
+            rkpt, crys_%adot,                                            &
+            recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns, &
+            recip_%inds, recip_%kmax, recip_%mstar,                      &
+            dims_%mxddim, dims_%mxdbnd, dims_%mxdgve, dims_%mxdnst)
+
+      endif
 
       do i = 1,recip_%ns
         tau(i) = tau(i) + tauk(i)
@@ -144,7 +183,10 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, tau,                     &
   deallocate(denk)
   deallocate(occ_x_wgk)
 
-  if(lxctau) deallocate(tauk)
+  if(lxctau) then
+    deallocate(tauk)
+    if(lxcmgga) deallocate(dtau_k_dbdot)
+  endif
 
   return
 

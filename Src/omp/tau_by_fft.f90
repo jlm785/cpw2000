@@ -32,6 +32,8 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
 ! Name of star_of_g. 10 March 2026. JLM
 ! remove dble, 18 August 2026. JLM
 ! renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
+! lattice coordinates and the metric bdot instead of cartesian coordinates,
+! as in tau_by_fft_stress. 1 October 2026. JLM+claude
 
 
   implicit none
@@ -89,8 +91,8 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
   integer         ::  iadd
   complex(REAL64) ::  xp
 
-  real(REAL64)    ::  qk(3),qcar(3)
-  real(REAL64)    ::  avec(3,3),bvec(3,3)
+  real(REAL64)    ::  qk(3)                                              !  k+G in reciprocal lattice coordinates
+  real(REAL64)    ::  vcell, bdot(3,3)                                   !  cell volume, metric in reciprocal space
 
 ! counters
 
@@ -104,7 +106,7 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
   complex(REAL64), parameter  ::  C_I = cmplx(ZERO,UM,REAL64)
 
 
-  call adot_to_avec(adot,avec,bvec)
+  call adot_to_bdot(adot, vcell, bdot)
 
   do i=1,ns
     tauk(i) = C_ZERO
@@ -190,18 +192,17 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
 !$omp end parallel do
 
 
-!$omp parallel do default(shared) private(i,qk,qcar)
+!       components of i (k+G) psi in reciprocal lattice coordinates
+
+!$omp parallel do default(shared) private(i,qk)
         do i=1,mtxd
           qk(1) = rkpt(1) + real(kgv(1,isort(i)),REAL64)
           qk(2) = rkpt(2) + real(kgv(2,isort(i)),REAL64)
           qk(3) = rkpt(3) + real(kgv(3,isort(i)),REAL64)
-          qcar(1) = bvec(1,1)*qk(1) + bvec(1,2)*qk(2) + bvec(1,3)*qk(3)
-          qcar(2) = bvec(2,1)*qk(1) + bvec(2,2)*qk(2) + bvec(2,3)*qk(3)
-          qcar(3) = bvec(3,1)*qk(1) + bvec(3,2)*qk(2) + bvec(3,3)*qk(3)
 
-          chd(ipoint(i),1) = C_I*qcar(1)*psi(i,j)
-          chd(ipoint(i),2) = C_I*qcar(2)*psi(i,j)
-          chd(ipoint(i),3) = C_I*qcar(3)*psi(i,j)
+          chd(ipoint(i),1) = C_I*qk(1)*psi(i,j)
+          chd(ipoint(i),2) = C_I*qk(2)*psi(i,j)
+          chd(ipoint(i),3) = C_I*qk(3)*psi(i,j)
         enddo
 !$omp end parallel do
 
@@ -211,12 +212,13 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
         call cfft_wf_c16(chd(:,2), id,n1,n2,n3, kd1,kd2,kd3, -1, wrkfft,mxdwrk)
         call cfft_wf_c16(chd(:,3), id,n1,n2,n3, kd1,kd2,kd3, -1, wrkfft,mxdwrk)
 
-!       Calculates the square of chd (wave-function -> charge)
+!       |grad psi|^2 using the reciprocal space metric (includes the 2 pi factors)
 
 !$omp parallel do default(shared) private(i,xp)
         do i=1,ntot
-          xp = conjg(chd(i,1))*chd(i,1) + conjg(chd(i,2))*chd(i,2)  &
-                                        + conjg(chd(i,3))*chd(i,3)
+          xp = conjg(chd(i,1))*(bdot(1,1)*chd(i,1) + bdot(1,2)*chd(i,2) + bdot(1,3)*chd(i,3)) +   &
+               conjg(chd(i,2))*(bdot(2,1)*chd(i,1) + bdot(2,2)*chd(i,2) + bdot(2,3)*chd(i,3)) +   &
+               conjg(chd(i,3))*(bdot(3,1)*chd(i,1) + bdot(3,2)*chd(i,2) + bdot(3,3)*chd(i,3))
           taumsh(i) = taumsh(i) + occ_x_wgk(j)*real(xp,REAL64) / 2
         enddo
 !$omp end parallel do
@@ -256,9 +258,6 @@ subroutine tau_by_fft(tauk, mtxd, neig, occ_x_wgk, isort, psi,           &
       deallocate(chd)
       deallocate(wrkfft)
       deallocate(taumsh)
-
-
-!     CONJ SHOULD BE CONVERTED TO INTEGER OR LOGICAL
 
       call gvec_star_of_g_fold(tauk, tauu, .FALSE.,                      &
            ng, phase, conj, ns, inds, mstar,                             &

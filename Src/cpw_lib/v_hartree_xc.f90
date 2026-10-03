@@ -20,11 +20,11 @@
 !>  \date         8 June 1987.  25 November 2025.
 !>  \copyright    GNU Public License v2
 
-subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
+subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
     exc, strxc, rhovxc,                                                  &
-    vhar, vxc, den, denc, rholap, tau,                                   &
+    vhar, vxc, den, denc, rholap, tau, dtau_dbdot,                       &
     ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
-    mxdgve, mxdnst)
+    mxdgve, mxdnst, mxdscr)
 
 ! Adapted from Sverre Froyen plane wave program
 ! written june 8 1987. jlm
@@ -42,6 +42,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 ! Kinetic energy density not the double. 25 November 2025. JLM
 ! name of mesh_fold, mesh_set, star_of_g. 10 March 2026. JLM
 ! Pass packing of rho/tau/.. to gvec_mesh_set. 11 March 2026. JLM
+! xc on the real space mesh of the potential (kmscr). dtau_dbdot. 1 October 2026. JLM+claude
 
 
   implicit none
@@ -52,6 +53,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
 
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dbdot, mesh of the potential (vscr)
 
   integer, intent(in)                ::  ipr                             !<  print switch
   character(len=*), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pbe, tbl)
@@ -64,6 +66,8 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   complex(REAL64), intent(in)        ::  denc(mxdnst)                    !<  core density for the prototype G-vector
   complex(REAL64), intent(in)        ::  rholap(mxdnst)                  !<  Laplacian of charge density
   complex(REAL64), intent(in)        ::  tau(mxdnst)                     !<  "kinetic energy density"
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+  real(REAL64),  intent(in)          ::  dtau_dbdot(3,3,mxdscr)          !<  derivative of kinetic energy density with respect to metric on the mesh of the potential (kmscr) [only correction for lxcmgga]
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -90,6 +94,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   real(REAL64), allocatable          ::  rhomsh(:)
   real(REAL64), allocatable          ::  rholapmsh(:)
   real(REAL64), allocatable          ::  taumsh(:)
+!  real(REAL64), allocatable          ::  dtau_dbdot(:,:,:)
   real(REAL64), allocatable          ::  wrkfft(:)
   complex(REAL64), allocatable       ::  chd(:)
   complex(REAL64), allocatable       ::  dentot(:)
@@ -133,13 +138,30 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
     enddo
   endif
 
-  call size_fft(kmax, nsfft, mxdfft, mxdwrk)
+! the xc is calculated on the real space mesh of the potential (kmscr),
+! the same mesh as dtau_dbdot.  With the dual approximation it is
+! smaller than the mesh of size_fft(kmax).  gvec_mesh_set then wraps
+! around the high G components, so the values at the mesh points are exact.
 
-  n1 = nsfft(1)
-  n2 = nsfft(2)
-  n3 = nsfft(3)
-  id = nsfft(1) + 1
+  call size_fft(kmscr, nsfft, mxdfft, mxdwrk)
+
+  n1 = kmscr(4)
+  n2 = kmscr(5)
+  n3 = kmscr(6)
+  id = kmscr(7)
+
   ntot = id * n2 * n3
+
+  if(nsfft(1) /= n1 .or. nsfft(2) /= n2 .or. nsfft(3) /= n3 .or.         &
+     ntot > mxdfft .or. ntot > mxdscr) then
+    write(6,*)
+    write(6,'("   STOPPED in v_hartree_xc:  inconsistent mesh ",4i6,      &
+       &      "  size_fft ",3i6,"  mxdfft, mxdscr ",2i10)')              &
+         n1, n2, n3, id, nsfft(1), nsfft(2), nsfft(3), mxdfft, mxdscr
+
+    stop
+
+  endif
 
   allocate(dentot(mxdnst))
   allocate(rhomsh(mxdfft))
@@ -165,7 +187,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
     allocate(rholapmsh(mxdfft))
 
     call gvec_mesh_set(ipr, "rholap", adot, rholap,                      &
-        rholapmsh, id,n1,n2,n2, .TRUE.,                                  &
+        rholapmsh, id,n1,n2,n3, .TRUE.,                                  &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
@@ -184,6 +206,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
         ng, kgv, phase, conj, inds, kmax,                                &
         mxdgve, mxdnst, mxdfft)
 
+
   else
 
     allocate(taumsh(1))
@@ -191,8 +214,9 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot,             &
   endif
 
 
-  call xc_cell(author, tblaha, lkincalc, id, n2, n1,n2,n3,               &
-        rhomsh, taumsh, rholapmsh, vxcmsh, adot, exc, rhovxc, strxc )
+  call xc_cell(author, adot, tblaha, lkincalc, id,n2, n1,n2,n3,          &
+        rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
+        exc, vxcmsh, rhovxc, strxc )
 
 
   deallocate(rholapmsh)

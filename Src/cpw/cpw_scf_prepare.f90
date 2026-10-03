@@ -20,7 +20,7 @@
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
-     nsave, chdsave,                                                     &
+     nsave, chdsave, kmscr,                                              &
      exc,strxc,rhovxc,                                                   &
      dims_,crys_,recip_,strfac_,pseudo_,chdens_,vcomp_,flags_,           &
      ewald_,xc_)
@@ -28,6 +28,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 ! Adapted from the code without cpw_variables. around 2020. JLM
 ! New variable for v_Hartree_xc. Indentation. 24 November 2025. JLM
 ! core kinetic energy density, 15 April 2026. JLM
+! kmscr and dtau_dbdot for v_hartree_xc (mesh of the potential). 1 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -49,6 +50,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   logical, intent(in)                ::  newcalc                         !<  indicates that it is a new calculation (equivalent iter = ist0+1)
 
   integer, intent(in)                ::  nsave(3)                        !<  dimensions of chdsave
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
   complex(REAL64), intent(inout)     ::                                  &
        chdsave(-nsave(1):nsave(1),-nsave(2):nsave(2),-nsave(3):nsave(3)) !<  quantity in reciprocal point i,j,k
 
@@ -60,6 +62,9 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   complex(REAL64), allocatable        ::  rholap(:)                      !  Laplacian of charge density
   complex(REAL64), allocatable        ::  tau(:)                         !  Kinetic energy density (whatever that means)
+  real(REAL64), allocatable           ::  dtau_dbdot(:,:,:)           !  d tau / d bdot on the mesh of the potential (not used here)
+
+  integer       ::  mxdscr, mxdwrk, nsfft(3)                             !  size of the mesh of the potential
 
   integer       ::  i
 
@@ -116,6 +121,10 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   allocate(rholap(dims_%mxdnst))
   allocate(tau(dims_%mxdnst))
 
+  call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
+  allocate(dtau_dbdot(3,3,mxdscr))
+  dtau_dbdot(:,:,:) = ZERO
+
   do i = 1,recip_%ns
     tau(i) = C_ZERO
     rholap(i) = C_ZERO
@@ -125,14 +134,16 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   if(iprglob > 1) ipr = 1
 
   call v_hartree_xc(ipr, xc_%author, xc_%tblaha, .FALSE., crys_%adot,    &
-      exc, strxc, rhovxc,                                                &
-      vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc, rholap, tau,   &
+      kmscr, exc, strxc, rhovxc,                                         &
+      vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc,                &
+      rholap, tau, dtau_dbdot,                                        &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,                 &
-      dims_%mxdgve, dims_%mxdnst)
+      dims_%mxdgve, dims_%mxdnst, mxdscr)
 
   deallocate(rholap)
   deallocate(tau)
+  deallocate(dtau_dbdot)
 
   return
 

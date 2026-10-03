@@ -21,6 +21,8 @@
 
 program cpw2000
 
+! spaceg_ passed to cpw_scf for tau_by_fft_stress. 29 September 2026. JLM+claude
+! kmscr passed to cpw_scf_prepare (xc on the mesh of the potential). 29 September 2026. JLM+claude
 
   use cpw_variables
 
@@ -250,7 +252,7 @@ program cpw2000
 !   End of newcel
 
     call cpw_scf_prepare(ealpha, iprglob, newcalc,                       &
-       nsave, chdsave,                                                   &
+       nsave, chdsave, kmscr,                                            &
        exc, strxc, rhovxc,                                               &
        dims_, crys_, recip_, strfac_, pseudo_, chdens_, vcomp_, flags_,  &
        ewald_, xc_)
@@ -281,7 +283,7 @@ program cpw2000
             efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,          &
             dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,    &
             vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,        &
-            total_, ewald_, chdens_, filename_)
+            total_, ewald_, chdens_, filename_, spaceg_)
 
         iguess = 1
 
@@ -305,7 +307,7 @@ program cpw2000
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_, filename_)
+      total_, ewald_, chdens_, filename_, spaceg_)
 
 
     endif

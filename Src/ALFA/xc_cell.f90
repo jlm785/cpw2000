@@ -19,11 +19,12 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         September 2015, 12 May 2026.
+!>  \date         23 February 1999, 1 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
-        chdr, taumsh, lapmsh, vxc, adot, exc, rhovxc, strxc )
+subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
+        rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
+        exc, vxc, rhovxc, strxc)
 
 ! Written 23 February 1999. jlm
 ! Modified for MMGA Tran-Blaha. CLR
@@ -35,7 +36,9 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 ! Kinetic energy density not twice (twotau -> tau). 25 November 2025. JLM
 ! Thomas-Fermi-von Weizsaker for tau. 12 May 2026. JLM
 ! replace dble, 18 August 2026. JLM
-! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! d_taumsh_dgij(3,3,mesh) as in tau_by_fft_stress. 29 September 2026. JLM+claude
+! stress contribution of the tau correction taumsh and d_taumsh_dgij. 29 September 2026. JLM+claude
+! renamed d_taumsh_dgij to dtau_dbdot. 1 October 2026. JLM+claude
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -50,26 +53,25 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
   real(REAL64), intent(in)           ::  tblaha                          !<  Tran-Blaha constant, if negative calculates it...
   logical, intent(in)                ::  lkincalc                        !<  Indicates that the kinetic energy density has been calculated.
 
-  integer, intent(in)                ::  id1                             !<  first dimension of the fft array
-  integer, intent(in)                ::  id2                             !<  second dimension of the fft array
-  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
-  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
-  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
-  real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
+  integer, intent(in)                ::  id1, id2                        !<  first and second dimension of the fft array
+  integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
+  real(REAL64), intent(in)           ::  rhomsh(id1,id2,n3)              !<  charge density (1/bohr^3)
   real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) [total for lxcmggavxc, correction for lxcmgga]
-  real(REAL64), intent(in)           ::  lapmsh(id1,id2,n3)              !<  Laplacian of charge density (1/bohr^5)
+  real(REAL64), intent(in)           ::  dtau_dbdot(3,3,id1,id2,n3)   !<  (1/V) d (V taumsh) / d bdot on the mesh (Hartree/bohr^3), bdot with the 2 pi factors [only correction for lxcmgga]
+  real(REAL64), intent(in)           ::  rholapmsh(id1,id2,n3)           !<  Laplacian of charge density (1/bohr^5)
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space (covariant components)
 
 ! output
 
-  real(REAL64), intent(out)          ::  vxc(id1,id2,n3)                 !<  exchange-correlation potential vxc (Hartree).
   real(REAL64), intent(out)          ::  exc                             !<  the total exchange correlation energy given by the integral of the density times epsilon xc (Hartree).
+  real(REAL64), intent(out)          ::  vxc(id1,id2,n3)                 !<  exchange-correlation potential vxc (Hartree).
   real(REAL64), intent(out)          ::  rhovxc                          !<  integral of the density times vxc (Hartree)
   real(REAL64), intent(out)          ::  strxc(3,3)                      !<  contribution of xc to the stress tensor (contravariant,a.u.)
 
 ! local variables
 
-  real(REAL64)        ::  bdot(3,3),vcell                                !  bdot/2*pi**2, cell volume
+  real(REAL64)        ::  bdot(3,3), vcell                               !  metric in reciprocal space, cell volume
+  real(REAL64)        ::  adotm1(3,3)                                    !  inverse of adot, bdot / (2 pi)^2
   real(REAL64)        ::  rho, epsx, epsc, vx, vc
   real(REAL64)        ::  strgga(3,3)                                    !  contribution to stress
   real(REAL64)        ::  grho,dexdr,decdr,dexdgr,decdgr
@@ -80,7 +82,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
   real(REAL64)        ::  coef
 
-  real(REAL64)        ::  tau, lap
+  real(REAL64)        ::  tau, rholap
   real(REAL64)        ::  tb09_integral, tb09_const_c
 
   real(REAL64)        ::  rhomax                                         !  maximum value of density
@@ -98,6 +100,11 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
   real(REAL64)        ::  d_tausingle_dgr                 !  d tausingle / d grho
   real(REAL64)        ::  tautfvw                         !  tauunif + tausingle
   real(REAL64)        ::  d_exc_dgr                       !  d E_xc / d grad_rho
+  real(REAL64)        ::  d_exc_dtau                      !  d E_xc / d tau
+
+  real(REAL64)        ::  d_tau_dgr                       !  d tau / d grad_rho
+  real(REAL64)        ::  d_tau_dr                        !  d tau / d rho
+  real(REAL64)        ::  bdprod(3,3)                     !  dtau_dbdot * adotm1 at a mesh point
 
 ! parameters
 
@@ -144,11 +151,11 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
   call xc_author_info(author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
 
-  rhomax = chdr(1,1,1)
+  rhomax = rhomsh(1,1,1)
   do i3 = 1,n3
   do i2 = 1,n2
   do i1 = 1,n1
-    if(chdr(i1,i2,i3) > rhomax) rhomax = chdr(i1,i2,i3)
+    if(rhomsh(i1,i2,i3) > rhomax) rhomax = rhomsh(i1,i2,i3)
   enddo
   enddo
   enddo
@@ -162,11 +169,9 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
   call adot_to_bdot(adot,vcell,bdot)
 
-! correct for the 2*PI
-
   do j = 1,3
   do i = 1,3
-    bdot(i,j) = bdot(i,j) / (2*PI*2*PI)
+    adotm1(i,j) = bdot(i,j) / (4*PI*PI)
   enddo
   enddo
 
@@ -218,8 +223,8 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i2=1,n2
       do i1=1,n1
 
-        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
-            nn, dgdm, bdot, rho, grho, drhocon,                          &
+        call xc_cell_deriv(rhomsh, i1,i2,i3, id1,id2, n1,n2,n3,          &
+            nn, dgdm, adotm1, rho, grho, drhocon,                        &
             mxdnn)
 
         tb09_integral = tb09_integral + (grho/rho)
@@ -247,7 +252,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
     do i3 = 1,n3
     do i2 = 1,n2
     do i1 = 1,n1
-      rho = chdr(i1,i2,i3)
+      rho = rhomsh(i1,i2,i3)
 
       call xc_lda( author, rho, epsx, epsc, vx, vc )
 
@@ -267,8 +272,8 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
     do i2 = 1,n2
     do i1 = 1,n1
 
-      call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
-          nn, dgdm, bdot, rho, grho, drhocon,                            &
+      call xc_cell_deriv(rhomsh, i1,i2,i3, id1,id2, n1,n2,n3,            &
+          nn, dgdm, adotm1, rho, grho, drhocon,                          &
           mxdnn)
 
       call xc_gga( author, rho, grho,                                    &
@@ -306,7 +311,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
     do i3=1,n3
     do i2=1,n2
     do i1=1,n1
-      rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
+      rhovxc = rhovxc + rhomsh(i1,i2,i3)*vxc(i1,i2,i3)
     enddo
     enddo
     enddo
@@ -321,8 +326,8 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i2 = 1,n2
       do i1 = 1,n1
 
-        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
-            nn, dgdm, bdot, rho, grho, drhocon,                          &
+        call xc_cell_deriv(rhomsh, i1,i2,i3, id1,id2, n1,n2,n3,          &
+            nn, dgdm, adotm1, rho, grho, drhocon,                        &
             mxdnn)
 
 !       uses an approximate expression for tau and its derivatives
@@ -332,7 +337,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
         tautfvw = tauunif + tausingle
         tau = taumsh(i1,i2,i3) + tautfvw
-        lap = ZERO
+        rholap = ZERO
 
         call xc_mgga( author, rho, grho, tau,                            &
                      epsx, epsc, dexdr, decdr, dexdgr, decdgr,           &
@@ -340,18 +345,43 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
         exc = exc + rho * (epsx + epsc)
 
-        d_exc_dgr = dexdgr + decdgr + (dexdtau + decdtau)*d_tausingle_dgr
-        coef = d_exc_dgr * grho
+        d_exc_dtau = dexdtau + decdtau
 
-        vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr
+        d_tau_dr = d_tauunif_dr + d_tausingle_dr
+        d_tau_dgr = d_tausingle_dgr
 
-        vxc(i1,i2,i3) = vxc(i1,i2,i3) + (dexdtau + decdtau)*(d_tauunif_dr + d_tausingle_dr)
+        d_exc_dgr = dexdgr + decdgr
+
+        vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr + d_exc_dtau*d_tau_dr
+
+        do i = 1,3
+        do j = 1,3
+          bdprod(j,i) = dtau_dbdot(j,1,i1,i2,i3)*adotm1(1,i) +        &
+                        dtau_dbdot(j,2,i1,i2,i3)*adotm1(2,i) +        &
+                        dtau_dbdot(j,3,i1,i2,i3)*adotm1(3,i)
+        enddo
+        enddo
 
         do i=1,3
         do j=1,3
-          strgga(j,i) = strgga(j,i) + coef*drhocon(i)*drhocon(j)
+          strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dgr * grho
+          strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dtau * d_tau_dgr * grho
+
+!         contribution of the correction taumsh to tau.  It scales as 1/volume
+!         and V taumsh depends on the metric through dtau_dbdot = (1/V) d (V taumsh) / d bdot
+!         (bdot with the 2 pi factors), so that -2 d E / d adot has
+!         d_exc_dtau * ( taumsh adotm1 + 8 pi^2 adotm1 dtau_dbdot adotm1 ).
+
+          strgga(j,i) = strgga(j,i) + d_exc_dtau * (                     &
+                   taumsh(i1,i2,i3) * adotm1(j,i) +                      &
+                   8*PI*PI * ( adotm1(j,1)*bdprod(1,i) +                 &
+                               adotm1(j,2)*bdprod(2,i) +                 &
+                               adotm1(j,3)*bdprod(3,i) ) )
         enddo
         enddo
+
+
+        d_exc_dgr = d_exc_dgr + d_exc_dtau*d_tau_dgr
 
         do in = -nn,nn
           ip = i1 + in
@@ -376,7 +406,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i3=1,n3
       do i2=1,n2
       do i1=1,n1
-        rhovxc = rhovxc + chdr(i1,i2,i3)*vxc(i1,i2,i3)
+        rhovxc = rhovxc + rhomsh(i1,i2,i3)*vxc(i1,i2,i3)
       enddo
       enddo
       enddo
@@ -388,7 +418,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i3 = 1,n3
       do i2 = 1,n2
       do i1 = 1,n1
-        rho = chdr(i1,i2,i3)
+        rho = rhomsh(i1,i2,i3)
 
         call xc_lda( 'PW92', rho, epsx, epsc, vx, vc )
 
@@ -413,19 +443,19 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i2=1,n2
       do i1=1,n1
 
-        call xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,            &
-            nn, dgdm, bdot, rho, grho, drhocon,                          &
+        call xc_cell_deriv(rhomsh, i1,i2,i3, id1,id2, n1,n2,n3,          &
+            nn, dgdm, adotm1, rho, grho, drhocon,                        &
             mxdnn)
 
         tau = taumsh(i1,i2,i3)
-        lap = lapmsh(i1,i2,i3)
+        rholap = rholapmsh(i1,i2,i3)
 
 !       avoids unphysical values due to noise at low densities
 !       useful for slabs
 
         if(rho > RHOEPS*rhomax) then
 
-          call xc_mgga_vxc('TB09','pz', rho, grho, lap, tau,             &
+          call xc_mgga_vxc('TB09','pz', rho, grho, rholap, tau,          &
                              epsx, epsc, vx, vc, tb09_const_c )
 
           vxc(i1,i2,i3) = vx + vc
@@ -437,7 +467,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
           if(tau/rho > 1.0) tau = rho
           if(grho/rho > 2.5) grho = 2.5*rho
 
-          call xc_mgga_vxc('TB09','pz', rho, grho, lap, tau,             &
+          call xc_mgga_vxc('TB09','pz', rho, grho, rholap, tau,          &
                              epsx, epsc, vx, vc, tb09_const_c )
 
           call xc_lda('pz', rho, epsx_lda, epsc_lda, vx_lda, vc_lda )
@@ -461,7 +491,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
       do i3 = 1,n3
       do i2 = 1,n2
       do i1 = 1,n1
-        rho = chdr(i1,i2,i3)
+        rho = rhomsh(i1,i2,i3)
 
         call xc_lda( 'CA', rho, epsx, epsc, vx, vc )
 
@@ -499,7 +529,7 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
   do i=1,3
   do j=1,3
-    strxc(i,j) = (rhovxc - exc) * bdot(j,i) + strgga(i,j)
+    strxc(i,j) = (rhovxc - exc) * adotm1(j,i) + strgga(i,j)
   enddo
   enddo
 
@@ -507,8 +537,8 @@ subroutine xc_cell( author, tblaha, lkincalc, id1, id2, n1, n2, n3,      &
 
 end subroutine xc_cell
 
-subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
-       nn, dgdm, bdot, rho, grho, drhocon,                               &
+subroutine xc_cell_deriv(rhomsh, i1,i2,i3, id1,id2, n1,n2,n3,            &
+       nn, dgdm, adotm1, rho, grho, drhocon,                             &
        mxdnn)
 
 
@@ -520,17 +550,12 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
 
   integer, intent(in)                ::  mxdnn                           !<  Lagrange interpolation uses at most 2*mxdnn+1 points
 
-  integer, intent(in)                ::  id1                             !<  first dimension of the fft array
-  integer, intent(in)                ::  id2                             !<  second dimension of the fft array
-  integer, intent(in)                ::  n1                              !<  fft dimension in direction 1
-  integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
-  integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
+  integer, intent(in)                ::  id1, id2                        !<  first and second dimensions of the fft array
+  integer, intent(in)                ::  n1, n2, n3                      !<  fft dimensions in directions 1,2,3
 
-  integer, intent(in)                ::  i1                              !<  index in direction 1 of the target point in the array
-  integer, intent(in)                ::  i2                              !<  index in direction 2 of the target point in the array
-  integer, intent(in)                ::  i3                              !<  index in direction 3 of the target point in the array
-  real(REAL64), intent(in)           ::  chdr(id1,id2,n3)                !<  charge density (1/bohr^3)
-  real(REAL64), intent(in)           ::  bdot(3,3)                       !<  bdot/2*pi**2
+  integer, intent(in)                ::  i1, i2, i3                      !<  target point in the array
+  real(REAL64), intent(in)           ::  rhomsh(id1,id2,n3)              !<  charge density (1/bohr^3)
+  real(REAL64), intent(in)           ::  adotm1(3,3)                     !<  inverse of the metric adot, bdot / (2 pi)^2
 
   integer, intent(in)                ::  nn                              !<  Lagrange interpolation used 2*mxdnn+1 points
   real(REAL64), intent(in)           ::  dgdm(-mxdnn:mxdnn)              !<  Lagrange interpolation coefficients
@@ -562,7 +587,7 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
 
   allocate(drhodm(3))
 
-  rho = chdr(i1,i2,i3)
+  rho = rhomsh(i1,i2,i3)
 
 ! calculates gradient of rho
 
@@ -570,7 +595,7 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
   do in = -nn,nn
     ip = i1 + in
     ip = mod(ip+n1-1,n1) + 1
-    drhodm(1) = drhodm(1) + dgdm(in)*chdr(ip,i2,i3)
+    drhodm(1) = drhodm(1) + dgdm(in)*rhomsh(ip,i2,i3)
   enddo
   drhodm(1) = n1*drhodm(1)
 
@@ -578,7 +603,7 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
   do in = -nn,nn
     ip = i2 + in
     ip = mod(ip+n2-1,n2) + 1
-    drhodm(2) = drhodm(2) + dgdm(in)*chdr(i1,ip,i3)
+    drhodm(2) = drhodm(2) + dgdm(in)*rhomsh(i1,ip,i3)
   enddo
   drhodm(2) = n2*drhodm(2)
 
@@ -586,13 +611,13 @@ subroutine xc_cell_deriv(chdr, i1,i2,i3, id1,id2, n1,n2,n3,              &
   do in = -nn,nn
     ip = i3 + in
     ip = mod(ip+n3-1,n3) + 1
-    drhodm(3) = drhodm(3) + dgdm(in)*chdr(i1,i2,ip)
+    drhodm(3) = drhodm(3) + dgdm(in)*rhomsh(i1,i2,ip)
   enddo
   drhodm(3) = n3*drhodm(3)
 
-  drhocon(1) = bdot(1,1)*drhodm(1) + bdot(1,2)*drhodm(2) + bdot(1,3)*drhodm(3)
-  drhocon(2) = bdot(2,1)*drhodm(1) + bdot(2,2)*drhodm(2) + bdot(2,3)*drhodm(3)
-  drhocon(3) = bdot(3,1)*drhodm(1) + bdot(3,2)*drhodm(2) + bdot(3,3)*drhodm(3)
+  drhocon(1) = adotm1(1,1)*drhodm(1) + adotm1(1,2)*drhodm(2) + adotm1(1,3)*drhodm(3)
+  drhocon(2) = adotm1(2,1)*drhodm(1) + adotm1(2,2)*drhodm(2) + adotm1(2,3)*drhodm(3)
+  drhocon(3) = adotm1(3,1)*drhodm(1) + adotm1(3,2)*drhodm(2) + adotm1(3,3)*drhodm(3)
   grho = drhodm(1)*drhocon(1) + drhodm(2)*drhocon(2) + drhodm(3)*drhocon(3)
 
   if(grho < EPS) then

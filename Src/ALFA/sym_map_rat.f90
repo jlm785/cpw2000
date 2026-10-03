@@ -25,6 +25,7 @@ subroutine sym_map_rat(adot, map_sr, map_stau,                           &
       mxdtyp, mxdatm)
 
 ! Adapted from other sym subroutines. 27 November 2022. JLM
+! Removed unused redefinition of bdot. 1 October 2026. JLM+claude
 
 
   implicit none
@@ -69,13 +70,9 @@ subroutine sym_map_rat(adot, map_sr, map_stau,                           &
 
   integer    ::  i, j, n, nt, j1, j2, k
 
-  call adot_to_bdot(adot,vcell,bdot)
+! only checks that adot is a metric (bdot is not used)
 
-  do i = 1,3
-  do j = 1,3
-    bdot(i,j) = bdot(i,j)/ (2*PI*2*PI)
-  enddo
-  enddo
+  call adot_to_bdot(adot,vcell,bdot)
 
   do n = 1,ntrans
 

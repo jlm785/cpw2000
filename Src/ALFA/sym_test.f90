@@ -12,6 +12,11 @@
 !------------------------------------------------------------!
 
 !>  tests the space group of the crystal
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         18 March 2004, 29 December 2020.
+!>  \copyright    GNU Public License v2
 
 subroutine sym_test(ipr, tol, istatus,                                   &
   ntrans, mtrx, tnp,                                                     &
@@ -22,6 +27,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
 ! Modified, f90, 7 June 2014. JLM
 ! Modified, documentation, December 2019. JLM
 ! Modified, stop decision. 29 December 2020. JLM
+! adotm1 instead of redefining bdot. 1 October 2026. JLM+claude
 ! copyright INESC-MN/Jose Luis Martins
 
 ! version 4.99
@@ -55,7 +61,8 @@ subroutine sym_test(ipr, tol, istatus,                                   &
 ! local variables
 
   integer              ::  irotdir(3,3,48)
-  real(REAL64)         ::  vcell,bdot(3,3)
+  real(REAL64)         ::  vcell, bdot(3,3)                              !  cell volume, metric in reciprocal space
+  real(REAL64)         ::  adotm1(3,3)                                   !  inverse of adot, bdot / (2 pi)^2
   integer              ::  irot(3,3)
   real(REAL64)         ::  frac(3),tmp(3,3)
 
@@ -80,7 +87,7 @@ subroutine sym_test(ipr, tol, istatus,                                   &
 
   do i=1,3
   do j=1,3
-    bdot(i,j) = bdot(i,j)/ (2*PI*2*PI)
+    adotm1(i,j) = bdot(i,j) / (4*PI*PI)
   enddo
   enddo
 
@@ -95,9 +102,9 @@ subroutine sym_test(ipr, tol, istatus,                                   &
 
     do i=1,3
     do j=1,3
-      irotdir(i,j,n) = nint(bdot(1,i)*tmp(1,j) +                         &
-                            bdot(2,i)*tmp(2,j) +                         &
-                            bdot(3,i)*tmp(3,j))
+      irotdir(i,j,n) = nint(adotm1(1,i)*tmp(1,j) +                       &
+                            adotm1(2,i)*tmp(2,j) +                       &
+                            adotm1(3,i)*tmp(3,j))
     enddo
     enddo
   enddo
@@ -242,4 +249,5 @@ subroutine sym_test(ipr, tol, istatus,                                   &
   enddo
 
   return
+
 end subroutine sym_test
