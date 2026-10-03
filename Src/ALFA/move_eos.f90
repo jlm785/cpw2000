@@ -19,7 +19,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         31 March 2026.
+!>  \date         31 March 2026, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine  move_eos(energy, adot, lepi, lfinisheos)
@@ -27,6 +27,9 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 ! Written 18 March 2026. JLM
 ! Final debugging 31 March 2026. JLM
 ! Minor stuff, 27 July 2026. Claude with Lukas
+! Stability test with the curvature instead of an absolute threshold,
+! convergence when the prediction no longer moves, prediction kept
+! inside the bracket. 3 October 2026. JLM+claude
 
   implicit none
 
@@ -67,6 +70,8 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 ! local variables
 
   real(REAL64)          ::  atmp, etmp
+  real(REAL64)          ::  curv                                         !  curvature of the parabola through the three points
+  real(REAL64)          ::  aold                                         !  last calculated point
   real(REAL64)          ::  fac
   real(REAL64)          ::  vcell, bdot(3,3)
 
@@ -220,20 +225,25 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
       nstatus = 4
 
-      if(abs(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) < EPS) then
+      if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
         write(6,*)
         write(6,*) '    STOPPED in move_eos, unstable prediction '
-        write(6,*) '    of lattice constant (nstatus = 3)'
+        write(6,*) '    of energy (nstatus = 3)'
         write(6,*)
 
         stop
 
       endif
 
-      if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
+!     curvature of the parabola, must be positive for a minimum
+
+      curv = -(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) /                &
+              ((a1 - a2)*(a2 - a3)*(a3 - a1))
+
+      if(curv <= ZERO) then
         write(6,*)
         write(6,*) '    STOPPED in move_eos, unstable prediction '
-        write(6,*) '    of energy (nstatus = 3)'
+        write(6,'("     of lattice constant (nstatus = 3), curvature = ",e12.4)') curv
         write(6,*)
 
         stop
@@ -311,20 +321,27 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
     e3 = energy
     a3 = sqrt(adot(3,3))
 
-    if(abs(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) < EPS) then
+    if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
       write(6,*)
       write(6,*) '    STOPPED in move_eos, unstable prediction '
-      write(6,*) '    of lattice constant (nstatus = 4)'
+      write(6,*) '    of energy (nstatus = 4)'
       write(6,*)
 
       stop
 
     endif
 
-    if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
+!   curvature of the parabola, must be positive for a minimum.
+!   (the denominator of apred goes to zero when two points are close,
+!   which happens when the prediction converges, so it is not tested)
+
+    curv = -(a3*(e2 - e1) + a1*(e3 - e2) + a2*(e1 - e3)) /                  &
+            ((a1 - a2)*(a2 - a3)*(a3 - a1))
+
+    if(curv <= ZERO) then
       write(6,*)
       write(6,*) '    STOPPED in move_eos, unstable prediction '
-      write(6,*) '    of energy (nstatus = 4)'
+      write(6,'("     of lattice constant (nstatus = 4), curvature = ",e12.4)') curv
       write(6,*)
 
       stop
@@ -336,6 +353,18 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
     epred =  e1*(apred - a2)*(apred - a3) / ((a1 - a2)*(a1 - a3)) +     &
              e2*(apred - a3)*(apred - a1) / ((a2 - a3)*(a2 - a1)) +     &
              e3*(apred - a1)*(apred - a2) / ((a3 - a1)*(a3 - a2))
+
+!   keeps the prediction inside the bracket (it may fall outside with noisy energies)
+
+    if(apred <= a1 .or. apred >= a2) then
+      if(a3 - a1 > a2 - a3) then
+        apred = (a1 + a3) / 2
+      else
+        apred = (a3 + a2) / 2
+      endif
+    endif
+
+    aold = a3
 
     if(apred < a3) then
 
@@ -362,9 +391,11 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
       enddo
     endif
 
-    if((a2 - a1) < DELTA/10) then
+    if((a2 - a1) < DELTA/10 .or. abs(apred - aold) < DELTA/10) then
 
-!     good enough estimate of the lattice constant
+!     good enough estimate of the lattice constant.  The bracket may not
+!     shrink (the same end point is kept), so it also stops when the
+!     prediction no longer moves.  The scan around it has steps of DELTA.
 
       write(6,*)
       write(6,'(5x,f14.3,"   move_eos lattice constant estimate")') a3
