@@ -16,8 +16,8 @@
 !>  book "Fundamentals of Semiconductors"
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         2 July 2014.  3 November2025.
+!>  \version      5.13
+!>  \date         2 July 2014. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
@@ -32,6 +32,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Modified to allow values in a given direction. 23 October2025. JLM
 ! Modified, includes spin degeneracy in sumations. Correct factor in F_xyz. 3 November2025. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -99,7 +100,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter     ::  PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   real(REAL64), parameter     ::  TOL = 1.0E-5_REAL64
 

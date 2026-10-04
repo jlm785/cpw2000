@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>writes the imaginary part of the dielectric function to a file.
-!>It is commented for gnuplot or xmgrace!
+!>  Writes the imaginary part of the dielectric function to a file.
+!>  It is commented for gnuplot or xmgrace!
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         July 2020, 3 October 2026.
+!>  \copyright    GNU Public License v2
 
   subroutine opt_write_file(filename, iotape, title, subtitle, func,     &
              nhist, ehist, dhist, vcell, ztot)
@@ -20,9 +25,7 @@
 ! Adapted from dos_print_file July 2020. CLR
 ! Modified, normalization, 1 October 2020. JLM
 ! Modified, float, 17 December 2020. JLM
-! copyright Carlos Loia Reis,  INESC-MN.
-
-! version 4.99 of cpw
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -53,7 +56,7 @@
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
 
   lfloat = .FALSE.
 
@@ -90,4 +93,5 @@
   close(unit=iotape)
 
   return
+
 end subroutine opt_write_file

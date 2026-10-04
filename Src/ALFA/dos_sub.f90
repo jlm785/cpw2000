@@ -11,8 +11,13 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Calculates the density of states using the
-!>  information on the PW_DOS_xyz files from cpw_postprocess
+!>  Driver subroutine for the calculation of the Density of States (DOS).
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         12 May 2004, 3 October 2026.
+!>  \copyright    GNU Public License v2
+
 
 subroutine dos_sub(ioreplay)
 
@@ -21,9 +26,7 @@ subroutine dos_sub(ioreplay)
 ! Modified, documentation, 19 September 2020. JLM
 ! Modified, egrid, 16-20 October 2020. JLM
 ! Modified, new unformatted input file. 13 December 2020. JLM
-! copyright  J.L.Martins, INESC-MN.
-
-! version 4.99 of cpw
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -108,7 +111,7 @@ subroutine dos_sub(ioreplay)
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
   real(REAL64), parameter :: ZERO = 0.0_REAL64 , UM = 1.0_REAL64
 
   

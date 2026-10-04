@@ -14,8 +14,8 @@
 !>  Driver for the calculation of the dielectric matrix
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.08
-!>  \date         20 January 2022.
+!>  \version      5.13
+!>  \date         20 January 2022, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_opt(ioreplay,                                          &
@@ -27,6 +27,7 @@ subroutine cpw_pp_opt(ioreplay,                                          &
 ! Breakup of cpw_pp_band_dos_opt. 20 Janeiro 2022. JLM
 ! But tracked from Pedro Borlido report.  23 October 2023. JLM
 ! Modified, iguess, 12 November 2023. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -72,7 +73,7 @@ subroutine cpw_pp_opt(ioreplay,                                          &
 ! constants
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  real(REAL64), parameter  :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
 
   file_dos_mesh = 'DOS_MESH.DAT'
 

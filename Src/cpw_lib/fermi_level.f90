@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins, Renata Wentzcovitch
 !>  \version      5.11
-!>  \date         June 16, 1987, March 5 2025.
+!>  \date         June 16, 1987, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine fermi_level(el, ztot, teleck,                                 &
@@ -33,6 +33,7 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 ! modified for temperature 11 may 99.jlm
 ! Modified, documentation, January 2020. JLM
 ! Modified, indentation, ztot=0. March 5 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, TAUTOK). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -84,8 +85,8 @@ subroutine fermi_level(el, ztot, teleck,                                 &
   real(REAL64), parameter ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
   real(REAL64), parameter ::  EPS = 0.000001_REAL64
   real(REAL64), parameter ::  SMALL = EPS*EPS
-  real(REAL64), parameter ::  EV = 27.2116_REAL64
-  real(REAL64), parameter ::  TAUTOK = 11604.9_REAL64 * EV
+  real(REAL64), parameter ::  HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter ::  TAUTOK = 11604.51812_REAL64 * HARTREE
 
 
   allocate(jrk(mxdnrk*mxdbnd))

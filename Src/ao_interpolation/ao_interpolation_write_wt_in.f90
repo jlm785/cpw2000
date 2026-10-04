@@ -14,8 +14,8 @@
 !>  Writes the input file for WannierTools (wt.in)
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         2020, 7 October 2024.
+!>  \version      5.13
+!>  \date         before 2020, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 ! Documentation, indentation, 7 October 2024. JLM
 ! Modified, length of label. 24 September 2025. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
   use NonOrthoInterp
 
@@ -75,7 +76,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 
 ! constants
 
-  real(REAL64), parameter     ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! namelists   I do not like them...
 
@@ -113,7 +114,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
     numoccupied = nint(ztot)/2
   endif
 
-  e_fermi = mtb%eref * EV
+  e_fermi = mtb%eref * HARTREE
 
   write(22,nml=tb_file)
   write(22,nml=control)

@@ -16,8 +16,8 @@
 !>  Another path may give a different value...
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         September 4, 201, 13 August 2025.
+!>  \version      5.13
+!>  \date         September 4, 2014, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
@@ -29,6 +29,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 ! copyright  Jose Luis Martins/INESC-MN
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, extra information about local of CBM and VBM, 13 August 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -72,7 +73,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 ! constants
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter  ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
   real(REAL64), parameter  ::  EPS = 1.0E-6_REAL64
 
 ! counters
@@ -184,13 +185,13 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
         write(6,'(i8,"   Occupied bands in apparent ",                   &
            &     "semiconductor/insulator",a16)') nocc,cso
         write(6,'(f12.6,"   shift applied to bands (eV) ",a16)')         &
-              -eref*EV,cso
+              -eref*HARTREE,cso
         write(6,'(2f12.6,"   valence band maximum and conduction",       &
-           &     " band minimum (eV) ",a16)') evbm*EV,ecbm*EV,cso
+           &     " band minimum (eV) ",a16)') evbm*HARTREE,ecbm*HARTREE,cso
         write(6,'(3f8.3,8x,3f8.3,"   at these k-points")') rk_vbm(:), rk_cbm(:)
         write(6,*)
         write(6,'(2f12.6,"   energies at gamma for bands ",2i5 )')       &
-            gam_vb*EV, gam_cb*EV, n, n+1
+            gam_vb*HARTREE, gam_cb*HARTREE, n, n+1
         write(6,*)
 
       else
@@ -200,8 +201,8 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
         write(6,*)
         write(6,'(i8,"   Average occupied bands in a metal ",            &
            &     "or semimetal",a16)') n,cso
-        write(6,'(f12.6,"   Maximum energy in band ",i5)') evbm*EV, n
-        write(6,'(f12.6,"   Minimum energy in band ",i5)') ecbm*EV, n+1
+        write(6,'(f12.6,"   Maximum energy in band ",i5)') evbm*HARTREE, n
+        write(6,'(f12.6,"   Minimum energy in band ",i5)') ecbm*HARTREE, n+1
         write(6,*)
 
       endif
@@ -222,16 +223,16 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 
 !     uses efermi if not too different from the current estimate
 
-      if(abs(eref - efermi) < 2/EV) then
+      if(abs(eref - efermi) < 2/HARTREE) then
         eref = efermi
         write(6,*)
-        write(6,'(f12.6,"   E_F, from self-consistent calculation", a16)') eref*EV, cso
-        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*EV, cso
+        write(6,'(f12.6,"   E_F, from self-consistent calculation", a16)') eref*HARTREE, cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*HARTREE, cso
         write(6,*)
       else
         write(6,*)
-        write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ", a16)') eref*EV, cso
-        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*EV, cso
+        write(6,'(f12.6,"   E_F, estimate of Fermi energy (eV) ", a16)') eref*HARTREE, cso
+        write(6,'(f12.6,"   shift applied to bands (eV) ",a16)') -eref*HARTREE, cso
         write(6,*)
       endif
 

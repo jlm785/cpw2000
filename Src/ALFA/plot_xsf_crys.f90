@@ -15,8 +15,8 @@
 !>  input file for vesta or xcrysden
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11 (1.7 of md)
-!>  \date         July 2013.  5 June 2024.
+!>  \version      5.13
+!>  \date         July 2013. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_xsf_crys(iotape, lvesta,                                 &
@@ -25,6 +25,7 @@ subroutine plot_xsf_crys(iotape, lvesta,                                 &
 
 ! written July 2013. JLM
 ! Heavily modified to use cpw crystal description, 31 January 2021. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -56,7 +57,7 @@ subroutine plot_xsf_crys(iotape, lvesta,                                 &
 
 ! constants
 
-  real(REAL64), parameter  :: BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter  :: BOHR = 0.5291772105_REAL64
 
 ! counters
 

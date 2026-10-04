@@ -17,8 +17,8 @@
 !>  For the double average see  PRL 61, 734 (1988).
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         September 5, 2012. 10 March 2025.
+!>  \version      5.13
+!>  \date         September 5, 2012. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -35,6 +35,7 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 ! Double average by material.  March-April 2023. JLM
 ! double average for nmat/=nwidth. 10 March 2025. JLM
 ! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
+! Constants updated to CODATA 2022 (HARTREE, BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -133,8 +134,8 @@ subroutine plot_rho_v_average(ioreplay,                                  &
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter  ::  PI=3.141592653589793_REAL64
-  real(REAL64), parameter  ::  HARTREE = 27.21138386_REAL64
-  real(REAL64), parameter  ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter  ::  BOHR = 0.5291772105_REAL64
 
 ! counters
 

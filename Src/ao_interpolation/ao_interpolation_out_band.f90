@@ -15,8 +15,8 @@
 !>  using atomic orbital interpolation
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.12
-!>  \date         before 2017. 17 September 2025.
+!>  \version      5.13
+!>  \date         before 2017. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -27,6 +27,7 @@
 ! Modified, ztot in out_band_circuit_size, indentation. 26 July 2024. JLM
 ! Bug when neig greater than nband. 1 November 2024. JLM
 ! Increase dimension of label. 17 September 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -75,6 +76,10 @@
   logical           ::  lfile
 
   integer           ::  ioerr
+
+! constants
+
+  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
 
 ! counters
 
@@ -224,9 +229,9 @@
          call NonOrthoInterpRun(noiData,rkpt,ev_interp)
          write(*,'(i5,3f8.3)') irk, rkpt(1),rkpt(2),rkpt(3)
          if (noiData%lso==1) then
-           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
+           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*HARTREE,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
          else
-           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*27.212,J=1,nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
+           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*HARTREE,J=1,nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
          endif
      enddo
      close(unit=127)

@@ -16,8 +16,8 @@
 !>  Calls the gnuplot package  www.gnuplot.info
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         2 March 2023.
+!>  \version      5.13
+!>  \date         2 March 2023, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
@@ -28,6 +28,7 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
 ! Modified, documentation, June 11, 2020. JLM
 ! Modified, name, API, 4 February 2021. JLM
 ! Modified, several double averages, 2 March 2023. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -62,7 +63,7 @@ subroutine plot_z1D_gnuplot(ioreplay, io, ave, dave, nw, n3, height,     &
 
 ! constants
 
-  real(REAL64), parameter :: BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter :: BOHR = 0.5291772105_REAL64
 
 
 ! writes the file

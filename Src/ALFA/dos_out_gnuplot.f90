@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         12 June 2014.
+!>  \date         12 June 2014, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dos_out_gnuplot(ioreplay, filename,                           &
@@ -25,6 +25,7 @@ subroutine dos_out_gnuplot(ioreplay, filename,                           &
 ! adapted June 12 , 2014. JLM
 ! Modified, documentation, 19 September 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -56,7 +57,7 @@ subroutine dos_out_gnuplot(ioreplay, filename,                           &
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
 
 
 ! finds nice plotrange

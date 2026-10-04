@@ -15,8 +15,8 @@
 !>  orbital file
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.12
-!>  \date         Before May 2020, 24 September 2025.
+!>  \version      5.13
+!>  \date         Before May 2020, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_info_write(filename, io,                             &
@@ -30,6 +30,7 @@ subroutine out_band_info_write(filename, io,                             &
 ! Modified, documentation 29 May 2020. JLM
 ! Modiified to write information to QtBandViewer June 2021. CLR
 ! Documentation, missing declaration. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -81,7 +82,7 @@ subroutine out_band_info_write(filename, io,                             &
 ! constants
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  real(REAL64), parameter  ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
 
   integer      :: i, irk, iband, iorb
 
@@ -123,8 +124,8 @@ subroutine out_band_info_write(filename, io,                             &
       if(ymax > ymtmp) ymax = ymtmp
     endif
   enddo
-  ymin = real(nint(ymin*27.212)) - UM
-  ymax = real(nint(ymax*27.212)) + UM
+  ymin = real(nint(ymin*HARTREE)) - UM
+  ymax = real(nint(ymax*HARTREE)) + UM
 
 ! find xk_start and xk_end
   j = 1
@@ -145,7 +146,7 @@ subroutine out_band_info_write(filename, io,                             &
   do irk = 1, nrk
     do iband = 1, neig
       xk_out(irk) = xk(irk)
-      e_of_k_out(iband, irk) = (e_of_k(iband, irk) -eref)*EV
+      e_of_k_out(iband, irk) = (e_of_k(iband, irk) -eref)*HARTREE
       pkn_out(irk, iband) = pkn(irk,iband)
 
       if ( pkn_out(irk, iband) > 1.0_REAL32) then

@@ -14,8 +14,8 @@
 !>  Calculates the quantum geometric properties for a given k-vector
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         4 April 2024. 24 September 2025.
+!>  \version      5.13
+!>  \date         4 April 2024. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom(ioreplay,                                           &
@@ -31,6 +31,7 @@ subroutine out_qgeom(ioreplay,                                           &
 
 ! Should be merged with out_mass_berry someday...
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 ! Adapted 4 April 2024 from out_mass_berry. JLM
 ! Orientation. 11 April 2024. JLM
@@ -180,7 +181,7 @@ subroutine out_qgeom(ioreplay,                                           &
 ! constants
 
   real(REAL64), parameter     ::  TOL = 1.0E-8_REAL64
-  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 

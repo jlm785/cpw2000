@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 september 2002. 31 March 2026.
+!>  \date         20 september 2002. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine print_parameters(flgcal, flgdal, flgscf,                      &
@@ -32,6 +32,7 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 ! Modified, write statement continuation, 22 February 2024. JLM
 ! Modified, prints information about more functionals. 25 November 2025. JLM
 ! Equation of state. 31 March 2026. JLM
+! Constants updated to CODATA 2022 (AUTOGPA). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -69,7 +70,7 @@ subroutine print_parameters(flgcal, flgdal, flgscf,                      &
 
 ! parameters
 
-  real(REAL64), parameter :: AUTOGPA = 29421.58_REAL64
+  real(REAL64), parameter :: AUTOGPA = 29421.0158_REAL64
 
 ! counters
 

@@ -17,8 +17,8 @@
 !>  Usage:  xmgrace "filename", or just click on the agr file
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.12
-!>  \date         19 October 2013, 24 September 2025.
+!>  \version      5.13
+!>  \date         19 October 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_dots_xmgrace(filename, io,                           &
@@ -30,6 +30,7 @@ subroutine out_band_dots_xmgrace(filename, io,                           &
 ! modified 4.7X November 2015. JLM
 ! Documentation, first line for KDE recognition. 20 January 2022. JLM
 ! Modified, indentation, length of label. 24 September 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -64,7 +65,7 @@ subroutine out_band_dots_xmgrace(filename, io,                           &
 
 ! constants
 
-  real(REAL64), parameter ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter ::  HARTREE = 27.211386246_REAL64
   real(REAL64), parameter  :: UM = 1.0_REAL64
 
 ! finds the energy range for the bands
@@ -82,8 +83,8 @@ subroutine out_band_dots_xmgrace(filename, io,                           &
       if(ymax > ymtmp) ymax = ymtmp
     endif
   enddo
-  ymin = real(nint(ymin*27.212)) - UM
-  ymax = real(nint(ymax*27.212)) + UM
+  ymin = real(nint(ymin*HARTREE)) - UM
+  ymax = real(nint(ymax*HARTREE)) + UM
 
   open(unit=io,file=filename,form='formatted')
 
@@ -91,7 +92,7 @@ subroutine out_band_dots_xmgrace(filename, io,                           &
   write(io,*)
 
   write(io,'("#    zero energy for bands is ",f12.4," eV above ",        &
-      &       "the average potential")') eref*EV
+      &       "the average potential")') eref*HARTREE
   write(io,*)
 
   write(io,'("@    autoscale onread none ")')
@@ -199,7 +200,7 @@ subroutine out_band_dots_xmgrace(filename, io,                           &
       endif
       do i=istart,nkstep(n)
         irk = irk + 1
-        write(io,'(3f18.8)') xk(irk),(e_of_k(j,irk)-eref)*EV
+        write(io,'(3f18.8)') xk(irk),(e_of_k(j,irk)-eref)*HARTREE
       enddo
     enddo
   enddo

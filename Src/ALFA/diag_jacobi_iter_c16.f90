@@ -14,8 +14,8 @@
 !> Performs a succession of Jacobi relaxations
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         May 3 2019. 10 December 2023.
+!>  \version      5.13
+!>  \date         May 3 2019. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
@@ -28,6 +28,7 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
 ! Adapted May 3 2019. JLM
 ! Adapted for 5.0X, 10 December 2023. JLM
 ! Prefix diag_, 17 March 2024. JLM
+! Removed debug statementsthat crept in. 3 October 2026. JLM
 
 
   implicit none
@@ -75,7 +76,6 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
 ! local variables
 
   real(REAL64)            ::  xn
-!  complex(REAL64)         ::  cn
 
 ! local allocatable arrays
 
@@ -120,9 +120,6 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
 
 ! start relaxation
 
-   WRITE(6,*)
-   WRITE(6,*)
-
   do j = 1,njac
 
 !   xerror is the error vector or jacobian relaxed error
@@ -132,17 +129,7 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
       call zcopy(mtxd, hdpsi(1, n), 1, xerror(1, n), 1)
       call zaxpy(mtxd, cmplx(-eg(n), ZERO, REAL64),                      &
                            dpsi(1, n), 1, xerror(1, n), 1)
-
-
-       XN = REAL(ZDOTC(MTXD, XERROR(1, N), 1, XERROR(1, N), 1), REAL64)
-
-       WRITE(6,'("  J,N,XN,EG = ",2I5,3X,F15.8,3X,F15.8)') J,N,XN,EG(N)*27.212
-
-
     enddo
-
-   WRITE(6,*)
-
 
     call rq_jac_c16(xerror, eg, hdiag, mtxd, neig,                       &
     mxddim, mxdbnd)
@@ -161,9 +148,6 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
       call zaxpy(mtxd, C_UM, xerror(1, n), 1, dpsi(1, n), 1)
       call zaxpy(mtxd, C_UM, hxerror(1, n), 1, hdpsi(1, n), 1)
       xn = real(zdotc(mtxd, dpsi(1, n), 1, dpsi(1, n), 1), REAL64)
-
-      WRITE(6,'("  XN NORM",F12.8 )') XN
-
       xn = UM/sqrt(xn)
       call zscal(mtxd, cmplx(xn, ZERO, REAL64), dpsi(1, n), 1)
       call zscal(mtxd, cmplx(xn, ZERO, REAL64), hdpsi(1, n), 1)

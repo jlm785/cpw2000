@@ -15,7 +15,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         9 November 1987, 15 November 2013.
+!>  \date         9 November 1987, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dos_gau(el, nrk, nband, w, ezero, lidos, np, mxdbnd)
@@ -24,6 +24,7 @@ subroutine dos_gau(el, nrk, nband, w, ezero, lidos, np, mxdbnd)
 ! modified November 15, 2013. jlm
 ! Modified, documentation, 19 September 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -58,7 +59,7 @@ subroutine dos_gau(el, nrk, nband, w, ezero, lidos, np, mxdbnd)
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
   real(REAL64), parameter :: SPI = 1.772453850905516_REAL64
   real(REAL64), parameter :: ZERO = 0.0_REAL64 , UM = 1.0_REAL64
 

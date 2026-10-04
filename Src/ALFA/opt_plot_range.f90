@@ -12,13 +12,16 @@
 !------------------------------------------------------------!
 
 !>  finds a reasonable scale for a density optical response plot
+!>
+!>  \author       José Luís Martins
+!>  \version      5.13
+!>  \date         11 December 2020, 3 October 2026.
+!>  \copyright    GNU Public License v2
 
   subroutine opt_plot_range(el, neig, nval, nhtarg, deltae, nhist, nrk, mxdbnd)
 
 ! Adapted from dos_plot_range, 11 December 2020. JLM
-! copyright  J.L.Martins, INESC-MN.
-
-! version 4.99
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -47,7 +50,7 @@
 
 ! constants
 
-  real(REAL64), parameter      ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter      ::  HARTREE = 27.211386246_REAL64
   real(REAL64), parameter      ::  ZERO = 0.0_REAL64
 
 ! counters

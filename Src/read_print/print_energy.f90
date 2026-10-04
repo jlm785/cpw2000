@@ -14,8 +14,8 @@
 !>  prints several energy terms, forces and stresses
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.10
-!>  \date         15 january 1999, 21 February 2024.
+!>  \version      5.13
+!>  \date         15 january 1999, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine print_energy(ipr, entype, energy, force, stress,              &
@@ -27,6 +27,7 @@ subroutine print_energy(ipr, entype, energy, force, stress,              &
 ! Modified, documentation, June 2019. JLM
 ! Modified, ipr, indentation, 21 February 2024. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (AUTOGPA). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -60,7 +61,7 @@ subroutine print_energy(ipr, entype, energy, force, stress,              &
 ! parameters
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
-  real(REAL64), parameter :: AUTOGPA = 29421.58_REAL64
+  real(REAL64), parameter :: AUTOGPA = 29421.0158_REAL64
 
 ! counters
 

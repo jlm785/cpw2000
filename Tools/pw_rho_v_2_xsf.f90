@@ -1,12 +1,28 @@
-program pw_rho_v_2_xsf
+!------------------------------------------------------------!
+! This file is distributed as part of the cpw2000 code and   !
+! under the terms of the GNU General Public License. See the !
+! file `LICENSE' in the root directory of the cpw2000        !
+! distribution, or http://www.gnu.org/copyleft/gpl.txt       !
+!                                                            !
+! The webpage of the cpw2000 code is not yet written         !
+!                                                            !
+! The cpw2000 code is hosted on GitHub:                      !
+!                                                            !
+! https://github.com/jlm785/cpw2000                          !
+!------------------------------------------------------------!
 
-! This program reads the PW_RHO_V.DAT file and writes the corresponding xsf file
+!>  Reads the PW_RHO_V.DAT file and writes the corresponding xsf file
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         5 December 2016, 3 October 2026.
+!>  \copyright    GNU Public License v2
+
+program pw_rho_v_2_xsf
 
 ! writen December 5, 2016.jlm
 ! Modified, write_xsf, 31 January 2021
-! copyright  Jose Luis Martins/INESC-MN
-
-! version 4.99
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -34,7 +50,7 @@ program pw_rho_v_2_xsf
 
 ! constants
 
-  real(REAL64), parameter  :: BOHR = 0.52917721_REAL64
+  real(REAL64), parameter  :: BOHR = 0.5291772105_REAL64
 
 ! reads data
 
@@ -87,5 +103,6 @@ program pw_rho_v_2_xsf
   deallocate(nameat)
 
   stop
+
 end program pw_rho_v_2_xsf
 

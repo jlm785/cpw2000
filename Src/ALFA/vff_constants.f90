@@ -18,7 +18,7 @@
 !>
 !>  \author       José Luís Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         January 2013, December 2019.
+!>  \date         January 2013, 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine vff_constants(iprint, iowrite,                                &
@@ -26,6 +26,7 @@ subroutine vff_constants(iprint, iowrite,                                &
 
 ! If the force constants are unavailable they are given a HUGE value
 ! so it is obvious in the output...
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, BOHR, ECHARGE). 3 October 2026. JLM+claude
 
 ! written January 2013, J.L.Martins
 ! modified May 2014, C.L. Reis,
@@ -36,6 +37,8 @@ subroutine vff_constants(iprint, iowrite,                                &
 ! Modified, documentation, details, printing, December 2019. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Indentation. 28 September 2026. JLM+claude
+! REAL64 literals (the fitted constants were truncated to single precision). 4 October 2026. JLM+claude
+! Fitted constants rounded to 6 decimals. 4 October 2026. JLM+claude
 
 
   implicit none
@@ -63,10 +66,10 @@ subroutine vff_constants(iprint, iowrite,                                &
 
 ! physical constants
 
-  real(REAL64), parameter  :: BOHR = 0.52917721E-10
-  real(REAL64), parameter  :: EV = 27.211385
-  real(REAL64), parameter  :: HARTREE = EV * 1.6021765E-19
-  real(REAL64), parameter  :: ANG = 1E-10
+  real(REAL64), parameter  :: BOHR = 0.5291772105E-10_REAL64
+  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64           !  Hartree in eV
+  real(REAL64), parameter  :: ECHARGE = 1.602176634E-19_REAL64        !  elementary charge, eV in J (exact)
+  real(REAL64), parameter  :: ANG = 1.0E-10_REAL64
 
 
 ! same species alpha,dist,beta (group IV)
@@ -74,28 +77,28 @@ subroutine vff_constants(iprint, iowrite,                                &
   do n=1,ntype
     nn2 = (n*(n+1))/2
     if(nameat(n) == 'C ' .or. nameat(n) == ' C') then
-      dist(nn2) = 1.54455630764955*1.1563
+      dist(nn2) = 1.544556_REAL64*1.1563_REAL64
 
-      alfa(nn2)   = 13.6248740466374851
-      beta(n,nn2) = 6.1553571220124841
+      alfa(nn2)   = 13.624874_REAL64
+      beta(n,nn2) = 6.155357_REAL64
 
     elseif(nameat(n) == 'Si') then
-      dist(nn2) = 2.35169198397664*1.07506
+      dist(nn2) = 2.351692_REAL64*1.07506_REAL64
 
-      alfa(nn2)   = 6.3503462524617307
-      beta(n,nn2) = 1.2601737048539403
+      alfa(nn2)   = 6.350346_REAL64
+      beta(n,nn2) = 1.260174_REAL64
 
     elseif(nameat(n) == 'Ge') then
-      dist(nn2)  = 2.44994256603599*0.97698
+      dist(nn2)  = 2.449943_REAL64*0.97698_REAL64
 
-      alfa(nn2)  = 2.9182378149662425
-      beta(n,nn2)= 0.4584868373542476
+      alfa(nn2)  = 2.918238_REAL64
+      beta(n,nn2)= 0.458487_REAL64
 
     elseif(nameat(n) == 'Sn') then
-      dist(nn2) = 1.00786*2.80722134636726
+      dist(nn2) = 1.00786_REAL64*2.807221_REAL64
 
-      alfa(nn2)   = 14.7836507262404933
-      beta(n,nn2) = -3.8734705709774992
+      alfa(nn2)   = 14.783651_REAL64
+      beta(n,nn2) = -3.873471_REAL64
 
     elseif(nameat(n) == 'Pb') then
       dist(nn2) = 2.99_REAL64
@@ -104,9 +107,9 @@ subroutine vff_constants(iprint, iowrite,                                &
       beta(n,nn2) = 0.25_REAL64*alfa(nn2)
 
     else
-      dist(nn2) = -1.0
+      dist(nn2) = -1.0_REAL64
 
-      alfa(nn2) = 1000000.0
+      alfa(nn2) = 1000000.0_REAL64
       beta(n,nn2) = alfa(nn2)
     endif
   enddo
@@ -153,9 +156,9 @@ subroutine vff_constants(iprint, iowrite,                                &
         endif
 
       else
-        alfa(nm2) = 1000000.0
-        dist(nm2) = -1.0
-        beta(n,mm2) = 1.0*alfa(nm2)
+        alfa(nm2) = 1000000.0_REAL64
+        dist(nm2) = -1.0_REAL64
+        beta(n,mm2) = 1.0_REAL64*alfa(nm2)
 
         stop 'Keating Correction not available for these elements'
 
@@ -166,13 +169,13 @@ subroutine vff_constants(iprint, iowrite,                                &
 !     beta(m,nm2) = sqrt(beta(m,nn2)*beta(m,mm2))
 
       beta(m,nn2) = beta(n,mm2)
-      if((beta(n,mm2)<0.0D0) .or.(beta(n,nn2)<0.0D0)) then
+      if((beta(n,mm2)<0.0_REAL64) .or.(beta(n,nn2)<0.0_REAL64)) then
         beta(n,nm2) = (beta(n,mm2)+beta(n,nn2))/2
       else
         beta(n,nm2) = sqrt(beta(n,mm2)*beta(n,nn2))
      endif
 
-      if((beta(m,nn2)<0.0D0) .or. (beta(m,mm2)<0.0D0)) then
+      if((beta(m,nn2)<0.0_REAL64) .or. (beta(m,mm2)<0.0_REAL64)) then
         beta(m,nm2) =  (beta(m,nn2)+beta(m,mm2))/2
       else
         beta(m,nm2) = sqrt(beta(m,nn2)*beta(m,mm2))
@@ -193,7 +196,7 @@ subroutine vff_constants(iprint, iowrite,                                &
               mk2 = (k*(k-1))/2 + m
               mm2 = (m*(m+1))/2
               kk2 = (k*(k+1))/2
-              if((beta(n,mm2)<0.0D0) .or. (beta(n,kk2)<0.0D0)) then
+              if((beta(n,mm2)<0.0_REAL64) .or. (beta(n,kk2)<0.0_REAL64)) then
                 beta(n,mk2) = (beta(n,mm2)+beta(n,kk2))/2
               else
                 beta(n,mk2) = sqrt(beta(n,mm2)*beta(n,kk2))
@@ -247,10 +250,10 @@ subroutine vff_constants(iprint, iowrite,                                &
 ! convert to atomic units
 
   do n=1,(ntype*(ntype+1))/2
-    alfa(n) = alfa(n) * BOHR*BOHR / HARTREE
+    alfa(n) = alfa(n) * BOHR*BOHR / (HARTREE*ECHARGE)
     dist(n) = dist(n) * ANG / BOHR
     do m=1,ntype
-      beta(m,n) = beta(m,n) * BOHR*BOHR / HARTREE
+      beta(m,n) = beta(m,n) * BOHR*BOHR / (HARTREE*ECHARGE)
     enddo
   enddo
 

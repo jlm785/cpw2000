@@ -15,8 +15,8 @@
 !>  for a given k-point.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         20 February 2018. 22 October 2024.
+!>  \version      5.13
+!>  \date         20 February 2018. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_psi_plotit(ioreplay, nc,                                 &
@@ -31,6 +31,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
 ! Documentation, merge of with(out) spin-orbit 3 February 2021. JLM
 ! Maximum value of iorb with spin-orbit. 22 October 2024.  JLM
 ! name of mesh_fold. 10 March 2026. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
 
 
@@ -96,7 +97,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_I = cmplx(ZERO,UM,REAL64)
-  real(REAL64), parameter     ::  EV = 27.211385_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 
@@ -201,7 +202,7 @@ subroutine plot_psi_plotit(ioreplay, nc,                                 &
     endif
 
     write(6,'("  The energy of orbital ",i5," is:",f12.3,"eV")')         &
-                           iorb,ei(iorb)*EV
+                           iorb,ei(iorb)*HARTREE
 
 !$omp parallel do default(shared) private(i)
     do i = 1,ntot

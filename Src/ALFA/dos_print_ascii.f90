@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         9 November 1987, 17 November 2013.
+!>  \date         9 November 1987, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dos_print_ascii(emin, deltae, nhist, dhist, chist, lidos,     &
@@ -26,6 +26,7 @@ subroutine dos_print_ascii(emin, deltae, nhist, dhist, chist, lidos,     &
 ! modified November 17, 2013. jlm
 ! Modified, documentation, 19 September 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -56,7 +57,7 @@ subroutine dos_print_ascii(emin, deltae, nhist, dhist, chist, lidos,     &
 ! constants
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
   character(len=1), parameter   ::  iblnk = ' ', isyd = 'D'
   character(len=1), parameter   ::  isyi = 'I'
 

@@ -11,12 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Writes to a file the data to interface with silvaco software
+!>  Writes to a file the data to interface with silvaco software.
 !>  Silvaco never finished it... but can be used later.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         12 April 2014. 2 November 2025.
+!>  \version      5.13
+!>  \date         12 April 2014. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine kdotp_silvaco_out(filename,iotape,neig,adot,rk0,       &
@@ -26,6 +26,7 @@
 ! Written April 12, 2014. jlm
 ! modified documentation 19 February 2020. JLM
 ! modified, indentation, 2 November 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -62,8 +63,8 @@
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
-  real(REAL64), parameter :: BOHR = 0.05291772109
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter :: BOHR = 0.05291772105_REAL64
 
 
 

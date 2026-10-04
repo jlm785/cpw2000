@@ -13,14 +13,17 @@
 
 !>  Estimates the radiative recombination rate from the
 !>  optical functions.  master subroutine
+!>
+!>  \author       Jose Luis Martins, Carlos Loia Reis
+!>  \version      5.13
+!>  \date         15 October 2020, 3 October 2026.
+!>  \copyright    GNU Public License v2
 
 subroutine opt_rad_sub(ioreplay)
 
 ! Written 15-30 October 2020. JLM
 ! based on optical subroutine by Carlos Loia Reis. July 2020
-! copyright  Carlos Loia Reis/Jose Luis Martins/INESC-MN
-
-! version 4.98
+! Constants updated to CODATA 2022 (BOHR, TAUTOK). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -170,8 +173,8 @@ subroutine opt_rad_sub(ioreplay)
   real(REAL64), parameter ::  EPS = 1.0E-10_REAL64
 
   real(REAL64), parameter ::  HARTREE = 27.211386246_REAL64
-  real(REAL64), parameter ::  TAUTOK = 11604.9_REAL64 * HARTREE
-  real(REAL64), parameter ::  BOHR = 0.5291772109E-10_REAL64 
+  real(REAL64), parameter ::  TAUTOK = 11604.51812_REAL64 * HARTREE
+  real(REAL64), parameter ::  BOHR = 0.5291772105E-10_REAL64 
   real(REAL64), parameter ::  ALPHA = UM / 137.036
   real(REAL64), parameter ::  AUT = 2.4188843266E-17_REAL64
   real(REAL64), parameter ::  ELMASS = 9.10938356E-31_REAL64

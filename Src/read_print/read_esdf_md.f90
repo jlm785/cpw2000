@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         17 June 2017, 10 August 2019.
+!>  \date         17 June 2017, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf_md(ipr,                                             &
@@ -26,6 +26,7 @@ subroutine read_esdf_md(ipr,                                             &
 ! Written June 17, 2017, from previous code. jlm
 ! Modified, documentation, kplusg,August 10 2019. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (AUTOGPA). 3 October 2026. JLM+claude
 
 
   use esdf
@@ -70,7 +71,7 @@ subroutine read_esdf_md(ipr,                                             &
 ! parameters
 
   real(REAL64), parameter ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter ::  AUTOGPA = 29421.58_REAL64
+  real(REAL64), parameter ::  AUTOGPA = 29421.0158_REAL64
   real(REAL64), parameter ::  AUTOFS = 0.02418884_REAL64
 
 ! counters
@@ -252,7 +253,7 @@ subroutine read_esdf_md(ipr,                                             &
   iseed = esdf_integer('MD.Seed',iseed)
 
 
-! external stress and pressure (29421.58 converts from GPa to au)
+! external stress and pressure (29421.0158 converts from GPa to au)
 
 
   press = ZERO
@@ -278,7 +279,7 @@ subroutine read_esdf_md(ipr,                                             &
 ! we should be able figure out how to fill strext
 ! for a cubic crystal, and for a shear component
 ! we should multiply by the lattice constant and
-! divide by 29421.58 the stress in GPa
+! divide by 29421.0158 the stress in GPa
 
   do i=1,3
   do j=1,3

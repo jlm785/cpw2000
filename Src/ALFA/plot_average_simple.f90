@@ -15,8 +15,8 @@
 !>  parallel to the z-direction.  Includes the atom positions...
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         2 March 2023.
+!>  \version      5.13
+!>  \date         2 March 2023, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_average_simple(ioreplay, func,                           &
@@ -29,6 +29,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
 ! Documentation, merged psi with rho_v. 5 February 2021. JLM
 ! Modified, double average. 2 March 2023. JLM
 ! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -90,7 +91,7 @@ subroutine plot_average_simple(ioreplay, func,                           &
 
 ! constants
 
-  real(REAL64), parameter  :: BOHR = 0.5291772109
+  real(REAL64), parameter  :: BOHR = 0.5291772105_REAL64
 
 ! counters
 

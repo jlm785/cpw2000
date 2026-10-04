@@ -14,8 +14,8 @@
 !>  imatch points to the old state that is most similar to the new states
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         29 October 2024
+!>  \version      5.13
+!>  \date         29 October 2024, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_match_state(imatch, xover, mtxd,                           &
@@ -24,6 +24,7 @@ subroutine ao_match_state(imatch, xover, mtxd,                           &
 
 
 ! Adapted from out_band_match_state, 29 October 2024. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -79,7 +80,7 @@ subroutine ao_match_state(imatch, xover, mtxd,                           &
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
   real(REAL64), parameter     ::  EPS = 1.0E-8_REAL64
   real(REAL64), parameter     ::  TOL = 1.0E-5_REAL64
-  real(REAL64), parameter     ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 
@@ -212,11 +213,11 @@ subroutine ao_match_state(imatch, xover, mtxd,                           &
 
   do i = 1,neig_new
     if(imatch(i) > 0) then
-      if(abs(ei_new(i) - ei_old(imatch(i))) > UM/EV) then
+      if(abs(ei_new(i) - ei_old(imatch(i))) > UM/HARTREE) then
             write(6,*)
             write(6,*) "  WARNING   correction larger than 1 eV in ao_match_state"
             write(6,*) "  check atomic orbital state ",i," and pw state ",imatch(i)
-            write(6,'(2(5x,f12.5))') ei_new(i)*EV, ei_old(imatch(i))*EV
+            write(6,'(2(5x,f12.5))') ei_new(i)*HARTREE, ei_old(imatch(i))*HARTREE
             write(6,*)
       endif
     endif

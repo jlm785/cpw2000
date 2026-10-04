@@ -14,8 +14,8 @@
 !>  Prints the topological tensors for a given k-vector
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         27 December 2023, 13 January 2025.
+!>  \version      5.13
+!>  \date         27 December 2023, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
@@ -28,6 +28,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 ! Removed double double counting in orbital magnetization. 23 November 2024. JLM
 ! Improved printing, 13 January 2025. JLM
 ! Typo corrected, 15 July 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -69,7 +70,7 @@ subroutine out_qgeom_print(ioreplay, nlevel, levdeg, leveigs,            &
 
 ! constants
 
-  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 

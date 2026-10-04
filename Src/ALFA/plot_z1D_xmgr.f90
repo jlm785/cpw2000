@@ -16,8 +16,8 @@
 !>  Writes a file to be plotted by xmgrace
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.06
-!>  \date         21 June 1014, 2 March 2023.
+!>  \version      5.13
+!>  \date         21 June 2014, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                  &
@@ -27,6 +27,7 @@ subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                  &
 ! Modified, Documentation, name, API, 4 February 2021. JLM
 ! Modified, first line for KDE recognition. 20 January 2022. JLM
 ! Modified, several double averages, 2 March 2023. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -59,7 +60,7 @@ subroutine plot_z1D_xmgr(io, ave, dave, nw, n3, height,                  &
 
 ! constants
 
-  real(REAL64), parameter :: BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter :: BOHR = 0.5291772105_REAL64
 
 
   ymin = ave(1)

@@ -14,8 +14,8 @@
 !>  Prints the information about the Fermi level and occupations.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.0.3
-!>  \date         September 15, 2015, 29 November 2021.
+!>  \version      5.13
+!>  \date         September 15, 2015, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine print_fermi_occup(ipr, el, teleck,                            &
@@ -29,6 +29,7 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
 ! Modified, documentation, August 2019. JLM
 ! Modified, increase threshold for printing details. 29 November 2021. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, TAUTOK). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -71,8 +72,8 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
   real(REAL64), parameter ::  UM = 1.0_REAL64
   real(REAL64), parameter ::  EPS = 0.000001_REAL64
   real(REAL64), parameter ::  SMALL = EPS*EPS
-  real(REAL64), parameter ::  EV = 27.2116_REAL64
-  real(REAL64), parameter ::  TAUTOK = 11604.9_REAL64 * EV
+  real(REAL64), parameter ::  HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter ::  TAUTOK = 11604.51812_REAL64 * HARTREE
 
   allocate(jrk(mxdnrk*mxdbnd))
   allocate(ind(mxdnrk*mxdbnd))
@@ -92,7 +93,7 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
   tempau = teleck / TAUTOK
 
   if(ipr > 0) write(6,'(/,"  the fermi level is at ",f10.4,         &
-      &       " [eV] ",/)') efermi*EV
+      &       " [eV] ",/)') efermi*HARTREE
 
   if(ipr > 2) then
 
@@ -106,7 +107,7 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
         if(abs(frac(ind(i))*(UM-frac(ind(i)))) > SMALL) then
           write(6,'(/,"  NOTE: Fractional occupancy at k point ",   &
      &              i3," frac = ",f9.6," with energy ",f10.4," [eV] ")') &
-               jrk(ind(i)),frac(ind(i)),el(ind(i))*EV
+               jrk(ind(i)),frac(ind(i)),el(ind(i))*HARTREE
         endif
       enddo
 
@@ -118,14 +119,14 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
         jmin = nband(i)/10
         if(jmin > 0) then
           do j=1,jmin
-            write(6,'(10f10.4)') (el(iel+k)*EV,k=1,10)
+            write(6,'(10f10.4)') (el(iel+k)*HARTREE,k=1,10)
             write(6,'(10f10.4)') (frac(iel+k),k=1,10)
             iel = iel + 10
           enddo
         endif
         jmax = nband(i) - 10*jmin
         if(jmax > 0) then
-          write(6,'(10f10.4)') (el(iel+k)*EV,k=1,jmax)
+          write(6,'(10f10.4)') (el(iel+k)*HARTREE,k=1,jmax)
           write(6,'(10f10.4)') (frac(iel+k),k=1,jmax)
           iel = iel + jmax
         endif
@@ -142,9 +143,9 @@ subroutine print_fermi_occup(ipr, el, teleck,                            &
     write(6,'(5x,f14.6,"  band energy (Ha)")') eband
     write(6,'(5x,f14.6,"  TS for electrons (Ha)")') elects
     write(6,'(5x,f14.6,"  ESTIMATE of band width (eV)")')                &
-              bandwid*EV
+              bandwid*HARTREE
     write(6,'(5x,f14.6,"  ESTIMATE of Penn gap (eV)")')                  &
-              penngap*EV
+              penngap*HARTREE
     write(6,*)
   endif
 

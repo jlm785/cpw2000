@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         9 December 2013, 14 December 2020.
+!>  \date         9 December 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine opt_rad_plot_range(filegrid, io_grid, nhtarg,                 &
@@ -27,6 +27,7 @@ subroutine opt_rad_plot_range(filegrid, io_grid, nhtarg,                 &
 ! Modified, egrid, 18 October 2020. JLM
 ! Modified, using files, 14 December 2020. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -72,7 +73,7 @@ subroutine opt_rad_plot_range(filegrid, io_grid, nhtarg,                 &
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
 
 
 ! find emin and nrange

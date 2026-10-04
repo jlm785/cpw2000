@@ -18,8 +18,8 @@
 !>  Adapted from out_dos
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         November 2018, 8 October 2024.
+!>  \version      5.13
+!>  \date         November 2018, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
@@ -28,6 +28,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 ! Written November 2018. CLR
 ! Modified, indentation, documentation, ao_int_, 8 October 2024. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -95,7 +96,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 
 ! parameters
 
-  real(REAL64)   , parameter         :: HARTREE = 27.21138386_REAL64
+  real(REAL64)   , parameter         :: HARTREE = 27.211386246_REAL64
   real(REAL64)   , parameter         :: PI = 3.14159265358979323846_REAL64
 
   real(REAL64)   , parameter         :: ZERO = 0.0_REAL64

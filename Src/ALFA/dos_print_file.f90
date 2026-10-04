@@ -11,13 +11,12 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Writes the density of states and integrated density of states
-!>  to a file.
+!>  Writes the density of states and integrated density of states to a file.
 !>  It is commented for gnuplot or xmgrace!
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         7 December 2013.
+!>  \date         7 December 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dos_print_file(filename, nhist, ehist, dhist, chist,          &
@@ -26,6 +25,7 @@ subroutine dos_print_file(filename, nhist, ehist, dhist, chist,          &
 ! written December 7 , 2013 from old code. jlm
 ! Modified, documentation, 19 September 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -51,7 +51,7 @@ subroutine dos_print_file(filename, nhist, ehist, dhist, chist,          &
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
 
 ! printout to filename
 

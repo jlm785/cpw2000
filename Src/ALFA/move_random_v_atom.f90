@@ -19,7 +19,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         2 November 1993, 6 January 2017.
+!>  \date         2 November 1993, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine move_random_v_atom(iseed, tempk, vat, vadot,                  &
@@ -33,6 +33,7 @@ subroutine move_random_v_atom(iseed, tempk, vat, vadot,                  &
 ! Modified 6 January 2017, f90. JLM
 ! Modified, documentation, June 2019. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, TAUTOK). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -74,8 +75,8 @@ subroutine move_random_v_atom(iseed, tempk, vat, vadot,                  &
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter  ::  EV = 27.2116_REAL64
-  real(REAL64), parameter  ::  TAUTOK = 11604.9_REAL64 * EV
+  real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter  ::  TAUTOK = 11604.51812_REAL64 * HARTREE
 
   integer, parameter       ::  IM = 2147483647
   integer, parameter       ::  MASK = 123459876

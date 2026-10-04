@@ -13,15 +13,18 @@
 
 !>  Calculates the dielectric tensor (independent electron approximation)
 !>  and related optical functions.  master subroutine
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         July 2020, 3 October 2026.
+!>  \copyright    GNU Public License v2
 
 subroutine opt_sub(ioreplay)
 
 ! Written by Carlos Loia Reis. July 2020
 ! Modified, documentation, 20 September 2020. JLM
 ! Modified, rearrange subroutines, October 23 2020. JLM
-! copyright  Carlos Loia Reis/INESC-MN
-
-! version 4.99
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -104,7 +107,7 @@ subroutine opt_sub(ioreplay)
 ! constants
 
   real(REAL64), parameter      :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  real(REAL64), parameter      :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter      :: HARTREE = 27.211386246_REAL64
 
 ! counters
 

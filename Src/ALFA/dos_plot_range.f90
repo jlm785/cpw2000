@@ -19,6 +19,7 @@
 ! Modified, documentation, 19 September 2020. JLM
 ! Modified, egrid, 18 October 2020. JLM
 ! copyright  J.L.Martins, INESC-MN.
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 ! version 4.98 of cpw
 
@@ -51,7 +52,7 @@
 
 ! constants
 
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
 
 ! find emin and emax
 

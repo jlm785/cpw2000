@@ -20,8 +20,8 @@
 !>  It is a driver subroutine for each task.
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.12
-!>  \date         December 18, 2013, 2 March 2026.
+!>  \version      5.13
+!>  \date         December 18, 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -45,6 +45,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
 ! Allows entering better value of Fermi level. 7 July 2025. JLM
 ! Rewrites the questions for the defaults in a separate subroutine. 2 March 2026. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -232,7 +233,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! constants
 
   real(REAL64), parameter  :: UM = 1.0_REAL64
-  real(REAL64), parameter  :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
 
 ! counter
 

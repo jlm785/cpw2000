@@ -91,9 +91,9 @@
 !   
 !  It would be read in by the main program in the following way:
 !  
-!  aou = esdf_physical('ageofuniverse',77.d0,ns)
+!  aou = esdf_physical('ageofuniverse',77.0_REAL64,ns)
 !  
-!  "aou" is the double precision variable, 77.d0 is the default number of
+!  "aou" is the double precision variable, 77.0_REAL64 is the default number of
 !  "ns" or nanoseconds. 24s will be converted automatically to its
 !  equivalent number of nanoseconds.
 !  
@@ -175,8 +175,8 @@ Module esdf
   ! Kind parameters 
 
   Integer, Private, Parameter :: I4B = Selected_int_kind(9)
-  Integer, Private, Parameter :: DP  = Kind(1.d0)
-  Integer, Private, Parameter :: SP  = Kind(1.0)
+  Integer, Private, Parameter :: REAL64 = Selected_real_kind(12)
+  Integer, Private, Parameter :: REAL32 = Selected_real_kind(6)
 
   ! Set the length of the lines
 
@@ -194,7 +194,7 @@ Module esdf
 
   Type phys_unit
      Character(10) :: d,n ! d - dimension n - name
-     Real(DP)      :: u   ! u - unit
+     Real(REAL64)      :: u   ! u - unit
   End Type phys_unit
 
   Type(phys_unit), Private, Dimension(nphys) :: phy
@@ -207,63 +207,66 @@ Module esdf
   ! m - mass l - length t - time e - energy f - force p - pressure c- charge
   ! d - dipole mom - mom inert ef - efield
   !
+  !jlm  conversion factors updated to CODATA 2022 (exact SI constants since 2019),
+  !jlm  digits within the uncertainty are not included. 3 October 2026. JLM+claude
+  !jlm  REAL64 and REAL32 instead of DP and SP, literals with _REAL64. 4 October 2026. JLM+claude
 
-  Data phy(1)%d /'m'/;Data phy(1)%n /'kg'/;Data phy(1)%u /1.d0/
-  Data phy(2)%d /'m'/;Data phy(2)%n /'g'/;Data phy(2)%u /1.d-3/
-  Data phy(3)%d /'m'/;Data phy(3)%n /'amu'/;Data phy(3)%u /1.66054d-27/
-  Data phy(4)%d /'l'/;Data phy(4)%n /'m'/;Data phy(4)%u /1.d0/
-  Data phy(5)%d /'l'/;Data phy(5)%n /'nm'/;Data phy(5)%u /1.d-9/
-  Data phy(6)%d /'l'/;Data phy(6)%n /'ang'/;Data phy(6)%u /1.d-10/
-  Data phy(7)%d /'l'/;Data phy(7)%n /'bohr'/;Data phy(7)%u /0.529177d-10/
-  Data phy(8)%d /'t'/;Data phy(8)%n /'s'/;Data phy(8)%u /1.d0/
-  Data phy(9)%d /'t'/;Data phy(9)%n /'ns'/;Data phy(9)%u /1.d-9/
-  Data phy(10)%d /'t'/;Data phy(10)%n /'ps'/;Data phy(10)%u /1.d-12/
-  Data phy(11)%d /'t'/;Data phy(11)%n /'fs'/;Data phy(11)%u /1.d-15/
-  Data phy(12)%d /'e'/;Data phy(12)%n /'j'/;Data phy(12)%u /1.d0/
-  Data phy(13)%d /'e'/;Data phy(13)%n /'erg'/;Data phy(13)%u /1.d-7/
-  Data phy(14)%d /'e'/;Data phy(14)%n /'ev'/;Data phy(14)%u /1.60219d-19/
-  Data phy(15)%d /'e'/;Data phy(15)%n /'mev'/;Data phy(15)%u /1.60219d-22/
-  Data phy(16)%d /'e'/;Data phy(16)%n /'ry'/;Data phy(16)%u /2.17991d-18/
-  Data phy(17)%d /'e'/;Data phy(17)%n /'mry'/;Data phy(17)%u /2.17991d-21/
-  Data phy(18)%d /'e'/;Data phy(18)%n /'hartree'/;Data phy(18)%u /4.35982d-18/
-  Data phy(19)%d /'e'/;Data phy(19)%n /'kcal/mol'/;Data phy(19)%u /6.94780d-21/
-  Data phy(20)%d /'e'/;Data phy(20)%n /'mhartree'/;Data phy(20)%u /4.35982d-21/
-  Data phy(21)%d /'e'/;Data phy(21)%n /'kj/mol'/;Data phy(21)%u /1.6606d-21/
-  Data phy(22)%d /'e'/;Data phy(22)%n /'hz'/;Data phy(22)%u /6.6262d-34/
-  Data phy(23)%d /'e'/;Data phy(23)%n /'thz'/;Data phy(23)%u /6.6262d-22/
-  Data phy(24)%d /'e'/;Data phy(24)%n /'cm-1'/;Data phy(24)%u /1.986d-23/
-  Data phy(25)%d /'e'/;Data phy(25)%n /'cm^-1'/;Data phy(25)%u /1.986d-23/
-  Data phy(26)%d /'e'/;Data phy(26)%n /'cm**-1'/;Data phy(26)%u /1.986d-23/
-  Data phy(27)%d /'f'/;Data phy(27)%n /'N'/;Data phy(27)%u /1.d0/
-  Data phy(28)%d /'f'/;Data phy(28)%n /'ev/ang'/;Data phy(28)%u /1.60219d-9/
-  Data phy(29)%d /'f'/;Data phy(29)%n /'ry/bohr'/;Data phy(29)%u /4.11943d-8/
-  Data phy(30)%d /'l'/;Data phy(30)%n /'cm'/;Data phy(30)%u /1.d-2/
-  Data phy(31)%d /'p'/;Data phy(31)%n /'pa'/;Data phy(31)%u /1.d0/
-  Data phy(32)%d /'p'/;Data phy(32)%n /'mpa'/;Data phy(32)%u /1.d6/
-  Data phy(33)%d /'p'/;Data phy(33)%n /'gpa'/;Data phy(33)%u /1.d9/
-  Data phy(34)%d /'p'/;Data phy(34)%n /'atm'/;Data phy(34)%u /1.01325d5/
-  Data phy(35)%d /'p'/;Data phy(35)%n /'bar'/;Data phy(35)%u /1.d5/
-  Data phy(36)%d /'p'/;Data phy(36)%n /'mbar'/;Data phy(36)%u /1.d11/
-  Data phy(37)%d /'p'/;Data phy(37)%n /'ry/bohr**3'/;Data phy(37)%u /1.47108d13/
-  Data phy(38)%d /'p'/;Data phy(38)%n /'ev/ang**3'/;Data phy(38)%u /1.60219d11/
-  Data phy(39)%d /'c'/;Data phy(39)%n /'c'/;Data phy(39)%u /1.d0/
-  Data phy(40)%d /'c'/;Data phy(40)%n /'e'/;Data phy(40)%u /1.602177d-19/
-  Data phy(41)%d /'d'/;Data phy(41)%n /'C*m'/;Data phy(41)%u /1.d0/
-  Data phy(42)%d /'d'/;Data phy(42)%n /'D'/;Data phy(42)%u /3.33564d-30/
-  Data phy(43)%d /'d'/;Data phy(43)%n /'debye'/;Data phy(43)%u /3.33564d-30/
-  Data phy(44)%d /'d'/;Data phy(44)%n /'e*bohr'/;Data phy(44)%u /8.47835d-30/
-  Data phy(45)%d /'d'/;Data phy(45)%n /'e*ang'/;Data phy(45)%u /1.602177d-29/
-  Data phy(46)%d /'mom'/;Data phy(46)%n /'kg*m**2'/;Data phy(46)%u /1.d0/
-  Data phy(47)%d /'mom'/;Data phy(47)%n /'ry*fs**2'/;Data phy(47)%u /2.1799d-48/
-  Data phy(48)%d /'ef'/;Data phy(48)%n /'v/m'/;Data phy(48)%u /1.d0/
-  Data phy(49)%d /'ef'/;Data phy(49)%n /'v/nm'/;Data phy(49)%u /1.d9/
-  Data phy(50)%d /'ef'/;Data phy(50)%n /'v/ang'/;Data phy(50)%u /1.d10/
-  Data phy(51)%d /'ef'/;Data phy(51)%n /'v/bohr'/;Data phy(51)%u /1.8897268d10/
-  Data phy(52)%d /'ef'/;Data phy(52)%n /'ry/bohr/e'/;Data phy(52)%u /2.5711273d11/
-  Data phy(53)%d /'ef'/;Data phy(53)%n /'har/bohr/e'/;Data phy(53)%u /5.1422546d11/
-  Data phy(54)%d /'e'/;Data phy(54)%n /'k'/;Data phy(54)%u /1.38066d-23/
-  Data phy(55)%d /'f'/;Data phy(55)%n /'har/bohr'/;Data phy(55)%u /8.23886d-8/
-  Data phy(56)%d /'t'/;Data phy(56)%n /'autime'/;Data phy(56)%u /2.418884d-17/
+  Data phy(1)%d /'m'/;Data phy(1)%n /'kg'/;Data phy(1)%u /1.0_REAL64/
+  Data phy(2)%d /'m'/;Data phy(2)%n /'g'/;Data phy(2)%u /1.0E-3_REAL64/
+  Data phy(3)%d /'m'/;Data phy(3)%n /'amu'/;Data phy(3)%u /1.660539069E-27_REAL64/
+  Data phy(4)%d /'l'/;Data phy(4)%n /'m'/;Data phy(4)%u /1.0_REAL64/
+  Data phy(5)%d /'l'/;Data phy(5)%n /'nm'/;Data phy(5)%u /1.0E-9_REAL64/
+  Data phy(6)%d /'l'/;Data phy(6)%n /'ang'/;Data phy(6)%u /1.0E-10_REAL64/
+  Data phy(7)%d /'l'/;Data phy(7)%n /'bohr'/;Data phy(7)%u /5.291772105E-11_REAL64/
+  Data phy(8)%d /'t'/;Data phy(8)%n /'s'/;Data phy(8)%u /1.0_REAL64/
+  Data phy(9)%d /'t'/;Data phy(9)%n /'ns'/;Data phy(9)%u /1.0E-9_REAL64/
+  Data phy(10)%d /'t'/;Data phy(10)%n /'ps'/;Data phy(10)%u /1.0E-12_REAL64/
+  Data phy(11)%d /'t'/;Data phy(11)%n /'fs'/;Data phy(11)%u /1.0E-15_REAL64/
+  Data phy(12)%d /'e'/;Data phy(12)%n /'j'/;Data phy(12)%u /1.0_REAL64/
+  Data phy(13)%d /'e'/;Data phy(13)%n /'erg'/;Data phy(13)%u /1.0E-7_REAL64/
+  Data phy(14)%d /'e'/;Data phy(14)%n /'ev'/;Data phy(14)%u /1.602176634E-19_REAL64/
+  Data phy(15)%d /'e'/;Data phy(15)%n /'mev'/;Data phy(15)%u /1.602176634E-22_REAL64/
+  Data phy(16)%d /'e'/;Data phy(16)%n /'ry'/;Data phy(16)%u /2.17987236110E-18_REAL64/
+  Data phy(17)%d /'e'/;Data phy(17)%n /'mry'/;Data phy(17)%u /2.17987236110E-21_REAL64/
+  Data phy(18)%d /'e'/;Data phy(18)%n /'hartree'/;Data phy(18)%u /4.35974472221E-18_REAL64/
+  Data phy(19)%d /'e'/;Data phy(19)%n /'kcal/mol'/;Data phy(19)%u /6.94769545706E-21_REAL64/
+  Data phy(20)%d /'e'/;Data phy(20)%n /'mhartree'/;Data phy(20)%u /4.35974472221E-21_REAL64/
+  Data phy(21)%d /'e'/;Data phy(21)%n /'kj/mol'/;Data phy(21)%u /1.66053906717E-21_REAL64/
+  Data phy(22)%d /'e'/;Data phy(22)%n /'hz'/;Data phy(22)%u /6.62607015E-34_REAL64/
+  Data phy(23)%d /'e'/;Data phy(23)%n /'thz'/;Data phy(23)%u /6.62607015E-22_REAL64/
+  Data phy(24)%d /'e'/;Data phy(24)%n /'cm-1'/;Data phy(24)%u /1.98644585715E-23_REAL64/
+  Data phy(25)%d /'e'/;Data phy(25)%n /'cm^-1'/;Data phy(25)%u /1.98644585715E-23_REAL64/
+  Data phy(26)%d /'e'/;Data phy(26)%n /'cm**-1'/;Data phy(26)%u /1.98644585715E-23_REAL64/
+  Data phy(27)%d /'f'/;Data phy(27)%n /'N'/;Data phy(27)%u /1.0_REAL64/
+  Data phy(28)%d /'f'/;Data phy(28)%n /'ev/ang'/;Data phy(28)%u /1.602176634E-9_REAL64/
+  Data phy(29)%d /'f'/;Data phy(29)%n /'ry/bohr'/;Data phy(29)%u /4.119361752E-8_REAL64/
+  Data phy(30)%d /'l'/;Data phy(30)%n /'cm'/;Data phy(30)%u /1.0E-2_REAL64/
+  Data phy(31)%d /'p'/;Data phy(31)%n /'pa'/;Data phy(31)%u /1.0_REAL64/
+  Data phy(32)%d /'p'/;Data phy(32)%n /'mpa'/;Data phy(32)%u /1.0E6_REAL64/
+  Data phy(33)%d /'p'/;Data phy(33)%n /'gpa'/;Data phy(33)%u /1.0E9_REAL64/
+  Data phy(34)%d /'p'/;Data phy(34)%n /'atm'/;Data phy(34)%u /1.01325E5_REAL64/
+  Data phy(35)%d /'p'/;Data phy(35)%n /'bar'/;Data phy(35)%u /1.0E5_REAL64/
+  Data phy(36)%d /'p'/;Data phy(36)%n /'mbar'/;Data phy(36)%u /1.0E11_REAL64/
+  Data phy(37)%d /'p'/;Data phy(37)%n /'ry/bohr**3'/;Data phy(37)%u /1.471050788E13_REAL64/
+  Data phy(38)%d /'p'/;Data phy(38)%n /'ev/ang**3'/;Data phy(38)%u /1.602176634E11_REAL64/
+  Data phy(39)%d /'c'/;Data phy(39)%n /'c'/;Data phy(39)%u /1.0_REAL64/
+  Data phy(40)%d /'c'/;Data phy(40)%n /'e'/;Data phy(40)%u /1.602176634E-19_REAL64/
+  Data phy(41)%d /'d'/;Data phy(41)%n /'C*m'/;Data phy(41)%u /1.0_REAL64/
+  Data phy(42)%d /'d'/;Data phy(42)%n /'D'/;Data phy(42)%u /3.33564095198E-30_REAL64/
+  Data phy(43)%d /'d'/;Data phy(43)%n /'debye'/;Data phy(43)%u /3.33564095198E-30_REAL64/
+  Data phy(44)%d /'d'/;Data phy(44)%n /'e*bohr'/;Data phy(44)%u /8.47835362E-30_REAL64/
+  Data phy(45)%d /'d'/;Data phy(45)%n /'e*ang'/;Data phy(45)%u /1.602176634E-29_REAL64/
+  Data phy(46)%d /'mom'/;Data phy(46)%n /'kg*m**2'/;Data phy(46)%u /1.0_REAL64/
+  Data phy(47)%d /'mom'/;Data phy(47)%n /'ry*fs**2'/;Data phy(47)%u /2.17987236110E-48_REAL64/
+  Data phy(48)%d /'ef'/;Data phy(48)%n /'v/m'/;Data phy(48)%u /1.0_REAL64/
+  Data phy(49)%d /'ef'/;Data phy(49)%n /'v/nm'/;Data phy(49)%u /1.0E9_REAL64/
+  Data phy(50)%d /'ef'/;Data phy(50)%n /'v/ang'/;Data phy(50)%u /1.0E10_REAL64/
+  Data phy(51)%d /'ef'/;Data phy(51)%n /'v/bohr'/;Data phy(51)%u /1.889726126E10_REAL64/
+  Data phy(52)%d /'ef'/;Data phy(52)%n /'ry/bohr/e'/;Data phy(52)%u /2.571103376E11_REAL64/
+  Data phy(53)%d /'ef'/;Data phy(53)%n /'har/bohr/e'/;Data phy(53)%u /5.142206751E11_REAL64/
+  Data phy(54)%d /'e'/;Data phy(54)%n /'k'/;Data phy(54)%u /1.380649E-23_REAL64/
+  Data phy(55)%d /'f'/;Data phy(55)%n /'har/bohr'/;Data phy(55)%u /8.23872350E-8_REAL64/
+  Data phy(56)%d /'t'/;Data phy(56)%n /'autime'/;Data phy(56)%u /2.41888432659E-17_REAL64/
 
 
 Contains
@@ -530,9 +533,9 @@ Contains
 
   Function esdf_single(label,default)
 
-    Real(SP), Intent(in) :: default
+    Real(REAL32), Intent(in) :: default
     Character(*), Intent(in) :: label
-    Real(SP) :: esdf_single
+    Real(REAL32) :: esdf_single
 
     ! Local
 
@@ -589,9 +592,9 @@ Contains
 
   Function esdf_double(label,default)
 
-    Real(DP), Intent(in) :: default
+    Real(REAL64), Intent(in) :: default
     Character(*), Intent(in) :: label
-    Real(DP) :: esdf_double
+    Real(REAL64) :: esdf_double
 
     ! Local
 
@@ -650,9 +653,9 @@ Contains
 
   Function esdf_physical(label,default,dunit)
 
-    Real(DP), Intent(in) :: default
+    Real(REAL64), Intent(in) :: default
     Character(*), Intent(in) :: label,dunit
-    Real(DP) :: esdf_physical
+    Real(REAL64) :: esdf_physical
 
     ! Local
 
@@ -976,7 +979,7 @@ Contains
   Function esdf_convfac(from,to)
 
     Character(*), Intent(in) :: from,to
-    Real(DP) :: esdf_convfac
+    Real(REAL64) :: esdf_convfac
 
     ! Local
 

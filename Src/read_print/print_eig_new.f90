@@ -15,8 +15,8 @@
 !>  adapted from Sverre Froyen plane wave program
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         June 6 1987. 21 September 2025.
+!>  \version      5.13
+!>  \date         June 6 1987. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine print_eig_new(ipr, nspin, lrk, irk, labelk, nrka, rkpt,       &
@@ -34,6 +34,7 @@ subroutine print_eig_new(ipr, nspin, lrk, irk, labelk, nrka, rkpt,       &
 ! Modified, neig > 9999, 9 November 2020. JLM
 ! Placement of complex components. 10 December 2022. JLM
 ! Merged with/without spin-orbit versions. 21 September 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -74,8 +75,8 @@ subroutine print_eig_new(ipr, nspin, lrk, irk, labelk, nrka, rkpt,       &
 ! parameters
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter  ::  EV = 27.21138505_REAL64
-  real(REAL64), parameter  ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter  ::  BOHR = 0.5291772105_REAL64
 
 ! counters
 
@@ -131,24 +132,24 @@ subroutine print_eig_new(ipr, nspin, lrk, irk, labelk, nrka, rkpt,       &
     if (jmax > nspin*neig) jmax = nspin*neig
     if(nrka > 0) then
       if (i == 1)  write(6,'(4x,a5,21x,i7,3x,8f9.5)')                    &
-                        labelk,mtxd,(EV*ei(j),j=1,jmax)
+                        labelk,mtxd,(HARTREE*ei(j),j=1,jmax)
     else
       if (i == 1) then
         write(prform,"( '(1x,i7,1x,i7,2x,',i1,'f9.5,5x,3f7.2,3x,3f11.4,3x,3f8.3)' )")  jmax
-        write(6,prform) irk,mtxd,(EV*ei(j),j=1,jmax), (rkcar(j),j=1,3),  &
-               (rkpt(j),j=1,3), (rkcar(j)/BOHR,j=1,3)
+        write(6,prform) irk,mtxd,(HARTREE*ei(j),j=1,jmax),               &
+               (rkcar(j),j=1,3), (rkpt(j),j=1,3), (rkcar(j)/BOHR,j=1,3)
         if(ipr > 2) write(6,*)
       endif
     endif
     if (i > 1) then
       if(ipr > 2) write(6,*)
-      write(6,'(18x,8f9.5)') (EV*ei(j),j=i,jmax)
+      write(6,'(18x,8f9.5)') (HARTREE*ei(j),j=i,jmax)
       if(ipr > 2) write(6,*)
     endif
 
 !   kinetic energies
 
-    if (ipr == 2)  write(6,'(13x,"ekin ",8f9.5)') (EV*ekpsi(j),j=i,jmax)
+    if (ipr == 2)  write(6,'(13x,"ekin ",8f9.5)') (HARTREE*ekpsi(j),j=i,jmax)
 
 !   eigenvectors, ncmax first components
 

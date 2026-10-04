@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         4 February 2021, 22 September 2026
+!>  \date         4 February 2021, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_contour3D(ioreplay, func,                                &
@@ -30,6 +30,7 @@ subroutine plot_contour3D(ioreplay, func,                                &
 ! Modified, documentation, 11 June 2020. JLM
 ! Modified to use calls to write_xsf, etc.., 1-4 February 2021. JLM
 ! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -83,7 +84,7 @@ subroutine plot_contour3D(ioreplay, func,                                &
 ! constants
 
   real(REAL64), parameter ::  ZERO = 0.0_REAL64
-  real(REAL64), parameter ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter ::  BOHR = 0.5291772105_REAL64
 
 ! counters
 

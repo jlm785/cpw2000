@@ -16,13 +16,14 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         1 February 2021.
+!>  \date         1 February 2021, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_xsf_data(iotape, lvesta, adot, chd, id, n1,n2,n3)
 
 ! Written 1 February 2021. Adapted from rho_contour3D. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -51,7 +52,7 @@ subroutine plot_xsf_data(iotape, lvesta, adot, chd, id, n1,n2,n3)
 ! constants
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64
-  real(REAL64), parameter  :: BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter  :: BOHR = 0.5291772105_REAL64
   
 ! counters
 

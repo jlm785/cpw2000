@@ -15,8 +15,8 @@
 !>  Usage:  xmgrace "filename", or just click on the agr file
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.12
-!>  \date         19 October 2013, 17 September 2025.
+!>  \version      5.13
+!>  \date         19 October 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine out_band_xmgrace(filename,io,                          &
@@ -30,6 +30,7 @@
 ! Modified, documentation, 4 February 2020. JLM
 ! Modified, first line for KDE recognition. 20 January 2022. JLM
 ! Modified, indentation, increase dimension of label. 17 September 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -71,7 +72,7 @@
 
 ! constants
 
-  real(REAL64), parameter ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter ::  HARTREE = 27.211386246_REAL64
   real(REAL64), parameter  :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
 
@@ -97,15 +98,15 @@
       if(ymax > ymtmp) ymax = ymtmp
     endif
   enddo
-  ymin = real(nint(ymin*27.212)) - UM
-  ymax = real(nint(ymax*27.212)) + UM
+  ymin = real(nint(ymin*HARTREE)) - UM
+  ymax = real(nint(ymax*HARTREE)) + UM
 
   open(unit=io, file=filename, form='formatted')
 
   write(io,'("# Grace project file ")')
   write(io,*)
 
-  write(io,'("#    zero energy for bands is ",f12.4," eV above the average potential")') eref*EV
+  write(io,'("#    zero energy for bands is ",f12.4," eV above the average potential")') eref*HARTREE
   write(io,*)
 
   write(io,'("@    autoscale onread none ")')
@@ -269,7 +270,7 @@
       endif
       do i=istart,nkstep(n)
         irk = irk + 1
-        write(io,'(2f18.8)') xk(irk), (e_of_k(j,irk)-eref)*EV
+        write(io,'(2f18.8)') xk(irk), (e_of_k(j,irk)-eref)*HARTREE
       enddo
     enddo
   enddo

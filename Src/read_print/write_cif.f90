@@ -14,8 +14,8 @@
 !>  writes a CIF file for later use
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         April 2021, 9 June 2025.
+!>  \version      5.13
+!>  \date         April 2021, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cif(filename,                                           &
@@ -24,6 +24,7 @@ subroutine write_cif(filename,                                           &
 
 ! Adapted April 2021. JLM
 ! Added comments with links, filename. 9 June 2025. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -54,7 +55,7 @@ subroutine write_cif(filename,                                           &
 
 ! parameters
 
-  real(REAL64), parameter    ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter    ::  BOHR = 0.5291772105_REAL64
   real(REAL64), parameter    ::  PI = 3.14159265358979323846_REAL64
   real(REAL64), parameter    ::  DEGREE = 180.0_REAL64
 

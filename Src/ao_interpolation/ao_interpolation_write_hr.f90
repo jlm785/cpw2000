@@ -14,14 +14,15 @@
 !>  Writes the data files for WannierTools (mtb_hr.dat, mtb_tb.dat)
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         2020, 8 October 2024.
+!>  \version      5.13
+!>  \date         2020, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_write_hr(adot, ioreplay)
 
 ! Written by Carlos Lois Reis in an unknown date.
 ! Documentation, indentation, ao_int_, 8 October 2024. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, BOHR). 3 October 2026. JLM+claude
 
   use NonOrthoInterp
 
@@ -57,8 +58,8 @@ subroutine ao_interpolation_write_hr(adot, ioreplay)
 
 ! constants
 
-  real(REAL64), parameter     ::  BOHR = 0.5291772109_REAL64
-  real(REAL64), parameter     ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter     ::  BOHR = 0.5291772105_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 
   call NonOrthoInterpReadFromFile(mtb)
@@ -176,8 +177,8 @@ subroutine ao_interpolation_write_hr(adot, ioreplay)
         write(257,'(3i5)') ortho%irvec(:,i)
     do j=1, nband
       do k=1, nband
-        write(256,'(3i5, 2i5, 2e22.12)') ortho%irvec(:,i), j, k, EV*ortho%Ham_r(j,k,i)
-        write(257,'(2i5, 2e22.12)')                        j, k, EV*ortho%Ham_r(j,k,i)
+        write(256,'(3i5, 2i5, 2e22.12)') ortho%irvec(:,i), j, k, HARTREE*ortho%Ham_r(j,k,i)
+        write(257,'(2i5, 2e22.12)')                        j, k, HARTREE*ortho%Ham_r(j,k,i)
       enddo
     enddo
     write(257,*)

@@ -14,8 +14,8 @@
 !>  Prints the results of the calculation of the effective mass
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         8 - 14 November 2023.
+!>  \version      5.13
+!>  \date         8 - 14 November 2023, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
@@ -23,6 +23,7 @@ subroutine out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
 
 ! Written November 2024. JLM
 ! Modified print statement. 5 March 2024. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
 
 
@@ -58,7 +59,7 @@ subroutine out_mass_print(neig, ei, deidxk, d2eidxk2,                    &
 
   real(REAL64), parameter     ::  UM = 1.0_REAL64
   real(REAL64), parameter     ::  TOL = 1.0E-4_REAL64
-  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 

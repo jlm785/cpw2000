@@ -16,8 +16,8 @@
 !>  using a finite difference interpolation.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         8 November 2023. 24 September 2025.
+!>  \version      5.13
+!>  \date         8 November 2023. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd(ioreplay,                                         &
@@ -36,6 +36,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 ! imethod, 25 March 2025. JLM
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -168,7 +169,7 @@ subroutine out_mass_fd(ioreplay,                                         &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
   real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
   real(REAL64), parameter     ::  TOL = 1.0E-8_REAL64
-  real(REAL64), parameter     ::  HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 

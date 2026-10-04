@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         before 20 October 2020.
+!>  \date         before 20 October 2020, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,6 +26,7 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
 ! Written by Jose Luis Martins extracting previous code
 ! by Carlos Loia Reis. 20 October 2020
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -81,7 +82,7 @@ subroutine opt_write(ix, iy, iotape, title, subtitle,                    &
   real(REAL64), parameter    ::  EPSILON_0 = 8.854187813E-12_REAL64
   real(REAL64), parameter    ::  AUT = 2.4188843266E-17_REAL64
   real(REAL64), parameter    ::  ALPHA = UM / 137.036
-  real(REAL64), parameter    ::  BOHR = 0.5291772109E-10_REAL64 
+  real(REAL64), parameter    ::  BOHR = 0.5291772105E-10_REAL64 
 
 ! counters
 

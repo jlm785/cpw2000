@@ -16,8 +16,8 @@
 !>  and dual approximation.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         2 March 2026.
+!>  \version      5.13
+!>  \date         2 March 2026, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_questions(ioreplay,                               &
@@ -25,6 +25,7 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
      emax, flgdal, epspsi, efermi)
 
 ! written 2 March 2026 from cpw_pp_band_dos_opt cpw_pp_prepare. JLM
+! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -57,7 +58,7 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 ! constants
 
   real(REAL64), parameter  :: UM = 1.0_REAL64
-  real(REAL64), parameter  :: HARTREE = 27.21138386_REAL64
+  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
 
 
   write(6,*)

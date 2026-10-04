@@ -14,8 +14,8 @@
 !>  Writes the files for wannier90 (wan.win, wan.amn, wan.mmn, wan.eig)
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         May 2020, 68 October 2024.
+!>  \version      5.13
+!>  \date         May 2020, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
@@ -31,6 +31,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Modified, documentation, May 2020. JLM
 ! Modified, indentation, ao_int_.., * October 2024. JLM
 ! Modified, length of labels, 24 September 2025. JLM
+! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -171,7 +172,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
-  real(REAL64), parameter     ::  EV = 27.21138505_REAL64
+  real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 
 ! Start A) First things first. Produce a Wannier90 input file called wan.win
@@ -201,7 +202,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
     numoccupied = nint(ztot)/2
   endif
 
-  e_fermi = mtb %eref * EV
+  e_fermi = mtb %eref * HARTREE
 
   norb = mtb%nband
 
@@ -528,7 +529,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       enddo
 
       do iband=1, neig
-        write(102,'(2i5,f14.8)') iband, irk, ev_interp(iband)*27.21138505
+        write(102,'(2i5,f14.8)') iband, irk, ev_interp(iband)*HARTREE
       enddo
 
     else  ! NON SPIN ORBIT CASE
@@ -571,7 +572,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       enddo
 
       do iband=1, neig
-        write(102,'(2i5,f14.8)') iband, irk, ev_interp(iband)*27.21138505
+        write(102,'(2i5,f14.8)') iband, irk, ev_interp(iband)*HARTREE
       enddo
 
     endif  ! SpinOrbit selection

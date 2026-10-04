@@ -16,14 +16,15 @@
 !>  and conventional cartesian coordinates.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         6 November 2023. 24 September 2025.
+!>  \version      5.13
+!>  \date         6 November 2023. 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_get_k_vector(rkpt, rkcar, adot, typeofk, ioreplay)
 
 ! extracted from old out_effective_mass. 22 September 2023.
 ! Writes the coordinates. 24 September 2025. JLM
+! Constants updated to CODATA 2022 (BOHR). 3 October 2026. JLM+claude
 
   implicit none
 
@@ -61,7 +62,7 @@ subroutine cpw_pp_get_k_vector(rkpt, rkcar, adot, typeofk, ioreplay)
 
   real(REAL64), parameter       ::  ZERO = 0.0_REAL64
   real(REAL64), parameter       ::  PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter       ::  BOHR = 0.5291772109_REAL64
+  real(REAL64), parameter       ::  BOHR = 0.5291772105_REAL64
 
 ! counters
 

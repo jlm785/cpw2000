@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         5 December 2013, 20 October 2020.
+!>  \date         5 December 2013, 3 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
@@ -27,6 +27,7 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 ! Modified, documentation, 19 September 2020. JLM
 ! Modified, Fermi level and effective masses. 20 October 2020. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Constants updated to CODATA 2022 (HARTREE, BOHR, TAUTOK). 3 October 2026. JLM+claude
 
 
   implicit none
@@ -74,9 +75,9 @@ subroutine dos_f_level(tempk, nel, nhist, ehist, dhist, chist, lidos,    &
 
   real(REAL64), parameter :: EPS = 0.000001
   real(REAL64), parameter :: ZERO = 0.0_REAL64
-  real(REAL64), parameter :: HARTREE = 27.21138386_REAL64
-  real(REAL64), parameter :: BOHR = 0.5291772109
-  real(REAL64), parameter :: TAUTOK = HARTREE*11604.9_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
+  real(REAL64), parameter :: BOHR = 0.5291772105_REAL64
+  real(REAL64), parameter :: TAUTOK = HARTREE*11604.51812_REAL64
 
   
   tau = tempk / TAUTOK
