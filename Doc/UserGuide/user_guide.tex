@@ -2134,12 +2134,240 @@ It also has programs that call one of the options of post-processing.
 They were used to develop those options.
 
 \subsection{Equation of state}
+\label{sec:eqst}
 
-From a few values of energy as a function of volume (or lattice constant for cubic systems),
-a least square fit is applied to the Murnaghan or Birch-Murnaghan equations of
-state.  The output is the equilibrium volume, bulk modulus and pressure derivative
-of the Bulk modulus.  If the user has several such data sets,
-the code will find the transition pressures between those structures.
+The program \texttt{Tools/eqst/eqst.f90} fits the energy as a function of volume,
+$E(V)$, calculated for one or several crystal structures to the
+Murnaghan (F.~D.~Murnaghan, Proc.\ Natl.\ Acad.\ Sci.\ \textbf{30}, 244 (1944))
+or the Birch-Murnaghan (third order) (F.~Birch, J.\ Geophys.\ Res.\ \textbf{83}, 1257 (1978))
+equation of state.
+For each structure it gives the equilibrium volume $V_0$, the energy $E_0=E(V_0)$,
+the bulk modulus $B_0$ and its pressure derivative $B'_0$.
+If several structures are given, it compares their enthalpies
+$H(p) = E + pV$, finds the transition pressures between them,
+and prepares plots of $E(V)$ and of the volume as a function of pressure, $V(p)$,
+of the most stable structure.
+
+The two equations of state are
+\begin{equation}
+E(V) = E_0 + \frac{B_0 V}{B'_0} \left[ \frac{(V_0/V)^{B'_0}}{B'_0-1} + 1 \right]
+       - \frac{B_0 V_0}{B'_0-1}
+\qquad \text{(Murnaghan)}
+\end{equation}
+and
+\begin{equation}
+E(V) = E_0 + \frac{9 V_0 B_0}{16} \left\{ \left[ (V_0/V)^{2/3} - 1 \right]^3 B'_0
+       + \left[ (V_0/V)^{2/3} - 1 \right]^2 \left[ 6 - 4 (V_0/V)^{2/3} \right] \right\}
+\qquad \text{(Birch)} .
+\end{equation}
+The Birch fit is linear except for $V_0$, which is found by minimizing the
+mean square error.  In the Murnaghan fit the non-linear parameter
+$B'_0$ is searched in the interval $2 \le B'_0 \le 7$.
+The results of both fits should be similar.  If they are not,
+the calculated points should be checked (are they converged? do they cover
+a reasonable range of volumes around $V_0$?).
+
+\subsubsection{Compiling and running}
+
+The main program is in \texttt{Tools/eqst/eqst.f90}, and the subroutines it calls
+are in the \texttt{libpw} library.  It must be compiled with the same compiler
+that was used for the library, for example with the link created in
+section \ref{sec:step3}
+
+\noindent\texttt{cpw2000-5.x.y/Tools/eqst\$ gfortran -o eqst.exe eqst.f90 ../../libpw.a}
+
+The data are read from the file \texttt{eqst.dat} in the directory where
+the program is run.  If that file does not exist, the program asks for the
+name of the data file, and stops if that file does not exist either.
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../Tools/eqst/eqst.exe}
+
+or, to use a different data file without being asked,
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ echo eqst\_Si.dat | ../Tools/eqst/eqst.exe > eqst\_Si.out}
+
+\subsubsection{The \texttt{eqst.dat} file}
+
+The data file is read line by line, in free format.
+Text after the expected values in a line is ignored, so comments may be added at the end
+of a line, except on the line with the volume factor (see below), where it would be
+read as the label if the label is missing.
+The file has the following structure:
+
+\begin{itemize}
+
+\item[] \textbf{Line 1:} type of equation of state, \texttt{BIRCH} or \texttt{MURNA}
+  (all uppercase or all lowercase).
+  With any other value the Murnaghan equation of state is used.
+
+\item[] \textbf{Line 2:} number of structures, \texttt{nstr} (positive integer).
+
+\item[] \textbf{A block for each structure} (see below).
+
+\item[] \textbf{Last line:} only read if there is more than one structure.
+  Maximum pressure \texttt{pmax} (in GPa) and number of points \texttt{npts}
+  for the plots as a function of pressure.
+  If \texttt{pmax} is not in the interval $[0,5000]$ it is reset to 100\,GPa,
+  and if \texttt{npts} is not in the interval $[10,5000]$ it is reset to 50.
+
+\end{itemize}
+
+Each block has the following structure:
+
+\begin{itemize}
+
+\item[] \textbf{First line of the block:} number of calculated points, \texttt{npt},
+  for this structure (integer, at least 4).
+
+\item[] \textbf{Second line of the block:}
+  \texttt{volfac}~~[\texttt{nform}]~~[\texttt{label}],
+  where the items in square brackets are optional.
+  \begin{itemize}
+  \item[$\bullet$] \texttt{volfac} (real) is the volume factor, which defines
+     the meaning of the first number in the data lines,
+     \begin{itemize}
+     \item[-] \texttt{volfac} $>0$: the data lines have the lattice constant $a$, and the
+        volume of the cell is $V = \texttt{volfac} \times a^3$.  For example,
+        \texttt{volfac} = 0.25 for the primitive cell of a face centered cubic lattice,
+        0.5 for body centered cubic and 1 for simple cubic.
+     \item[-] \texttt{volfac} $=0$: the data lines have the volume of the cell.
+     \item[-] \texttt{volfac} $<0$: epitaxial case, where only the dimension
+        of the cell perpendicular to $\vec a_1$ and $\vec a_2$ changes.
+        The data lines have the volume of the cell, and $|\texttt{volfac}|$ is
+        the area of the base of the cell (in bohr$^2$), so that the height of the cell
+        is $V/|\texttt{volfac}|$.  Instead of the bulk modulus
+        the corresponding elastic constant is printed.
+     \end{itemize}
+  \item[$\bullet$] \texttt{nform} (positive integer, default 1) is the number of
+     formula units in the cell.  It is only used when comparing different structures:
+     the plots and the enthalpies used to find the transition pressures are per
+     formula unit.  The results printed for each structure are for the cell.
+     For example, for silicon in the diamond structure with the primitive cell (2 atoms)
+     and in the fcc structure (1 atom), \texttt{nform} should be 2 and 1.
+     The second item of the line is taken as \texttt{nform} only if it is
+     written only with digits, otherwise it is taken as the label.
+     Older files, without \texttt{nform}, can therefore still be read.
+  \item[$\bullet$] \texttt{label} (string with at most 10 characters and without blanks)
+     identifies the structure in the output and plots.  If it is missing a default
+     label is created.  As it is used as a title in \texttt{gnuplot},
+     an underscore should be written as \verb|\_|
+     (the backslash is removed in the \texttt{python} scripts).
+     A label cannot be made only of digits.
+  \end{itemize}
+  The whole line must have less than 100 characters.
+
+\item[] \textbf{The next \texttt{npt} lines:}
+  lattice constant (bohr) or volume of the cell (bohr$^3$), depending on \texttt{volfac},
+  and the total energy of the cell (hartree).
+  The points do not need to be ordered.
+
+\end{itemize}
+
+There is no limit on the number of structures or points, as the program
+reads the file twice, first to find the dimensions of the arrays.
+
+As an example, the following file has the energies of silicon calculated in the
+diamond (2 atoms in the primitive cell), body centered cubic and face centered cubic structures
+
+\begin{verbatim}
+   BIRCH
+    3
+    9
+    0.25000000    2    diamond
+    9.61978677   -7.92021896
+    9.76120812   -7.92662746
+    9.90262948   -7.93085811
+   10.04405083   -7.93317278
+   10.18547219   -7.93376582
+   10.32689355   -7.93287971
+   10.46831490   -7.93068538
+   10.60973626   -7.92736393
+   10.75115762   -7.92305672
+    9
+    0.50000000    1    bcc
+    5.23927021   -3.93972397
+    5.35474026   -3.94657964
+    5.47021032   -3.95117850
+    5.58568037   -3.95370854
+    5.70115043   -3.95454963
+    5.81662048   -3.95393709
+    5.93209053   -3.95221012
+    6.04756059   -3.94945947
+    6.16303064   -3.94605662
+    9
+    0.25000000    1    fcc
+    6.64376027   -3.93680372
+    6.78518162   -3.94144018
+    6.92660298   -3.94449813
+    7.06802434   -3.94615157
+    7.20944569   -3.94659005
+    7.35086705   -3.94611966
+    7.49228841   -3.94488143
+    7.63370976   -3.94308661
+    7.77513112   -3.94073548
+   200.000  101
+\end{verbatim}
+
+\subsubsection{Output}
+
+For each structure the program prints the input points, the scaled energies
+and their fitted values, a measure of the quality of the fit, and the results
+of the fit, for the silicon example in the diamond structure
+\begin{verbatim}
+   aeq(a.u.)= 10.1690   Veq(a.u.)=  262.894   E0(Hartree)=  -7.93377
+   B0(GPa)=   96.88   B0PRIM=   4.16
+
+  Lattice constant in Angstroms:    5.38123
+\end{verbatim}
+where the equilibrium volume and energy are for the cell of the data
+(2 formula units in this case).
+For the fit the energies are internally converted to rydberg,
+so the mean value of the energies and the typical error of the fit are printed in rydberg.
+
+With several structures, the transition pressures are printed
+\begin{verbatim}
+ TRANSITION PRESSURE P=   12.000  BETWEEN   1   2
+ TRANSITION PRESSURE P=   92.000  BETWEEN   2   3
+\end{verbatim}
+They are found on the grid of \texttt{npts} pressures between 0 and \texttt{pmax},
+so their precision is \texttt{pmax}/(\texttt{npts}$-1$).
+
+With the Birch equation of state and $B'_0 < 4$ the pressure has a maximum
+at high compression, and the structure becomes mechanically unstable ($B<0$).
+If the maximum pressure of the plot is larger than that maximum,
+a warning is written and the structure is not considered at higher pressures.
+
+The program also writes the following files
+\begin{itemize}
+\item[$\bullet$] \texttt{replay\_eqst.dat}, a copy of the data in the current format,
+  with comments, that can be used as a data file;
+\item[$\bullet$] \texttt{eofv\_com.gp} and \texttt{eofv\_dat.gp}, for the plot of
+  the calculated and fitted energies per formula unit (in eV) as a function of the volume
+  per formula unit;
+\item[$\bullet$] \texttt{eqst\_com.gp} and \texttt{eqst\_dat.gp}, for the plot of the volume
+  of the most stable structure as a function of pressure, relative to the equilibrium volume
+  of the structure with the lowest energy.  Only written if there is more than one structure.
+\end{itemize}
+The plots are seen with \texttt{gnuplot}
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ gnuplot eofv\_com.gp}
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ gnuplot eqst\_com.gp}
+
+or with \texttt{python} and \texttt{matplotlib}, as the program also writes
+the equivalent scripts \texttt{eofv\_plot.py} and \texttt{eqst\_plot.py},
+which read the same \texttt{*\_dat.gp} data files,
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ python3 eofv\_plot.py}
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ python3 eqst\_plot.py}
+
+The \texttt{*\_com.gp} and \texttt{*\_plot.py} files can be edited by hand,
+for example to obtain a pdf file (see the commented lines in those files).
+
+The original code was written by David M. Wood in the early eighties
+for the Murnaghan fit, and the Birch fit was added in 1989.
+It has been modified many times since then.
 
 \subsection{Remove gnuplot commands from 2D plot files}
 
