@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         2014. 1 November 2024.
+!>  \date         2014. 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -52,6 +52,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Modified, removed IrredBZM, only used here, 28 October 2024. JLM
 ! Array dimensions, ao_h_and_s API, eigenvalue mapping. 1 November 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -584,7 +585,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
       rkpt(2) = rk_grid(2,irk)
       rkpt(3) = rk_grid(3,irk)
 
-      write(*,'(2i5,3f8.5)') nkpt,irk, rkpt(1),rkpt(2),rkpt(3)
+      call progress_line(irk, nkpt, 'k-points:', 6)
 
       call ao_h_and_s_spin_orbit(emax, rkpt, norb_ao, flgpsd,            &
           ng, kgv,                                                       &
@@ -627,7 +628,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
       rkpt(2) = rk_grid(2,irk)
       rkpt(3) = rk_grid(3,irk)
 
-      write(*,'(2i5,3f8.5)') nkpt,irk, rkpt(1),rkpt(2),rkpt(3)
+      call progress_line(irk, nkpt, 'k-points:', 6)
 
 !     hdiag etc... are not needed here.  Should simplify call
 

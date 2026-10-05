@@ -11,13 +11,31 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
+!>  a non-advancing status counter.
+!>
+!>  \author       Carlos Loia Reis
+!>  \version      5.13
+!>  \date         Unknown, 4 October 2026.
+!>  \copyright    GNU Public License v2
+
+
 subroutine progress(j,n)
-!  a non-advancing status counter...
-!  input n = number of steps
-!  input j = current step 
-!  note that achar(13) brings the cursor to the begining of line
+
+! Implemented by Carlos Loia Reis at an unknown date.
+! Documentation 5 october 2026. JLM
+
   implicit none
-  integer :: j, n
+
+! input
+
+  integer, intent(in)                   ::  j                            !<  current step
+  integer, intent(in)                   ::  n                            !<  number of steps
+
+  !  note that achar(13) brings the cursor to the begining of line
+
   write(6,FMT="(A1,A,t21,F6.2,A)",ADVANCE="NO") achar(13), &
   & " Percent Complete: ", (real(j)/real(n))*100.0, "%"
+
+  return
+
 end subroutine progress

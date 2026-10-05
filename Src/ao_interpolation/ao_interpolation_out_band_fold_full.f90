@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         May 2020. 26 July 2024
+!>  \date         May 2020. 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
@@ -35,6 +35,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 ! Modified, ztot in out_band_circuit_size. 26 July 2024. JLM
 ! Modified, ao_int, indentation improved. 8 october 2024. JLM
 ! Modified, dimension labels, 24 September 2025. JLM
+! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 
 
 
@@ -339,7 +340,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
       rkpt(j) = rk_fld(j,irk)                                            ! computed in folded k-point
     enddo
 
-    write(*,'(i5,3f8.5)') irk, rkpt(1),rkpt(2),rkpt(3)
+    call progress_line(irk, nrk2, 'k-points:', 6)
 
 !   WE NEED TO FIND ANOTHER WAY TO DO THIS ... 2 DIAGS HERE
 

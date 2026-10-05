@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         May 2020, 3 October 2026.
+!>  \date         May 2020, 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
@@ -32,6 +32,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Modified, indentation, ao_int_.., * October 2024. JLM
 ! Modified, length of labels, 24 September 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
+! Debug prints commented. 4 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -321,7 +322,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   read(33, *) sys_str
   read(33, *) nntot
 
-  write(*,*) "nntot is" , nntot
+!  write(*,*) "nntot is" , nntot
   write(6,*)
 
   allocate(nnlist(num_kpts,num_nnmax))
@@ -483,11 +484,11 @@ subroutine ao_interpolation_w90(mtb,                                     &
         mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
 
 
-    if (irk==1) then
-       do iorb = 1, mxdorb
-         write(*,'("infolcao",6i6)') iorb, (infolcao(j,iorb),j=1,5)
-       enddo
-    endif
+!    if (irk==1) then
+!       do iorb = 1, mxdorb
+!         write(*,'("infolcao",6i6)') iorb, (infolcao(j,iorb),j=1,5)
+!       enddo
+!    endif
 
     if(mtb%lso==1) then
 

@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2017. 3 October 2026.
+!>  \date         before 2017. 4 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -28,6 +28,7 @@
 ! Bug when neig greater than nband. 1 November 2024. JLM
 ! Increase dimension of label. 17 September 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -123,7 +124,7 @@
       rkpt(j) = rk(j,irk)
     enddo
 
-    write(*,'(i5,3f8.5)') irk, rkpt(1),rkpt(2),rkpt(3)
+    call progress_line(irk, nrk2, 'k-points:', 6)
 
     call NonOrthoInterpRun(noiData,rkpt,ev_interp)
 
@@ -227,7 +228,7 @@
      do irk=1,nrk2
          read(144,*) rkpt(1),rkpt(2),rkpt(3)
          call NonOrthoInterpRun(noiData,rkpt,ev_interp)
-         write(*,'(i5,3f8.3)') irk, rkpt(1),rkpt(2),rkpt(3)
+         call progress_line(irk, nrk2, 'k-points:', 6)
          if (noiData%lso==1) then
            write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*HARTREE,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
          else

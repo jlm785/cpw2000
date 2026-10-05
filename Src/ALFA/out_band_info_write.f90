@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         Before May 2020, 3 October 2026.
+!>  \date         Before May 2020, 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_info_write(filename, io,                             &
@@ -31,11 +31,13 @@ subroutine out_band_info_write(filename, io,                             &
 ! Modiified to write information to QtBandViewer June 2021. CLR
 ! Documentation, missing declaration. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
+! Debug print commented, at most 5 messages out of domain in basxpsi. 4 October 2026. JLM+claude
 
 
   implicit none
 
   integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, parameter          ::  REAL32 = selected_real_kind(6)
 
 ! input
 
@@ -73,33 +75,38 @@ subroutine out_band_info_write(filename, io,                             &
   real(REAL64), intent(in)           ::  rk(3,nrk)                  !<  coordinates of the k-points
   real(REAL64), intent(in)           ::  rk_fld(3,nrk)              !<  coordinates of the folded k-points
 
+! allocatable arrays
+
+  real(REAL32), allocatable          ::  pkn_out(:,:)
+  real(REAL32), allocatable          ::  basxpsi_out(:,:,:)
+  real(REAL32), allocatable          ::  e_of_k_out(:,:)
+  real(REAL32), allocatable          ::  xk_out(:)
+
+  real(REAL64), allocatable          :: xk_start(:), xk_end(:)
+
+! local variables
+
+  integer      :: i, irk, iband, iorb
+
+  integer                  ::  nwarn                                     !  number of out of domain messages
+
+  real(REAL64) ymin, ymax, ymtmp
+
+  real(REAL32) :: scl
+
 ! counters
 
   integer      ::   n, n10, k, j, jj
-
-! extra stuff
 
 ! constants
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter  ::  HARTREE = 27.211386246_REAL64
 
-  integer      :: i, irk, iband, iorb
+  integer, parameter       ::  NWMAX = 5                                 !  Harcoded maximum number of messages printed
 
-  integer, parameter                     ::  REAL32 = selected_real_kind(6)
 
-  real(REAL32), allocatable              ::  pkn_out(:,:)
-  real(REAL32), allocatable              ::  basxpsi_out(:,:,:)
-  real(REAL32), allocatable              ::  e_of_k_out(:,:)
-  real(REAL32), allocatable              ::  xk_out(:)
-
-  real(REAL64) ymin, ymax, ymtmp
-
-  real(REAL64), allocatable :: xk_start(:), xk_end(:)
-
-  real(REAL32) :: scl
-
-! begin
+! allocations
 
   allocate(xk_out(nrk))
   allocate(e_of_k_out(neig, nrk))
@@ -143,6 +150,8 @@ subroutine out_band_info_write(filename, io,                             &
 
 ! transfer large arrays to REAL32
 
+  nwarn = 0
+
   do irk = 1, nrk
     do iband = 1, neig
       xk_out(irk) = xk(irk)
@@ -160,7 +169,10 @@ subroutine out_band_info_write(filename, io,                             &
         basxpsi_out(iorb,iband,irk) = 0.9999*basxpsi(iorb,iband,irk)  ! dont like this a bit , but python does not know how to sum !!!
         if (basxpsi_out(iorb,iband,irk) > 1.0_REAL32 ) then
          basxpsi_out(iorb,iband,irk) = 1.0_REAL32
-         write(*,*) 'out of domain in basxpsi', basxpsi_out(iorb,iband,irk)
+         nwarn = nwarn + 1
+         if(nwarn <= NWMAX) then
+           write(6,*) 'out of domain in basxpsi', basxpsi(iorb,iband,irk)
+         endif
         endif
         if (basxpsi_out(iorb,iband,irk) < 1.0e-8 ) then
          basxpsi_out(iorb,iband,irk) = 0.0
@@ -172,6 +184,13 @@ subroutine out_band_info_write(filename, io,                             &
 !    stop
 
   enddo                 ! loop over k-points
+
+  if(nwarn > NWMAX) then
+    write(6,*)
+    write(6,'("  WARNING: ",i10," more messages out of domain",          &
+        &     " in basxpsi were suppressed")') nwarn - NWMAX
+    write(6,*)
+  endif
 
 !  basxpsi_out(:,:,:) = 0.0
 
@@ -287,23 +306,21 @@ subroutine out_band_info_write(filename, io,                             &
     enddo
   enddo
 
-  !! extra unfolding info
+!! extra unfolding info
   do k = 1,nrk
     do n = 1,neig
        write(io,'(10f14.6)') pkn(k,n)
      enddo
   enddo
-  !!
+!!
 
-  !! extra atomic information: ntype natom(ntype)
+!! extra atomic information: ntype natom(ntype)
 
-    write(*,*) 'ntype is', ntype
+  write(io,'(i5)') ntype
 
-    write(io,'(i5)') ntype
-
-    do n = 1,ntype
-     write(io,'(a2)') nameat(n)
-    enddo
+  do n = 1,ntype
+    write(io,'(a2)') nameat(n)
+  enddo
 
   !!
 

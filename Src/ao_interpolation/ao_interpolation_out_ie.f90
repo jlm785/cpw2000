@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         November 2018, 3 October 2026.
+!>  \date         November 2018, 4 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
@@ -29,6 +29,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 ! Modified, indentation, documentation, ao_int_, 8 October 2024. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! Progress print commented. 4 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -308,7 +309,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
                 C_ZERO,dh0drk(:,:,idir),nband)
     enddo
 
-    write(*,'("dh0drk",i5, 3f8.5, i5)') irk,rkpt, nband
+!    write(*,'("dh0drk",i5, 3f8.5, i5)') irk,rkpt, nband
 
     write(21) ev
     write(21) dh0drk

@@ -16,6 +16,7 @@ module FourierInterpolation
 ! adapted from Wannier90 w90_hamiltonian
 ! Copyright Carlos Loia Reis
 ! June 2014.
+! Debug print in fi_hamiltonian_setup commented. 4 October 2026. JLM+claude
 
   implicit none
   integer, parameter,private          :: REAL64 = selected_real_kind(12)
@@ -198,8 +199,6 @@ contains
           Op_R(:,:,3,loop_rpt)=Op_R(:,:,3,loop_rpt)+fac*Op_k(:,:,3,loop_kpt)
         enddo
 
-!        write(6,FMT="(3x,A1,A,t21,F6.2,A)",ADVANCE="NO") achar(13), &
-!        & " Percent Complete: ", (real(loop_rpt)/real(this%nrpts))*100.0, "%"
       call progress(loop_rpt,this%nrpts)
       call flush(6)
 
@@ -230,8 +229,6 @@ contains
     this%mp_grid(3) = n3
 
     this%real_metric(:,:) = adot(:,:)
-
-    write(*,'("in setup nband, nk_grid, ws_search_size", 7i5)') nband,n1,n2,n3, ws_n1, ws_n2, ws_n3
 
     this%ws_search_size(1) = ws_n1
     this%ws_search_size(2) = ws_n2
@@ -282,11 +279,6 @@ contains
     enddo
     enddo
     enddo
-
-!    write(*,*) 'kpt lattice'
-!    do ikpt=1,this%num_kpts
-!      write(*,'(3f8.5)') this%kpt_latt(:,ikpt)
-!    enddo
 
     return
   end subroutine fi_hamiltonian_setup
