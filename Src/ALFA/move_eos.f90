@@ -15,11 +15,13 @@
 !>  Can be use for cubic crystals, or for the epitaxial situation.
 !>  For non-cubic systems it is not accurate.
 !>
-!>  Writes the file to be read by eqst.f90 in Tools
+!>  Writes the file to be read by eqst.f90 in Tools, and prints
+!>  the results of the fit to the Birch equation of state
+!>  (equilibrium volume, bulk modulus,...).
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         31 March 2026, 3 October 2026.
+!>  \date         31 March 2026, 5 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine  move_eos(energy, adot, lepi, lfinisheos)
@@ -30,6 +32,7 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 ! Stability test with the curvature instead of an absolute threshold,
 ! convergence when the prediction no longer moves, prediction kept
 ! inside the bracket. 3 October 2026. JLM+claude
+! Fits the Birch equation of state with eqst_fit and prints the results. 5 October 2026. JLM+claude
 
   implicit none
 
@@ -74,6 +77,10 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
   real(REAL64)          ::  aold                                         !  last calculated point
   real(REAL64)          ::  fac
   real(REAL64)          ::  vcell, bdot(3,3)
+
+  real(REAL64)          ::  es2(9)                                       !  energies in Rydberg for eqst_fit
+  real(REAL64)          ::  vfac                                         !  volume factor for eqst_fit
+  real(REAL64)          ::  ezero, vzero, bzero, bprim                   !  results of the fit (Rydberg units)
 
   integer               ::  bravais, mtotal(3,3)
   real(REAL64)          ::  adotnig(3,3), adotsym(3,3)
@@ -470,6 +477,26 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
       write(12,'(f8.3,i5)') 4.0, 101
 
       close(unit = 12)
+
+!     fit of the Birch equation of state (energies in Rydberg)
+
+      do i = 1,9
+        es2(i) = 2*es(i)
+      enddo
+      if(lepi) then
+        vfac = -barea
+      elseif(lcub) then
+        vfac = volfac
+      else
+        vfac = ZERO
+      endif
+
+      write(6,*)
+      write(6,'("  Birch equation of state from move_eos:")')
+
+      call eqst_fit('BIRCH', 9, vfac, vs, es2, 0,                        &
+          ezero, vzero, bzero, bprim,                                    &
+          9)
 
       fac = as(5)*as(5) / adot(3,3)
       if(lepi) then
