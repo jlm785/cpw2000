@@ -31,7 +31,7 @@ subroutine out_band_info_write(filename, io,                             &
 ! Modiified to write information to QtBandViewer June 2021. CLR
 ! Documentation, missing declaration. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
-! Debug print commented, at most 5 messages out of domain in basxpsi. 4 October 2026. JLM+claude
+! Debug print removed, at most 5 messages out of domain in basxpsi. 4 October 2026. JLM+claude
 
 
   implicit none

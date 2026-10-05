@@ -16,7 +16,7 @@ module FourierInterpolation
 ! adapted from Wannier90 w90_hamiltonian
 ! Copyright Carlos Loia Reis
 ! June 2014.
-! Debug print in fi_hamiltonian_setup commented. 4 October 2026. JLM+claude
+! Debug print in fi_hamiltonian_setup removed. 4 October 2026. JLM+claude
 
   implicit none
   integer, parameter,private          :: REAL64 = selected_real_kind(12)
