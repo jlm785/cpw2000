@@ -15,7 +15,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         12 August 2015, 13 February 2021.
+!>  \date         12 August 2015, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
@@ -23,6 +23,7 @@ subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
     neig, mtxd, mtxds, nexact, niter, nitold, ndeg,                      &
     psi, hpsi, bas, hbas,                                                &
     ekpg, isort, vscr, kmscr,                                            &
+    lgks, rkpt, adot, vtaumsh,                                           &
     ng, kgv,                                                             &
     anlga, xnlkb, nanl,                                                  &
     hamsm,                                                               &
@@ -35,6 +36,7 @@ subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Indentation. 28 September 2026. JLM+claude
+! Modified, generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. claude
 
 
   implicit none
@@ -62,6 +64,10 @@ subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,ng)                       !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -219,9 +225,9 @@ subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
   deallocate(tvec)
   deallocate(et)
 
-  call hk_psi_c16(mtxd, nexact, bas, hbas, lnewanl,                      &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr, kmscr,                                          &
+  call hk_psi_driver_c16(lgks, mtxd, nexact, bas, hbas, lnewanl,         &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr, vtaumsh, kmscr,                                 &
       anlga, xnlkb, nanl,                                                &
       mxddim, mxdsml, mxdanl, mxdgve, mxdscr)
 
@@ -240,9 +246,9 @@ subroutine ditsp_c16_start(ipr, iguess, epspsi, epsa,                    &
     nitold = 0
   else
 
-    call hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                      &
-        ng, kgv,                                                         &
-        ekpg, isort, vscr, kmscr,                                        &
+    call hk_psi_driver_c16(lgks, mtxd, neig, psi, hpsi, lnewanl,         &
+        ng, kgv, rkpt, adot,                                             &
+        ekpg, isort, vscr, vtaumsh, kmscr,                               &
         anlga, xnlkb, nanl,                                              &
         mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 

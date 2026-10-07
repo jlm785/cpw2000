@@ -13,10 +13,11 @@
 
 !>  Calculates the hamiltonian for one k-point in the atomic basis
 !>  and diagonalizes it in an LCAO basis.  It can do also a Jacobian update improvement.
+!>  Includes the generalized Kohn-Sham term of meta-GGA (without Pulay corrections).
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         18 october 1993. 30 November 2023.
+!>  \version      5.13
+!>  \date         18 october 1993. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -30,6 +31,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
     mtxd, hdiag, isort, qmod, ekpg, lkpg,                                &
     psi, hpsi, ei,                                                       &
     vscr, kmscr,                                                         &
+    lgks, vtaur1, vtaumsh,                                               &
     mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
 
 ! version 4.0. 18 october 1993. jlm
@@ -50,6 +52,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
 ! prefix diag_rq_jac. 17 March 2024. JLM
+! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. JLM+claude
 
 
   implicit none
@@ -98,6 +101,10 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaur1                          !<  average value (vtau(1)) of d (rho eps_xc) / d tau (only used if lgks)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
 ! input and output
@@ -142,6 +149,7 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 ! counters
 
   integer       ::  n
+  integer       ::  i
 
 
   if(flgpsd /= 'PSEUKB') then
@@ -178,6 +186,14 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
       anlga, xnlkb,                                                      &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdanl, mxdgve)
 
+! diagonal of the generalized Kohn-Sham kinetic term (used by AOJC)
+
+  if(lgks) then
+    do i = 1,mtxd
+      hdiag(i) = hdiag(i) + vtaur1*ekpg(i)
+    enddo
+  endif
+
   lnewanl = .TRUE.
 
   call size_nbaslcao(ntype, natom, norbat, lorb, mxdorb, mxdtyp, mxdlao)
@@ -204,9 +220,9 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
 
   endif
 
-  call hk_psi_c16(mtxd, nbasorb, bas, hbas,  lnewanl,                    &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr, kmscr,                                          &
+  call hk_psi_driver_c16(lgks, mtxd, nbasorb, bas, hbas, lnewanl,        &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr, vtaumsh, kmscr,                                 &
       anlga, xnlkb, nanl,                                                &
       mxddim, mxdorb, mxdanl, mxdgve, mxdscr)
 
@@ -249,9 +265,9 @@ subroutine h_kb_dia_ao(emax, rkpt, neig, flgpsd, flgscf,                 &
       call zcopy(mtxd, hpsi(:,n), 1, bas(:,n), 1)
     enddo
 
-    call hk_psi_c16(mtxd, ndeg, bas, hbas, lnewanl,                      &
-        ng, kgv,                                                         &
-        ekpg, isort, vscr, kmscr,                                        &
+    call hk_psi_driver_c16(lgks, mtxd, ndeg, bas, hbas, lnewanl,         &
+        ng, kgv, rkpt, adot,                                             &
+        ekpg, isort, vscr, vtaumsh, kmscr,                               &
         anlga, xnlkb, nanl,                                              &
         mxddim, 2*ndeg, mxdanl, mxdgve, mxdscr)
 

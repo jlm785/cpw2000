@@ -13,8 +13,13 @@
 
 !>  Calculates the energy according to the 
 !>  Harris-Weinert-Foulkes functional
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         2 December 2020, 6 October 2026.
+!>  \copyright    GNU Public License v2
 
-subroutine harris_weinert_foulkes(eharrfou, eband, exc, enerew,          &
+subroutine harris_weinert_foulkes(eharrfou, eband, etauv, exc, enerew,   &
   ns, mstar, ek,                                                         &
   vhxc, den,                                                             &
   adot,                                                                  &
@@ -22,9 +27,8 @@ subroutine harris_weinert_foulkes(eharrfou, eband, exc, enerew,          &
 
 ! Adapted from total_ks_energy
 ! written 2 December 2020. JLM
-! copyright INESC-MN/Jose Luis Martins
+! etauv, generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 
-! Version 4.99
 
   implicit none
 
@@ -35,6 +39,7 @@ subroutine harris_weinert_foulkes(eharrfou, eband, exc, enerew,          &
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
 
   real(REAL64), intent(in)           ::  eband                           !<  integrated band energy.
+  real(REAL64), intent(in)           ::  etauv                           !<  int vtau * tau of the wave-functions, generalized Kohn-Sham meta-GGA (Hartree)
   real(REAL64), intent(in)           ::  exc                             !<  exchange+correlation energy (previous run)
   real(REAL64), intent(in)           ::  enerew                          !<  Ewald energy
 
@@ -94,7 +99,7 @@ subroutine harris_weinert_foulkes(eharrfou, eband, exc, enerew,          &
 
 ! the total energy. modified for average potential
 
-  eharrfou = eband - evhxc + ehart + exc + enerew
+  eharrfou = eband - evhxc - etauv + ehart + exc + enerew
 
   return
 end subroutine harris_weinert_foulkes

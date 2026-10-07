@@ -13,8 +13,8 @@
 !>  Deallocates arrays before exiting cpw
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         18 February 2026.
+!>  \version      5.13
+!>  \date         18 February 2026, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
@@ -25,6 +25,8 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 ! Written 11 February 2026. JLM
 ! Added new_atorb_ temporarily (only used in read pseudo). 18 February 2026.
 ! core kinetic energy densidty. 3 March 2026. JLM
+! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+! pseudo_%tnc, pseudo_%dtauc. 6 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -114,6 +116,8 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   deallocate(pseudo_%dnc)
   deallocate(pseudo_%dvql)
   deallocate(pseudo_%ddc)
+  deallocate(pseudo_%tnc)
+  deallocate(pseudo_%dtauc)
 
   deallocate(chdens_%den)
   deallocate(chdens_%denc)
@@ -125,6 +129,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   deallocate(vcomp_%vion)
   deallocate(vcomp_%vhar)
   deallocate(vcomp_%vxc)
+  deallocate(vcomp_%vtau)
   deallocate(vcomp_%veff)
 
 

@@ -14,11 +14,12 @@
 !>  calculates the hamiltonian for one k-point and diagonalizes
 !>  either in a plane wave basis basis
 !>  or in an LCAO basis.
+!>  Includes the generalized Kohn-Sham term of meta-GGA.
 !>
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
-!>  \version      5.09
-!>  \date         May 2020. 11 November 2023.
+!>  \version      5.13
+!>  \date         May 2020. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
@@ -30,6 +31,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   mtxd, hdiag, isort, qmod, ekpg, lkpg,                                  &
   psi, hpsi, ei,                                                         &
   vscr, kmscr,                                                           &
+  lgks, vtau,                                                            &
   latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
   mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,                &
   mxdbnd, mxdscr, mxdlao)
@@ -40,6 +42,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 ! Modified, norbtot bug, 30 November 2020. JLM
 ! Modified, k-point far from 1st BZ, 30 January 2021. JLM
 ! default value of ifail. 11 November 2023. JLM
+! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau), vtau in the mesh calculated here. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -98,6 +101,9 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh and fft mesh size
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (only used if lgks)
+
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
@@ -109,6 +115,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
 
   real(REAL64)                       ::  veffr1
+  real(REAL64)                       ::  vtaur1                          !  average value of vtau
 
 
 ! input and output
@@ -133,6 +140,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 ! allocatable local arrays
 
   integer, allocatable               ::  isort_tr(:)
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
 
 ! local variables
 
@@ -149,8 +157,11 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
   integer        ::  mtxd_tr
 
+  real(REAL64)   ::  vtmax, vtmin                                        !  maximum and minimum of vtau
+
 ! parameters
 
+  real(REAL64), parameter    ::  ZERO = 0.0_REAL64
   real(REAL64), parameter    ::  UM = 1.0_REAL64
 
 ! counter
@@ -161,6 +172,18 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   IFAIL = NOCC
 
   ifail = 0
+
+! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
+
+  if(lgks) then
+    allocate(vtaumsh(mxdscr))
+    call pot_local(0, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,          &
+        ng, kgv, phase, conj, ns, inds,                                  &
+        mxdscr, mxdgve, mxdnst)
+  else
+    allocate(vtaumsh(1))
+    vtaumsh(1) = ZERO
+  endif
 
 
 ! deals with k-points far away from the 1st Brillouin zone
@@ -196,12 +219,13 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   iguess_local = 0
 
   veffr1 = real(veff(1),REAL64)
+  vtaur1 = real(vtau(1),REAL64)
 
   if(diag_type == "pw  ") then
 
     norbtot = 0
     if(latorb) then
-      call size_nbaslcao(ntype, natom, norbat, lorb, norbtot,             &
+      call size_nbaslcao(ntype, natom, norbat, lorb, norbtot,            &
            mxdtyp, mxdlao)
     endif
     iguess_local = iguess
@@ -219,6 +243,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
           mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
           psi, hpsi, ei,                                                 &
           vscr, kmscr,                                                   &
+          lgks, vtaur1, vtaumsh,                                         &
           mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
 
       iguess_local = 1
@@ -235,6 +260,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        lgks, vtau, vtaumsh,                                             &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, mxdbnd,  &
         mxdscr)
 
@@ -274,6 +300,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        lgks, vtaur1, vtaumsh,                                           &
         mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
 
 
@@ -288,6 +315,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        lgks, vtaur1, vtaumsh,                                           &
         mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
 
   endif
@@ -305,6 +333,8 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   endif
 
   deallocate(isort_tr)
+  deallocate(vtaumsh)
 
   return
+
 end subroutine h_kb_dia_all

@@ -16,10 +16,13 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         November   2019, 15 April 2026
+!>  \date         November   2019, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
+
+! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+! pseudo_%tnc, pseudo_%dtauc, core tau in forces and stress. 6 October 2026. JLM+claude
 
 
   implicit none
@@ -176,6 +179,8 @@ module cpw_variables
     real(REAL64), allocatable          ::  dnc(:,:)                      !<  core charge for atom type i and prototype g-vector in star j
     complex(REAL64), allocatable       ::  dvql(:)                       !<  derivative of the local pseudopotential for the prototype g-vector in star j
     complex(REAL64), allocatable       ::  ddc(:)                        !<  derivative of the core charge for the prototype g-vector in star j
+    real(REAL64), allocatable          ::  tnc(:,:)                      !<  core kinetic energy density for atom type i and prototype g-vector in star j
+    complex(REAL64), allocatable       ::  dtauc(:)                      !<  derivative of the core kinetic energy density for the prototype g-vector in star j
 
 !   KB non-local pseudo-potential in g-space
 
@@ -215,6 +220,7 @@ module cpw_variables
     complex(REAL64), allocatable       ::  vion(:)                       !<  ionic potential for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  vhar(:)                       !<  Hartree potential for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  vxc(:)                        !<  Hartree+exchange+correlation potential for the prototype G-vector in star j
+    complex(REAL64), allocatable       ::  vtau(:)                       !<  d (rho eps_xc) / d tau (generalized Kohn-Sham meta-GGA) for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  veff(:)                       !<  Effective potential for the prototype G-vector in star j
 
   end type vcomp_t

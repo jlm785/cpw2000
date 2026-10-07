@@ -19,12 +19,12 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         23 February 1999, 1 October 2026.
+!>  \date         23 February 1999, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
         rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
-        exc, vxc, rhovxc, strxc)
+        exc, vxc, vtau, rhovxc, strxc)
 
 ! Written 23 February 1999. jlm
 ! Modified for MMGA Tran-Blaha. CLR
@@ -40,6 +40,9 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 ! stress contribution of the tau correction taumsh and d_taumsh_dgij. 29 September 2026. JLM+claude
 ! renamed d_taumsh_dgij to dtau_dbdot. 1 October 2026. JLM+claude
 ! Documentation, one argument per declaration. 3 October 2026. JLM+claude
+! Generalized Kohn-Sham: vtau output, tau from the wave-functions without
+! the Thomas-Fermi-von Weizsacker correction, or deorbitalized tau
+! (source of tau from xc_author_tau). 6 October 2026. JLM+claude
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
@@ -60,8 +63,8 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
   integer, intent(in)                ::  n2                              !<  fft dimension in direction 2
   integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
   real(REAL64), intent(in)           ::  rhomsh(id1,id2,n3)              !<  charge density (1/bohr^3)
-  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) [total for lxcmggavxc, correction for lxcmgga]
-  real(REAL64), intent(in)           ::  dtau_dbdot(3,3,id1,id2,n3)      !<  (1/V) d (V taumsh) / d bdot on the mesh (Hartree/bohr^3), bdot with the 2 pi factors [only correction for lxcmgga]
+  real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) from the wave-functions (and core)
+  real(REAL64), intent(in)           ::  dtau_dbdot(3,3,id1,id2,n3)      !<  (1/V) d (V taumsh) / d bdot on the mesh (Hartree/bohr^3), bdot with the 2 pi factors (meta-GGA with tau from the wave-functions)
   real(REAL64), intent(in)           ::  rholapmsh(id1,id2,n3)           !<  Laplacian of charge density (1/bohr^5)
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space (covariant components)
 
@@ -69,6 +72,7 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
   real(REAL64), intent(out)          ::  exc                             !<  the total exchange correlation energy given by the integral of the density times epsilon xc (Hartree).
   real(REAL64), intent(out)          ::  vxc(id1,id2,n3)                 !<  exchange-correlation potential vxc (Hartree).
+  real(REAL64), intent(out)          ::  vtau(id1,id2,n3)                !<  d (rho eps_xc) / d tau, generalized Kohn-Sham meta-GGA (zero otherwise)
   real(REAL64), intent(out)          ::  rhovxc                          !<  integral of the density times vxc (Hartree)
   real(REAL64), intent(out)          ::  strxc(3,3)                      !<  contribution of xc to the stress tensor (contravariant,a.u.)
 
@@ -110,6 +114,9 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
   real(REAL64)        ::  d_tau_dr                        !  d tau / d rho
   real(REAL64)        ::  bdprod(3,3)                     !  dtau_dbdot * adotm1 at a mesh point
 
+  character(len=4)    ::  xcbase                          !  meta-GGA functional used in xc_mgga
+  character(len=4)    ::  tausrc                          !  source of tau: 'PSI ', 'TF  ', 'TFVW' or 'NONE'
+
 ! parameters
 
   real(REAL64), parameter  :: PI = 3.14159265358979323846_REAL64
@@ -138,6 +145,7 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
   do i2 = 1,n2
   do i1 = 1,n1
       vxc(i1,i2,i3) = ZERO
+      vtau(i1,i2,i3) = ZERO
   enddo
   enddo
   enddo
@@ -154,6 +162,8 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
   call xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
 
   call xc_author_info(author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
+
+  call xc_author_tau(author, xcbase, tausrc)
 
   rhomax = rhomsh(1,1,1)
   do i3 = 1,n3
@@ -322,7 +332,7 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
   elseif(lxcmgga) then
 
-    if(lkincalc) then
+    if(lkincalc .or. tausrc /= 'PSI ') then
 
 !     meta-gga exchange and correlation with both potential and energy
 
@@ -334,16 +344,30 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
             nn, dgdm, adotm1, rho, grho, drhocon,                        &
             mxdnn)
 
-!       uses an approximate expression for tau and its derivatives
+!       tau from the wave-functions (generalized Kohn-Sham) or from
+!       an approximate expression in terms of the density (deorbitalized)
 
-        call xc_tau(rho, grho, tauunif, tausingle,                       &
-                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
-
-        tautfvw = tauunif + tausingle
-        tau = taumsh(i1,i2,i3) + tautfvw
+        if(tausrc == 'PSI ') then
+          tau = taumsh(i1,i2,i3)
+          d_tau_dr = ZERO
+          d_tau_dgr = ZERO
+        else
+          call xc_tau(rho, grho, tauunif, tausingle,                     &
+                    d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
+          if(tausrc == 'TF  ') then
+            tau = tauunif
+            d_tau_dr = d_tauunif_dr
+            d_tau_dgr = ZERO
+          else
+            tautfvw = tauunif + tausingle
+            tau = tautfvw
+            d_tau_dr = d_tauunif_dr + d_tausingle_dr
+            d_tau_dgr = d_tausingle_dgr
+          endif
+        endif
         rholap = ZERO
 
-        call xc_mgga( author, rho, grho, tau,                            &
+        call xc_mgga( xcbase, rho, grho, tau,                            &
                      epsx, epsc, dexdr, decdr, dexdgr, decdgr,           &
                      dexdtau, decdtau  )
 
@@ -351,36 +375,39 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
         d_exc_dtau = dexdtau + decdtau
 
-        d_tau_dr = d_tauunif_dr + d_tausingle_dr
-        d_tau_dgr = d_tausingle_dgr
+        if(tausrc == 'PSI ') vtau(i1,i2,i3) = d_exc_dtau
 
         d_exc_dgr = dexdgr + decdgr
 
         vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr + d_exc_dtau*d_tau_dr
 
-        do i = 1,3
-        do j = 1,3
-          bdprod(j,i) = dtau_dbdot(j,1,i1,i2,i3)*adotm1(1,i) +        &
-                        dtau_dbdot(j,2,i1,i2,i3)*adotm1(2,i) +        &
-                        dtau_dbdot(j,3,i1,i2,i3)*adotm1(3,i)
-        enddo
-        enddo
+        if(tausrc == 'PSI ') then
+          do i = 1,3
+          do j = 1,3
+            bdprod(j,i) = dtau_dbdot(j,1,i1,i2,i3)*adotm1(1,i) +         &
+                          dtau_dbdot(j,2,i1,i2,i3)*adotm1(2,i) +         &
+                          dtau_dbdot(j,3,i1,i2,i3)*adotm1(3,i)
+          enddo
+          enddo
+        endif
 
         do i=1,3
         do j=1,3
           strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dgr * grho
           strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dtau * d_tau_dgr * grho
 
-!         contribution of the correction taumsh to tau.  It scales as 1/volume
+!         contribution of tau from the wave-functions.  It scales as 1/volume
 !         and V taumsh depends on the metric through dtau_dbdot = (1/V) d (V taumsh) / d bdot
 !         (bdot with the 2 pi factors), so that -2 d E / d adot has
 !         d_exc_dtau * ( taumsh adotm1 + 8 pi^2 adotm1 dtau_dbdot adotm1 ).
 
-          strgga(j,i) = strgga(j,i) + d_exc_dtau * (                     &
-                   taumsh(i1,i2,i3) * adotm1(j,i) +                      &
-                   8*PI*PI * ( adotm1(j,1)*bdprod(1,i) +                 &
-                               adotm1(j,2)*bdprod(2,i) +                 &
-                               adotm1(j,3)*bdprod(3,i) ) )
+          if(tausrc == 'PSI ') then
+            strgga(j,i) = strgga(j,i) + d_exc_dtau * (                   &
+                     taumsh(i1,i2,i3) * adotm1(j,i) +                    &
+                     8*PI*PI * ( adotm1(j,1)*bdprod(1,i) +               &
+                                 adotm1(j,2)*bdprod(2,i) +               &
+                                 adotm1(j,3)*bdprod(3,i) ) )
+          endif
         enddo
         enddo
 

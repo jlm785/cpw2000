@@ -17,7 +17,7 @@
 !>
 !>  \author       Sverre Froyen, José Luís Martins
 !>  \version      5.13
-!>  \date         15 January 1988, December 2016.
+!>  \date         15 January 1988, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_local_force(floc,                                     &
@@ -25,6 +25,7 @@ subroutine for_str_local_force(floc,                                     &
     vxc, den,                                                            &
     ntype, natom, rat,                                                   &
     vql, dnc,                                                            &
+    vtau, tnc,                                                           &
     mxdgve, mxdnst, mxdtyp, mxdatm)
 
 ! Adapted from Sverre Froyen plane wave program
@@ -34,6 +35,7 @@ subroutine for_str_local_force(floc,                                     &
 ! Modified December 2016, f90. JLM
 ! Modified, documentation, January 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! core tau with vtau (generalized Kohn-Sham meta-GGA). 6 October 2026. JLM+claude
 
 
   implicit none
@@ -64,6 +66,8 @@ subroutine for_str_local_force(floc,                                     &
 
   real(REAL64), intent(in)           ::  vql(mxdtyp,mxdnst)              !<  local pseudopotential for atom type i and prototype g-vector in star j       real*8 floc(3,mxdatm,mxdtyp)
   real(REAL64), intent(in)           ::  dnc(mxdtyp,mxdnst)              !<  core charge for atom type i and prototype g-vector in star j
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (generalized Kohn-Sham meta-GGA)
+  real(REAL64), intent(in)           ::  tnc(mxdtyp,mxdnst)              !<  core kinetic energy density for atom type i and prototype g-vector in star j
 
 ! output
 
@@ -109,7 +113,8 @@ subroutine for_str_local_force(floc,                                     &
     do jj = 2,ns
       j = ns - jj + 2
 
-      vds =  vql(i,j) * conjg(den(j)) + dnc(i,j) * conjg(vxc(j))
+      vds =  vql(i,j) * conjg(den(j)) + dnc(i,j) * conjg(vxc(j))         &
+           + tnc(i,j) * conjg(vtau(j))
 
 !     loop over g vectors in star
 

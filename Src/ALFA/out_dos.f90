@@ -15,8 +15,8 @@
 !>  for later processing by the density of states or optical program
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.11
-!>  \date         8 may 2004, 8 October 2024.
+!>  \version      5.13
+!>  \date         8 may 2004, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
@@ -49,6 +49,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! Modified, indentation, documentaion, 29 September 2022. JLM
 ! Modified, ao_int_GetS12, indentation, 8 October 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -134,6 +135,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
 
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
@@ -254,10 +256,12 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(mxdnst))
+  vtau(:) = C_ZERO
 
   ipr = 1
 
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
+  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,               &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
 
@@ -447,6 +451,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
           mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
           psi, hpsi, ei,                                                 &
           vscr, kmscr,                                                   &
+          .FALSE., vtau,                                                 &
           latorb, norbat, nqwf, delqwf, wvfao,lorb,                      &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdbnd, mxdscr, mxdlao)
@@ -594,6 +599,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
   write(6,'(" elapsed time (s):", 2f14.3)') (t2-t1)
 
   deallocate(vscr)
+  deallocate(vtau)
 
   deallocate(hdiag)
   deallocate(isort)

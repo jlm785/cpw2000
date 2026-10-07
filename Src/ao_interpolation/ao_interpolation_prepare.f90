@@ -20,8 +20,8 @@
 !>  an arbitrary k' point with idft.
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         2014. 4 October 2026.
+!>  \version      5.13
+!>  \date         2014. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -53,6 +53,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Array dimensions, ao_h_and_s API, eigenvalue mapping. 1 November 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -129,6 +130,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
 
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
@@ -207,6 +209,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counters
 
@@ -224,6 +227,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(mxdnst))
+  vtau(:) = C_ZERO
 
   ipr = 1
 
@@ -471,6 +476,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi_ao, hpsi_ao, ei_ao,                                          &
         vscr, kmscr,                                                     &
+        .FALSE., vtau,                                                   &
         .TRUE., norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdorb, mxdscr, mxdlao)
@@ -486,6 +492,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        .FALSE., vtau,                                                   &
         .TRUE., norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
@@ -672,6 +679,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   write(6,*)
 
   deallocate(vscr)
+  deallocate(vtau)
   deallocate(hdiag)
   deallocate(isort)
   deallocate(qmod)

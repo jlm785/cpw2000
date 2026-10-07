@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         20 October 93, 31 March 2026.
+!>  \date         20 October 93, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
@@ -30,7 +30,8 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
 ! Modified, error after keating, 18 February 2020. JLM
 ! Modified, indentation, another printing choices, 21 February 2024. JLM
 ! Modified, option to read wave-functions from disk. 12 October 2024.
-! Modifeid, equation of state option. 31 March 2026. JLM
+! Modified, equation of state option. 31 March 2026. JLM
+! core tau with vtau in forces and stress (generalized Kohn-Sham meta-GGA). 6 October 2026. JLM+claude
 
 
 
@@ -89,6 +90,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
       hamallk_%mtxd_allk, hamallk_%isort_allk,                           &
       psiallk_%psi_allk, psiallk_%occ_allk,                              &
       pseudo_%vql, pseudo_%dnc, pseudo_%dvql, pseudo_%ddc,               &
+      vcomp_%vtau, pseudo_%tnc, pseudo_%dtauc,                           &
       kpoint_%nrk, kpoint_%nband, kpoint_%rk, kpoint_%wgk,               &
       filename_%itape_save_psi, mxd_psi_allk,                            &
       dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp, dims_%mxddim,            &

@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         16 February 2018, 27 July 2026.
+!>  \date         16 February 2018, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -31,6 +31,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified, enter method for k-point. 22 October 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -201,6 +202,7 @@ subroutine plot_psi_sub(ioreplay)
 ! allocatable arrays
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
   real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
   integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
@@ -259,7 +261,8 @@ subroutine plot_psi_sub(ioreplay)
 
 ! constants
 
-  real(REAL64), parameter :: ZERO = 0.0_REAL64
+  real(REAL64), parameter     :: ZERO = 0.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counter
 
@@ -307,10 +310,12 @@ subroutine plot_psi_sub(ioreplay)
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(dims_%mxdnst))
+  vtau(:) = C_ZERO
 
   ipr = 1
 
-  call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,     &
+  call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax, &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
       recip_%ns, recip_%inds,                                            &
       mxdscr, dims_%mxdgve, dims_%mxdnst)
@@ -378,6 +383,7 @@ subroutine plot_psi_sub(ioreplay)
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        .FALSE., vtau,                                                   &
         atorb_%latorb, atorb_%norbat, atorb_%nqwf,                       &
         atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                        &
         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
@@ -471,6 +477,7 @@ subroutine plot_psi_sub(ioreplay)
   enddo
 
   deallocate(vscr)
+  deallocate(vtau)
 
   return
 

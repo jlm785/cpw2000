@@ -14,8 +14,8 @@
 !>  Provides orbital information to post-processing companion program
 !>
 !>  \author       Carlos, Loia Reis, Jose Luis Martins
-!>  \version      5.12
-!>  \date         8 may 2004, 17 September 2025.
+!>  \version      5.13
+!>  \date         8 may 2004, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
@@ -45,6 +45,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 !  Modified, rk in out_band_eref, 13 August 2025. JLM
 !  Increase dimension of label. 17 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -144,6 +145,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
 
 ! variables for local orbitals
@@ -266,6 +268,8 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(mxdnst))
+  vtau(:) = C_ZERO
 
   ipr = 1
 
@@ -496,6 +500,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
           mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
           psi, hpsi, ei,                                                 &
           vscr, kmscr,                                                   &
+          .FALSE., vtau,                                                 &
           latorb, norbat, nqwf, delqwf, wvfao, lorb,                     &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdbnd, mxdscr, mxdlao)
@@ -732,6 +737,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   deallocate(xklab)
 
   deallocate(vscr)
+  deallocate(vtau)
 
   deallocate(ei)
   deallocate(hdiag)

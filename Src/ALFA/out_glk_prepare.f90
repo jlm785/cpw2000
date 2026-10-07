@@ -15,8 +15,8 @@
 !>   For the GLK interpolation
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.09
-!>  \date         23 September 2020, 12 November 2023.
+!>  \version      5.13
+!>  \date         23 September 2020, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_glk_prepare(diag_type, io66,                              &
@@ -37,6 +37,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 
 ! Extracted from out_dos_glk, 23 September 2020. JLM
 ! Name change, indentation. 12 November 2023.
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -121,6 +122,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
   complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
 
 ! local variables
 
@@ -140,7 +142,8 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 
 ! parameters
 
-  real(REAL64), parameter            ::  UM = 1.0_REAL64
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counters
 
@@ -158,6 +161,8 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   allocate(psi(mxddim,mxdbnd))
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
+  allocate(vtau(mxdnst))
+  vtau(:) = C_ZERO
 
   iguess = 0
 
@@ -181,6 +186,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
+        .FALSE., vtau,                                                   &
         latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
@@ -209,6 +215,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   deallocate(psi)
   deallocate(hpsi)
   deallocate(ekpsi)
+  deallocate(vtau)
 
   return
 

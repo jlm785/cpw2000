@@ -16,14 +16,15 @@
 !>  of adding new functionals.
 !>
 !>  \author       José Luís Martins
-!>  \version      5.12
-!>  \date         22 November 2025.
+!>  \version      5.13
+!>  \date         22 November 2025, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
        lxctb09, lxccalc)
 
 ! Written 22 November 2025. JLM
+! meta-GGA flags from xc_author_tau. 6 October 2026. JLM+claude
 
   implicit none
 
@@ -38,6 +39,11 @@ subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
   logical, intent(out)               ::  lxctau                          !<  Kinetic energy density should be calculated
   logical, intent(out)               ::  lxctb09                         !<  Tran-Blaha constant is present
   logical, intent(out)               ::  lxccalc                         !<  xc energy is calculted
+
+! local variables
+
+  character(len=4)                   ::  xcbase                          !  functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau
 
 ! functions
 
@@ -65,10 +71,11 @@ subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
        lxctb09 = .TRUE.
   endif
 
-  if(chrsameinfo(author, 'LAK') .or. chrsameinfo(author, 'TASK') .or.    &
-     chrsameinfo(author, 'R2SC') ) then
+  call xc_author_tau(author, xcbase, tausrc)
+
+  if(tausrc /= 'NONE') then
        lxcgrad = .TRUE.
-       lxctau = .TRUE.
+       if(tausrc == 'PSI ') lxctau = .TRUE.
   endif
 
   return
@@ -82,6 +89,7 @@ end subroutine xc_author_info
 subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
 
 ! Written 22 November 2025. JLM
+! meta-GGA flag from xc_author_tau. 6 October 2026. JLM+claude
 
   implicit none
 
@@ -95,6 +103,11 @@ subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
   logical, intent(out)               ::  lxcgga                          !<  GGA functionals
   logical, intent(out)               ::  lxcmgga                         !<  meta-GGA functionals with energy and potential
   logical, intent(out)               ::  lxcmggavxc                      !<  meta-GGA functionals with only the potential
+
+! local variables
+
+  character(len=4)                   ::  xcbase                          !  functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau
 
 ! functions
 
@@ -118,8 +131,9 @@ subroutine xc_author_family(author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
        lxcgga = .TRUE.
   endif
 
-  if(chrsameinfo(author, 'LAK' ) .or. chrsameinfo(author, 'TASK') .or.   &
-     chrsameinfo(author, 'R2SC') ) then
+  call xc_author_tau(author, xcbase, tausrc)
+
+  if(tausrc /= 'NONE') then
        lxcmgga = .TRUE.
   endif
 
@@ -199,6 +213,22 @@ subroutine xc_author_print(author)
     write(6,*)
     write(6,'("  The potential was calculated in the meta-GGA",          &
       &   " r2SCAN of Furness et al.:   R2SC")')
+  elseif( chrsameinfo(author, 'R2TF' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " r2SCAN with the Thomas-Fermi tau:   R2TF")')
+  elseif( chrsameinfo(author, 'R2TW' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " r2SCAN with the Thomas-Fermi-von Weizsacker tau:   R2TW")')
+  elseif( chrsameinfo(author, 'TATF' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " TASK with the Thomas-Fermi tau:   TATF")')
+  elseif( chrsameinfo(author, 'TATW' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " TASK with the Thomas-Fermi-von Weizsacker tau:   TATW")')
   else
     write(6,*)
     write(6,'("  The XC flag is:   ",a4)') author
@@ -207,3 +237,70 @@ subroutine xc_author_print(author)
   return
 
 end subroutine xc_author_print
+
+
+!>  For meta-GGA functionals gives the functional used in xc_mgga
+!>  and the source of the kinetic energy density tau.
+!>
+!>    tausrc = 'PSI '  tau from the wave-functions (generalized Kohn-Sham)
+!>    tausrc = 'TF  '  Thomas-Fermi tau of the density (deorbitalized, Kohn-Sham)
+!>    tausrc = 'TFVW'  Thomas-Fermi + von Weizsacker tau of the density (deorbitalized)
+!>    tausrc = 'NONE'  not a meta-GGA with energy and potential
+!>
+!>  New variants of a functional need only one line here
+!>  (and a line in xc_author_print).
+!>
+!>  \author       Jose Luis Martins
+!>  \version      5.13
+!>  \date         6 October 2026.
+!>  \copyright    GNU Public License v2
+
+subroutine xc_author_tau(author, xcbase, tausrc)
+
+! Written 6 October 2026. JLM+claude
+
+  implicit none
+
+! input
+
+  character(len=4), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pw92 , pbe,...)
+
+! output
+
+  character(len=4), intent(out)      ::  xcbase                          !<  meta-GGA functional used in xc_mgga
+  character(len=4), intent(out)      ::  tausrc                          !<  source of tau: 'PSI ', 'TF  ', 'TFVW', or 'NONE'
+
+! functions
+
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
+
+
+  xcbase = author
+  tausrc = 'NONE'
+
+  if(chrsameinfo(author, 'LAK')) then
+    xcbase = 'LAK '
+    tausrc = 'PSI '
+  elseif(chrsameinfo(author, 'TASK')) then
+    xcbase = 'TASK'
+    tausrc = 'PSI '
+  elseif(chrsameinfo(author, 'R2SC')) then
+    xcbase = 'R2SC'
+    tausrc = 'PSI '
+  elseif(chrsameinfo(author, 'R2TF')) then
+    xcbase = 'R2SC'
+    tausrc = 'TF  '
+  elseif(chrsameinfo(author, 'R2TW')) then
+    xcbase = 'R2SC'
+    tausrc = 'TFVW'
+  elseif(chrsameinfo(author, 'TATF')) then
+    xcbase = 'TASK'
+    tausrc = 'TF  '
+  elseif(chrsameinfo(author, 'TATW')) then
+    xcbase = 'TASK'
+    tausrc = 'TFVW'
+  endif
+
+  return
+
+end subroutine xc_author_tau

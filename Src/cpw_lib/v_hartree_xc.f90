@@ -16,13 +16,13 @@
 !>
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
-!>  \version      5.12
-!>  \date         8 June 1987.  25 November 2025.
+!>  \version      5.13
+!>  \date         8 June 1987.  6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
     exc, strxc, rhovxc,                                                  &
-    vhar, vxc, den, denc, rholap, tau, dtau_dbdot,                       &
+    vhar, vxc, vtau, den, denc, rholap, tau, dtau_dbdot,                 &
     ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
     mxdgve, mxdnst, mxdscr)
 
@@ -43,6 +43,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
 ! name of mesh_fold, mesh_set, star_of_g. 10 March 2026. JLM
 ! Pass packing of rho/tau/.. to gvec_mesh_set. 11 March 2026. JLM
 ! xc on the real space mesh of the potential (kmscr). dtau_dbdot. 1 October 2026. JLM+claude
+! vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 
 
   implicit none
@@ -87,10 +88,12 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
   real(REAL64), intent(out)          ::  strxc(3,3)                      !<  contribution of xc to the stress tensor (contravariant,Hartree)
   complex(REAL64), intent(out)       ::  vhar(mxdnst)                    !<  Hartree potential (in Hartree) for the prototype G-vector
   complex(REAL64), intent(out)       ::  vxc(mxdnst)                     !<  XC potential (in Hartree) for the prototype G-vector
+  complex(REAL64), intent(out)       ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau (generalized Kohn-Sham meta-GGA) for the prototype G-vector
 
 ! local allocatable arrays
 
   real(REAL64), allocatable          ::  vxcmsh(:)
+  real(REAL64), allocatable          ::  vtaumsh(:)
   real(REAL64), allocatable          ::  rhomsh(:)
   real(REAL64), allocatable          ::  rholapmsh(:)
   real(REAL64), allocatable          ::  taumsh(:)
@@ -166,6 +169,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
   allocate(dentot(mxdnst))
   allocate(rhomsh(mxdfft))
   allocate(vxcmsh(mxdfft))
+  allocate(vtaumsh(mxdfft))
   allocate(chd(mxdfft))
   allocate(wrkfft(mxdwrk))
 
@@ -216,7 +220,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
 
   call xc_cell(author, adot, tblaha, lkincalc, id,n2, n1,n2,n3,          &
         rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
-        exc, vxcmsh, rhovxc, strxc )
+        exc, vxcmsh, vtaumsh, rhovxc, strxc )
 
 
   deallocate(rholapmsh)
@@ -257,9 +261,26 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
       ng, phase, conj, ns, inds, mstar,                                  &
       mxdgve, mxdnst)
 
+! the same for vtau
+
+  do i = 1,ntot
+    chd(i) = cmplx(vtaumsh(i),ZERO,REAL64)
+  enddo
+
+  call cfft_c16(chd, id,n1,n2,n3, 1, wrkfft, mxdwrk)
+
+  call gvec_mesh_fold(vxcg, chd, id,n1,n2,n3,                            &
+      ng, kgv,                                                           &
+      mxdgve, mxdfft)
+
+  call gvec_star_of_g_fold(vtau, vxcg, .FALSE.,                          &
+      ng, phase, conj, ns, inds, mstar,                                  &
+      mxdgve, mxdnst)
+
   deallocate(dentot)
   deallocate(rhomsh)
   deallocate(vxcmsh)
+  deallocate(vtaumsh)
   deallocate(chd)
   deallocate(wrkfft)
   deallocate(vxcg)

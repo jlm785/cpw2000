@@ -16,13 +16,13 @@
 !>  and checks for convergence.
 !>
 !>  \author       Sverre Froyen,  Jose Luis Martins
-!>  \version      5.0.3
-!>  \date         1980s, 1987, 29 November 2021.
+!>  \version      5.13
+!>  \date         1980s, 1987, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
   iconv, errvhxc, epscv,                                                 &
-  energy, eband, ektot, exc, ealpha, enerew,                             &
+  energy, eband, etauv, ektot, exc, ealpha, enerew,                      &
   ng, kgv, ns, mstar, ek,                                                &
   vion, vhxc, vhxcout, den,                                              &
   ztot, adot,                                                            &
@@ -38,7 +38,8 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
 ! Modified documentation, August 2019. JLM
 ! Modified, itmix,errvhxc,eharrfou,printing, 2 December 2020. JLM
 ! Modified, stops if error in charge is large, 29 November 2021. JLM
-! copyright INESC-MN/Jose Luis Martins
+! etauv, generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+
 
   implicit none
 
@@ -58,6 +59,7 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
   real(REAL64), intent(in)           ::  epscv                           !<  convergence criteria
 
   real(REAL64), intent(in)           ::  eband                           !<  integrated band energy.
+  real(REAL64), intent(in)           ::  etauv                           !<  int vtau * tau of the wave-functions, generalized Kohn-Sham meta-GGA (Hartree)
   real(REAL64), intent(in)           ::  ektot                           !<  total kinetic energy of electrons
   real(REAL64), intent(in)           ::  exc                             !<  exchange+correlation energy
   real(REAL64), intent(in)           ::  ealpha                          !<  alpha term. (G=0)
@@ -196,11 +198,11 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
 
 ! find the nonlocal energy.
 
-  epsnl = eband - (evhxc + ektot + epsloc)
+  epsnl = eband - (evhxc + etauv + ektot + epsloc)
 
 ! the total energy. modified for average potential
 
-  energy = eband - evhxc + ehart + exc + enerew
+  energy = eband - evhxc - etauv + ehart + exc + enerew
 
 ! printout
 
@@ -223,6 +225,7 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
       write(6,'(11x,"-------------------------------------")')
       write(6,'(11x,"Eigenvalue Sum    =",2x,f15.6)') eband
       write(6,'(11x,"HXC  Correction   =",2x,f15.6)') -evhxc
+      if(etauv /= ZERO) write(6,'(11x,"vtau Correction   =",2x,f15.6)') -etauv
       write(6,'(11x,"Hartree  Energy   =",2x,f15.6)') ehart
       write(6,'(11x,"XC       Energy   =",2x,f15.6)') exc
       write(6,'(11x,"Ewald    Energy   =",2x,f15.6)') enerew
@@ -250,6 +253,7 @@ subroutine total_ks_energy(ipr, icmplx, iter, itmix, eharrfou,           &
       write(6,'(11x,"-------------------------------------")')
       write(6,'(11x,"Eigenvalue Sum    =",2(2x,f15.6))') eband, eband-oeband
       write(6,'(11x,"HXC  Correction   =",2(2x,f15.6))') -evhxc, -(evhxc-oevhxc)
+      if(etauv /= ZERO) write(6,'(11x,"vtau Correction   =",2x,f15.6)') -etauv
       write(6,'(11x,"Hartree  Energy   =",2(2x,f15.6))') ehart, ehart-oehart
       write(6,'(11x,"XC       Energy   =",2(2x,f15.6))') exc, exc-oexc
       write(6,'(11x,"Ewald    Energy   =",2(2x,f15.6))') enerew

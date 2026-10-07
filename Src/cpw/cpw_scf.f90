@@ -16,8 +16,8 @@
 !>  or plane wave basis set.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         October 1993, 3 October 2026.
+!>  \version      5.13
+!>  \date         October 1993, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -56,6 +56,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Modified, spaceg_ in input and passed to cpw_scf_loop_rho for tau_by_fft_stress. 29 September 2026. JLM+claude
 ! xc on the mesh of the potential, dtau_dbdot to v_hartree_xc.  1 October 2026. JLM+claude
 ! kinetic_density_tfvw renamed tau_tfvw_stress. 3 October 2026. JLM+claude
+! Meta-GGA tau from the wave-functions and core (no Thomas-Fermi-von Weizsacker
+! correction, options A and B removed), vtau from v_hartree_xc. 6 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA: vtau in the hamiltonian, energy correction,
+! linear mixing and convergence of vtau. 6 October 2026. JLM+claude
+! Anderson mixing of vtau. 7 October 2026. JLM+claude
+! vtaumsh no longer passed to cpw_scf_loop_psi. 7 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -236,26 +242,29 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   complex(REAL64), allocatable       ::  rholap(:)
   complex(REAL64), allocatable       ::  tau(:)                          !  "kinetic energy density"
-  complex(REAL64), allocatable       ::  tau_tfvw(:)                     !  "kinetic energy density" approximation of Thomas-Fermi-von Weizsaker
   complex(REAL64), allocatable       ::  tau_val(:)                      !  "kinetic energy density" for valence
   real(REAL64), allocatable          ::  dtau_val_dbdot(:,:,:)           !  d tau_val / d bdot on the mesh of the potential
-  real(REAL64), allocatable          ::  dtau_tfvw_dbdot(:,:,:)          !  d tau_tfvw / d bdot on the mesh of the potential
   real(REAL64), allocatable          ::  dtau_dbdot(:,:,:)               !  d tau / d bdot for the tau passed to v_hartree_xc
-  complex(REAL64), allocatable       ::  tau_0(:)                        !  "kinetic energy density" dorbitalizatio correction
-  real(REAL64), allocatable          ::  dtau_0_dbdot(:,:,:)             !  d tau_0 / d bdot on the mesh of the potential
-
-! choice of the correction to the Thomas-Fermi-von Weizsaker kinetic energy density
-! passed to v_hartree_xc in meta-GGA:
-!   'A'  tau_val - tau_tfvw of the current cycle (tau from psi in every cycle)
-!   'B'  tau_val - tau_tfvw of the first cycle, added to the new tau_tfvw
-!   'T'  no correction, pure Thomas-Fermi-von Weizsaker
-
-!  character(len=1), parameter        ::  TAU_CORR = 'A'
-
 
   real(REAL64), allocatable          ::  ekl(:)                          !  kinetic energy of wave-function j, for all the k-points
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the FFT real space mesh
+
+! generalized Kohn-Sham meta-GGA
+
+  logical                            ::  lgks                            !  generalized Kohn-Sham (tau from the wave-functions)
+  character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau
+  complex(REAL64), allocatable       ::  vtauin(:)                       !  input d (rho eps_xc) / d tau used in the hamiltonian (stars)
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtauin in the FFT real space mesh
+  complex(REAL64), allocatable       ::  tauold(:)                       !  tau of the wave-functions of the previous iteration (stars)
+  real(REAL64)                       ::  etauv                           !  int vtauin * tau of the wave-functions
+  real(REAL64)                       ::  etauvold                        !  int vtauin * tau of the previous iteration (Harris-Foulkes)
+  real(REAL64)                       ::  errvtau                         !  maximum change of vtau
+  real(REAL64)                       ::  vtmax, vtmin                    !  maximum and minimum of vtau
+  complex(REAL64), allocatable       ::  vtaumem(:,:)                    !  history of the Anderson mixing of vtau
+  real(REAL64), parameter            ::  BETATAU = 0.5_REAL64            !  mixing coefficient of vtau
+  integer, parameter                 ::  IDTAU = 3                       !  Anderson mixing of vtau with two previous iterations
 
   complex(REAL64), allocatable       ::  vhxclow(:)                      !  Hartre+xc potential that entered the diagonalization that yelded the lowest energy
   complex(REAL64), allocatable       ::  vhxcoutlow(:)                   !  Hartre+xc potential that came out of the diagonalization that yelded the lowest energy
@@ -338,6 +347,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   call xc_author_family(xc_%author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
 
+  call xc_author_tau(xc_%author, xcbase, tausrc)
+  lgks = lxcmgga .and. tausrc == 'PSI '
+
   call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
 
   lkincalc = .FALSE.
@@ -360,6 +372,21 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   do i=1,recip_%ns
     vhxc(i) = vcomp_%vxc(i) + vcomp_%vhar(i)
   enddo
+
+! vtau (zero in the first iteration, as tau is not yet known)
+
+  allocate(vtauin(dims_%mxdnst))
+  allocate(tauold(dims_%mxdnst))
+  allocate(vtaumsh(mxdscr))
+  allocate(vtaumem(dims_%mxdnst,4))
+  do i = 1,recip_%ns
+    vtauin(i) = C_ZERO
+    tauold(i) = C_ZERO
+  enddo
+  vtaumem(:,:) = C_ZERO
+  vtaumsh(:) = ZERO
+  etauv = ZERO
+  etauvold = ZERO
 
   if(flags_%flgscf /= '    PW' .and. flags_%flgscf /= 'AO    ' .and.     &
      flags_%flgscf /= 'AOJC  ' .and. flags_%flgscf /= 'AOJCPW') then
@@ -389,11 +416,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   itmix = 1
   itlow = 0
 
-  if(lxctau .and. lxcmgga) then
-    allocate(tau_0(dims_%mxdnst))
-    allocate(dtau_0_dbdot(3,3,mxdscr))
-  endif
-
   do iter = 1,acc_%itmax
 
 !   do until convergence
@@ -414,6 +436,27 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
         recip_%ns, recip_%inds,                                          &
         mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+!   vtau in the fft mesh, 1 + vtau must be positive
+
+    if(lgks) then
+
+      call pot_local(0, vtaumsh, vtmax, vtmin, vtauin, kmscr,            &
+          recip_%kmax, recip_%ng, recip_%kgv, recip_%phase, recip_%conj, &
+          recip_%ns, recip_%inds,                                        &
+          mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+      if(UM + vtmin <= ZERO) then
+        write(6,*)
+        write(6,'("   STOPPED in cpw_scf:  1 + vtau is not positive, ",  &
+           &      "minimum of vtau = ",f14.6)') vtmin
+        write(6,*)
+
+        stop
+
+      endif
+
+    endif
 
 !   checks if there is a problem, restart the convergence procedure
 
@@ -478,6 +521,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     call cpw_scf_loop_psi(iprglob, iter, minifail,                       &
         flgaopw, iguess,  lkpg,                                          &
         kmscr, vscr, ekl,                                                &
+        lgks, vtauin,                                                    &
         dims_, crys_, flags_, pwexp_, recip_, acc_, strfac_,             &
         vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_, filename_, &
         mxdscr)
@@ -500,7 +544,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !  calculates the Harris-Foulkes functional energy
 
     if(abs(itmix) /= 1) then
-      call harris_weinert_foulkes(eharrfou, eband, exc, ewald_%energy,   &
+      call harris_weinert_foulkes(eharrfou, eband, etauvold, exc,        &
+          ewald_%energy,                                                 &
           recip_%ns, recip_%mstar, recip_%ek,                            &
           vhxc, chdens_%den,                                             &
           crys_%adot,                                                    &
@@ -514,10 +559,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     enddo
 
     allocate(tau(dims_%mxdnst))
-    allocate(tau_tfvw(dims_%mxdnst))
     allocate(tau_val(dims_%mxdnst))
     allocate(dtau_val_dbdot(3,3,mxdscr))
-    allocate(dtau_tfvw_dbdot(3,3,mxdscr))
     allocate(dtau_dbdot(3,3,mxdscr))
     dtau_dbdot(:,:,:) = ZERO
 
@@ -525,7 +568,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       do i = 1,recip_%ns
         tau(i) = C_ZERO
         tau_val(i) = C_ZERO
-        tau_tfvw(i) = C_ZERO
       enddo
       lkincalc = .TRUE.
     endif
@@ -537,14 +579,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         kmscr, dtau_val_dbdot, mxdscr,                                   &
         dims_, crys_, spaceg_, recip_, kpoint_, hamallk_, psiallk_,      &
         chdens_, filename_)
-
-!   calculates the Thomas-Fermi-von Weizsaker kinetic energy density
-
-    call tau_tfvw_stress(ipr, crys_%adot, chdens_%den, kmscr,            &
-        tau_tfvw, dtau_tfvw_dbdot,                                       &
-        recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &
-        recip_%inds, recip_%kmax, recip_%mstar,                          &
-        dims_%mxdgve, dims_%mxdnst, mxdscr)
 
 !   calculates laplacian of rho
 
@@ -560,24 +594,16 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     endif
 
-!   sets up appropriate tau (total or correction)
+!   tau of the wave-functions and of the core.  For meta-GGA
+!   generalized Kohn-Sham (tau from the wave-functions) the dependence
+!   of tau on the metric is used in the stress.  dtau_dbdot is only for
+!   the wave-functions, the core tau contribution to forces and stress
+!   (pseudo_%tnc, pseudo_%dtauc) is in for_str_local_force/stress.
 
     if(lxctau) then
       if(lxcmgga) then
-!        if(TAU_CORR == 'A') then
-          tau(:) = tau_val(:) - tau_tfvw(:)
-          dtau_dbdot(:,:,:) = dtau_val_dbdot(:,:,:) - dtau_tfvw_dbdot(:,:,:)
-!         elseif(TAU_CORR == 'B') then
-!           if(iter == 1) then
-!             tau_0(:) = tau_val(:) - tau_tfvw(:)
-!             dtau_0_dbdot(:,:,:) = dtau_val_dbdot(:,:,:) - dtau_tfvw_dbdot(:,:,:)
-!           endif
-!           tau(:) = tau_0(:)
-!           dtau_dbdot(:,:,:) = dtau_0_dbdot(:,:,:)
-!         else
-!           tau(:) = C_ZERO
-!           dtau_dbdot(:,:,:) = ZERO
-!         endif
+        tau(:) = tau_val(:) + chdens_%tauc_g(:)
+        dtau_dbdot(:,:,:) = dtau_val_dbdot(:,:,:)
       else
         tau(:) = tau_val(:)
         dtau_dbdot(:,:,:) = ZERO
@@ -592,17 +618,31 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     call v_hartree_xc(ipr, xc_%author, xc_%tblaha, lkincalc,             &
         crys_%adot, kmscr, exc, strxc, rhovxc,                           &
-        vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc,              &
-        rholap, tau, dtau_dbdot,                                      &
+        vcomp_%vhar, vcomp_%vxc, vcomp_%vtau,                            &
+        chdens_%den, chdens_%denc, rholap, tau, dtau_dbdot,              &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &
         recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,               &
         dims_%mxdgve, dims_%mxdnst, mxdscr)
 
+!   int vtau * tau of the wave-functions, for the total energy and Harris-Foulkes
+
+    etauv = ZERO
+    etauvold = ZERO
+    if(lgks) then
+      etauv = real(vtauin(1),REAL64)*real(tau_val(1),REAL64)
+      etauvold = real(vtauin(1),REAL64)*real(tauold(1),REAL64)
+      do i = 2,recip_%ns
+        etauv = etauv + recip_%mstar(i)*real(vtauin(i)*conjg(tau_val(i)),REAL64)
+        etauvold = etauvold + recip_%mstar(i)*real(vtauin(i)*conjg(tauold(i)),REAL64)
+      enddo
+      do i = 1,recip_%ns
+        tauold(i) = tau_val(i)
+      enddo
+    endif
+
     deallocate(tau)
-    deallocate(tau_tfvw)
     deallocate(tau_val)
     deallocate(dtau_val_dbdot)
-    deallocate(dtau_tfvw_dbdot)
     deallocate(dtau_dbdot)
     deallocate(rholap)
 
@@ -622,11 +662,24 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     itmixabs = abs(itmix)
     call total_ks_energy(ipr, strfac_%icmplx, iter, itmixabs, eharrfou,  &
         iconv, errvhxc, epsconv,                                         &
-        total_%energy, eband, ektot, exc, ealpha, ewald_%energy,         &
+        total_%energy, eband, etauv, ektot, exc, ealpha, ewald_%energy,  &
         recip_%ng, recip_%kgv, recip_%ns, recip_%mstar, recip_%ek,       &
         vcomp_%vion, vhxc, vhxcout, chdens_%den,                         &
         pseudo_%ztot, crys_%adot,                                        &
         dims_%mxdgve, dims_%mxdnst)
+
+!   convergence of vtau
+
+    if(lgks) then
+      errvtau = ZERO
+      do i = 1,recip_%ns
+        errvtau = max(errvtau, abs(vcomp_%vtau(i) - vtauin(i)))
+      enddo
+      if(errvtau > epsconv) iconv = 0
+      if(iprglob > 1) then
+        write(6,'("  maximum change of vtau = ",es12.4,"   etauv = ",f16.8)') errvtau, etauv
+      endif
+    endif
 
 !   detects problems in convergence
 
@@ -725,6 +778,15 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     vhxc(1) = vhxcout(1)
 
+!   Anderson mixing of vtau (including G=0).  The history is restarted
+!   in the second iteration, as the first one starts with vtau = 0.
+
+    if(lgks) then
+      call mixer_anderson_c16(max(2,iter), IDTAU, BETATAU,               &
+          vcomp_%vtau, vtauin, vtaumem,                                  &
+          recip_%ns, recip_%mstar, dims_%mxdnst)
+    endif
+
 
     call zesec(tout)
     if(iprglob > 1) then
@@ -772,11 +834,10 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   deallocate(vhxcoutlow)
 
   deallocate(vscr)
-
-  if(lxctau .and. lxcmgga) then
-    deallocate(tau_0)
-    deallocate(dtau_0_dbdot)
-  endif
+  deallocate(vtauin)
+  deallocate(tauold)
+  deallocate(vtaumsh)
+  deallocate(vtaumem)
 
 ! if self-consistency not reached
 

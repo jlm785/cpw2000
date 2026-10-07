@@ -18,8 +18,8 @@
 !>  Circuit for band structure is defined in BAND_LINES.DAT
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         8 may 2004, 17 September 2025.
+!>  \version      5.13
+!>  \date         8 may 2004, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_kdotp_var(title, subtitle,                           &
@@ -49,6 +49,7 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
 ! Modified, rk in out_band_eref, 13 August 2025. JLM
 ! Increase dimension of label. 17 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -145,6 +146,7 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
   real(REAL64), allocatable          ::  ekpsi0(:)                       !  kinetic energy of eigenvector i. (hartree)
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
 
@@ -181,6 +183,9 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
 
 ! constants
 
+  real(REAL64), parameter     :: ZERO = 0.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+
   real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size
 !  real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory
 
@@ -198,6 +203,8 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(mxdnst))
+  vtau(:) = C_ZERO
 
   ipr = 1
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
@@ -294,6 +301,7 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
       mtxd0, hdiag0, isort0, qmod0, ekpg0, .FALSE.,                      &
       psi0, hpsi0, ei0,                                                  &
       vscr, kmscr,                                                       &
+      .FALSE., vtau,                                                     &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
@@ -407,6 +415,7 @@ subroutine out_band_kdotp_var(title, subtitle,                           &
   deallocate(xklab)
 
   deallocate(vscr)
+  deallocate(vtau)
 
   deallocate(ei)
   deallocate(hdiag)

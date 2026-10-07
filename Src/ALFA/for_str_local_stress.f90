@@ -16,7 +16,7 @@
 !>
 !>  \author       Sverre Froyen, José Luís Martins
 !>  \version      5.13
-!>  \date         19 January 1988, December 2016.
+!>  \date         19 January 1988, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_local_stress(ealpha, strhl,                           &
@@ -24,6 +24,7 @@ subroutine for_str_local_stress(ealpha, strhl,                           &
     vion, vhar, vxc, den,                                                &
     adot,                                                                &
     dvql, ddc,                                                           &
+    vtau, dtauc,                                                         &
     mxdgve, mxdnst)
 
 ! Adapted from Sverre Froyen plane wave program
@@ -33,6 +34,7 @@ subroutine for_str_local_stress(ealpha, strhl,                           &
 ! Modified f90, December 2016. JLM
 ! Modified, documentation, January 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! core tau with vtau (generalized Kohn-Sham meta-GGA). 6 October 2026. JLM+claude
 
 
   implicit none
@@ -58,6 +60,8 @@ subroutine for_str_local_stress(ealpha, strhl,                           &
 
   complex(REAL64), intent(in)        ::  dvql(mxdnst)                    !<  derivative of the local pseudopotential for the prototype g-vector in star j
   complex(REAL64), intent(in)        ::  ddc(mxdnst)                     !<  derivative of the core charge for the prototype g-vector in star j
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (generalized Kohn-Sham meta-GGA)
+  complex(REAL64), intent(in)        ::  dtauc(mxdnst)                   !<  derivative of the core kinetic energy density for the prototype g-vector in star j
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
@@ -118,6 +122,11 @@ subroutine for_str_local_stress(ealpha, strhl,                           &
 !   vxc * d(dcor)/d(g)
 
     dvxd = real(vxc(i)*conjg(ddc(i)),REAL64)
+
+!   the same for the core kinetic energy density in the meta-GGA,
+!   vtau * d(tauc)/d(g)
+
+    dvxd = dvxd + real(vtau(i)*conjg(dtauc(i)),REAL64)
 
 !   diagonal (exp1) and nondiag (exp2) contributions
 

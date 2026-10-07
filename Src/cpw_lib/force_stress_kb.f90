@@ -14,8 +14,8 @@
 !>  Calculates the force and stress
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         20 October 93, 12 October 2025.
+!>  \version      5.13
+!>  \date         20 October 93, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine force_stress_kb(force, stress,                              &
@@ -27,6 +27,7 @@
       vion, vhar, vxc, den,                                              &
       mtxd_allk, isort_allk, psi_allk, occ_allk,                         &
       vql, dnc, dvql, ddc,                                               &
+      vtau, tnc, dtauc,                                                  &
       nrk, nband, rk, wgk,                                               &
       itape_save_psi, mxd_psi_allk,                                      &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdnst, mxdnrk)
@@ -39,6 +40,7 @@
 ! Modified, indentation, remove print, 21 February 2024. JLM
 ! Modified, option to read wave-functions from disk. 12 October 2025. JLM
 ! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
+! core tau with vtau (generalized Kohn-Sham meta-GGA). 6 October 2026. claude
 
 
   implicit none
@@ -98,6 +100,9 @@
   real(REAL64), intent(in)           ::  dnc(mxdtyp,mxdnst)              !<  core charge for atom type i and prototype g-vector in star j
   complex(REAL64), intent(in)        ::  dvql(mxdnst)                    !<  derivative of the local pseudopotential for the prototype g-vector in star j
   complex(REAL64), intent(in)        ::  ddc(mxdnst)                     !<  derivative of the core charge for the prototype g-vector in star j
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (generalized Kohn-Sham meta-GGA)
+  real(REAL64), intent(in)           ::  tnc(mxdtyp,mxdnst)              !<  core kinetic energy density for atom type i and prototype g-vector in star j
+  complex(REAL64), intent(in)        ::  dtauc(mxdnst)                   !<  derivative of the core kinetic energy density for the prototype g-vector in star j
 
   integer, intent(in)                ::  nrk                             !<  number of k-points for integration in the irreducible wedge of the brillouin zone
   integer, intent(in)                ::  nband(mxdnrk)                   !<  number of bands for each k-points
@@ -176,6 +181,7 @@
       vxc, den,                                                          &
       ntype, natom, rat,                                                 &
       vql, dnc,                                                          &
+      vtau, tnc,                                                         &
       mxdgve, mxdnst, mxdtyp, mxdatm)
 
 ! local contribution to stress (covariant)
@@ -185,6 +191,7 @@
       vion, vhar, vxc, den,                                              &
       adot,                                                              &
       dvql, ddc,                                                         &
+      vtau, dtauc,                                                       &
       mxdgve, mxdnst)
 
 ! strxc in GGA is not strictly symmetric.

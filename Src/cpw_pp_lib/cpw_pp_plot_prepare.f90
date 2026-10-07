@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         13 March 2025. 15 April 2026.
+!>  \date         13 March 2025. 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,6 +26,7 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 ! written 13 March 2025. JLM
 ! core kinetic energy density. 15 April 2026. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! pseudo_%tnc, pseudo_%dtauc from v_first. 6 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -101,6 +102,8 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
   allocate(pseudo_%dvql(dims_in_%mxdnst))
   allocate(pseudo_%dnc(dims_%mxdtyp,dims_in_%mxdnst))
   allocate(pseudo_%ddc(dims_in_%mxdnst))
+  allocate(pseudo_%tnc(dims_%mxdtyp,dims_in_%mxdnst))
+  allocate(pseudo_%dtauc(dims_in_%mxdnst))
 
   call adot_to_bdot(crys_%adot, vcell, bdot)
 
@@ -123,6 +126,7 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
       vcomp_in_%vion, chdens_in_%denc, chdens_in_%dens,                  &
       chdens_in_%tauc_g,                                                 &
       pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
+      pseudo_%tnc, pseudo_%dtauc,                                        &
       dims_%mxdtyp, dims_%mxdlqp, dims_in_%mxdnst)
 
 ! Hartree potential

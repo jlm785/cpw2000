@@ -15,8 +15,8 @@
 !>  Initial potential etc...
 !>
 !>  \author       José Luís Martins
-!>  \version      5.12
-!>  \date         around 2020, 24 November 2025.
+!>  \version      5.13
+!>  \date         around 2020, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
@@ -29,6 +29,8 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 ! New variable for v_Hartree_xc. Indentation. 24 November 2025. JLM
 ! core kinetic energy density, 15 April 2026. JLM
 ! kmscr and dtau_dbdot for v_hartree_xc (mesh of the potential). 1 October 2026. JLM+claude
+! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+! pseudo_%tnc, pseudo_%dtauc from v_first. 6 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -88,6 +90,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
       crys_%ntype, crys_%adot,                                           &
       vcomp_%vion, chdens_%denc, chdens_%dens, chdens_%tauc_g,           &
       pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
+      pseudo_%tnc, pseudo_%dtauc,                                        &
       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdnst)
 
 
@@ -135,8 +138,8 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   call v_hartree_xc(ipr, xc_%author, xc_%tblaha, .FALSE., crys_%adot,    &
       kmscr, exc, strxc, rhovxc,                                         &
-      vcomp_%vhar, vcomp_%vxc, chdens_%den, chdens_%denc,                &
-      rholap, tau, dtau_dbdot,                                        &
+      vcomp_%vhar, vcomp_%vxc, vcomp_%vtau,                              &
+      chdens_%den, chdens_%denc, rholap, tau, dtau_dbdot,                &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,                 &
       dims_%mxdgve, dims_%mxdnst, mxdscr)

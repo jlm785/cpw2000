@@ -15,8 +15,8 @@
 !>  and diagonalizes it
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         18 october 1993. 30 November 2023.
+!>  \version      5.13
+!>  \date         18 october 1993. 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
@@ -28,6 +28,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
     mtxd, hdiag, isort, qmod, ekpg, lkpg,                                &
     psi, hpsi, ei,                                                       &
     vscr, kmscr,                                                         &
+    lgks, vtau, vtaumsh,                                                 &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, mxdbnd, mxdscr)
 
 ! version 4.0. 18 october 1993. jlm
@@ -46,6 +47,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 ! Modified, qmod-->ekpg in ditsp_c16. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Added the commented out alternative call to hamilt_kb_alt. 16 Mrch 2024. JLM
+! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh, hamilt_mgga_add). 6 October 2026. JLM+claude
 
 
   implicit none
@@ -100,6 +102,10 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh and fft mesh size
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
+
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (only used if lgks)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
 
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
@@ -179,6 +185,15 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
       ntype, adot, hamsm,                                                &
       mxdtyp, mxdgve, mxdnst, mxdcub, mxdlqp, mxdsml)
 
+! meta-GGA generalized Kohn-Sham term
+
+  if(lgks) then
+    call hamilt_mgga_add(mtxd, mtxds, isort, qmod, vtau,                 &
+        kgv, phase, conj, inds, kmax, indv, ek,                          &
+        hdiag, hamsm,                                                    &
+        mxdgve, mxdnst, mxdcub, mxddim, mxdsml)
+  endif
+
 ! the call to "old" hamilt_kb can be replaced to the call
 ! to the new alternative hamilt_kb_alt
 
@@ -197,6 +212,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
       NDUM, mtxd, mtxds,                                                 &
       psi, hpsi, ei,                                                     &
       ekpg, isort, vscr, kmscr,                                          &
+      lgks, rkpt, adot, vtaumsh,                                         &
       ng, kgv,                                                           &
       anlga, xnlkb, nanl,                                                &
       hamsm, hdiag,                                                      &

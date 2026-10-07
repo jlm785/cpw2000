@@ -14,8 +14,8 @@
 !>  Loop step of the iterative diagonalization
 !>
 !>  \author       Jose Luis Martins
-!>  \version      4.99
-!>  \date         1990. 13 February 2921.
+!>  \version      5.13
+!>  \date         1990. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
@@ -25,6 +25,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
     psi, hpsi, bas, hbas,                                                &
     eg, lconv, lexit,                                                    &
     ekpg, isort, vscr, kmscr,                                            &
+    lgks, rkpt, adot, vtaumsh,                                           &
     ng, kgv,                                                             &
     anlga, xnlkb, nanl,                                                  &
     hdiag,                                                               &
@@ -36,6 +37,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
 ! Modified, documentation, January 2020. JLM
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Indentation, diag_rq, 17 March 2024. JLM
+! Modified, generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. claude
 
   implicit none
 
@@ -63,6 +65,10 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
 
   real(REAL64), intent(in)           ::  hdiag(mxddim)                   !<  hamiltonian diagonal
 
@@ -514,10 +520,10 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
       endif
 
 
-      call hk_psi_c16(mtxd, ntst-ired-nconv,                             &
+      call hk_psi_driver_c16(lgks, mtxd, ntst-ired-nconv,                &
           bas(1,nexact+nconv+1), hbas(1,nexact+nconv+1), lnewanl,        &
-          ng, kgv,                                                       &
-          ekpg, isort, vscr, kmscr,                                      &
+          ng, kgv, rkpt, adot,                                           &
+          ekpg, isort, vscr, vtaumsh, kmscr,                             &
           anlga, xnlkb, nanl,                                            &
           mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 
@@ -544,10 +550,10 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
 
     lortho = .FALSE.
 
-    call hk_psi_c16(mtxd, niter-nconv,                                   &
+    call hk_psi_driver_c16(lgks, mtxd, niter-nconv,                      &
         psi(1,nconv+1), hpsi(1,nconv+1), lnewanl,                        &
-        ng, kgv,                                                         &
-        ekpg, isort, vscr, kmscr,                                        &
+        ng, kgv, rkpt, adot,                                             &
+        ekpg, isort, vscr, vtaumsh, kmscr,                               &
         anlga, xnlkb, nanl,                                              &
         mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 

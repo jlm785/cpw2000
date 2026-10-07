@@ -15,8 +15,8 @@
 !>  for a given k-vector and direction with finite differences
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.11
-!>  \date         7 November 2023. 25 March 2024
+!>  \version      5.13
+!>  \date         7 November 2023. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
@@ -37,6 +37,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! Modified, spin_perturb to spin_improve. 5 March 2024. JLM
 ! Modified, added full diagonalization, imethod. 25 March 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -126,6 +127,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
 
   real(REAL64), allocatable          ::  ei_l(:,:)                       !  eigenvalue no. i. in the line (hartree)
   real(REAL64), allocatable          ::  rk_l(:,:)                       !  k-point on the line
@@ -184,6 +186,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   real(REAL64), parameter     ::  TOL = 1.0E-8_REAL64
   real(REAL64), parameter     ::  EPS = 1.0E-12_REAL64
 
@@ -257,6 +260,8 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtau(mxdnst))
+  vtau(:) = cmplx(0.0_REAL64,0.0_REAL64,REAL64)
 
   ipr = 1
 
@@ -307,6 +312,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei_l(:,n),                                            &
         vscr, kmscr,                                                     &
+        .FALSE., vtau,                                                   &
         latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
@@ -475,6 +481,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   endif
 
   deallocate(vscr)
+  deallocate(vtau)
 
   deallocate(ei)
   deallocate(hdiag)

@@ -15,14 +15,14 @@
 !>  pseudopotential in the G-vectors. Scales by vcell
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         October 1994, March 5 2025.
+!>  \version      5.13
+!>  \date         October 1994, 6 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine v_first(ns, ek, sfact, ealpha, ealraw,                      &
       nq, delq, vloc, dcor, dval, tauc_q,                                &
       ntype, adot,                                                       &
-      vion, denc, dens, tauc_g, vql, dvql, dnc, ddc,                     &
+      vion, denc, dens, tauc_g, vql, dvql, dnc, ddc, tnc, dtauc,         &
       mxdtyp, mxdlqp, mxdnst)
 
 ! written october 94. jlm
@@ -33,6 +33,7 @@
 ! Modified 25 October 2015. f90. removed vkb.  JLM
 ! Modified documentation, January 2020. JLM
 ! Modified, indentation, dens(1)=0. JLM
+! tnc and dtauc, core tau for the generalized Kohn-Sham meta-GGA forces and stress. 6 October 2026. JLM+claude
 
   implicit none
 
@@ -74,6 +75,8 @@
   real(REAL64), intent(out)          ::  dnc(mxdtyp,mxdnst)              !<  core charge for atom type i and prototype g-vector in star j
   complex(REAL64), intent(out)       ::  dvql(mxdnst)                    !<  derivative of the local pseudopotential for the prototype g-vector in star j
   complex(REAL64), intent(out)       ::  ddc(mxdnst)                     !<  derivative of the core charge for the prototype g-vector in star j
+  real(REAL64), intent(out)          ::  tnc(mxdtyp,mxdnst)              !<  core kinetic energy density for atom type i and prototype g-vector in star j
+  complex(REAL64), intent(out)       ::  dtauc(mxdnst)                   !<  derivative of the core kinetic energy density for the prototype g-vector in star j
 
 ! local variables
 
@@ -82,7 +85,7 @@
   real(REAL64)           ::  vcell, bdot(3,3)
   real(REAL64)           ::  gmax, glmax, delql
   real(REAL64)           ::  qj, xn, q2vn, q2vp, q2vm
-  real(REAL64)           ::  vqj, dvqj, dcj, ddcj, dvj, dtj
+  real(REAL64)           ::  vqj, dvqj, dcj, ddcj, dvj, dtj, ddtj
 
 ! constants
 
@@ -110,6 +113,7 @@
     dens(i) = C_ZERO
     dvql(i) = C_ZERO
     ddc(i) = C_ZERO
+    dtauc(i) = C_ZERO
     tauc_g(i) = C_ZERO
   enddo
 
@@ -209,13 +213,16 @@
       endif
     enddo
 
-!   compute core kinetic energy density tau
+!   compute core kinetic energy density tau and its derivative
+!   (as for the core charge density)
 
     do j = 1,ns
+      tnc(nt,j) = ZERO
 
 !     interpolate vda
 
-      xn = sqrt(2*ek(j))/delql
+      qj = sqrt(2*ek(j))
+      xn = qj/delql
       n = int(xn + UM/2)
       if (n < nql) then
 
@@ -225,12 +232,24 @@
             + (UM/2) * (tauc_q(n+1,nt)*(UM+xn)                           &
             - tauc_q(n-1,nt)*(UM-xn)) * xn
 
-!       sum up the charge density
+!       sum up the kinetic energy density
 
+        tnc(nt,j) = dtj
         tauc_g(j) = tauc_g(j) + dtj*sfact(nt,j)
+
+        if (j /= 1) then
+          ddtj = -2*tauc_q(n,nt) * xn                                    &
+               + tauc_q(n+1,nt)*((UM/2)+xn)                              &
+               - tauc_q(n-1,nt)*((UM/2)-xn)
+          ddtj = ddtj/(2*delql*qj)
+          dtauc(j) = dtauc(j) + ddtj*sfact(nt,j)
+        endif
 
       endif
     enddo
+    ddtj = (tauc_q(1,nt)-tauc_q(0,nt))  / (delql*delql)
+    ddtj = ddtj * real(sfact(nt,1),REAL64)
+    dtauc(1) = dtauc(1) + cmplx(ddtj,ZERO,REAL64)
 
 !   end loop over atomic types
 

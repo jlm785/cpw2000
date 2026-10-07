@@ -14,12 +14,14 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         Before February 2020. 15 April 2026.
+!>  \date         Before February 2020. 6 October 2026.
 !>  \copyright    GNU Public License v2
 
 ! Written before February 2020.
 ! Indentation, core kinetic energy density, 15 April 2026. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+! pseudo_%tnc, pseudo_%dtauc. 6 October 2026. JLM+claude
 
   subroutine cpw_gspace(iprglob, kmscr,                                  &
      dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
@@ -76,6 +78,8 @@
     allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
     allocate(pseudo_%dvql(dims_%mxdnst))
     allocate(pseudo_%ddc(dims_%mxdnst))
+    allocate(pseudo_%tnc(dims_%mxdtyp,dims_%mxdnst))
+    allocate(pseudo_%dtauc(dims_%mxdnst))
 
     allocate(chdens_%den(dims_%mxdnst))
     allocate(chdens_%denc(dims_%mxdnst))
@@ -87,6 +91,7 @@
     allocate(vcomp_%vion(dims_%mxdnst))
     allocate(vcomp_%vhar(dims_%mxdnst))
     allocate(vcomp_%vxc(dims_%mxdnst))
+    allocate(vcomp_%vtau(dims_%mxdnst))
     allocate(vcomp_%veff(dims_%mxdnst))
 
   else
@@ -132,6 +137,8 @@
       deallocate(pseudo_%dnc)
       deallocate(pseudo_%dvql)
       deallocate(pseudo_%ddc)
+      deallocate(pseudo_%tnc)
+      deallocate(pseudo_%dtauc)
 
       deallocate(chdens_%den)
       deallocate(chdens_%denc)
@@ -143,6 +150,7 @@
       deallocate(vcomp_%vion)
       deallocate(vcomp_%vhar)
       deallocate(vcomp_%vxc)
+      deallocate(vcomp_%vtau)
       deallocate(vcomp_%veff)
 
       allocate(recip_%mstar(dims_%mxdnst))
@@ -155,6 +163,8 @@
       allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
       allocate(pseudo_%dvql(dims_%mxdnst))
       allocate(pseudo_%ddc(dims_%mxdnst))
+      allocate(pseudo_%tnc(dims_%mxdtyp,dims_%mxdnst))
+      allocate(pseudo_%dtauc(dims_%mxdnst))
 
       allocate(chdens_%den(dims_%mxdnst))
       allocate(chdens_%denc(dims_%mxdnst))
@@ -166,6 +176,7 @@
       allocate(vcomp_%vion(dims_%mxdnst))
       allocate(vcomp_%vhar(dims_%mxdnst))
       allocate(vcomp_%vxc(dims_%mxdnst))
+      allocate(vcomp_%vtau(dims_%mxdnst))
       allocate(vcomp_%veff(dims_%mxdnst))
 
     endif
