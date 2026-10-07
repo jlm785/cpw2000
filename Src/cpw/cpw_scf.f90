@@ -61,7 +61,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Generalized Kohn-Sham meta-GGA: vtau in the hamiltonian, energy correction,
 ! linear mixing and convergence of vtau. 6 October 2026. JLM+claude
 ! Anderson mixing of vtau. 7 October 2026. JLM+claude
-! vtaumsh no longer passed to cpw_scf_loop_psi. 7 October 2026. JLM+claude
+! vcomp_%vtau is the input vtau of the hamiltonian (as veff), output in vtauout. 7 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -256,6 +256,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
   character(len=4)                   ::  tausrc                          !  source of tau
   complex(REAL64), allocatable       ::  vtauin(:)                       !  input d (rho eps_xc) / d tau used in the hamiltonian (stars)
+  complex(REAL64), allocatable       ::  vtauout(:)                      !  output d (rho eps_xc) / d tau from v_hartree_xc (stars)
   real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtauin in the FFT real space mesh
   complex(REAL64), allocatable       ::  tauold(:)                       !  tau of the wave-functions of the previous iteration (stars)
   real(REAL64)                       ::  etauv                           !  int vtauin * tau of the wave-functions
@@ -376,6 +377,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! vtau (zero in the first iteration, as tau is not yet known)
 
   allocate(vtauin(dims_%mxdnst))
+  allocate(vtauout(dims_%mxdnst))
   allocate(tauold(dims_%mxdnst))
   allocate(vtaumsh(mxdscr))
   allocate(vtaumem(dims_%mxdnst,4))
@@ -425,6 +427,12 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     do i=1,recip_%ns
       vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
+    enddo
+
+!   vtau used in the hamiltonian (as veff, saved for post-processing)
+
+    do i=1,recip_%ns
+      vcomp_%vtau(i) = vtauin(i)
     enddo
 
     ipr = 0
@@ -521,7 +529,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     call cpw_scf_loop_psi(iprglob, iter, minifail,                       &
         flgaopw, iguess,  lkpg,                                          &
         kmscr, vscr, ekl,                                                &
-        lgks, vtauin,                                                    &
+        lgks, vtauin, vtaumsh,                                           &
         dims_, crys_, flags_, pwexp_, recip_, acc_, strfac_,             &
         vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_, filename_, &
         mxdscr)
@@ -618,7 +626,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     call v_hartree_xc(ipr, xc_%author, xc_%tblaha, lkincalc,             &
         crys_%adot, kmscr, exc, strxc, rhovxc,                           &
-        vcomp_%vhar, vcomp_%vxc, vcomp_%vtau,                            &
+        vcomp_%vhar, vcomp_%vxc, vtauout,                                &
         chdens_%den, chdens_%denc, rholap, tau, dtau_dbdot,              &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &
         recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,               &
@@ -673,7 +681,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     if(lgks) then
       errvtau = ZERO
       do i = 1,recip_%ns
-        errvtau = max(errvtau, abs(vcomp_%vtau(i) - vtauin(i)))
+        errvtau = max(errvtau, abs(vtauout(i) - vtauin(i)))
       enddo
       if(errvtau > epsconv) iconv = 0
       if(iprglob > 1) then
@@ -783,7 +791,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     if(lgks) then
       call mixer_anderson_c16(max(2,iter), IDTAU, BETATAU,               &
-          vcomp_%vtau, vtauin, vtaumem,                                  &
+          vtauout, vtauin, vtaumem,                                      &
           recip_%ns, recip_%mstar, dims_%mxdnst)
     endif
 
@@ -835,6 +843,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   deallocate(vscr)
   deallocate(vtauin)
+  deallocate(vtauout)
   deallocate(tauold)
   deallocate(vtaumsh)
   deallocate(vtaumem)

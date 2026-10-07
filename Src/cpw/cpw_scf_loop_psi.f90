@@ -21,14 +21,14 @@
 subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
       flgaopw,  iguess,  lkpg,                                           &
       kmscr, vscr, ekl,                                                  &
-      lgks, vtauin,                                                      &
+      lgks, vtauin, vtaumsh,                                             &
       dims_, crys_, flags_, pwexp_, recip_, acc_, strfac_,               &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_, filename_,   &
       mxdscr)
 
 ! extracted from cpw_scf (it was too long), 12 may 2026. JLM
 ! generalized Kohn-Sham meta-GGA, h_kb_dia_all_gks. 6 October 2026. JLM+claude
-! h_kb_dia_all_gks merged into h_kb_dia_all, vtaumsh removed. 7 October 2026. JLM+claude
+! h_kb_dia_all_gks merged into h_kb_dia_all. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -77,6 +77,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
   complex(REAL64), intent(in)        ::  vtauin(dims_%mxdnst)            !<  input d (rho eps_xc) / d tau for the prototype G-vector (only used if lgks)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  input d (rho eps_xc) / d tau in the FFT real space mesh (only used if lgks)
 
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
@@ -189,7 +190,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           qmod, ekpg, lkpg,                                              &
           psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                       &
           vscr, kmscr,                                                   &
-          lgks, vtauin,                                                  &
+          lgks, vtauin, vtaumsh,                                         &
           atorb_%latorb, atorb_%norbat, atorb_%nqwf,                     &
           atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
@@ -229,7 +230,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           qmod, ekpg, lkpg,                                              &
           psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                       &
           vscr, kmscr,                                                   &
-          lgks, vtauin,                                                  &
+          lgks, vtauin, vtaumsh,                                         &
           atorb_%latorb, atorb_%norbat, atorb_%nqwf,                     &
           atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &

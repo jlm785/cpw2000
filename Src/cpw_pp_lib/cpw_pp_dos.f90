@@ -15,17 +15,18 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 January 2022, 3 October 2026.
+!>  \date         20 January 2022, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_dos(ioreplay,                                          &
            dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,       &
-           pwexp_, strfac_,  vcomp_,                                     &
+           pwexp_, strfac_,  vcomp_, lgks,                               &
            title, subtitle, epspsi, icmax)
 
 ! Breakup of cpw_pp_band_dos_opt. 20 Janeiro 2022. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks and vtau passed. 7 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -45,6 +46,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
   type(pwexp_t)                           ::  pwexp_                     !<  plane-wave expansion choices
   type(strfac_t)                          ::  strfac_                    !<  structure factors
   type(vcomp_t)                           ::  vcomp_                     !<  local potential contributions
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
 
  ! information about the calculation
 
@@ -166,7 +168,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
         recip_%ns, recip_%inds, recip_%kmax,                             &
         recip_%indv, recip_%ek,                                          &
         strfac_%sfact, strfac_%icmplx,                                   &
-        vcomp_%veff,                                                     &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,              &
         atorb_%latorb, atorb_%norbat,atorb_%nqwf,atorb_%delqwf,          &
         atorb_%wvfao,atorb_%lorb,                                        &
@@ -284,7 +286,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
         recip_%ns, recip_%inds, recip_%kmax,                             &
         recip_%indv, recip_%ek,                                          &
         strfac_%sfact, strfac_%icmplx,                                   &
-        vcomp_%veff,                                                     &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,              &
         atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
         atorb_%wvfao,atorb_%lorb,                                        &

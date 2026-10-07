@@ -12,11 +12,15 @@
 !------------------------------------------------------------!
 
 !>  This subroutines reads the file "filename",  (default PW_RHO_V.DAT),
-!>  data from a self-consistent calculation
+!>  data from a self-consistent calculation.
+!>  Files written before October 2026 are recognized by the shorter
+!>  first record (no mxdset).  They have one atomic basis set, no core
+!>  kinetic energy density and no vtau (set to zero, with a warning
+!>  for the generalized Kohn-Sham meta-GGA).
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         May 16, 2014, 20 February 2025.
+!>  \version      5.13
+!>  \date         May 16, 2014, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
@@ -26,12 +30,12 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
-         veff, den, denbond,                                             &
+         veff, vtau, den, denbond,                                       &
          irel, icore, icorr, iray, psdtitle,                             &
          ealraw, zv, ztot,                                               &
-         nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                    &
-         norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
-         mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao)
+         nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,            &
+         n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,             &
+         mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao, mxdset)
 
 ! Written January 12, 2014. JLM
 ! Modified (split) May 27, 2014. JLM
@@ -44,6 +48,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Modified, size of author, 13 January 2024.
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! vtau, several atomic basis sets, core tau, old files recognized. 7 October 2026. JLM+claude
 
 
   implicit none
@@ -58,6 +63,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   character(len=*), intent(in)       ::  filename                        !<  name of file
   integer, intent(in)                ::  io                              !<  number of tape to which the pseudo is added.
@@ -106,6 +112,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   integer, intent(out)               ::  mstar(mxdnst)                   !<  number of g-vectors in the j-th star
 
   complex(REAL64), intent(out)       ::  veff(mxdnst)                    !<  effective potential (local+Hartree+Xc) for the prototype g-vector in star j
+  complex(REAL64), intent(out)       ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau (generalized Kohn-Sham meta-GGA, zero otherwise) for the prototype g-vector in star j
   complex(REAL64), intent(out)       ::  den(mxdnst)                     !<  valence charge density for the prototype g-vector in star j
   complex(REAL64), intent(out)       ::  denbond(mxdnst)                 !<  bonding charge density for the prototype g-vector in star j
 
@@ -123,14 +130,29 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
   real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
-  integer, intent(out)               ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  real(REAL64), intent(out)          ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density  (hartree/bohr^3)
+  integer, intent(out)               ::  n_bsets(mxdtyp)                 !<  number of basis sets for each atom k
+  integer, intent(out)               ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(out)               ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(out)          ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(out)               ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
+  integer, intent(out)               ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (unnormalized to vcell)
   logical, intent(out)               ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   real(REAL64), intent(out)          ::  zv(mxdtyp)                      !<  valence of atom with type i
   real(REAL64), intent(out)          ::  ztot                            !<  total charge density (electrons/cell)
+
+! local variables
+
+  logical             ::  lnew                                           !  file written after October 2026
+  integer             ::  i1, i2, i3, i4, i5, i6, i7
+  integer             ::  ioerr
+  character(len=4)    ::  xcbase                                         !  meta-GGA functional used in xc_mgga
+  character(len=4)    ::  tausrc                                         !  source of tau, 'PSI ' for generalized Kohn-Sham
+
+! constants
+
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counters
 
@@ -140,6 +162,12 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 
 
   open(unit=io,file=trim(filename),status='old',form='UNFORMATTED')
+
+! newer files have mxdset in the first record
+
+  read(io,iostat=ioerr) i1, i2, i3, i4, i5, i6, i7
+  lnew = ioerr == 0
+  rewind(io)
 
 ! reads the first part of the file up to the geometry
 
@@ -163,14 +191,33 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   read(io) (denbond(i),i=1,ns)
   read(io) (veff(i),i=1,ns)
 
+! vtau for the generalized Kohn-Sham meta-GGA
+
+  call xc_author_tau(author, xcbase, tausrc)
+
+  if(tausrc == 'PSI ' .and. lnew) then
+    read(io) (vtau(i),i=1,ns)
+  else
+    do i = 1,ns
+      vtau(i) = C_ZERO
+    enddo
+    if(tausrc == 'PSI ') then
+      write(6,*)
+      write(6,'("   WARNING in pw_rho_v_in:  file ",a," is in the old ", &
+         &      "format, vtau of the ",a4," meta-GGA set to zero")')     &
+             trim(filename), author
+      write(6,*)
+    endif
+  endif
+
 ! reads the pseudopotentials
 
-  call pw_rho_v_in_pseudo(io, ipr, ealraw, author,                       &
+  call pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,                 &
          irel, icore, icorr, iray, psdtitle,                             &
-         nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                    &
-         norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
+         nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,            &
+         n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,             &
          ntype, natom, nameat, zv, ztot,                                 &
-         mxdtyp, mxdlqp, mxdlao)
+         mxdtyp, mxdlqp, mxdlao, mxdset)
 
   close(unit = io)
 

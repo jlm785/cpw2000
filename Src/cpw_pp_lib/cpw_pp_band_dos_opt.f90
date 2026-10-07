@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 3 October 2026.
+!>  \date         December 18, 2013, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -46,6 +46,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Allows entering better value of Fermi level. 7 July 2025. JLM
 ! Rewrites the questions for the defaults in a separate subroutine. 2 March 2026. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -204,6 +205,9 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! information about the calculation
 
   character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau, 'PSI ' for generalized Kohn-Sham
+  logical                            ::  lgks                            !  generalized Kohn-Sham meta-GGA (vtau term)
 
   character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                           !  title for plots
@@ -276,6 +280,11 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
       dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,           &
       dims_in_, recip_in_, vcomp_in_)
 
+! generalized Kohn-Sham meta-GGA
+
+  call xc_author_tau(author, xcbase, tausrc)
+  lgks = tausrc == 'PSI '
+
 
   do i = 1,100
 
@@ -325,7 +334,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       call cpw_pp_band(ioreplay,                                         &
           dims_, flags_, crys_, recip_, pseudo_, atorb_, pwexp_,         &
-          strfac_,  vcomp_,                                              &
+          strfac_,  vcomp_, lgks,                                        &
           efermi, meta_cpw2000, title, subtitle,                         &
           epspsi, icmax)
 
@@ -333,7 +342,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       call cpw_pp_dos(ioreplay,                                          &
           dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,        &
-          pwexp_, strfac_,  vcomp_,                                      &
+          pwexp_, strfac_,  vcomp_, lgks,                                &
           title, subtitle, epspsi, icmax)
 
 
@@ -348,7 +357,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
           recip_%ns, recip_%inds, recip_%kmax,                           &
           recip_%indv, recip_%ek,                                        &
           strfac_%sfact, strfac_%icmplx,                                 &
-          vcomp_%veff,                                                   &
+          vcomp_%veff, lgks, vcomp_%vtau,                                &
           pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
           atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
           atorb_%wvfao,atorb_%lorb,                                      &
@@ -360,7 +369,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       call  cpw_pp_opt(ioreplay,                                         &
           dims_, flags_, crys_, recip_, spaceg_, pseudo_, atorb_,        &
-          pwexp_, strfac_,  vcomp_,                                      &
+          pwexp_, strfac_,  vcomp_, lgks,                                &
           title, subtitle,                                               &
           epspsi, icmax)
 
@@ -369,7 +378,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       call cpw_pp_mass(ioreplay,                                         &
            dims_, flags_, crys_, recip_, pseudo_, atorb_,                &
-           pwexp_, strfac_,  vcomp_,                                     &
+           pwexp_, strfac_,  vcomp_, lgks,                               &
            epspsi, icmax)
 
 
@@ -378,7 +387,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       call cpw_pp_qgeom(ioreplay,                                        &
            dims_, flags_, crys_, recip_, pseudo_, atorb_,                &
-           pwexp_, strfac_,  vcomp_,                                     &
+           pwexp_, strfac_,  vcomp_, lgks,                               &
            efermi, epspsi, icmax)
 
 

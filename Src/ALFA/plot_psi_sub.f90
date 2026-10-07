@@ -31,7 +31,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified, enter method for k-point. 22 October 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 ! Modified size_kmscr. 24 September 2026. JLM+claude
-! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks from author, vtau in the fft mesh. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -193,6 +193,9 @@ subroutine plot_psi_sub(ioreplay)
 ! information about the calculation
 
   character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau, 'PSI ' for generalized Kohn-Sham
+  logical                            ::  lgks                            !  generalized Kohn-Sham meta-GGA (vtau term)
 
   character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                           !  title for plots
@@ -202,7 +205,7 @@ subroutine plot_psi_sub(ioreplay)
 ! allocatable arrays
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
-  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
   real(REAL64), allocatable          ::  ei(:)                           !  eigenvalue no. i. (hartree)
   real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
   integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
@@ -235,6 +238,7 @@ subroutine plot_psi_sub(ioreplay)
   integer           ::  mtxd
 
   real(REAL64)           ::  vmax, vmin                                  !  maximum and minimum values of vscr
+  real(REAL64)           ::  vtmax, vtmin                                !  maximum and minimum values of vtau
 
   character(len=4)       ::  diag_type                                   !  selects diagonalization, 'pw  ','ao  ','aojc'
   integer                ::  nocc
@@ -262,7 +266,6 @@ subroutine plot_psi_sub(ioreplay)
 ! constants
 
   real(REAL64), parameter     :: ZERO = 0.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
 ! counter
 
@@ -310,8 +313,8 @@ subroutine plot_psi_sub(ioreplay)
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
-  allocate(vtau(dims_%mxdnst))
-  vtau(:) = C_ZERO
+  allocate(vtaumsh(mxdscr))
+  vtaumsh(:) = ZERO
 
   ipr = 1
 
@@ -319,6 +322,18 @@ subroutine plot_psi_sub(ioreplay)
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
       recip_%ns, recip_%inds,                                            &
       mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
+
+  call xc_author_tau(author, xcbase, tausrc)
+  lgks = tausrc == 'PSI '
+
+  if(lgks) then
+    call pot_local(ipr, vtaumsh, vtmax, vtmin, vcomp_%vtau, kmscr,       &
+        recip_%kmax, recip_%ng, recip_%kgv, recip_%phase, recip_%conj,   &
+        recip_%ns, recip_%inds,                                          &
+        mxdscr, dims_%mxdgve, dims_%mxdnst)
+  endif
 
 
 
@@ -383,7 +398,7 @@ subroutine plot_psi_sub(ioreplay)
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
-        .FALSE., vtau,                                                   &
+        lgks, vcomp_%vtau, vtaumsh,                                      &
         atorb_%latorb, atorb_%norbat, atorb_%nqwf,                       &
         atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                        &
         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
@@ -477,7 +492,7 @@ subroutine plot_psi_sub(ioreplay)
   enddo
 
   deallocate(vscr)
-  deallocate(vtau)
+  deallocate(vtaumsh)
 
   return
 

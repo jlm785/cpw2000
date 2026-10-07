@@ -28,7 +28,7 @@
       ng, kgv, phase, conj,                                              &
       ns, inds, kmax, indv, ek,                                          &
       sfact, icmplx,                                                     &
-      veff,                                                              &
+      veff, lgks, vtau,                                                  &
       nqnl, delqnl, vkb, nkb,                                            &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
@@ -53,7 +53,7 @@
 ! Modified, rk in out_band_eref, 13 August 2025. JLM
 ! Increase dimension of label. 17 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
-! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -101,6 +101,8 @@
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (local+Hartree+XC) for the prototype g-vector in star j
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype g-vector in star j (only used if lgks)
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the interpolation
@@ -141,7 +143,7 @@
   complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
-  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
 
@@ -163,6 +165,7 @@
   integer           ::  idshift        !  shift of the fft mesh, used /= 0 only in highly banked memory.
 
   real(REAL64)      ::  vmax, vmin     !  maximum and minimum values of vscr
+  real(REAL64)      ::  vtmax, vtmin                                     !  maximum and minimum values of vtau
 
   real(REAL64)      ::  eref           !  reference energy for plot
   integer           ::  nocc           !  number of occupied states (different color) or recycled
@@ -180,7 +183,6 @@
 ! constants
 
   real(REAL64), parameter     :: ZERO = 0.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
   real(REAL64), parameter  :: XSC = 1.000_REAL64                     !  criteria for reduced vector size
 !  real(REAL64), parameter  :: XSC = 0.99_REAL64                     !  Use this value or even smaller if you have problems with memory
@@ -199,14 +201,22 @@
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
 
   allocate(vscr(mxdscr))
-  allocate(vtau(mxdnst))
-  vtau(:) = C_ZERO
+  allocate(vtaumsh(mxdscr))
+  vtaumsh(:) = ZERO
 
   ipr = 1
 
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
+
+! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
+
+  if(lgks) then
+    call pot_local(ipr, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,        &
+        ng, kgv, phase, conj, ns, inds,                                  &
+        mxdscr, mxdgve, mxdnst)
+  endif
 
 
   iotape = 13
@@ -293,7 +303,7 @@
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
-        .FALSE., vtau,                                                   &
+        lgks, vtau, vtaumsh,                                             &
         latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
@@ -379,7 +389,7 @@
   deallocate(xklab)
 
   deallocate(vscr)
-  deallocate(vtau)
+  deallocate(vtaumsh)
 
   deallocate(ei)
   deallocate(hdiag)

@@ -26,7 +26,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
     ng, kgv, phase, conj,                                                &
     ns, inds, kmax, indv, ek,                                            &
     sfact, icmplx,                                                       &
-    veff,                                                                &
+    veff, lgks, vtau,                                                    &
     nqnl, delqnl, vkb, nkb,                                              &
     latorb, norbat, nqwf, delqwf, wvfao, lorb,                           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
@@ -39,7 +39,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
-! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -85,6 +85,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (local+Hartree+XC) for the prototype g-vector in star j
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype g-vector in star j (only used if lgks)
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the interpolation
@@ -112,7 +114,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
 
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
-  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
 
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
@@ -147,6 +149,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   integer           ::  idshift                                          !  shift of the fft mesh, used /= 0 only in highly banked memory.
 
   real(REAL64)      ::  vmax, vmin                                       !  maximum and minimum values of vscr
+  real(REAL64)      ::  vtmax, vtmin                                     !  maximum and minimum values of vtau
 
   integer           ::  nrka
   character(len=5)  ::  labelk
@@ -177,7 +180,6 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64 , UM = 1.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   real(REAL64), parameter     ::  EPS = 1.0E-14_REAL64
   real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
@@ -195,14 +197,35 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
 
   allocate(vscr(mxdscr))
-  allocate(vtau(mxdnst))
-  vtau(:) = C_ZERO
+  allocate(vtaumsh(mxdscr))
+  vtaumsh(:) = ZERO
 
   ipr = 1
 
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
+
+! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
+
+  if(lgks) then
+    call pot_local(ipr, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,        &
+        ng, kgv, phase, conj, ns, inds,                                  &
+        mxdscr, mxdgve, mxdnst)
+  endif
+
+  if(lgks) then
+    write(6,*)
+    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
+        'out_mass_kdotp'
+    write(6,'("   does not yet include the vtau term of the ",           &
+       &      "generalized")')
+    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
+       &      "k.p,")')
+    write(6,'("   effective masses and Berry quantities are ",           &
+       &      "approximate.")')
+    write(6,*)
+  endif
 
   write(6,*)
   write(6,'("  Enter initial number of bands (greater than ",i4,")")')  &
@@ -290,7 +313,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
       mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                           &
       psi, hpsi, ei,                                                     &
       vscr, kmscr,                                                       &
-      .FALSE., vtau,                                                     &
+      lgks, vtau, vtaumsh,                                               &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
@@ -517,7 +540,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   endif
 
   deallocate(vscr)
-  deallocate(vtau)
+  deallocate(vtaumsh)
 
   deallocate(ei)
   deallocate(hdiag)

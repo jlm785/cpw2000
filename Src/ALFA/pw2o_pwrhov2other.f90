@@ -15,8 +15,8 @@
 !>  writes the input file for pwSCF (quantum espresso) and abinit
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         12 October 2018. 25 February 2025
+!>  \version      5.13
+!>  \date         12 October 2018. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw2o_pwrhov2other(ioreplay)
@@ -25,6 +25,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
 ! Modernized, February 12, 2021. JLM
 ! Removed unused variables, 14 November 2024. JLM
 ! Converted to a subroutine called by cpw_post_process. 25 February 2025. JLM
+! vtau, several atomic basis sets and core tau from pw_rho_v_in. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -71,11 +72,13 @@ subroutine pw2o_pwrhov2other(ioreplay)
   real(REAL64), allocatable          ::  vloc  (:,:)                     !  local pseudopotential for atom k (hartree)
   real(REAL64), allocatable          ::  dcor(:,:)                       !  core charge density for atom k
   real(REAL64), allocatable          ::  dval (:,:)                      !  valence charge density for atom k
-  integer, allocatable               ::  norbat(:)                       !  number of atomic orbitals for atom k
+  real(REAL64), allocatable          ::  tauc_q(:,:)                     !  partial core kinetic energy density  (hartree/bohr^3)
+  integer, allocatable               ::  n_bsets(:)                      !  number of basis sets for each atom k
+  integer, allocatable               ::  norbat(:,:)                     !  number of atomic orbitals for basis set nb and atom k
   integer, allocatable               ::  nqwf(:)                         !  number of points for wavefunction interpolation for atom k
   real(REAL64), allocatable          ::  delqwf(:)                       !  step used in the wavefunction interpolation for atom k
-  integer, allocatable               ::  lorb(:,:)                       !  angular momentum of orbital n of atom k
-  real(REAL64), allocatable          ::  wvfao(:,:,:)                    !  wavefunction for atom k, ang. mom. l
+  integer, allocatable               ::  lorb(:,:,:)                     !  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), allocatable          ::  wvfao(:,:,:,:)                  !  wavefunction for atom k, basis nb, ang. mom. l
   logical                            ::  latorb                          !  indicates if all atoms have information about atomic orbitals
   real(REAL64), allocatable          ::  zv(:)                           !  valence of atom with type i
   real(REAL64)                       ::  ztot                            !  total charge density (electrons/cell)
@@ -96,6 +99,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
   integer                            ::  nsin                            !  input value of ns
   integer, allocatable               ::  mstarin(:)                      !  input values of kgv
   complex(REAL64), allocatable       ::  veffin(:)                       !  input effective potential (local+Hartree+Xc) for the prototype g-vector
+  complex(REAL64), allocatable       ::  vtauin(:)                       !  input d (rho eps_xc) / d tau (generalized Kohn-Sham meta-GGA) for the prototype g-vector
   complex(REAL64), allocatable       ::  denin(:)                        !  input charge density for the prototype g-vector
   complex(REAL64), allocatable       ::  denbondin(:)                    !  input bonding charge density for the prototype g-vector
 
@@ -116,6 +120,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
 
   integer                            ::  mxdlqp                          !  array dimension for local potential
   integer                            ::  mxdlao                          !  array dimension of orbital per atom type
+  integer                            ::  mxdset                          !  array dimension for number of atomic basis sets
 
 ! other variables
 
@@ -144,7 +149,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
   fileband = 'BAND_LINES.DAT'
 
   call pw_rho_v_in_size(filename, iotape,                                &
-         mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao)
+         mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao, mxdset)
 
   allocate(natom(mxdtyp))
   allocate(nameat(mxdtyp))
@@ -157,6 +162,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
   allocate(denin(mxdnstin))
   allocate(denbondin(mxdnstin))
   allocate(veffin(mxdnstin))
+  allocate(vtauin(mxdnstin))
 
 
   allocate(nqnl(mxdtyp))
@@ -166,11 +172,13 @@ subroutine pw2o_pwrhov2other(ioreplay)
   allocate(vloc(-1:mxdlqp,mxdtyp))
   allocate(dcor(-1:mxdlqp,mxdtyp))
   allocate(dval(-1:mxdlqp,mxdtyp))
-  allocate(norbat(mxdtyp))
+  allocate(tauc_q(-1:mxdlqp,mxdtyp))
+  allocate(n_bsets(mxdtyp))
+  allocate(norbat(mxdset,mxdtyp))
   allocate(nqwf(mxdtyp))
   allocate(delqwf(mxdtyp))
-  allocate(lorb(mxdlao,mxdtyp))
-  allocate(wvfao(-2:mxdlqp,mxdlao,mxdtyp))
+  allocate(lorb(mxdlao,mxdset,mxdtyp))
+  allocate(wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp))
   allocate(zv(mxdtyp))
 
   allocate(iray(mxdtyp))
@@ -190,12 +198,12 @@ subroutine pw2o_pwrhov2other(ioreplay)
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ngin, kmaxin, kgvin, phasein, conjin, nsin, mstarin,            &
-         veffin, denin, denbondin,                                       &
+         veffin, vtauin, denin, denbondin,                               &
          irel, icore, icorr, iray, psdtitle,                             &
          ealraw, zv, ztot,                                               &
-         nqnl, delqnl, vkb, nkb, vloc, dcor, dval,                       &
-         norbat, nqwf, delqwf, wvfao, lorb, latorb,                      &
-         mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao)
+         nqnl, delqnl, vkb, nkb, vloc, dcor, dval, tauc_q,               &
+         n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,             &
+         mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao, mxdset)
 
   emax = emaxin
 
@@ -308,6 +316,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
   deallocate(denin)
   deallocate(denbondin)
   deallocate(veffin)
+  deallocate(vtauin)
 
 
   deallocate(nqnl)
@@ -317,6 +326,8 @@ subroutine pw2o_pwrhov2other(ioreplay)
   deallocate(vloc)
   deallocate(dcor)
   deallocate(dval)
+  deallocate(tauc_q)
+  deallocate(n_bsets)
   deallocate(norbat)
   deallocate(nqwf)
   deallocate(delqwf)

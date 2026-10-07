@@ -30,6 +30,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
       veff,                                                              &
       nqnl, delqnl, vkb, nkb,                                            &
       vscr, kmscr,                                                       &
+      lgks, vtau, vtaumsh,                                               &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
@@ -37,7 +38,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 
 ! Extracted from out_dos_glk, 23 September 2020. JLM
 ! Name change, indentation. 12 November 2023.
-! Modified, h_kb_dia_all with generalized Kohn-Sham meta-GGA arguments (lgks = .FALSE.). 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks, vtau, vtaumsh arguments. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -98,6 +99,9 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   KB pseudo.  normalization for atom k, ang. mom. l
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh and fft mesh size
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype g-vector in star j (only used if lgks)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
@@ -122,7 +126,6 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   complex(REAL64), allocatable       ::  psi(:,:)                        !  component j of eigenvector i (guess on input)
   complex(REAL64), allocatable       ::  hpsi(:,:)                       !  H | psi>
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
-  complex(REAL64), allocatable       ::  vtau(:)                         !  d (rho eps_xc) / d tau for the prototype G-vector (meta-GGA, not yet used)
 
 ! local variables
 
@@ -142,8 +145,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 
 ! parameters
 
-  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  real(REAL64), parameter            ::  UM = 1.0_REAL64
 
 ! counters
 
@@ -161,8 +163,6 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   allocate(psi(mxddim,mxdbnd))
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
-  allocate(vtau(mxdnst))
-  vtau(:) = C_ZERO
 
   iguess = 0
 
@@ -186,7 +186,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
-        .FALSE., vtau,                                                   &
+        lgks, vtau, vtaumsh,                                             &
         latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
@@ -215,7 +215,6 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   deallocate(psi)
   deallocate(hpsi)
   deallocate(ekpsi)
-  deallocate(vtau)
 
   return
 

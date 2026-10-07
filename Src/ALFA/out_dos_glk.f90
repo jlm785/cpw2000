@@ -15,8 +15,8 @@
 !>  for later processing.   Uses the GLK interpolation
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
-!>  \version      5.09
-!>  \date         8 may 2004, 11 November 2023.
+!>  \version      5.13
+!>  \date         8 may 2004, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
@@ -27,7 +27,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
       ng, kgv, phase, conj,                                              &
       ns, inds, kmax, indv, ek,                                          &
       sfact, icmplx,                                                     &
-      veff,                                                              &
+      veff, lgks, vtau,                                                  &
       nqnl, delqnl, vkb, nkb,                                            &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
@@ -45,6 +45,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
 ! Modified, vmax, vmin, 27 November 2020. JLM
 ! Modified, new name out_glk_prepare out_glk_interp, 12 November 2023. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 
 
 ! The reference states are calculated in an inefficient way....
@@ -100,6 +101,8 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (local+Hartree+XC) for the prototype g-vector in star j
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype g-vector in star j (only used if lgks)
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the interpolation
@@ -133,6 +136,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   real(REAL64), allocatable          ::  ekpsi(:)                        !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  ekpsi_so(:)                     !  kinetic energy of eigenvector i. (hartree)
   real(REAL64), allocatable          ::  vscr(:)                         !  screened potential in the fft real space mesh
+  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
 
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
   complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
@@ -163,6 +167,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   integer                            ::  idshift                         !  shift of the fft mesh, used /= 0 only in highly banked memory.
 
   real(REAL64)                       ::  vmax, vmin                      !  maximum and minimum values of vscr
+  real(REAL64)                       ::  vtmax, vtmin                    !  maximum and minimum values of vtau
 
   integer                            ::  irk,nrka
   character(len=5)                   ::  labelk
@@ -250,12 +255,22 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
   allocate(vscr(mxdscr))
+  allocate(vtaumsh(mxdscr))
+  vtaumsh(:) = ZERO
 
   ipr = 1
 
   call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
+
+! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
+
+  if(lgks) then
+    call pot_local(ipr, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,        &
+    ng, kgv, phase, conj, ns, inds,                                      &
+    mxdscr, mxdgve, mxdnst)
+  endif
 
   ipr = 2
 
@@ -447,6 +462,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
       veff,                                                              &
       nqnl, delqnl, vkb, nkb,                                            &
       vscr, kmscr,                                                       &
+      lgks, vtau, vtaumsh,                                               &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
@@ -547,6 +563,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
           ntype, natom, rat, adot,                                       &
           nqnl, delqnl, vkb, nkb,                                        &
           vscr, kmscr,                                                   &
+          lgks, vtaumsh,                                                 &
           mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
 
 
@@ -607,6 +624,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   write(6,*)
 
   deallocate(vscr)
+  deallocate(vtaumsh)
 
   deallocate(hdiag)
   deallocate(isort)

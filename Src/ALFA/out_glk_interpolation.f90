@@ -16,8 +16,8 @@
 !>  are the points used in interpolation
 !>
 !>  \author       José Luís Martins
-!>  \version      5.12
-!>  \date         23 August 2020. 2 November 2025.
+!>  \version      5.13
+!>  \date         23 August 2020. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
     ntype, natom, rat, adot,                                             &
     nqnl, delqnl, vkb, nkb,                                              &
     vscr, kmscr,                                                         &
+    lgks, vtaumsh,                                                       &
     mxdtyp, mxdatm, mxddim, mxdlqp, mxdbnd, mxdgve, mxdscr)
 
 ! Written 23 August 2020. JLM
@@ -36,6 +37,7 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
 ! Modified, psi_convert. 2 November 2025. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. JLM+claude
 
 
   implicit none
@@ -86,6 +88,8 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<  KB pseudo.  normalization for atom k, ang. mom. l
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
 ! output
@@ -267,9 +271,9 @@ subroutine out_glk_interpolation(nrk_int, emax, neig, xsvd, csvd,        &
 
   lnewanl = .TRUE.
 
-  call hk_psi_c16(mtxd, nglk, psi_svd, hpsi_svd, lnewanl,                &
-      ng,  kgv,                                                          &
-      ekpg, isort, vscr, kmscr,                                          &
+  call hk_psi_driver_c16(lgks, mtxd, nglk, psi_svd, hpsi_svd, lnewanl,   &
+      ng,  kgv, rkpt, adot,                                              &
+      ekpg, isort, vscr, vtaumsh, kmscr,                                 &
       anlga, xnlkb, nanl,                                                &
       mxddim, mxdbnd*nrk_int, mxdanl, mxdgve, mxdscr)
 

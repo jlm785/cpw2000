@@ -13,18 +13,20 @@
 
 !>  Reads the fourier pseudo potentials and atomic orbitals
 !>  atomic core and valence charge densities tape io.
+!>  Files written before October 2026 (lnew = .FALSE.) have only one
+!>  atomic basis set and no core kinetic energy density.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         1980s, 20 February 2025.
+!>  \version      5.13
+!>  \date         1980s, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
+subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
      irel, icore, icorr, iray, psdtitle,                                 &
-     nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval,                        &
-     norbat, nqwf, delqwf, wvfao, lorb, latorb,                          &
+     nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,                &
+     n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,                 &
      ntype, natom, nameat, zv, ztot,                                     &
-     mxdtyp, mxdlqp, mxdlao)
+     mxdtyp, mxdlqp, mxdlao, mxdset)
 
 ! UNFORMATTED VERSION "PW_RHO_V.DAT"
 
@@ -46,6 +48,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 ! Modified, size of author, 13 January 2024. JLM
 ! Modified, avoid bug in ifx compiler. 25 February 2024. JLM
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
+! Modified, several basis sets, core tau, old format with lnew. 7 October 2026. JLM+claude
 
 
   implicit none
@@ -57,6 +60,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   integer, intent(in)                ::  io                              !<  number of tape to which the pseudo is added.
 
@@ -65,6 +69,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   character(len=*), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
+  logical, intent(in)                ::  lnew                            !<  file written after October 2026 (several basis sets, core tau)
 
 ! output
 
@@ -76,11 +81,13 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
   real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
-  integer, intent(out)               ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  real(REAL64), intent(out)          ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density  (hartree/bohr^3)
+  integer, intent(out)               ::  n_bsets(mxdtyp)                 !<  number of basis sets for each atom k
+  integer, intent(out)               ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(out)               ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(out)          ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(out)               ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (non normalized to vcell)
+  integer, intent(out)               ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(out)          ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (non normalized to vcell)
   logical, intent(out)               ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   real(REAL64), intent(out)          ::  zv(mxdtyp)                      !<  valence of atom with type i
   real(REAL64), intent(out)          ::  ztot                            !<  total charge density (electrons/cell)
@@ -115,7 +122,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
 ! counters
 
-  integer                  :: nt, n, j, m, l, mmax, nc
+  integer                  :: nt, n, j, m, l, mmax, nc, nb
 
 
 ! write heading
@@ -389,12 +396,20 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
 
 !   reads the fourier transforms of the wavefunctions
 
+    do nb = 1,mxdset
     do n = 1,mxdlao
-    do j = 0,mxdlqp
-      wvfao(j,n,nt) = ZERO
+    do j = -2,mxdlqp
+      wvfao(j,n,nb,nt) = ZERO
     enddo
     enddo
-    read(io) nqwf(nt),delqwf(nt),norbat(nt)
+    enddo
+
+    if(lnew) then
+      read(io) nqwf(nt), delqwf(nt), norbat(1,nt), n_bsets(nt)
+    else
+      read(io) nqwf(nt), delqwf(nt), norbat(1,nt)
+      n_bsets(nt) = 1
+    endif
 
     if(nqwf(nt)-1 > mxdlqp) then
       write(6,'("  stopped in pw_rho_v_in_pseudo,   atom ",a2,           &
@@ -404,69 +419,96 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author,                   &
       stop
 
     endif
-    if(norbat(nt) > mxdlao) then
+    if(n_bsets(nt) > mxdset) then
       write(6,'("  stopped in pw_rho_v_in_pseudo,    atom ",a2,          &
-        &    "  program does not accept ",i4,  " orbitals.",             &
-        &    "  Maximum is: ",i4)') nameat(nt),norbat(nt),mxdlao
+        &    "  program does not accept ",i4,  " basis sets.",           &
+        &    "  Maximum is: ",i4)') nameat(nt),n_bsets(nt),mxdset
 
       stop
 
     endif
 
-    nskip = 0
-    do n=1,norbat(nt)
+    do nb = 1,n_bsets(nt)
 
-      read(io) lorb(n-nskip,nt),eorbwv
+      if(lnew) read(io) norbat(nb,nt)
 
-      l = lorb(n-nskip,nt)
-
-      if(l < 0) then
-        write(6,'("  stopped in pw_rho_v_in_pseudo  reading data for ",  &
-          &     a2,"  program does noes not accept negative",            &
-          &     " l in wavefunctions")') nameat(nt)
+      if(norbat(nb,nt) > mxdlao) then
+        write(6,'("  stopped in pw_rho_v_in_pseudo,    atom ",a2,        &
+          &    "  program does not accept ",i4,  " orbitals.",           &
+          &    "  Maximum is: ",i4)') nameat(nt),norbat(nb,nt),mxdlao
 
         stop
 
       endif
 
-      if(l > 3) then
-        write(6,'("  WARNING in pw_rho_v_in_pseudo  reading data for ",  &
-          &     a2,"  code not written for l= ",i4,                      &
-          &     " in wavefunctions")') nameat(nt),l
-        write(6,'("  skipping atomic orbital")')
-        do j = 0,nqwf(nt)-1
-          read(io) wvfao(j,n-nskip,nt)
-        enddo
-        nskip = nskip+1
-      else
-        do j = 0,nqwf(nt)-1
-          read(io) wvfao(j,n-nskip,nt)
-        enddo
+      nskip = 0
+      do n = 1,norbat(nb,nt)
 
-!       divides by 1/q**l
+        read(io) lorb(n-nskip,nb,nt),eorbwv
 
-        if(l > 0) then
-          do j = 1,nqwf(nt)-1
-            fac = (j*delqwf(nt))**l
-            wvfao(j,n-nskip,nt) = wvfao(j,n-nskip,nt) / fac
-          enddo
+        l = lorb(n-nskip,nb,nt)
 
-          wvfao(0,n-nskip,nt) = (4*wvfao(1,n-nskip,nt) - wvfao(2,n-nskip,nt)) / 3
+        if(l < 0) then
+          write(6,'("  stopped in pw_rho_v_in_pseudo  reading ",         &
+            &     "data for ",a2,"  program does noes not accept ",      &
+            &     "negative l in wavefunctions")') nameat(nt)
+
+          stop
 
         endif
 
-        wvfao(-1,n-nskip,nt) = wvfao(1,n-nskip,nt)
-        wvfao(-2,n-nskip,nt) = wvfao(2,n-nskip,nt)
+        if(l > 3) then
+          write(6,'("  WARNING in pw_rho_v_in_pseudo  reading ",         &
+            &     "data for ",a2,"  code not written for l= ",i4,        &
+            &     " in wavefunctions")') nameat(nt),l
+          write(6,'("  skipping atomic orbital")')
+          do j = 0,nqwf(nt)-1
+            read(io) wvfao(j,n-nskip,nb,nt)
+          enddo
+          nskip = nskip+1
+        else
+          do j = 0,nqwf(nt)-1
+            read(io) wvfao(j,n-nskip,nb,nt)
+          enddo
 
-      endif
+!         divides by 1/q**l
+
+          if(l > 0) then
+            do j = 1,nqwf(nt)-1
+              fac = (j*delqwf(nt))**l
+              wvfao(j,n-nskip,nb,nt) = wvfao(j,n-nskip,nb,nt) / fac
+            enddo
+
+            wvfao(0,n-nskip,nb,nt) = (4*wvfao(1,n-nskip,nb,nt) - wvfao(2,n-nskip,nb,nt)) / 3
+
+          endif
+
+          wvfao(-1,n-nskip,nb,nt) = wvfao(1,n-nskip,nb,nt)
+          wvfao(-2,n-nskip,nb,nt) = wvfao(2,n-nskip,nb,nt)
+
+        endif
+
+      enddo
+      norbat(nb,nt) = norbat(nb,nt) - nskip
 
     enddo
-    norbat(nt) = norbat(nt) - nskip
+
+!   core kinetic energy density
+
+    if(lnew) then
+      read(io) (tauc_q(j,nt),j=0,nql)
+      tauc_q(-1,nt) = tauc_q(1,nt)
+    else
+      tauc_q(:,nt) = ZERO
+    endif
 
 !   converts to Hartree
 
     do j = -1,nql
       vloc(j,nt) = vloc(j,nt) / 2
+    enddo
+    do j = -1,nql
+      tauc_q(j,nt) = tauc_q(j,nt) / 2
     enddo
     do n = 0,3
       do j = -2,nqnl(nt)

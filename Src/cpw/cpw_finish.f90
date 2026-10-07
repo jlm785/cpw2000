@@ -15,8 +15,8 @@
 !>  post processing
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         201x, 12 October 2025.
+!>  \version      5.13
+!>  \date         201x, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
@@ -26,6 +26,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
 
 ! added efermi 29 November 2021. JLM
 ! added filename for pseudo and psi to disk. 10 October 2025. JLM
+! vtau passed to pw_rho_v_out. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -68,7 +69,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                          &
      recip_%ng, recip_%kmax, recip_%kgv, recip_%phase,                   &
      recip_%conj, recip_%ns, recip_%mstar,                               &
-     vcomp_%veff, chdens_%den, chdens_%dens,                             &
+     vcomp_%veff, vcomp_%vtau, chdens_%den, chdens_%dens,                &
      filename_%pseudo_path, filename_%pseudo_suffix,                     &
      filename_%itape_pseudo,                                             &
      dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst)

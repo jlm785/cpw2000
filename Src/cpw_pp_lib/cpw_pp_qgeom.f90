@@ -15,16 +15,17 @@
 !>  at chosen k-points.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         4 April 2024.
+!>  \version      5.13
+!>  \date         4 April 2024, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_qgeom(ioreplay,                                        &
            dims_, flags_, crys_, recip_, pseudo_, atorb_,                &
-           pwexp_, strfac_,  vcomp_,                                     &
+           pwexp_, strfac_,  vcomp_, lgks,                               &
            efermi, epspsi, icmax)
 
 ! adapted from cpw_pp_mass. 4 April 2024.
+! Generalized Kohn-Sham meta-GGA, lgks and vtau passed. 7 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -43,6 +44,7 @@ subroutine cpw_pp_qgeom(ioreplay,                                        &
   type(pwexp_t)                           ::  pwexp_                     !<  plane-wave expansion choices
   type(strfac_t)                          ::  strfac_                    !<  structure factors
   type(vcomp_t)                           ::  vcomp_                     !<  local potential contributions
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
 
  ! other input
 
@@ -65,7 +67,7 @@ subroutine cpw_pp_qgeom(ioreplay,                                        &
         recip_%ns, recip_%inds, recip_%kmax,                             &
         recip_%indv, recip_%ek,                                          &
         strfac_%sfact, strfac_%icmplx,                                   &
-        vcomp_%veff,                                                     &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,              &
         atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
         atorb_%wvfao,atorb_%lorb,                                        &

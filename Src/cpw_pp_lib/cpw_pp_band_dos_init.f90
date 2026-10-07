@@ -16,8 +16,8 @@
 !>  the effective potential and charge density.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         February 2020, 12 March 2025.
+!>  \version      5.13
+!>  \date         February 2020, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_init(filename, iotape,                        &
@@ -32,6 +32,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 ! size of author, 13 January 2024. JLM
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
 ! Modified, order of input variables, dims_in_. 12 March 2025. JLM
+! vtau, core tau, all atomic basis sets read (the first is used). 7 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -84,7 +85,20 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 
 ! other variables
 
+  integer, allocatable               ::  n_bsets(:)                      !  number of basis sets for each atom k
+  integer, allocatable               ::  norbat(:,:)                     !  number of atomic orbitals for basis set nb and atom k
+  integer, allocatable               ::  lorb(:,:,:)                     !  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), allocatable          ::  wvfao(:,:,:,:)                  !  wavefunction for atom k, basis nb, ang. mom. l
+
   integer           ::  ipr
+
+! constants
+
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+
+! counters
+
+  integer           ::  nt, n
 
 
 ! writes preamble to standard output
@@ -97,7 +111,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 
   call pw_rho_v_in_size(filename, iotape,                                &
      dims_%mxdtyp, dims_%mxdatm, dims_in_%mxdgve, dims_in_%mxdnst,       &
-     dims_%mxdlqp, dims_%mxdlao)
+     dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
 
   allocate(crys_%natom(dims_%mxdtyp))
   allocate(crys_%nameat(dims_%mxdtyp))
@@ -110,6 +124,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
   allocate(chdens_in_%den(dims_in_%mxdnst))
   allocate(chdens_in_%dend(dims_in_%mxdnst))
   allocate(vcomp_in_%veff(dims_in_%mxdnst))
+  allocate(vcomp_in_%vtau(dims_in_%mxdnst))
 
 
   allocate(pseudo_%nq(dims_%mxdtyp))
@@ -119,12 +134,18 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
   allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%dcor(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
+  allocate(pseudo_%tauc_q(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%zv(dims_%mxdtyp))
   allocate(atorb_%norbat(dims_%mxdtyp))
   allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
   allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
+
+  allocate(n_bsets(dims_%mxdtyp))
+  allocate(norbat(dims_%mxdset,dims_%mxdtyp))
+  allocate(lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+  allocate(wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
 
   allocate(irel(dims_%mxdtyp))
   allocate(icore(dims_%mxdtyp))
@@ -146,15 +167,32 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
          recip_in_%ng, recip_in_%kmax, recip_in_%kgv,                    &
          recip_in_%phase, recip_in_%conj, recip_in_%ns,                  &
          recip_in_%mstar,                                                &
-         vcomp_in_%veff, chdens_in_%den, chdens_in_%dend,                &
+         vcomp_in_%veff, vcomp_in_%vtau,                                 &
+         chdens_in_%den, chdens_in_%dend,                                &
          irel, icore, icorr, iray, psdtitle,                             &
          pseudo_%ealraw, pseudo_%zv, pseudo_%ztot,                       &
          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,             &
-         pseudo_%vloc, pseudo_%dcor, pseudo_%dval,                       &
-         atorb_%norbat, atorb_%nqwf, atorb_%delqwf, atorb_%wvfao,        &
-         atorb_%lorb, atorb_%latorb,                                     &
+         pseudo_%vloc, pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,       &
+         n_bsets, norbat, atorb_%nqwf, atorb_%delqwf, wvfao,             &
+         lorb, atorb_%latorb,                                            &
          dims_%mxdtyp, dims_%mxdatm, dims_in_%mxdgve, dims_in_%mxdnst,   &
-         dims_%mxdlqp, dims_%mxdlao)
+         dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
+
+! for the time being uses only the first atomic basis set
+
+  atorb_%wvfao(:,:,:) = ZERO
+  do nt = 1,crys_%ntype
+    atorb_%norbat(nt) = norbat(1,nt)
+    do n = 1,norbat(1,nt)
+      atorb_%lorb(n,nt) = lorb(n,1,nt)
+      atorb_%wvfao(:,n,nt) = wvfao(:,n,1,nt)
+    enddo
+  enddo
+
+  deallocate(n_bsets)
+  deallocate(norbat)
+  deallocate(lorb)
+  deallocate(wvfao)
 
 ! processes crystal structure
 

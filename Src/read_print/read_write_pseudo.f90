@@ -15,10 +15,13 @@
 !>  atomic core and valence charge densities from
 !>  files whose name depend on the chemical symbol.
 !>  After writes it to iotape which must be opened.
+!>  Reads both the old format and the 2026 format (more than one
+!>  atomic basis set and core kinetic energy density).  The output
+!>  is always in the new format.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         January 30 2008, 10 October 2025.
+!>  \version      5.13
+!>  \date         January 30 2008, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine read_write_pseudo(iotape, ntype, nameat,                 &
@@ -36,6 +39,7 @@
 ! modified, documentation, August 2019.
 ! Modified, ititle -> psdtitle, indentation. 20 February 2025. JLM
 ! Modified, filenames for pseudos. 10 October 2025. JLM
+! Modified, several basis sets and core tau (2026 format), new output format. 7 October 2026. JLM+claude
 
 
 
@@ -63,6 +67,7 @@
   real(REAL64), allocatable   ::  dcor(:)                                !  core charge density for atom k
   real(REAL64), allocatable   ::  dval(:)                                !  valence charge density for atom k
   real(REAL64), allocatable   ::  wvfraw(:)                              !  wavefunction for atom k, ang. mom. l
+  real(REAL64), allocatable   ::  tauc(:)                                !  core kinetic energy density for atom k
 
 ! local variables
 
@@ -83,12 +88,19 @@
   real(REAL64)             ::  delqwf                                    !  step used in the wavefunction interpolation for atom k
   integer                  ::  norbat                                    !  number of atomic orbitals for atom k
   integer                  ::  lorb                                      !  angular momentum of orbital n of atom k
+  integer                  ::  n_bsets                                   !  number of atomic basis sets for atom k
+  logical                  ::  l2026                                     !  extended pseudo format from 2026
+  character(len=512)       ::  line
 
   integer                  ::  ioerror
 
+! constants
+
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+
 ! counters
 
-  integer                  ::  nt, n, j, l
+  integer                  ::  nt, n, j, l, nb
 
 ! start loop over atomic types
 
@@ -222,23 +234,62 @@
     enddo
     deallocate(dval)
 
-!   reads the fourier transforms of the wavefunctions
+!   reads the fourier transforms of the wavefunctions.
+!   The 2026 format has the number of basis sets in the first line
+!   and the number of orbitals in the first line of each basis set.
 
-    read(it,*) nqwf, delqwf, norbat
-    write(iotape) nqwf, delqwf, norbat
+    line(1:512) = ' '
+    read(it,'(a)') line
+
+    read(line,*,iostat=ioerror) nqwf, delqwf, norbat, n_bsets
+
+    l2026 = .TRUE.
+    if(ioerror /= 0) then
+      read(line,*) nqwf, delqwf, norbat
+      n_bsets = 1
+      l2026 = .FALSE.
+    endif
+
+    write(iotape) nqwf, delqwf, norbat, n_bsets
 
     allocate(wvfraw(0:nqwf))
-    do n=1,norbat
-      read(it,*) lorb, eorbwv
-      write(iotape) lorb, eorbwv
 
-      do j = 0,nqwf-1
-        read(it,*) wvfraw(j)
-        write(iotape) wvfraw(j)
+    do nb = 1,n_bsets
+
+      if(l2026) read(it,*) lorb, eorbwv, norbat
+      write(iotape) norbat
+
+      do n = 1,norbat
+
+        if(.not. l2026 .or. n /= 1) read(it,*) lorb, eorbwv
+        write(iotape) lorb, eorbwv
+
+        do j = 0,nqwf-1
+          read(it,*) wvfraw(j)
+          write(iotape) wvfraw(j)
+        enddo
+
       enddo
 
     enddo
+
     deallocate(wvfraw)
+
+!   core kinetic energy density (zero in the old format)
+
+    allocate(tauc(0:nql))
+
+    if(l2026) then
+      do j = 0,nql
+        read(it,*) tauc(j)
+      enddo
+    else
+      tauc(:) = ZERO
+    endif
+
+    write(iotape) (tauc(j),j=0,nql)
+
+    deallocate(tauc)
 
     close (unit=it)
 

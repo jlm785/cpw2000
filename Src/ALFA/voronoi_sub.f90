@@ -15,14 +15,15 @@
 !>  from the cpw.in file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         22 April 2021. 23 January 2022.
+!>  \version      5.13
+!>  \date         22 April 2021. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine voronoi_sub(ioreplay)
 
 ! Added call to sym_space_group_name. 23 January 2022. JLM
 ! Added filenme to call write_cif. 9 June 2025. JLM
+! mxdset in pw_rho_v_in_size. 7 October 2026. JLM+claude
 
   use esdf
 
@@ -84,7 +85,7 @@ subroutine voronoi_sub(ioreplay)
 
 ! unused variables
 
-  integer        ::  mxdgvein, mxdnstin, mxdlqp, mxdlao
+  integer        ::  mxdgvein, mxdnstin, mxdlqp, mxdlao, mxdset
 
 ! parameter
 
@@ -99,7 +100,7 @@ subroutine voronoi_sub(ioreplay)
   io = 21
 
   call pw_rho_v_in_size(filename, io,                                    &
-     mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao)
+     mxdtyp, mxdatm, mxdgvein, mxdnstin, mxdlqp, mxdlao, mxdset)
 
   allocate(natom(mxdtyp))
   allocate(rat(3,mxdatm,mxdtyp))

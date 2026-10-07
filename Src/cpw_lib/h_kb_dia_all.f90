@@ -31,7 +31,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   mtxd, hdiag, isort, qmod, ekpg, lkpg,                                  &
   psi, hpsi, ei,                                                         &
   vscr, kmscr,                                                           &
-  lgks, vtau,                                                            &
+  lgks, vtau, vtaumsh,                                                   &
   latorb, norbat, nqwf, delqwf, wvfao, lorb,                             &
   mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,                &
   mxdbnd, mxdscr, mxdlao)
@@ -42,7 +42,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 ! Modified, norbtot bug, 30 November 2020. JLM
 ! Modified, k-point far from 1st BZ, 30 January 2021. JLM
 ! default value of ifail. 11 November 2023. JLM
-! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau), vtau in the mesh calculated here. 7 October 2026. JLM+claude
+! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh). 7 October 2026. JLM+claude
 
   implicit none
 
@@ -103,6 +103,7 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
   complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype G-vector (only used if lgks)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
 
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
 
@@ -140,7 +141,6 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 ! allocatable local arrays
 
   integer, allocatable               ::  isort_tr(:)
-  real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
 
 ! local variables
 
@@ -157,11 +157,9 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
 
   integer        ::  mtxd_tr
 
-  real(REAL64)   ::  vtmax, vtmin                                        !  maximum and minimum of vtau
 
 ! parameters
 
-  real(REAL64), parameter    ::  ZERO = 0.0_REAL64
   real(REAL64), parameter    ::  UM = 1.0_REAL64
 
 ! counter
@@ -172,18 +170,6 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   IFAIL = NOCC
 
   ifail = 0
-
-! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
-
-  if(lgks) then
-    allocate(vtaumsh(mxdscr))
-    call pot_local(0, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,          &
-        ng, kgv, phase, conj, ns, inds,                                  &
-        mxdscr, mxdgve, mxdnst)
-  else
-    allocate(vtaumsh(1))
-    vtaumsh(1) = ZERO
-  endif
 
 
 ! deals with k-points far away from the 1st Brillouin zone
@@ -333,7 +319,6 @@ subroutine h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,               &
   endif
 
   deallocate(isort_tr)
-  deallocate(vtaumsh)
 
   return
 

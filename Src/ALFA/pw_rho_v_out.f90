@@ -13,11 +13,12 @@
 
 !>  Writes a file with the self consistent
 !>  potential and charge density for later processing
-!>  by cpw_post_process
+!>  by cpw_post_process.  For the generalized Kohn-Sham meta-GGA
+!>  it also writes vtau.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         22 April 2021, 18 February 2026.
+!>  \version      5.13
+!>  \date         22 April 2021, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
@@ -26,7 +27,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
-         veff, den, dens,                                                &
+         veff, vtau, den, dens,                                          &
          pseudo_path, pseudo_suffix, itape_pseudo,                       &
          mxdtyp, mxdatm, mxdgve, mxdnst)
 
@@ -44,6 +45,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 ! Modified, filenames for pseudos. 10 October 2025. JLM
 ! Modified, preliminary modifications for more than one basis set. 18 February 2026. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! mxdset in the first record, vtau for generalized Kohn-Sham. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -98,6 +100,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   integer, intent(in)                ::  mstar(mxdnst)                   !<  number of g-vectors in the j-th star
 
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (hartree) for the prototype g-vector in star j
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau (generalized Kohn-Sham meta-GGA) for the prototype g-vector in star j
   complex(REAL64), intent(in)        ::  den(mxdnst)                     !<  valence charge density for the prototype g-vector in star j
   complex(REAL64), intent(in)        ::  dens(mxdnst)                    !<  spherical atomic valence charge density for the prototype g-vector in star j
 
@@ -110,6 +113,8 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   character(len=9 )   ::  bdate
   character(len=8)    ::  btime
   integer             ::  mxdl, mxdlao, mxdset
+  character(len=4)    ::  xcbase                                         !  meta-GGA functional used in xc_mgga
+  character(len=4)    ::  tausrc                                         !  source of tau, 'PSI ' for generalized Kohn-Sham
 
 ! counters
 
@@ -124,7 +129,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 
 ! quantities relevant for array size (+ntrans)
 
-  write(io) ntype, ng, ns, mxdl, ntrans, mxdlao
+  write(io) ntype, ng, ns, mxdl, ntrans, mxdlao, mxdset
   write(io) (natom(i),i=1,ntype)
 
 ! date and calculation identification and parameters
@@ -161,6 +166,12 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   write(io) (den(i),i=1,ns)
   write(io) (den(i)-dens(i),i=1,ns)
   write(io) (veff(i),i=1,ns)
+
+! vtau for the generalized Kohn-Sham meta-GGA
+
+  call xc_author_tau(author, xcbase, tausrc)
+
+  if(tausrc == 'PSI ') write(io) (vtau(i),i=1,ns)
 
   call read_write_pseudo(io, ntype, nameat,                              &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &

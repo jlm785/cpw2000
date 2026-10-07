@@ -15,14 +15,15 @@
 !>  variational k.p energies and eigenvectors.
 !>
 !>  \author       José Luís Martins
-!>  \version      5.12
-!>  \date         7 February 2014. 2 November 2025.
+!>  \version      5.13
+!>  \date         7 February 2014. 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
     psi, ei, mtxd, isort, qmod, ekpg, lkpg,                              &
     ng, kgv,                                                             &
-    vscr, kmscr, nqnl, delqnl, vkb, nkb,                                 &
+    vscr, kmscr, lgks, vtaumsh,                                          &
+    nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdgve, mxddim, mxdbnd, mxdlqp, mxdscr)
 
@@ -32,6 +33,7 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Modified, psi_convert. 2 November 2025. JLM
+! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. JLM+claude
 
 
   implicit none
@@ -70,6 +72,8 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
@@ -135,9 +139,9 @@ subroutine h_kb_kdotp_var(emax, rkpt, neig, mtxd0, isort0, psi0,         &
 
   lnewanl = .TRUE.
 
-  call hk_psi_c16(mtxd, neig, psi_lk, hpsi_lk, lnewanl,                  &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr, kmscr,                                          &
+  call hk_psi_driver_c16(lgks, mtxd, neig, psi_lk, hpsi_lk, lnewanl,     &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr, vtaumsh, kmscr,                                 &
       anlga, xnlkb, nanl,                                                &
       mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 

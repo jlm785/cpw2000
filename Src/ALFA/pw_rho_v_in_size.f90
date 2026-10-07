@@ -15,16 +15,17 @@
 !>  array dimensions for future allocations.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.02
-!>  \date         January 12, 2014, 13 September 2021.
+!>  \version      5.13
+!>  \date         January 12, 2014, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_size(filename, io,                                &
-     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao)
+     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao, mxdset)
 
 ! written January 12, 2014. jlm
 ! modified documentation February 4, 2020. JLM
 ! ntrans, mxdlao bug. 13 September 2021.
+! mxdset, files from before October 2026 have one basis set. 7 October 2026. JLM+claude
 
   implicit none
 
@@ -42,6 +43,7 @@ subroutine pw_rho_v_in_size(filename, io,                                &
   integer, intent(out)               ::  mxdnst                          !<  array dimension for g-space stars
   integer, intent(out)               ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(out)               ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(out)               ::  mxdset                          !<  array dimension for number of atomic basis sets
 
 ! local allocatable array
 
@@ -59,12 +61,17 @@ subroutine pw_rho_v_in_size(filename, io,                                &
 
   open(unit=io,file=trim(filename),status='old',form='UNFORMATTED')
 
-  read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp, ntrans, mxdlao
+  read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp, ntrans, mxdlao, mxdset
 
   if(ioerr /= 0) then
     backspace(io)
-    read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp
-    mxdlao = 4
+    read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp, ntrans, mxdlao
+    mxdset = 1
+    if(ioerr /= 0) then
+      backspace(io)
+      read(io,IOSTAT=ioerr) mxdtyp, mxdgve, mxdnst, mxdlqp
+      mxdlao = 4
+    endif
   endif
 
   allocate(natom(mxdtyp))

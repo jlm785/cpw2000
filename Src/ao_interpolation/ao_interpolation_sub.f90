@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 27 July 2026 .
+!>  \date         December 18, 2013, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -36,6 +36,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Modified, indentation, duplicate ao_interpolation_prepare. 2 October 2024. JLM
 ! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
+! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -203,6 +204,9 @@ subroutine ao_interpolation_sub(ioreplay)
 ! information about the calculation
 
   character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
+  character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
+  character(len=4)                   ::  tausrc                          !  source of tau, 'PSI ' for generalized Kohn-Sham
+  logical                            ::  lgks                            !  generalized Kohn-Sham meta-GGA (vtau term)
 
   character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
   character(len=50)                  ::  title                           !  title for plots
@@ -257,6 +261,11 @@ subroutine ao_interpolation_sub(ioreplay)
   call cpw_pp_band_prepare(                                              &
      dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,            &
      dims_in_, recip_in_, vcomp_in_)
+
+! generalized Kohn-Sham meta-GGA
+
+  call xc_author_tau(author, xcbase, tausrc)
+  lgks = tausrc == 'PSI '
 
 
   write(6,*)
@@ -330,7 +339,7 @@ subroutine ao_interpolation_sub(ioreplay)
        recip_%ns, recip_%inds, recip_%kmax,                              &
        recip_%indv, recip_%ek,                                           &
        strfac_%sfact, strfac_%icmplx,                                    &
-       vcomp_%veff,                                                      &
+       vcomp_%veff, lgks, vcomp_%vtau,                                   &
        pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,               &
        atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                        &
        atorb_%wvfao, atorb_%lorb,                                        &

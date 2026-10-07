@@ -15,8 +15,8 @@
 !>  that are neede to calculate the bands at a given k-point.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         2 February 2020, 2 March 2026.
+!>  \version      5.13
+!>  \date         2 February 2020, 7 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -29,6 +29,7 @@ subroutine cpw_pp_band_prepare(                                          &
 ! Modified, bug in initialization of chd. 12 February 2021. JLM
 ! Modified, order of input variables, dims_in_, cpw_pp_convert. 12 March 2025. JLM
 ! Modified, removed emax question. 2 March 2026. JLM
+! vtau (generalized Kohn-Sham meta-GGA) converted as veff. 7 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -119,6 +120,15 @@ subroutine cpw_pp_band_prepare(                                          &
   allocate(vcomp_%veff(dims_%mxdnst))
 
   call cpw_pp_convert(vcomp_%veff, recip_%kmax, vcomp_in_%veff,          &
+      recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
+      recip_%mstar,                                                      &
+      recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
+      recip_in_%mstar,                                                   &
+      dims_%mxdgve, dims_%mxdnst, dims_in_%mxdgve, dims_in_%mxdnst)
+
+  allocate(vcomp_%vtau(dims_%mxdnst))
+
+  call cpw_pp_convert(vcomp_%vtau, recip_%kmax, vcomp_in_%vtau,          &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%mstar,                                                      &
       recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &
