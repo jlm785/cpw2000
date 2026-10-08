@@ -15,8 +15,8 @@
 !>  with spin-orbit. Perturbative version
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         February 29, 2020. 30 November 2023.
+!>  \version      5.13
+!>  \date         February 29, 2020. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
@@ -24,11 +24,13 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
       ng, kgv,                                                           &
       ntype, natom, rat, adot,                                           &
       nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+      lgks, vtaumsh, kmscr,                                              &
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr)
 
 ! Written February 29, 2020, from previous code,
 ! spin_orbir_perturb and kdotp_matrix_so.  JLM
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
+! Generalized Kohn-Sham meta-GGA, vtau term in the derivatives. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -43,6 +45,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtaumsh
 
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
   integer, intent(in)                ::  neig                            !<  number of wavefunctions
@@ -61,6 +64,10 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  lattice coordinates of atom j of type i
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
+
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for pseudo interpolation for atom k
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the pseudo interpolation for atom k
@@ -109,6 +116,13 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
   real(REAL64), parameter  :: ZERO = 0.0_REAL64
   complex(REAL64), parameter  :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  :: C_UM = cmplx(1.0_REAL64,ZERO,REAL64)
+
+! generalized Kohn-Sham meta-GGA
+
+  complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  vtau |psi>
+  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
+  complex(REAL64), allocatable       ::  vtmat(:,:)                      !  matrix elements of the vtau terms
 
 ! counters
 
@@ -259,6 +273,52 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
       enddo
       enddo
     enddo
+
+  endif
+
+! vtau term of the generalized Kohn-Sham meta-GGA
+
+  if(lgks) then
+
+    allocate(vtaupsi(mxddim,mxdbnd))
+    allocate(dvtaupsi(mxddim,mxdbnd,3))
+    allocate(vtmat(mxdbnd,mxdbnd))
+
+    call dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,              &
+        rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
+        mxddim, mxdbnd, mxdgve, mxdscr)
+
+    do m = 1,3
+      call zgemm('C', 'N', neig, neig, mtxd, C_UM, psi, mxddim,          &
+          dvtaupsi(:,:,m), mxddim, C_ZERO, vtmat, mxdbnd)
+      do i = 1,neig
+      do j = 1,neig
+        dhso0drk(j     ,i     ,m) = dhso0drk(j     ,i     ,m) + vtmat(j,i)
+        dhso0drk(j+neig,i+neig,m) = dhso0drk(j+neig,i+neig,m) + vtmat(j,i)
+      enddo
+      enddo
+    enddo
+
+    if(nder == 2) then
+      call zgemm('C', 'N', neig, neig, mtxd, C_UM, psi, mxddim,          &
+          vtaupsi, mxddim, C_ZERO, vtmat, mxdbnd)
+      do i = 1,neig
+      do j = 1,neig
+        do n = 1,3
+        do m = 1,3
+          d2hso0drk2(j     ,i     ,m,n) = d2hso0drk2(j     ,i     ,m,n)  &
+                                        + bdot(m,n)*vtmat(j,i)
+          d2hso0drk2(j+neig,i+neig,m,n) = d2hso0drk2(j+neig,i+neig,m,n)  &
+                                        + bdot(m,n)*vtmat(j,i)
+        enddo
+        enddo
+      enddo
+      enddo
+    endif
+
+    deallocate(vtaupsi)
+    deallocate(dvtaupsi)
+    deallocate(vtmat)
 
   endif
 

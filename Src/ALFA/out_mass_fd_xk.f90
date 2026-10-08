@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         7 November 2023. 7 October 2026.
+!>  \date         7 November 2023. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
@@ -38,6 +38,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! Modified, added full diagonalization, imethod. 25 March 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, warning for the spin-orbit calculation. 8 October 2026. JLM+claude
 
   implicit none
 
@@ -294,6 +295,16 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   allocate(rk_l(3,-npt:npt))
 
   if(lso) then
+
+    if(lgks) then
+      write(6,*)
+      write(6,'("   WARNING in ",a,":  the spin-orbit calculation")')    &
+          'out_mass_fd_xk'
+      write(6,'("   does not yet include the vtau term of the ",         &
+         &      "generalized Kohn-Sham meta-GGA.")')
+      write(6,*)
+    endif
+
     allocate(ei_l_so(2*mxdbnd,-npt:npt))
     allocate(psi_so(2*mxddim,2*mxdbnd))
     allocate(hpsi_so(2*mxddim,2*mxdbnd))

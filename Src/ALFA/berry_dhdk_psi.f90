@@ -15,18 +15,20 @@
 !>  pseudopotential with respect to the k-vector.
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.09
-!>  \date         9 January 2023. 15 December 2023.
+!>  \version      5.13
+!>  \date         9 January 2023. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
     kgv, isort,                                                          &
     nanl, anlga, xnlkb, danlgadrk,                                       &
-    mxddim, mxdbnd, mxdgve, mxdanl)
+    lgks, vtaumsh, kmscr,                                                &
+    mxddim, mxdbnd, mxdgve, mxdanl, mxdscr)
 
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
 ! Non-local part in a separate subroutine. 15 December 2023. JLM
+! Generalized Kohn-Sham meta-GGA, vtau term. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -39,6 +41,7 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdanl                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtaumsh
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
@@ -56,6 +59,10 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   real(REAL64), intent(in)           ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
   complex(REAL64), intent(in)        ::  danlgadrk(mxddim,mxdanl,3)      !<  d anlga / d rkpt
 
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+
 ! output
 
   complex(REAL64), intent(out)       ::  dhdkpsi(mxddim,mxdbnd,3)        !<  (d H /d k) |Psi>
@@ -63,6 +70,8 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 ! local allocatable variables
 
   real(REAL64), allocatable          ::  qcontra(:,:)                    !  contravariant rkpt+kgv
+  complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  vtau |psi>
+  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
   real(REAL64), allocatable          ::  bdot(:,:)                       !  metric in reciprocal space.  It is allocatable to keep subroutine thread-safe
 
 ! local variables
@@ -113,6 +122,30 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 
   deallocate(qcontra)
   deallocate(bdot)
+
+! vtau term of the generalized Kohn-Sham meta-GGA
+
+  if(lgks) then
+
+    allocate(vtaupsi(mxddim,mxdbnd))
+    allocate(dvtaupsi(mxddim,mxdbnd,3))
+
+    call dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,              &
+        rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
+        mxddim, mxdbnd, mxdgve, mxdscr)
+
+    do j = 1,3
+      do n = 1,neig
+        do m = 1,mtxd
+          dhdkpsi(m,n,j) = dhdkpsi(m,n,j) + dvtaupsi(m,n,j)
+        enddo
+      enddo
+    enddo
+
+    deallocate(vtaupsi)
+    deallocate(dvtaupsi)
+
+  endif
 
   return
 

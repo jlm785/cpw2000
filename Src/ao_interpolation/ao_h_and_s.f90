@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2015. 7 October 2026.
+!>  \date         before 2015. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
@@ -43,6 +43,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified ao_atomic_orbital, 6 October 2024. JLM
 ! Modified, removed mxdbnd, hdiag, etc... from API. 1 November 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16 (dh0drk without vtau). 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau term in dh0drk from kdotp_matrix. 8 October 2026. JLM+claude
 
   implicit none
 
@@ -204,7 +205,8 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
       ng, kgv,                                                           &
       ntype, natom, rat, adot,                                           &
       nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve)
+      lgks, vtaumsh, kmscr,                                              &
+      mxdtyp,mxdatm,mxdlqp,mxddim,mxdorb,mxdgve, mxdscr)
 
   deallocate(d2h0drk2)
 

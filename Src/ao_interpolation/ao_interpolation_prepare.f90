@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 7 October 2026.
+!>  \date         2014. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -54,6 +54,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau in ao_h_and_s_spin_orbit, warning removed. 8 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -246,18 +247,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         mxdscr, mxdgve, mxdnst)
   endif
 
-  if(lgks) then
-    write(6,*)
-    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
-        'ao_interpolation_prepare'
-    write(6,'("   does not yet include the vtau term of the ",           &
-       &      "generalized")')
-    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
-       &      "k.p,")')
-    write(6,'("   effective masses and Berry quantities are ",           &
-       &      "approximate.")')
-    write(6,*)
-  endif
 
   ipr = 2
 
@@ -458,7 +447,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   allocate(xover(mxdorb))
 
 
-
 !-------------------------------------------------------------------------
 
   if (lso) then
@@ -627,6 +615,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           psi_ao, hpsi_ao,                                               &
           Hao, S, dh0drk_AO,                                             &
           vscr, kmscr,                                                   &
+          lgks, vtaumsh,                                                 &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,        &
           mxdscr, mxdlao)
 

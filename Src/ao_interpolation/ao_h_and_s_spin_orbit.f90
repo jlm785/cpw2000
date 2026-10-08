@@ -15,8 +15,8 @@
 !>  with non-orthogonal atomic orbitals. Spin-Orbit version.
 !>
 !>  \author       Carlos Loia Reis
-!>  \version      5.11
-!>  \date         before 2015. 1 November 2024.
+!>  \version      5.13
+!>  \date         before 2015. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
@@ -29,6 +29,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
     psi, hpsi,                                                           &
     Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
+    lgks, vtaumsh,                                                       &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,              &
     mxdscr, mxdlao)
 
@@ -42,6 +43,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Modified, ao_atomic_orbital, 6 October 2024. JLM
 ! Modified, removed mxdbnd, hdiag, etc... from API. 1 November 2024. JLM
+! Generalized Kohn-Sham meta-GGA, hk_psi_driver_c16 and vtau in dh0drk. 8 October 2026. JLM+claude
 
   implicit none
 
@@ -79,6 +81,8 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
   integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
@@ -226,9 +230,9 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
 
 ! call with zero projectors
 
-  call hk_psi_c16(mtxd, nbaslcao, psi, hpsi, lnewanl,                    &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr, kmscr,                                          &
+  call hk_psi_driver_c16(lgks, mtxd, nbaslcao, psi, hpsi, lnewanl,       &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr, vtaumsh, kmscr,                                 &
       anlga, xnlkb, 0,                                                   &
       mxddim, mxdorb, mxdanl, mxdgve, mxdscr)
 
@@ -256,7 +260,8 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
       ng, kgv,                                                           &
       ntype, natom, rat, adot,                                           &
       nqnl, delqnl, vkb, nkb,                                            &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve)
+      lgks, vtaumsh, kmscr,                                              &
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdscr)
 
   call kdotp_matrix_so_convert(mxdorb, h0, dh0drk, d2h0drk2, nder,       &
       mxdorb)

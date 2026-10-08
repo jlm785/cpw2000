@@ -17,7 +17,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 7 October 2026.
+!>  \date         8 may 2004, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
@@ -40,6 +40,7 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
 ! Modified, iguess, new name out_glk_prepare out_glk_interpolation, 12 November 2023. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau term in kdotp_matrix(_so_pert), warning removed. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -296,18 +297,6 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
     mxdscr, mxdgve, mxdnst)
   endif
 
-  if(lgks) then
-    write(6,*)
-    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
-        'out_opt_glk'
-    write(6,'("   does not yet include the vtau term of the ",           &
-       &      "generalized")')
-    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
-       &      "k.p,")')
-    write(6,'("   effective masses and Berry quantities are ",           &
-       &      "approximate.")')
-    write(6,*)
-  endif
 
   ipr = 2
 
@@ -474,7 +463,6 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
   open(unit = io60, file = trim(filewave), access="direct", recl=ir_size)
 
 
-
 ! if run by a human do not restart
 
   if(.not. lworkers) then
@@ -524,7 +512,6 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
   enddo
 
 
-
   call out_glk_prepare(diag_type, io60,                                  &
       nrk3, rk_ref,                                                      &
       emax, neig, flgpsd,                                                &
@@ -540,7 +527,6 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
-
 
 
   call zeelap(t1)
@@ -658,7 +644,8 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
           ng, kgv,                                                       &
           ntype, natom, rat, adot,                                       &
           nqnl, delqnl, vkb, nkb,                                        &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          lgks, vtaumsh, kmscr,                                          &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr)
 
       deallocate(d2h0drk2)
 
@@ -690,7 +677,8 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
           ng, kgv,                                                       &
           ntype, natom, rat, adot,                                       &
           nqnl, delqnl, vkb, nkb,                                        &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          lgks, vtaumsh, kmscr,                                          &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr)
 
       call kdotp_matrix_so_convert(neig, hso0, dhso0drk, d2hso0drk2,     &
           nder,                                                          &

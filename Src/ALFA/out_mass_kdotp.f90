@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         18 january 2022. 7 October 2026.
+!>  \date         18 january 2022. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_kdotp(ioreplay,                                      &
@@ -32,7 +32,6 @@ subroutine out_mass_kdotp(ioreplay,                                      &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
 
 
-
 ! Adapted from out_band_onek plus old "Silvaco" subroutines. 18 january 2022. JLM
 ! Better user interface, 1 April 2023. JLM
 ! calls out_mass_kdotp_xk instead of local code.  8 November 2023. JLM
@@ -40,6 +39,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau term in kdotp_matrix(_so_pert), warning removed. 8 October 2026. JLM+claude
 
   implicit none
 
@@ -99,7 +99,6 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l
   integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-
 
 
 ! allocatable arrays with larger scope
@@ -214,18 +213,6 @@ subroutine out_mass_kdotp(ioreplay,                                      &
         mxdscr, mxdgve, mxdnst)
   endif
 
-  if(lgks) then
-    write(6,*)
-    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
-        'out_mass_kdotp'
-    write(6,'("   does not yet include the vtau term of the ",           &
-       &      "generalized")')
-    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
-       &      "k.p,")')
-    write(6,'("   effective masses and Berry quantities are ",           &
-       &      "approximate.")')
-    write(6,*)
-  endif
 
   write(6,*)
   write(6,'("  Enter initial number of bands (greater than ",i4,")")')  &
@@ -359,7 +346,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
         ng, kgv,                                                         &
         ntype, natom, rat, adot,                                         &
         nqnl, delqnl, vkb, nkb,                                          &
-        mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+        lgks, vtaumsh, kmscr,                                            &
+        mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr)
 
   else
 
@@ -400,7 +388,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
         ng, kgv,                                                         &
         ntype, natom, rat, adot,                                         &
         nqnl, delqnl, vkb, nkb,                                          &
-        mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+        lgks, vtaumsh, kmscr,                                            &
+        mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr)
 
     call kdotp_matrix_so_convert(nmodel, hso0, dhso0drk, d2hso0drk2,     &
          nder,                                                           &

@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         9 November 2023. 7 October 2026.
+!>  \date         9 November 2023. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -39,6 +39,7 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative, warning only for spin-orbit. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -242,18 +243,6 @@ subroutine out_mass_berry(ioreplay,                                      &
         mxdscr, mxdgve, mxdnst)
   endif
 
-  if(lgks) then
-    write(6,*)
-    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
-        'out_mass_berry'
-    write(6,'("   does not yet include the vtau term of the ",           &
-       &      "generalized")')
-    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
-       &      "k.p,")')
-    write(6,'("   effective masses and Berry quantities are ",           &
-       &      "approximate.")')
-    write(6,*)
-  endif
 
   write(6,*)
   write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
@@ -319,6 +308,16 @@ subroutine out_mass_berry(ioreplay,                                      &
   write(ioreplay,*) yesno_so,'   with spin-orbit'
 
   if(yesno_so == 'y' .or. yesno_so == 'Y') then
+
+    if(lgks) then
+      write(6,*)
+      write(6,'("   WARNING in ",a,":  the spin-orbit calculation")')    &
+          'out_mass_berry'
+      write(6,'("   does not yet include the vtau term of the ",         &
+         &      "generalized Kohn-Sham meta-GGA.")')
+      write(6,*)
+    endif
+
 
 !   choose method for spin-orbitals
 
@@ -580,13 +579,13 @@ subroutine out_mass_berry(ioreplay,                                      &
 !     allocate(tqmetric(mxddeg,mxddeg,3,3,mxdlev))
 
 
-
     call berry_derivative(rkpt, mtxd, neig, isort, ekpg, .TRUE.,         &
       nlevel, levdeg, leveigs,                                           &
       psi, ei,                                                           &
       dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr, kmscr,                                                       &
+      lgks, vtaumsh,                                                     &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,            &

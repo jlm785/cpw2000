@@ -14,8 +14,8 @@
 !>  Solves the Sternheimer equation with a RCI (reverse communication interface)
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.06
-!>  \date         13 January 2023.
+!>  \version      5.13
+!>  \date         13 January 2023, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -23,11 +23,13 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
     nlevel, levdeg, leveigs,                                             &
     isort, ekpg,                                                         &
     vscr, kmscr,                                                         &
+    lgks, vtaumsh, rkpt, adot,                                           &
     ng, kgv,                                                             &
     nanl, anlga, xnlkb,                                                  &
     mxddim, mxdbnd, mxdgve, mxdscr, mxdanl, mxdlev, mxddeg)
 
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
+! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -57,6 +59,10 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
 
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for
   real(REAL64), intent(in)           ::  vscr(mxdscr)                    !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point in reciprocal lattice coordinates
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
   integer, intent(in)                ::  nanl                            !<  half of number of projectors without spin
   complex(REAL64), intent(in)        ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
@@ -102,6 +108,8 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
+
+  logical           ::  lnewanl                                        !  anlga recalculated (not used in default implementation)
 
 ! counters
 
@@ -187,9 +195,10 @@ subroutine berry_stern_solve(mtxd, neig, psi, ei, dhdkpsi, dpsi, tol,    &
           call berry_project_one('O', psi, ac(:,1), mtxd, neig,          &
             mxddim, mxdbnd)
 
-          call hk_psi_c16(mtxd, 1, ac, bc, .TRUE.,                       &
-             ng, kgv,                                                    &
-             ekpg, isort, vscr, kmscr,                                   &
+          lnewanl = .TRUE.
+          call hk_psi_driver_c16(lgks, mtxd, 1, ac, bc, lnewanl,         &
+             ng, kgv, rkpt, adot,                                        &
+             ekpg, isort, vscr, vtaumsh, kmscr,                          &
              anlga, xnlkb, nanl,                                         &
              mxddim, mxdbnd, mxdanl, mxdgve, mxdscr)
 

@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         4 April 2024. 7 October 2026.
+!>  \date         4 April 2024. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom(ioreplay,                                           &
@@ -37,6 +37,7 @@ subroutine out_qgeom(ioreplay,                                           &
 ! Orientation. 11 April 2024. JLM
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative, warning only for spin-orbit. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -226,18 +227,6 @@ subroutine out_qgeom(ioreplay,                                           &
         mxdscr, mxdgve, mxdnst)
   endif
 
-  if(lgks) then
-    write(6,*)
-    write(6,'("   WARNING in ",a,":  the velocity operator dH/dk")')     &
-        'out_qgeom'
-    write(6,'("   does not yet include the vtau term of the ",           &
-       &      "generalized")')
-    write(6,'("   Kohn-Sham meta-GGA.  Optical matrix elements, ",       &
-       &      "k.p,")')
-    write(6,'("   effective masses and Berry quantities are ",           &
-       &      "approximate.")')
-    write(6,*)
-  endif
 
   write(6,*)
   write(6,'(" enter number of bands (greater than ~",i4,")")') nint(ztot/2)
@@ -310,6 +299,16 @@ subroutine out_qgeom(ioreplay,                                           &
   write(ioreplay,*) yesno_so,'   with spin-orbit'
 
   if(yesno_so == 'y' .or. yesno_so == 'Y') then
+
+    if(lgks) then
+      write(6,*)
+      write(6,'("   WARNING in ",a,":  the spin-orbit calculation")')    &
+          'out_qgeom'
+      write(6,'("   does not yet include the vtau term of the ",         &
+         &      "generalized Kohn-Sham meta-GGA.")')
+      write(6,*)
+    endif
+
 
 !   choose method for spin-orbitals
 
@@ -565,6 +564,7 @@ subroutine out_qgeom(ioreplay,                                           &
       dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr, kmscr,                                                       &
+      lgks, vtaumsh,                                                     &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,            &
