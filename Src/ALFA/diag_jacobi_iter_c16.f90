@@ -13,6 +13,11 @@
 
 !> Performs a succession of Jacobi relaxations
 !>
+!>  NOT USED at present (only called by diag_jacobi_ritz_c16, kept for
+!>  later use).  It is not yet adapted to the generalized Kohn-Sham
+!>  meta-GGA: hk_psi_c16 should be replaced by hk_psi_driver_c16 with
+!>  lgks, rkpt, adot, vtaumsh, as in diag_jacobi_iter_spin_c16.
+!>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
 !>  \date         May 3 2019. 3 October 2026.
@@ -104,6 +109,7 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
 
 ! apply H to initial eigenvectors
 
+!   generalized Kohn-Sham: use hk_psi_driver_c16 (see header)
   call hk_psi_c16(mtxd, neig, psi, hpsi, lnewanl,                        &
       ng, kgv,                                                           &
       ekpg, isort, vscr, kmscr,                                          &
@@ -134,6 +140,7 @@ subroutine diag_jacobi_iter_c16(mtxd, neig, psi, hpsi, njac,             &
     call rq_jac_c16(xerror, eg, hdiag, mtxd, neig,                       &
     mxddim, mxdbnd)
 
+!   generalized Kohn-Sham: use hk_psi_driver_c16 (see header)
     call hk_psi_c16(mtxd, neig, xerror, hxerror, lnewanl,                &
         ng, kgv,                                                         &
         ekpg, isort, vscr, kmscr,                                        &

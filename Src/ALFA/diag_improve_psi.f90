@@ -16,6 +16,10 @@
 !>  First it does 1st order perturbation theory,
 !>  then does jacobi-ritz iteration
 !>
+!>  NOT USED at present (kept for later use).  It is not yet adapted to
+!>  the generalized Kohn-Sham meta-GGA: lgks, vtaumsh, rkpt, adot should
+!>  be passed to diag_jacobi_ritz_c16, as in diag_improve_psi_spin.
+!>
 !>  \author       José Luís Martins
 !>  \version      5.09
 !>  \date         18 December 2023.

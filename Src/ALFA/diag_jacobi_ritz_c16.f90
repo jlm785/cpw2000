@@ -14,6 +14,11 @@
 !>  Finds improved guess eigen-vector by Jacobian relaxation and
 !>  diagonalizes hamiltonian in the initial+improved subspace.
 !>
+!>  NOT USED at present (only called by diag_improve_psi, kept for later
+!>  use).  It is not yet adapted to the generalized Kohn-Sham meta-GGA:
+!>  lgks, vtaumsh, rkpt, adot should be passed to diag_jacobi_iter_c16,
+!>  as in diag_jacobi_ritz_spin_c16.
+!>
 !>  \author       Jose Luis Martins
 !>  \version      5.09
 !>  \date         April 2019. 10 December 2023.
