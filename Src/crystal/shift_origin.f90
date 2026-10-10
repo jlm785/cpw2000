@@ -11,12 +11,14 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  This program finds the closest atom to the origin and gives the shift that brings
-!>  that brings it to the origin
+!>  This program finds the closest atom to the origin and gives the
+!>  shortest shift that brings the nearest image of that atom to the origin.
+!>  ratio is the ratio of the distances to the origin of the nearest and
+!>  second nearest atoms (1 if there is only one atom).
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         10 January 2017.
+!>  \date         10 January 2017, 10 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine shift_origin(adot, ntype, natom, rat, shift, ratio,           &
@@ -25,6 +27,8 @@ subroutine shift_origin(adot, ntype, natom, rat, shift, ratio,           &
 ! writen January 10, 2017. JLM
 ! Modified, documentation, August 2019. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! near_dist_image: exact nearest image, shortest shift, ratio of distances,
+! no assumption on natom(1). 10 October 2026. JLM+claude
 
 
   implicit none
@@ -45,14 +49,16 @@ subroutine shift_origin(adot, ntype, natom, rat, shift, ratio,           &
 
 ! output
 
-  real(REAL64), intent(out)          ::  shift(3)                        !<  shift that brings atom to shift_origin (lattice coordinates)
-  real(REAL64), intent(out)          ::  ratio                           !<  square of ratio of nearest to second nearest atom
+  real(REAL64), intent(out)          ::  shift(3)                        !<  shortest shift that brings the nearest atom to the origin (lattice coordinates)
+  real(REAL64), intent(out)          ::  ratio                           !<  ratio of the distances of the nearest and second nearest atoms (1 if only one atom)
 
 ! local variables
 
   real(REAL64)       ::  dist, distmin, distmin2
+  real(REAL64)       ::  r0(3), rimg(3), rmin(3)
+  integer            ::  natot
   integer            ::  ntmin, jmin
-  real(REAL64)       ::  r0(3),r1(3)
+  logical            ::  lfound                                          !  a second atom was found
 
 ! parameters
 
@@ -63,58 +69,61 @@ subroutine shift_origin(adot, ntype, natom, rat, shift, ratio,           &
   integer i, j, nt
 
 
-  do i = 1,3
-    r0(i) = ZERO
-    r1(i) = rat(i,1,1)
+  natot = 0
+  do nt = 1,ntype
+    natot = natot + natom(nt)
   enddo
 
-  call near_dist(distmin, adot, r0, r1)
-  distmin2 = distmin
+  do i = 1,3
+    r0(i) = ZERO
+    rmin(i) = ZERO
+  enddo
 
+! nearest atom (nearest image) to the origin
 
-  if(ntype == 1 .and. natom(1) == 1) then
+  ntmin = 0
+  jmin = 0
+  distmin = ZERO
 
-    do i = 1,3
-      shift(i) = -rat(i,1,1)
-    enddo
+  do nt = 1,ntype
+  do j = 1,natom(nt)
+
+    call near_dist_image(dist, rimg, adot, r0, rat(:,j,nt))
+
+    if(ntmin == 0 .or. dist < distmin) then
+      ntmin = nt
+      jmin = j
+      distmin = dist
+      rmin(:) = rimg(:)
+    endif
+
+  enddo
+  enddo
+
+  do i = 1,3
+    shift(i) = -rmin(i)
+  enddo
+
+! second nearest atom
+
+  if(natot < 2) then
+
     ratio = UM
 
   else
 
-    ntmin = 1
-    jmin = 1
-
-    do nt = 1,ntype
-    do j = 1,natom(nt)
-
-      do i = 1,3
-        r1(i) = rat(i,j,nt)
-      enddo
-
-      call near_dist(dist, adot, r0, r1)
-
-      if(dist < distmin) then
-        ntmin = nt
-        jmin = j
-        distmin = dist
-      endif
-
-    enddo
-    enddo
-
-    distmin2 = 10*distmin + 10000000.0
+    distmin2 = ZERO
+    lfound = .FALSE.
 
     do nt = 1,ntype
     do j = 1,natom(nt)
 
       if(nt /= ntmin .or. j /= jmin) then
-        do i = 1,3
-          r1(i) = rat(i,j,nt)
-        enddo
 
-        call near_dist(dist, adot, r0, r1)
+        call near_dist(dist, adot, r0, rat(:,j,nt))
 
-        if(dist < distmin2) then
+        if(.not. lfound .or. dist < distmin2) then
+          lfound = .TRUE.
           distmin2 = dist
         endif
 
@@ -123,10 +132,11 @@ subroutine shift_origin(adot, ntype, natom, rat, shift, ratio,           &
     enddo
     enddo
 
-    do i = 1,3
-      shift(i) = -rat(i,jmin,ntmin)
-    enddo
-    ratio = distmin/distmin2
+    if(distmin2 > ZERO) then
+      ratio = distmin/distmin2
+    else
+      ratio = UM
+    endif
 
   endif
 
