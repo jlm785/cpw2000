@@ -15,18 +15,20 @@
 !>  For the spinor representation.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         13 December 2023.
+!>  \version      5.13
+!>  \date         13 December 2023, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
       dpsi_sp, hdpsi_sp,                                                 &
       ng, kgv,                                                           &
       ekpg, isort, vscr_sp, kmscr, nsp,                                  &
+      lgks, vtaumsh, rkpt, adot,                                         &
       anlsp, xnlkbsp, nanlsp, lnewanl,                                   &
       mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
 ! Adapted from the non spin version. 13 December 2023. JLM
+! Generalized Kohn-Sham meta-GGA, hk_psi_spin_c16 replaced by hk_psi_spin_driver_c16. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -50,6 +52,10 @@ subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point in reciprocal lattice coordinates
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
 
@@ -104,9 +110,10 @@ subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
 
 ! apply H to initial eigenvectors
 
-  call hk_psi_spin_c16(mtxd, neig, psi_sp, hpsi_sp, lnewanl,             &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr_sp, kmscr, nsp,                                  &
+  call hk_psi_spin_driver_c16(lgks, mtxd, neig, psi_sp, hpsi_sp,         &
+      lnewanl,                                                           &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                         &
       anlsp, xnlkbsp, nanlsp,                                            &
       mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
@@ -135,9 +142,10 @@ subroutine diag_jacobi_iter_spin_c16(mtxd, neig, psi_sp, hpsi_sp, njac,  &
     mxddim, mxdbnd)
 
 
-    call hk_psi_spin_c16(mtxd, neig, xerror, hxerror, lnewanl,           &
-      ng, kgv,                                                           &
-      ekpg, isort, vscr_sp, kmscr, nsp,                                  &
+    call hk_psi_spin_driver_c16(lgks, mtxd, neig, xerror, hxerror,       &
+      lnewanl,                                                           &
+      ng, kgv, rkpt, adot,                                               &
+      ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                         &
       anlsp, xnlkbsp, nanlsp,                                            &
       mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

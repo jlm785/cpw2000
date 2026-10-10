@@ -17,8 +17,8 @@
 !>  spin-wavefunction version.
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.09
-!>  \date         15 December 2023.
+!>  \version      5.13
+!>  \date         15 December 2023, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,9 +26,11 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
     psi_sp, dhdkpsi_sp,                                                  &
     kgv, isort,                                                          &
     nanlsp, anlsp, xnlkbsp, danlspdrk,                                   &
-    mxddim, mxdbnd, mxdgve, mxdasp)
+    lgks, vtaumsh, kmscr,                                                &
+    mxddim, mxdbnd, mxdgve, mxdasp, mxdscr)
 
 ! adapted from non-spin version, 15 December 2023. JLM
+! Generalized Kohn-Sham meta-GGA, vtau term. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -41,6 +43,7 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdasp                          !<  array dimension of number of projectors
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtaumsh
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
@@ -57,6 +60,10 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   complex(REAL64), intent(in)        ::  anlsp(2*mxddim,mxdasp)          !<  KB projectors without spin-orbit
   real(REAL64), intent(in)           ::  xnlkbsp(mxdasp)                 !<  KB normalization without spin-orbit
   complex(REAL64), intent(in)        ::  danlspdrk(2*mxddim,mxdasp,3)    !<  d anlsp / d rkpt
+
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
 ! output
 
@@ -78,6 +85,11 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
+
+! generalized Kohn-Sham meta-GGA
+
+  complex(REAL64), allocatable       ::  vtaupsi_sp(:,:)                 !  vtau |psi_sp>
+  complex(REAL64), allocatable       ::  dvtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>
 
 ! counters
 
@@ -115,6 +127,31 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   enddo
 
   deallocate(qcontra)
+
+! vtau term of the generalized Kohn-Sham meta-GGA
+
+  if(lgks) then
+
+    allocate(vtaupsi_sp(2*mxddim,mxdbnd))
+    allocate(dvtaupsi_sp(2*mxddim,mxdbnd,3))
+
+    call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,            &
+        dvtaupsi_sp,                                                     &
+        rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
+        mxddim, mxdbnd, mxdgve, mxdscr)
+
+    do j = 1,3
+      do n = 1,neig
+        do m = 1,2*mtxd
+          dhdkpsi_sp(m,n,j) = dhdkpsi_sp(m,n,j) + dvtaupsi_sp(m,n,j)
+        enddo
+      enddo
+    enddo
+
+    deallocate(vtaupsi_sp)
+    deallocate(dvtaupsi_sp)
+
+  endif
   deallocate(bdot)
 
   return

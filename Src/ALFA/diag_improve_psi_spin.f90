@@ -17,8 +17,8 @@
 !>  then does jacobi-ritz iteration
 !>
 !>  \author       José Luís Martins
-!>  \version      5.09
-!>  \date         18 December 2023.
+!>  \version      5.13
+!>  \date         18 December 2023, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
@@ -26,12 +26,14 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
     ei_pert, ei_sp, psi_sp, hpsi_sp,                                     &
     ng, kgv,                                                             &
     ekpg, isort, vscr_sp, kmscr, nsp,                                    &
+    lgks, vtaumsh,                                                       &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
 
 ! Written 18 December 2023 from early out_mass_berry code.  JLM
+! Generalized Kohn-Sham meta-GGA, lgks, vtaumsh. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -68,6 +70,8 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
 
@@ -136,6 +140,7 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
       njac, nritz, tol,                                                &
       ng, kgv,                                                         &
       ekpg, isort, vscr_sp, kmscr, nsp,                                &
+      lgks, vtaumsh, rkpt, adot,                                         &
       anlsp, xnlkbsp, nanlsp, lnewanl,                                 &
       mxddim, 2*mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

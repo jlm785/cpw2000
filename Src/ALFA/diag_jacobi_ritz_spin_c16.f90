@@ -16,8 +16,8 @@
 !>  spin version.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.09
-!>  \date         April 2019. 13 December 2023.
+!>  \version      5.13
+!>  \date         April 2019. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
@@ -25,10 +25,12 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
      njac, nritz, epsdeg,                                                &
      ng, kgv,                                                            &
      ekpg, isort, vscr_sp, kmscr, nsp,                                   &
+     lgks, vtaumsh, rkpt, adot,                                          &
      anlsp, xnlkbsp, nanlsp, lnewanl,                                    &
      mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
 ! Adapted from non-spin version, 13 December 2023.
+! Generalized Kohn-Sham meta-GGA, lgks, vtaumsh, rkpt, adot. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -54,6 +56,10 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
   integer, intent(in)                ::  isort(mxddim)                   !< g-vector associated with row/column i of hamiltonian
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !< screened potential in the fft real space mesh
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point in reciprocal lattice coordinates
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  kmscr(7)                        !< max value of kgv(i,n) used for the potential fft mesh
   integer, intent(in)                ::  nsp                             !< number of spin components ox xc-potential (1,2,4)
 
@@ -107,6 +113,7 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
         bas(1, neig+1), hbas(1, neig+1),                                 &
         ng, kgv,                                                         &
         ekpg, isort, vscr_sp, kmscr, nsp,                                &
+        lgks, vtaumsh, rkpt, adot,                                       &
         anlsp, xnlkbsp, nanlsp, lnewanl,                                 &
         mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

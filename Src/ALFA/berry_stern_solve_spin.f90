@@ -14,8 +14,8 @@
 !>  Solves the Sternheimer equation with a RCI (reverse communication interface)
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      5.09
-!>  \date         13 January 2023, 15 december 2023.
+!>  \version      5.13
+!>  \date         13 January 2023, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -24,12 +24,14 @@ subroutine berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,    &
     nlevel, levdeg, leveigs,                                             &
     isort, ekpg,                                                         &
     vscr_sp, kmscr, nsp,                                                 &
+    lgks, vtaumsh, rkpt, adot,                                           &
     ng, kgv,                                                             &
     nanlsp, anlsp, xnlkbsp,                                              &
     mxddim, mxdbnd, mxdgve, mxdscr, mxdasp, mxdlev, mxddeg, mxdnsp)
 
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
 ! spin version 15 December 2023. JLM
+! Generalized Kohn-Sham meta-GGA, hk_psi_spin_c16 replaced by hk_psi_spin_driver_c16. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -61,6 +63,10 @@ subroutine berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,    &
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh with spin components
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point in reciprocal lattice coordinates
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
   integer, intent(in)                ::  nanlsp                          !<  number of projectors with spin
   complex(REAL64), intent(in)        ::  anlsp(2*mxddim,mxdasp)          !<  KB projectors with spin-orbit
@@ -106,6 +112,8 @@ subroutine berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,    &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
+
+  logical           ::  lnewanl                                        !  anlsp recalculated (not used in default implementation)
 
 ! counters
 
@@ -191,9 +199,10 @@ subroutine berry_stern_solve_spin(mtxd, neig, psi_sp, ei, dhdkpsi_sp,    &
           call berry_project_one('O', psi_sp, ac(:,1), 2*mtxd, neig,     &
             2*mxddim, mxdbnd)
 
-          call hk_psi_spin_c16(mtxd, 1, ac, bc, .TRUE.,                  &
-             ng, kgv,                                                    &
-             ekpg, isort, vscr_sp, kmscr, nsp,                           &
+          lnewanl = .TRUE.
+          call hk_psi_spin_driver_c16(lgks, mtxd, 1, ac, bc, lnewanl,    &
+             ng, kgv, rkpt, adot,                                        &
+             ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                  &
              anlsp, xnlkbsp, nanlsp,                                     &
              mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

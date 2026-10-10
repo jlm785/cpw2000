@@ -38,7 +38,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! Modified, added full diagonalization, imethod. 25 March 2024. JLM
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
-! Generalized Kohn-Sham meta-GGA, warning for the spin-orbit calculation. 8 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, also with spin-orbit. 8 October 2026. JLM+claude
 
   implicit none
 
@@ -296,15 +296,6 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 
   if(lso) then
 
-    if(lgks) then
-      write(6,*)
-      write(6,'("   WARNING in ",a,":  the spin-orbit calculation")')    &
-          'out_mass_fd_xk'
-      write(6,'("   does not yet include the vtau term of the ",         &
-         &      "generalized Kohn-Sham meta-GGA.")')
-      write(6,*)
-    endif
-
     allocate(ei_l_so(2*mxdbnd,-npt:npt))
     allocate(psi_so(2*mxddim,2*mxdbnd))
     allocate(hpsi_so(2*mxddim,2*mxdbnd))
@@ -362,6 +353,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
              hamk_so,                                                      &
              ng, kgv, phase, conj, inds, kmax, indv,                       &
              veff, nqnl, delqnl, vkb, nkb,                                 &
+             lgks, vtau, ek,                                             &
              ntype, natom, rat, adot,                                      &
              mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, 2*mxddim)
 
@@ -393,6 +385,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
             ei_pert, ei_l_so(:,n), psi_so, hpsi_so,                      &
             ng, kgv,                                                     &
             ekpg, isort, vscr_sp, kmscr, nsp,                            &
+            lgks, vtaumsh,                                               &
             nqnl, delqnl, vkb, nkb,                                      &
             ntype, natom, rat, adot,                                     &
             mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)

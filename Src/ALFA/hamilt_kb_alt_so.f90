@@ -16,18 +16,20 @@
 !>  Alternative method using proj_nl_kb
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         22 March 2024,
+!>  \version      5.13
+!>  \date         22 March 2024, 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine hamilt_kb_alt_so(rkpt, mtxd, isort, qmod, ekpg,               &
     hamk,                                                                &
     ng, kgv, phase, conj, inds, kmax, indv,                              &
     veff, nqnl, delqnl, vkb, nkb,                                        &
+    lgks, vtau, ek,                                                      &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, mxdsml)
 
 ! Adapted from hamilt_kb_alt.  22 March 2024. JLM
+! Generalized Kohn-Sham meta-GGA, vtau term (hamilt_mgga_add). 8 October 2026. JLM+claude
 
 
   implicit none
@@ -60,6 +62,9 @@ subroutine hamilt_kb_alt_so(rkpt, mtxd, isort, qmod, ekpg,               &
   integer, intent(in)                ::  indv(mxdcub)                    !<  kgv(i,indv(jadd)) is the g-vector associated with jadd. jadd is defined by the g-vector components and kmax
 
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  real part of the ionic potential (hartree) for the prototype g-vector in star j
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  complex(REAL64), intent(in)        ::  vtau(mxdnst)                    !<  d (rho eps_xc) / d tau for the prototype g-vector in star j (only used if lgks)
+  real(REAL64), intent(in)           ::  ek(mxdnst)                      !<  kinetic energy (hartree) of g-vectors in star j
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
   real(REAL64), intent(in)           ::  delqnl(mxdtyp)                  !<  step used in the interpolation
@@ -81,6 +86,10 @@ subroutine hamilt_kb_alt_so(rkpt, mtxd, isort, qmod, ekpg,               &
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
+! local allocatable arrays
+
+  real(REAL64), allocatable          ::  hdiag(:)                        !  not used, needed by hamilt_mgga_add
+
 ! counters
 
   integer   ::  i, j
@@ -96,6 +105,18 @@ subroutine hamilt_kb_alt_so(rkpt, mtxd, isort, qmod, ekpg,               &
       ng, kgv, phase, conj, inds, kmax, indv,                            &
       veff,                                                              &
       mxdgve, mxdnst, mxdcub, mxddim, mxdsml)
+
+! vtau term of the generalized Kohn-Sham meta-GGA (does not depend on spin)
+
+  if(lgks) then
+    allocate(hdiag(mxddim))
+    hdiag(:) = ZERO
+    call hamilt_mgga_add(mtxd, mtxd, isort, qmod, vtau,                  &
+        kgv, phase, conj, inds, kmax, indv, ek,                          &
+        hdiag, hamk,                                                     &
+        mxdgve, mxdnst, mxdcub, mxddim, mxdsml)
+    deallocate(hdiag)
+  endif
 
 ! folds into large matrix
 

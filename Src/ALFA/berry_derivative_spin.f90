@@ -23,8 +23,8 @@
 !>  spin-wave-function version
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         15 December 2023. 11 April 2024.
+!>  \version      5.13
+!>  \date         15 December 2023. 8 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
@@ -33,6 +33,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     dhdkpsi_sp, dpsidk_sp, psidhdkpsi_sp, tfqg, tgammamf, td2hdk2,       &
     ng, kgv,                                                             &
     vscr_sp, kmscr, nsp,                                                 &
+    lgks, vtaumsh,                                                       &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
@@ -42,6 +43,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 ! Corrected psidhdkpsi_sp. 5 March 2024. JLM
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
 ! Modified, complex tensors, quantities calculated elsewhere. 11 April 2024. JLM
+! Generalized Kohn-Sham meta-GGA, vtau terms, hk_psi_spin_driver_c16. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -84,6 +86,8 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened local potential (including spin)
+  logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
+  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -133,6 +137,11 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   real(REAL64), parameter       ::  ZERO = 0.0_REAL64
   real(REAL64), parameter       ::  TOL = 1.0E-12_REAL64
 
+  logical           ::  lnewanl                                        !  anlsp recalculated (not used in default implementation)
+
+  complex(REAL64), allocatable       ::  vtaupsi_sp(:,:)                 !  vtau |psi_sp>
+  complex(REAL64), allocatable       ::  dvtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>, not used
+
 ! counters
 
   integer    ::  i, j, n, m
@@ -176,7 +185,8 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   call berry_dhdk_psi_spin(rkpt, adot, mtxd, neig, psi_sp, dhdkpsi_sp,   &
       kgv, isort,                                                        &
       nanlsp, anlsp, xnlkbsp, danlspdrk,                                 &
-      mxddim, mxdbnd, mxdgve, mxdasp)
+      lgks, vtaumsh, kmscr,                                              &
+      mxddim, mxdbnd, mxdgve, mxdasp, mxdscr)
 
   do nl = 1,nlevel
     do nk = 1,levdeg(nl)
@@ -199,6 +209,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
        nlevel, levdeg, leveigs,                                          &
        isort, ekpg,                                                      &
        vscr_sp, kmscr, nsp,                                              &
+       lgks, vtaumsh, rkpt, adot,                                        &
        ng, kgv,                                                          &
        nanlsp, anlsp, xnlkbsp,                                           &
        mxddim, mxdbnd, mxdgve, mxdscr, mxdasp, mxdlev, mxddeg, mxdnsp)
@@ -228,9 +239,11 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
     do j = 1,3
 
-      call hk_psi_spin_c16(mtxd, neig, dpsidk_sp(:,:,j), hmedpsidk_sp(:,:,j), .TRUE.,  &
-             ng, kgv,                                                                &
-             ekpg, isort, vscr_sp, kmscr, nsp,                                       &
+      lnewanl = .TRUE.
+      call hk_psi_spin_driver_c16(lgks, mtxd, neig, dpsidk_sp(:,:,j),    &
+             hmedpsidk_sp(:,:,j), lnewanl,                               &
+             ng, kgv, rkpt, adot,                                        &
+             ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                  &
              anlsp, xnlkbsp, nanlsp,                                                 &
              mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
@@ -256,6 +269,17 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
     call adot_to_bdot(adot, vcell, bdot)
 
+!   vtau |psi_sp> for the second derivative (generalized Kohn-Sham meta-GGA)
+
+    if(lgks) then
+      allocate(vtaupsi_sp(2*mxddim,mxdbnd))
+      allocate(dvtaupsi_sp(2*mxddim,mxdbnd,3))
+      call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,          &
+          dvtaupsi_sp,                                                   &
+          rkpt, adot, isort, kgv, vtaumsh, kmscr,                        &
+          mxddim, mxdbnd, mxdgve, mxdscr)
+    endif
+
     do nl = 1,nlevel
       do nk = 1,levdeg(nl)
         n = leveigs(nl,nk)
@@ -274,6 +298,10 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
             if(nk == mk) then
               td2hdk2(i,j,nk,mk,nl) = td2hdk2(i,j,nk,mk,nl) + bdot(i,j)
             endif
+            if(lgks) then
+              td2hdk2(i,j,nk,mk,nl) = td2hdk2(i,j,nk,mk,nl) +            &
+                     bdot(i,j)*zdotc(2*mtxd, psi_sp(:,n), 1, vtaupsi_sp(:,m), 1)
+            endif
           enddo
           enddo
 
@@ -285,6 +313,11 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     deallocate(vnl0)
     deallocate(dvnl0drk)
     deallocate(d2vnl0drk2)
+
+    if(lgks) then
+      deallocate(vtaupsi_sp)
+      deallocate(dvtaupsi_sp)
+    endif
 
     deallocate(hmedpsidk_sp)
 

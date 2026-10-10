@@ -37,7 +37,7 @@ subroutine out_qgeom(ioreplay,                                           &
 ! Orientation. 11 April 2024. JLM
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
-! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative, warning only for spin-orbit. 8 October 2026. JLM+claude
+! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative(_spin) and spin-orbit hamiltonians. 8 October 2026. JLM+claude
 
 
   implicit none
@@ -300,15 +300,6 @@ subroutine out_qgeom(ioreplay,                                           &
 
   if(yesno_so == 'y' .or. yesno_so == 'Y') then
 
-    if(lgks) then
-      write(6,*)
-      write(6,'("   WARNING in ",a,":  the spin-orbit calculation")')    &
-          'out_qgeom'
-      write(6,'("   does not yet include the vtau term of the ",         &
-         &      "generalized Kohn-Sham meta-GGA.")')
-      write(6,*)
-    endif
-
 
 !   choose method for spin-orbitals
 
@@ -371,6 +362,7 @@ subroutine out_qgeom(ioreplay,                                           &
            hamk_so,                                                      &
            ng, kgv, phase, conj, inds, kmax, indv,                       &
            veff, nqnl, delqnl, vkb, nkb,                                 &
+           lgks, vtau, ek,                                               &
            ntype, natom, rat, adot,                                      &
            mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, 2*mxddim)
 
@@ -401,6 +393,7 @@ subroutine out_qgeom(ioreplay,                                           &
           ei_pert, ei_sp, psi_sp, hpsi_sp,                               &
           ng, kgv,                                                       &
           ekpg, isort, vscr_sp, kmscr, nsp,                              &
+          lgks, vtaumsh,                                                 &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
@@ -498,6 +491,7 @@ subroutine out_qgeom(ioreplay,                                           &
       dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
+      lgks, vtaumsh,                                                     &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
