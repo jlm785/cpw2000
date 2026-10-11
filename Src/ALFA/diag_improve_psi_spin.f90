@@ -18,7 +18,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 December 2023, 8 October 2026.
+!>  \date         18 December 2023, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
@@ -26,7 +26,7 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
     ei_pert, ei_sp, psi_sp, hpsi_sp,                                     &
     ng, kgv,                                                             &
     ekpg, isort, vscr_sp, kmscr, nsp,                                    &
-    lgks, vtaumsh,                                                       &
+    lgks, vtau_sp,                                                       &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
@@ -34,6 +34,7 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
 
 ! Written 18 December 2023 from early out_mass_berry code.  JLM
 ! Generalized Kohn-Sham meta-GGA, lgks, vtaumsh. 8 October 2026. JLM+claude
+! vtau_sp with spin components (as vscr_sp) instead of vtaumsh. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -71,7 +72,7 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y), only used if lgks
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
 
@@ -140,7 +141,7 @@ subroutine diag_improve_psi_spin(rkpt, mtxd, neig, njac, nritz, tol,     &
       njac, nritz, tol,                                                &
       ng, kgv,                                                         &
       ekpg, isort, vscr_sp, kmscr, nsp,                                &
-      lgks, vtaumsh, rkpt, adot,                                         &
+      lgks, vtau_sp, rkpt, adot,                                         &
       anlsp, xnlkbsp, nanlsp, lnewanl,                                 &
       mxddim, 2*mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

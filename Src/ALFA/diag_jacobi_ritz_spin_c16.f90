@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         April 2019. 8 October 2026.
+!>  \date         April 2019. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
@@ -25,12 +25,13 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
      njac, nritz, epsdeg,                                                &
      ng, kgv,                                                            &
      ekpg, isort, vscr_sp, kmscr, nsp,                                   &
-     lgks, vtaumsh, rkpt, adot,                                          &
+     lgks, vtau_sp, rkpt, adot,                                          &
      anlsp, xnlkbsp, nanlsp, lnewanl,                                    &
      mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
 ! Adapted from non-spin version, 13 December 2023.
 ! Generalized Kohn-Sham meta-GGA, lgks, vtaumsh, rkpt, adot. 8 October 2026. JLM+claude
+! vtau_sp with spin components (as vscr_sp) instead of vtaumsh. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -57,7 +58,7 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !< screened potential in the fft real space mesh
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y), only used if lgks
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point in reciprocal lattice coordinates
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  kmscr(7)                        !< max value of kgv(i,n) used for the potential fft mesh
@@ -113,7 +114,7 @@ subroutine diag_jacobi_ritz_spin_c16(mtxd, neig, eg,                     &
         bas(1, neig+1), hbas(1, neig+1),                                 &
         ng, kgv,                                                         &
         ekpg, isort, vscr_sp, kmscr, nsp,                                &
-        lgks, vtaumsh, rkpt, adot,                                       &
+        lgks, vtau_sp, rkpt, adot,                                       &
         anlsp, xnlkbsp, nanlsp, lnewanl,                                 &
         mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 

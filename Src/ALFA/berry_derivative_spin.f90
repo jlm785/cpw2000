@@ -24,7 +24,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         15 December 2023. 8 October 2026.
+!>  \date         15 December 2023. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
@@ -33,7 +33,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
     dhdkpsi_sp, dpsidk_sp, psidhdkpsi_sp, tfqg, tgammamf, td2hdk2,       &
     ng, kgv,                                                             &
     vscr_sp, kmscr, nsp,                                                 &
-    lgks, vtaumsh,                                                       &
+    lgks, vtau_sp,                                                       &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr,              &
@@ -44,6 +44,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
 ! Modified, complex tensors, quantities calculated elsewhere. 11 April 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau terms, hk_psi_spin_driver_c16. 8 October 2026. JLM+claude
+! vtau_sp with spin components (as vscr_sp) instead of vtaumsh. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -87,7 +88,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   integer, intent(in)                ::  nsp                             !<  number of spin components ox xc-potential (1,2,4)
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened local potential (including spin)
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y), only used if lgks
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -185,8 +186,8 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   call berry_dhdk_psi_spin(rkpt, adot, mtxd, neig, psi_sp, dhdkpsi_sp,   &
       kgv, isort,                                                        &
       nanlsp, anlsp, xnlkbsp, danlspdrk,                                 &
-      lgks, vtaumsh, kmscr,                                              &
-      mxddim, mxdbnd, mxdgve, mxdasp, mxdscr)
+      lgks, vtau_sp, kmscr, nsp,                                         &
+      mxddim, mxdbnd, mxdgve, mxdasp, mxdscr, mxdnsp)
 
   do nl = 1,nlevel
     do nk = 1,levdeg(nl)
@@ -209,7 +210,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
        nlevel, levdeg, leveigs,                                          &
        isort, ekpg,                                                      &
        vscr_sp, kmscr, nsp,                                              &
-       lgks, vtaumsh, rkpt, adot,                                        &
+       lgks, vtau_sp, rkpt, adot,                                        &
        ng, kgv,                                                          &
        nanlsp, anlsp, xnlkbsp,                                           &
        mxddim, mxdbnd, mxdgve, mxdscr, mxdasp, mxdlev, mxddeg, mxdnsp)
@@ -243,7 +244,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
       call hk_psi_spin_driver_c16(lgks, mtxd, neig, dpsidk_sp(:,:,j),    &
              hmedpsidk_sp(:,:,j), lnewanl,                               &
              ng, kgv, rkpt, adot,                                        &
-             ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                  &
+             ekpg, isort, vscr_sp, vtau_sp, kmscr, nsp,                  &
              anlsp, xnlkbsp, nanlsp,                                                 &
              mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
@@ -276,8 +277,8 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
       allocate(dvtaupsi_sp(2*mxddim,mxdbnd,3))
       call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,          &
           dvtaupsi_sp,                                                   &
-          rkpt, adot, isort, kgv, vtaumsh, kmscr,                        &
-          mxddim, mxdbnd, mxdgve, mxdscr)
+          rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                   &
+          mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
     endif
 
     do nl = 1,nlevel

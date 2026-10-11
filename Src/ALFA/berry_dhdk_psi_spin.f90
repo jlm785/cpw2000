@@ -18,7 +18,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         15 December 2023, 8 October 2026.
+!>  \date         15 December 2023, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,11 +26,12 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
     psi_sp, dhdkpsi_sp,                                                  &
     kgv, isort,                                                          &
     nanlsp, anlsp, xnlkbsp, danlspdrk,                                   &
-    lgks, vtaumsh, kmscr,                                                &
-    mxddim, mxdbnd, mxdgve, mxdasp, mxdscr)
+    lgks, vtau_sp, kmscr, nsp,                                           &
+    mxddim, mxdbnd, mxdgve, mxdasp, mxdscr, mxdnsp)
 
 ! adapted from non-spin version, 15 December 2023. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau term. 8 October 2026. JLM+claude
+! vtau_sp with spin components (as vscr_sp) instead of vtaumsh, nsp. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -43,7 +44,8 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdasp                          !<  array dimension of number of projectors
-  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtaumsh
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtau_sp
+  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
@@ -62,7 +64,8 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   complex(REAL64), intent(in)        ::  danlspdrk(2*mxddim,mxdasp,3)    !<  d anlsp / d rkpt
 
   logical, intent(in)                ::  lgks                            !<  generalized Kohn-Sham meta-GGA (vtau term)
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y), only used if lgks
+  integer, intent(in)                ::  nsp                             !<  number of spin components of vtau_sp (1,2,4)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
 ! output
@@ -137,8 +140,8 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
 
     call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,            &
         dvtaupsi_sp,                                                     &
-        rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
-        mxddim, mxdbnd, mxdgve, mxdscr)
+        rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                     &
+        mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
     do j = 1,3
       do n = 1,neig

@@ -11,21 +11,25 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Spinor version of dvtaudk_psi_c16.  As vtau does not depend on
-!>  spin the two components (interleaved, 2*i-1 and 2*i) are treated
-!>  as independent wave-functions.
+!>  Spinor version of dvtaudk_psi_c16.  vtau_sp has the same
+!>  convention as vscr_sp, components (1, sigma_z, sigma_x, sigma_y),
+!>  so the vtau term is  -1/2 nabla . (vtau_1 + vtau . sigma) nabla.
+!>  As the operator is linear in vtau, the result is the Pauli
+!>  combination of dvtaudk_psi_c16 applied to the two spinor
+!>  components (interleaved, 2*i-1 and 2*i) for each component of vtau_sp.
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         8 October 2026.
+!>  \date         8 October 2026, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
     dvtaupsi_sp,                                                         &
-    rkpt, adot, isort, kgv, vtaumsh, kmscr,                              &
-    mxddim, mxdbnd, mxdgve, mxdscr)
+    rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                         &
+    mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
 ! Written 8 October 2026. claude
+! vtau_sp with spin components (1,2,4) as vscr_sp. 12 October 2026. claude
 
   implicit none
 
@@ -36,7 +40,8 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
-  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtaumsh
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of vtau_sp
+  integer, intent(in)                ::  mxdnsp                          !<  array dimension for number of spin components (1,2,4)
 
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension (basis size, does not include spin)
   integer, intent(in)                ::  neig                            !<  number of spin-wavefunctions
@@ -47,8 +52,9 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
   integer, intent(in)                ::  isort(mxddim)                   !<  g-vector associated with row/column i of hamiltonian
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
 
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
+  integer, intent(in)                ::  nsp                             !<  number of spin components of vtau_sp (1,2,4)
 
 ! output
 
@@ -57,14 +63,34 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
 
 ! local allocatable arrays
 
-  complex(REAL64), allocatable       ::  psi(:,:)                        !  spin components as independent wave-functions
-  complex(REAL64), allocatable       ::  vtaupsi(:,:)
-  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)
+  complex(REAL64), allocatable       ::  psi(:,:)                        !  spin components as independent wave-functions (up: 1..neig, down: neig+1..2*neig)
+  complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  result for one component of vtau_sp
+  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  result for one component of vtau_sp
+
+! local variables
+
+  complex(REAL64)    ::  cup, cdn                                        !  coefficients of the up and down results in the up row (cup) and in the down row (cdn)
+
+! constants
+
+  real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  ::  C_I = cmplx(ZERO,UM,REAL64)
 
 ! counters
 
-  integer   ::   m, n, l
+  integer   ::   m, n, l, isp
 
+
+  if(nsp /= 1 .and. nsp /= 2 .and. nsp /= 4) then
+    write(6,*)
+    write(6,'("   STOPPED in dvtaudk_psi_spin_c16.  nsp = ",i8,          &
+           &  " is an incorrect value, should be 1,2,4")') nsp
+    write(6,*)
+
+    stop
+
+  endif
 
   allocate(psi(mtxd,2*neig))
   allocate(vtaupsi(mtxd,2*neig))
@@ -77,23 +103,67 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
     enddo
   enddo
 
-  call dvtaudk_psi_c16(mtxd, 2*neig, psi, vtaupsi, dvtaupsi,             &
-      rkpt, adot, isort, kgv, vtaumsh, kmscr,                            &
-      mtxd, 2*neig, mxdgve, mxdscr)
+  vtaupsi_sp(1:2*mtxd,1:neig) = C_ZERO
+  dvtaupsi_sp(1:2*mtxd,1:neig,:) = C_ZERO
 
-  do n = 1,neig
-    do m = 1,mtxd
-      vtaupsi_sp(2*m-1,n) = vtaupsi(m,n     )
-      vtaupsi_sp(2*m  ,n) = vtaupsi(m,n+neig)
-    enddo
-  enddo
-  do l = 1,3
-    do n = 1,neig
-      do m = 1,mtxd
-        dvtaupsi_sp(2*m-1,n,l) = dvtaupsi(m,n     ,l)
-        dvtaupsi_sp(2*m  ,n,l) = dvtaupsi(m,n+neig,l)
+  do isp = 1,nsp
+
+    call dvtaudk_psi_c16(mtxd, 2*neig, psi, vtaupsi, dvtaupsi,           &
+        rkpt, adot, isort, kgv, vtau_sp(:,isp), kmscr,                   &
+        mtxd, 2*neig, mxdgve, mxdscr)
+
+!   (1, sigma_z): diagonal in spin, +1/+1 and +1/-1
+!   (sigma_x, sigma_y): off-diagonal, up row gets 1 or -i times down, down row 1 or +i times up
+
+    if(isp == 1 .or. isp == 2) then
+
+      cup = C_ZERO
+      cdn = C_ZERO
+      if(isp == 1) cdn = cmplx(UM,ZERO,REAL64)
+      if(isp == 2) cdn = cmplx(-UM,ZERO,REAL64)
+
+      do n = 1,neig
+        do m = 1,mtxd
+          vtaupsi_sp(2*m-1,n) = vtaupsi_sp(2*m-1,n) + vtaupsi(m,n     )
+          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) + cdn*vtaupsi(m,n+neig)
+        enddo
       enddo
-    enddo
+      do l = 1,3
+        do n = 1,neig
+          do m = 1,mtxd
+            dvtaupsi_sp(2*m-1,n,l) = dvtaupsi_sp(2*m-1,n,l) + dvtaupsi(m,n     ,l)
+            dvtaupsi_sp(2*m  ,n,l) = dvtaupsi_sp(2*m  ,n,l) + cdn*dvtaupsi(m,n+neig,l)
+          enddo
+        enddo
+      enddo
+
+    else
+
+      if(isp == 3) then
+        cup = cmplx(UM,ZERO,REAL64)
+        cdn = cmplx(UM,ZERO,REAL64)
+      else
+        cup = -C_I
+        cdn = C_I
+      endif
+
+      do n = 1,neig
+        do m = 1,mtxd
+          vtaupsi_sp(2*m-1,n) = vtaupsi_sp(2*m-1,n) + cup*vtaupsi(m,n+neig)
+          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) + cdn*vtaupsi(m,n     )
+        enddo
+      enddo
+      do l = 1,3
+        do n = 1,neig
+          do m = 1,mtxd
+            dvtaupsi_sp(2*m-1,n,l) = dvtaupsi_sp(2*m-1,n,l) + cup*dvtaupsi(m,n+neig,l)
+            dvtaupsi_sp(2*m  ,n,l) = dvtaupsi_sp(2*m  ,n,l) + cdn*dvtaupsi(m,n     ,l)
+          enddo
+        enddo
+      enddo
+
+    endif
+
   enddo
 
   deallocate(psi)

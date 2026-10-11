@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         9 November 2023. 8 October 2026.
+!>  \date         9 November 2023. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_berry(ioreplay,                                      &
@@ -40,6 +40,7 @@ subroutine out_mass_berry(ioreplay,                                      &
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative(_spin) and spin-orbit hamiltonians. 8 October 2026. JLM+claude
+! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -137,6 +138,7 @@ subroutine out_mass_berry(ioreplay,                                      &
   complex(REAL64), allocatable       ::  hpsi_sp(:,:)                    !  H | psi>
 
   real(REAL64), allocatable          ::  vscr_sp(:,:)
+  real(REAL64), allocatable          ::  vtau_sp(:,:)                    !  vtau with spin components, as vscr_sp (only used if lgks)
 
   real(REAL64), allocatable          ::  xpoint(:,:)
 
@@ -359,8 +361,11 @@ subroutine out_mass_berry(ioreplay,                                      &
     mxdnsp = 1
 
     allocate(vscr_sp(mxdscr,mxdnsp))
+    allocate(vtau_sp(mxdscr,mxdnsp))
 
     vscr_sp(:,1) = vscr(:)
+    vtau_sp(:,:) = ZERO
+    vtau_sp(:,1) = vtaumsh(:)
 
     if(imethod == 1) then
 
@@ -403,7 +408,7 @@ subroutine out_mass_berry(ioreplay,                                      &
           ei_pert, ei_sp, psi_sp, hpsi_sp,                               &
           ng, kgv,                                                       &
           ekpg, isort, vscr_sp, kmscr, nsp,                              &
-          lgks, vtaumsh,                                                 &
+          lgks, vtau_sp,                                                 &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
@@ -488,7 +493,7 @@ subroutine out_mass_berry(ioreplay,                                      &
       dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
-      lgks, vtaumsh,                                                     &
+      lgks, vtau_sp,                                                     &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
@@ -516,6 +521,7 @@ subroutine out_mass_berry(ioreplay,                                      &
     deallocate(psi_sp)
     deallocate(hpsi_sp)
     deallocate(vscr_sp)
+    deallocate(vtau_sp)
 
     allocate(deidxk(2*mxdbnd))
     allocate(d2eidxk2(2*mxdbnd))

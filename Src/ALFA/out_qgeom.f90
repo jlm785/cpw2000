@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         4 April 2024. 8 October 2026.
+!>  \date         4 April 2024. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom(ioreplay,                                           &
@@ -38,6 +38,7 @@ subroutine out_qgeom(ioreplay,                                           &
 ! Print k-point in cpw_pp_get_k_vector, 24 September 2025. JLM
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative(_spin) and spin-orbit hamiltonians. 8 October 2026. JLM+claude
+! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -134,6 +135,7 @@ subroutine out_qgeom(ioreplay,                                           &
   complex(REAL64), allocatable       ::  hpsi_sp(:,:)                    !  H | psi>
 
   real(REAL64), allocatable          ::  vscr_sp(:,:)                    !  screened potential (spin)
+  real(REAL64), allocatable          ::  vtau_sp(:,:)                    !  vtau with spin components, as vscr_sp (only used if lgks)
 
   complex(REAL64), allocatable       ::  hamk_so(:,:)                    !  hamiltonian matrix with spin-orbit
   real(REAL64), allocatable          ::  eiall_so(:)                     !  energies
@@ -349,8 +351,11 @@ subroutine out_qgeom(ioreplay,                                           &
     mxdnsp = 1
 
     allocate(vscr_sp(mxdscr,mxdnsp))
+    allocate(vtau_sp(mxdscr,mxdnsp))
 
     vscr_sp(:,1) = vscr(:)
+    vtau_sp(:,:) = ZERO
+    vtau_sp(:,1) = vtaumsh(:)
 
     if(imethod == 1) then
 
@@ -393,7 +398,7 @@ subroutine out_qgeom(ioreplay,                                           &
           ei_pert, ei_sp, psi_sp, hpsi_sp,                               &
           ng, kgv,                                                       &
           ekpg, isort, vscr_sp, kmscr, nsp,                              &
-          lgks, vtaumsh,                                                 &
+          lgks, vtau_sp,                                                 &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
@@ -491,7 +496,7 @@ subroutine out_qgeom(ioreplay,                                           &
       dhdkpsi, dpsidk, psidhdkpsi, tfqg, tgammamf, td2hdk2,              &
       ng, kgv,                                                           &
       vscr_sp, kmscr, nsp,                                               &
-      lgks, vtaumsh,                                                     &
+      lgks, vtau_sp,                                                     &
       nqnl, delqnl, vkb, nkb,                                            &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, 2*mxdbnd, mxdgve, mxdscr,          &
@@ -501,6 +506,7 @@ subroutine out_qgeom(ioreplay,                                           &
     deallocate(psi_sp)
     deallocate(hpsi_sp)
     deallocate(vscr_sp)
+    deallocate(vtau_sp)
 
     allocate(deidxk(2*mxdbnd))
     allocate(d2eidxk2(2*mxdbnd))

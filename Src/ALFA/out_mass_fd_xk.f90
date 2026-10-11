@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         7 November 2023. 8 October 2026.
+!>  \date         7 November 2023. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
@@ -39,6 +39,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, also with spin-orbit. 8 October 2026. JLM+claude
+! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 
   implicit none
 
@@ -142,6 +143,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   complex(REAL64), allocatable       ::  hpsi_so(:,:)                    !  H | psi>
 
   real(REAL64), allocatable          ::  vscr_sp(:,:)
+  real(REAL64), allocatable          ::  vtau_sp(:,:)                    !  vtau with spin components, as vscr_sp (only used if lgks)
 
   real(REAL64), allocatable          ::  xin(:), yin(:)
 
@@ -302,6 +304,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
     allocate(ei_pert(2*mxdbnd))
     mxdnsp = 1
     allocate(vscr_sp(mxdscr,mxdnsp))
+    allocate(vtau_sp(mxdscr,mxdnsp))
   endif
 
   do n = -npt,npt
@@ -342,6 +345,8 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
       nsp = 1
 
       vscr_sp(:,1) = vscr(:)
+      vtau_sp(:,:) = ZERO
+      vtau_sp(:,1) = vtaumsh(:)
 
       if(imethod == 1) then
 
@@ -385,7 +390,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
             ei_pert, ei_l_so(:,n), psi_so, hpsi_so,                      &
             ng, kgv,                                                     &
             ekpg, isort, vscr_sp, kmscr, nsp,                            &
-            lgks, vtaumsh,                                               &
+            lgks, vtau_sp,                                               &
             nqnl, delqnl, vkb, nkb,                                      &
             ntype, natom, rat, adot,                                     &
             mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
@@ -514,6 +519,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
     deallocate(hpsi_so)
     deallocate(ei_pert)
     deallocate(vscr_sp)
+    deallocate(vtau_sp)
   endif
 
   deallocate(xin,yin)

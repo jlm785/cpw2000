@@ -14,21 +14,23 @@
 !>  Calculates the product of the hamiltonian times neig spin-wavevectors,
 !>  either the Kohn-Sham hamiltonian (hk_psi_spin_c16) or the generalized
 !>  Kohn-Sham hamiltonian of a meta-GGA (hk_psi_spin_mgga_c16).
-!>  vtau does not depend on spin (vtau_sp has only the first component).
+!>  vtau_sp has the same convention as vscr_sp, components
+!>  (1, sigma_z, sigma_x, sigma_y) for nsp = 1, 2, 4.
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         8 October 2026.
+!>  \date         8 October 2026, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine hk_psi_spin_driver_c16(lgks, mtxd, neig, psi_sp, hpsi_sp,     &
     lnewanl,                                                             &
     ng, kgv, rkpt, adot,                                                 &
-    ekpg, isort, vscr_sp, vtaumsh, kmscr, nsp,                           &
+    ekpg, isort, vscr_sp, vtau_sp, kmscr, nsp,                           &
     anlsp, xnlkbsp, nanlsp,                                              &
     mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
 
 ! Written 8 October 2026 from hk_psi_driver_c16. claude
+! vtau_sp with spin components (as vscr_sp) instead of vtaumsh. 12 October 2026. claude
 
   implicit none
 
@@ -54,7 +56,7 @@ subroutine hk_psi_spin_driver_c16(lgks, mtxd, neig, psi_sp, hpsi_sp,     &
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
 
   real(REAL64), intent(in)           ::  vscr_sp(mxdscr,mxdnsp)          !<  screened potential in the fft real space mesh (1, sigma_z, sigma_x, sigma_y)
-  real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
+  real(REAL64), intent(in)           ::  vtau_sp(mxdscr,mxdnsp)          !<  d (rho eps_xc) / d tau in the fft real space mesh (1, sigma_z, sigma_x, sigma_y), only used if lgks
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
   integer, intent(in)                ::  nsp                             !<  number of spin components of the potential (1,2,4)
 
@@ -74,28 +76,14 @@ subroutine hk_psi_spin_driver_c16(lgks, mtxd, neig, psi_sp, hpsi_sp,     &
 
   complex(REAL64), intent(out)       ::  hpsi_sp(2*mxddim,mxdbnd)        !<  |hpsi_sp> =  H |psi_sp>
 
-! local allocatable arrays
-
-  real(REAL64), allocatable          ::  vtau_sp(:,:)                    !  vtau with spin components, only the first is not zero
-
-! constants
-
-  real(REAL64), parameter    ::  ZERO = 0.0_REAL64
-
 
   if(lgks) then
-
-    allocate(vtau_sp(mxdscr,mxdnsp))
-    vtau_sp(:,:) = ZERO
-    vtau_sp(:,1) = vtaumsh(:)
 
     call hk_psi_spin_mgga_c16(mtxd, neig, psi_sp, hpsi_sp, lnewanl,      &
         ng, kgv, rkpt, adot,                                             &
         ekpg, isort, vscr_sp, vtau_sp, kmscr, nsp,                       &
         anlsp, xnlkbsp, nanlsp,                                          &
         mxddim, mxdbnd, mxdasp, mxdgve, mxdscr, mxdnsp)
-
-    deallocate(vtau_sp)
 
   else
 
