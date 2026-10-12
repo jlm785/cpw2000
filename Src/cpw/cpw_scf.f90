@@ -63,6 +63,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Anderson mixing of vtau. 7 October 2026. JLM+claude
 ! vcomp_%vtau is the input vtau of the hamiltonian (as veff), output in vtauout. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -350,7 +351,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   call xc_author_family(xc_%author, lxclda, lxcgga, lxcmgga, lxcmggavxc)
 
   call xc_author_tau(xc_%author, xcbase, tausrc)
-  lgks = lxcmgga .and. tausrc == 'PSI '
+  lgks = .FALSE.
+  if(lxcmgga .and. tausrc == 'PSI ') lgks = .TRUE.
 
   call xc_author_info(xc_%author, lxcgrad, lxclap, lxctau, lxctb09, lxccalc)
 

@@ -33,6 +33,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks from author, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -328,7 +329,8 @@ subroutine plot_psi_sub(ioreplay)
 ! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
 
   call xc_author_tau(author, xcbase, tausrc)
-  lgks = tausrc == 'PSI '
+  lgks = .FALSE.
+  if(tausrc == 'PSI ') lgks = .TRUE.
 
   if(lgks) then
     call pot_local(ipr, 'KE density potential',                          &

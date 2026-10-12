@@ -43,7 +43,7 @@
 !>
 !>  \author       R. P. Brent + claude + JLM
 !>  \version      5.13
-!>  \date         3 October 2026.
+!>  \date         3 October 2026. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine num_zbrent(xval, fval, ax, bx, tol, iflag)
@@ -51,6 +51,7 @@ subroutine num_zbrent(xval, fval, ax, bx, tol, iflag)
 ! Prefix eqst_ for all subroutines and functions, split from eqst.f90. 3 October 2026. JLM+claude
 ! Rewritten from zeroin with a reverse communication interface. 3 October 2026. JLM+claude
 ! Renamed num_zbrent, pure numerical routine. 3 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
   implicit none
   integer, parameter  :: REAL64 = selected_real_kind(12)
@@ -130,7 +131,8 @@ subroutine num_zbrent(xval, fval, ax, bx, tol, iflag)
   else
 
     fb = fval
-    lnewc = (fb*(fc/abs(fc)) > ZERO)
+    lnewc = .FALSE.
+    if(fb*(fc/abs(fc)) > ZERO) lnewc = .TRUE.
 
   endif
 

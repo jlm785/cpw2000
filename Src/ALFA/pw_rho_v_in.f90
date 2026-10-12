@@ -20,7 +20,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 16, 2014, 7 October 2026.
+!>  \date         May 16, 2014, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
@@ -49,6 +49,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! vtau, several atomic basis sets, core tau, old files recognized. 7 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
 
   implicit none
@@ -166,7 +167,8 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! newer files have mxdset in the first record
 
   read(io,iostat=ioerr) i1, i2, i3, i4, i5, i6, i7
-  lnew = ioerr == 0
+  lnew = .FALSE.
+  if(ioerr == 0) lnew = .TRUE.
   rewind(io)
 
 ! reads the first part of the file up to the geometry

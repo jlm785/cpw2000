@@ -41,6 +41,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in kdotp_matrix(_so_pert), warning removed. 8 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! neigk, nmodel+1 was passed to intent(inout) in h_kb_dia_all. 12 October 2026. JLM+claude
 
   implicit none
 
@@ -166,6 +167,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 
   character(len=1)  ::  yesno, yesno_dir
   integer           ::  nocc
+  integer           ::  neigk                                            !  number of eigenvectors in h_kb_dia_all (may be modified on output)
 
   real(REAL64)      ::  bdot(3,3), vcell
 
@@ -293,8 +295,9 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 
 
   nocc = nmodel
+  neigk = nmodel+1
 
-  call h_kb_dia_all('pw  ', emax, rk0, nmodel+1, nocc,                   &
+  call h_kb_dia_all('pw  ', emax, rk0, neigk, nocc,                      &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
       ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
       sfact, veff, icmplx,                                               &
@@ -307,6 +310,16 @@ subroutine out_mass_kdotp(ioreplay,                                      &
       latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,            &
       mxdbnd, mxdscr, mxdlao)
+
+  if(neigk < nmodel+1) then
+    write(6,*)
+    write(6,'("   STOPPED in out_mass_kdotp.  h_kb_dia_all returned ",    &
+         &  i6," eigenvectors, ",i6," were requested")') neigk, nmodel+1
+    write(6,*)
+
+    stop
+
+  endif
 
   if(abs(ei(nmodel+1)-ei(nmodel)) < 0.1) then
     write(6,*)

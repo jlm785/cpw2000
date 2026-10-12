@@ -41,6 +41,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! Generalized Kohn-Sham meta-GGA, also with spin-orbit. 8 October 2026. JLM+claude
 ! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! neigk, neig is intent(in) but intent(inout) in h_kb_dia_all. 12 October 2026. JLM+claude
 
   implicit none
 
@@ -175,6 +176,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
   integer           ::  nsfft(3)
 
   integer           ::  nocc
+  integer           ::  neigk                                            !  copy of neig for h_kb_dia_all (may be modified on output)
   integer           ::  iguess
 
   integer           ::  nsp, mxdnsp
@@ -316,12 +318,13 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
       rk_l(k,n) = rkpt(k) - n*delta*yk(k)
     enddo
 
+    neigk = neig
     nocc = neig
     iguess = 0
 
     ipr = 1
 
-    call h_kb_dia_all('pw  ', emax, rk_l(:,n), neig, nocc,               &
+    call h_kb_dia_all('pw  ', emax, rk_l(:,n), neigk, nocc,              &
         flgpsd, ipr, ifail, icmax, iguess, epsloc,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
@@ -334,6 +337,16 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
         latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao)
+
+    if(neigk < neig) then
+      write(6,*)
+      write(6,'("   STOPPED in out_mass_fd_xk.  h_kb_dia_all returned ",  &
+           &  i6," eigenvectors, ",i6," were requested")') neigk, neig
+      write(6,*)
+
+      stop
+
+    endif
 
     ipr = 1
 

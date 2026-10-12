@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 7 October 2026.
+!>  \date         December 18, 2013, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -47,6 +47,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Rewrites the questions for the defaults in a separate subroutine. 2 March 2026. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -283,7 +284,8 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! generalized Kohn-Sham meta-GGA
 
   call xc_author_tau(author, xcbase, tausrc)
-  lgks = tausrc == 'PSI '
+  lgks = .FALSE.
+  if(tausrc == 'PSI ') lgks = .TRUE.
 
 
   do i = 1,100

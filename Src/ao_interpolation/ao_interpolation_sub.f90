@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 7 October 2026.
+!>  \date         December 18, 2013, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -37,6 +37,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Modified, cpw_pp_band_dos_init/prepare. 12 March 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 ! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
+! Logical assignments written as if statements. 12 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -265,7 +266,8 @@ subroutine ao_interpolation_sub(ioreplay)
 ! generalized Kohn-Sham meta-GGA
 
   call xc_author_tau(author, xcbase, tausrc)
-  lgks = tausrc == 'PSI '
+  lgks = .FALSE.
+  if(tausrc == 'PSI ') lgks = .TRUE.
 
 
   write(6,*)
