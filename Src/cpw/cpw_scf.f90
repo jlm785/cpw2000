@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 1993, 7 October 2026.
+!>  \date         October 1993, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -62,6 +62,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! linear mixing and convergence of vtau. 6 October 2026. JLM+claude
 ! Anderson mixing of vtau. 7 October 2026. JLM+claude
 ! vcomp_%vtau is the input vtau of the hamiltonian (as veff), output in vtauout. 7 October 2026. JLM+claude
+! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -440,7 +441,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     if(iprglob == 4) ipr = 2
 
 
-    call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,   &
+    call pot_local(ipr, 'local potential',                               &
+        vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,               &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
         recip_%ns, recip_%inds,                                          &
         mxdscr, dims_%mxdgve, dims_%mxdnst)
@@ -449,7 +451,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     if(lgks) then
 
-      call pot_local(0, vtaumsh, vtmax, vtmin, vtauin, kmscr,            &
+      call pot_local(0, 'KE density potential',                          &
+          vtaumsh, vtmax, vtmin, vtauin, kmscr,                          &
           recip_%kmax, recip_%ng, recip_%kgv, recip_%phase, recip_%conj, &
           recip_%ns, recip_%inds,                                        &
           mxdscr, dims_%mxdgve, dims_%mxdnst)
@@ -501,7 +504,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
             vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
           enddo
 
-          call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,  &
+          call pot_local(ipr, 'local potential',                         &
+              vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,         &
               recip_%ng, recip_%kgv, recip_%phase, recip_%conj,               &
               recip_%ns, recip_%inds,                                         &
               mxdscr, dims_%mxdgve, dims_%mxdnst)

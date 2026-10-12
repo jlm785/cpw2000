@@ -17,7 +17,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 8 October 2026.
+!>  \date         8 may 2004, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
@@ -41,6 +41,7 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in kdotp_matrix(_so_pert), warning removed. 8 October 2026. JLM+claude
+! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 
 
   implicit none
@@ -285,14 +286,16 @@ subroutine out_opt_glk(diag_type, lworkers, xsvd, csvd,                  &
 
   ipr = 1
 
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
+  call pot_local(ipr, 'local potential',                                 &
+  vscr, vmax, vmin, veff, kmscr, kmax,                                   &
   ng, kgv, phase, conj, ns, inds,                                        &
   mxdscr, mxdgve, mxdnst)
 
 ! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
 
   if(lgks) then
-    call pot_local(ipr, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,        &
+    call pot_local(ipr, 'KE density potential',                          &
+    vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,                            &
     ng, kgv, phase, conj, ns, inds,                                      &
     mxdscr, mxdgve, mxdnst)
   endif

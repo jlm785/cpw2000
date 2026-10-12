@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         16 February 2018, 7 October 2026.
+!>  \date         16 February 2018, 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -32,6 +32,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks from author, vtau in the fft mesh. 7 October 2026. JLM+claude
+! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -318,7 +319,8 @@ subroutine plot_psi_sub(ioreplay)
 
   ipr = 1
 
-  call pot_local(ipr, vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax, &
+  call pot_local(ipr, 'local potential',                                 &
+      vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,                 &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                  &
       recip_%ns, recip_%inds,                                            &
       mxdscr, dims_%mxdgve, dims_%mxdnst)
@@ -329,7 +331,8 @@ subroutine plot_psi_sub(ioreplay)
   lgks = tausrc == 'PSI '
 
   if(lgks) then
-    call pot_local(ipr, vtaumsh, vtmax, vtmin, vcomp_%vtau, kmscr,       &
+    call pot_local(ipr, 'KE density potential',                          &
+        vtaumsh, vtmax, vtmin, vcomp_%vtau, kmscr,                       &
         recip_%kmax, recip_%ng, recip_%kgv, recip_%phase, recip_%conj,   &
         recip_%ns, recip_%inds,                                          &
         mxdscr, dims_%mxdgve, dims_%mxdnst)

@@ -13,6 +13,9 @@
 
 !>  Computes the local potential on a grid
 !>  using fast fourier transforms.
+!>  Also used for other quantities given by star coefficients,
+!>  for example vtau (d (rho eps_xc) / d tau) of a meta-GGA.
+!>  vname is only used for printing.
 !>
 !>  The description of the fft mesh (kmscr) is calculated
 !>  outside, by size_kmscr, so that it can be shared with other
@@ -20,10 +23,10 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 February 2018. 24 September 2026.
+!>  \date         20 February 2018. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
+subroutine pot_local(ipr, vname, vscr, vmax, vmin, veff, kmscr, kmax,    &
     ng, kgv, phase, conj, ns, inds,                                      &
     mxdscr,mxdgve, mxdnst)
 
@@ -41,6 +44,7 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
 ! Modified, kmscr(4:7) and idshift moved to size_kmscr,
 !           kmax is input.  24 September 2026. JLM            WARNING NEW API
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
+! vname, also used for vtau. 12 October 2026. JLM+claude            WARNING NEW API
 
   implicit none
 
@@ -54,6 +58,8 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
 
   integer, intent(in)                ::  ipr                             !<  print option, ipr=0 no printing, ipr=1 some printing, ipr=2 a lot of printing
+  character(len=*), intent(in)       ::  vname                           !<  name of the quantity for printing, e.g. 'local potential', 'KE density potential'
+
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  ionic potential (local+Hartree+XC) for the prototype g-vector in star j
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -93,11 +99,11 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
     adot(i,i) = UM
   enddo
 
-! printout local potential
+! printout of the quantity in g-space
 
   if (ipr > 2) then
     write(6,*)
-    write(6,*)  '  local potential in g-space'
+    write(6,*)  '  ', trim(vname), ' in g-space'
     write(6,*)
     write(6,'(20f10.3)') (veff(i),i=1,ns)
     write(6,*)
@@ -112,13 +118,13 @@ subroutine pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,           &
 
   if (ipr /= 0) then
     write(6,*)
-    write(6,'("  in fft for local potential n =",3i5)') n1,n2,n3
+    write(6,'("  in fft for ",a," n =",3i5)') trim(vname), n1,n2,n3
   endif
 
 ! initialize charge density array and enter symmetrized charge.
 ! gvec_mesh_set checks that the mesh fits in vscr
 
-  call gvec_mesh_set(ipr, 'potential', adot, veff,                       &
+  call gvec_mesh_set(ipr, vname, adot, veff,                             &
     vscr, id,n1,n2,n3, .FALSE.,                                          &
     ng, kgv, phase, conj, inds, kmax,                                    &
     mxdgve, mxdnst, mxdscr)

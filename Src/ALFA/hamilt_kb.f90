@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      4.94
-!>  \date         8 February 1990,
+!>  \date         8 February 1990, 26 September 2015
 !>  \copyright    GNU Public License v2
 
 subroutine hamilt_kb(mtxd, hdiag, isort, qmod,                           &
@@ -76,7 +76,7 @@ subroutine hamilt_kb(mtxd, hdiag, isort, qmod,                           &
 
 ! output
 
-  complex(REAL64), intent(out)       ::  hamk(mxddim,mxddim)             !<  small hamiltonian
+  complex(REAL64), intent(out)       ::  hamk(mxddim,mxddim)             !<  hamiltonian (in most calls just the "small" hamiltonian)
 
 ! local varaibles
 

@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 8 October 2026.
+!>  \date         2014. 12 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -55,6 +55,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau in ao_h_and_s_spin_orbit, warning removed. 8 October 2026. JLM+claude
+! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -235,14 +236,16 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   ipr = 1
 
-  call pot_local(ipr, vscr, vmax, vmin, veff, kmscr, kmax,            &
+  call pot_local(ipr, 'local potential',                                 &
+      vscr, vmax, vmin, veff, kmscr, kmax,                               &
       ng, kgv, phase, conj, ns, inds,                                    &
       mxdscr, mxdgve, mxdnst)
 
 ! vtau in the fft mesh (generalized Kohn-Sham meta-GGA)
 
   if(lgks) then
-    call pot_local(ipr, vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,        &
+    call pot_local(ipr, 'KE density potential',                          &
+        vtaumsh, vtmax, vtmin, vtau, kmscr, kmax,                        &
         ng, kgv, phase, conj, ns, inds,                                  &
         mxdscr, mxdgve, mxdnst)
   endif

@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      4.98
-!>  \date         8 February 1990,
+!>  \date         8 February 1990, 2 Jume 2020.
 !>  \copyright    GNU Public License v2
 
 subroutine hamilt_pw(emax, rkpt, lkpg, veffr1, nanl,                     &
