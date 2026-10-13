@@ -17,7 +17,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         22 November 2025, 6 October 2026.
+!>  \date         22 November 2025, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_author_info(author, lxcgrad, lxclap, lxctau,               &
@@ -154,6 +154,7 @@ end subroutine xc_author_family
 subroutine xc_author_print(author)
 
 ! Written 25 November 2025. JLM
+! LATF, LATW. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -229,6 +230,14 @@ subroutine xc_author_print(author)
     write(6,*)
     write(6,'("  The potential was calculated with the meta-GGA",        &
       &   " TASK with the Thomas-Fermi-von Weizsacker tau:   TATW")')
+  elseif( chrsameinfo(author, 'LATF' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " LAK with the Thomas-Fermi tau:   LATF")')
+  elseif( chrsameinfo(author, 'LATW' ) ) then
+    write(6,*)
+    write(6,'("  The potential was calculated with the meta-GGA",        &
+      &   " LAK with the Thomas-Fermi-von Weizsacker tau:   LATW")')
   else
     write(6,*)
     write(6,'("  The XC flag is:   ",a4)') author
@@ -252,12 +261,13 @@ end subroutine xc_author_print
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         6 October 2026.
+!>  \date         6 October 2026. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_author_tau(author, xcbase, tausrc)
 
 ! Written 6 October 2026. JLM+claude
+! LATF, LATW. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -298,6 +308,12 @@ subroutine xc_author_tau(author, xcbase, tausrc)
     tausrc = 'TF  '
   elseif(chrsameinfo(author, 'TATW')) then
     xcbase = 'TASK'
+    tausrc = 'TFVW'
+  elseif(chrsameinfo(author, 'LATF')) then
+    xcbase = 'LAK '
+    tausrc = 'TF  '
+  elseif(chrsameinfo(author, 'LATW')) then
+    xcbase = 'LAK '
     tausrc = 'TFVW'
   endif
 

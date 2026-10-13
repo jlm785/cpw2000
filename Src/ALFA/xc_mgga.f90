@@ -17,8 +17,8 @@
 !>  Lengths in Bohr, energies in Hartrees.
 !>
 !>  \author       J.L. Martins
-!>  \version      5.12
-!>  \date         25 November 2025.
+!>  \version      5.13
+!>  \date         25 November 2025. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga( author, rho, grho, tau,                              &
@@ -133,7 +133,7 @@ end subroutine xc_mgga
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 November 2025.
+!>  \date         12 November 2025. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
@@ -141,6 +141,7 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 ! Written 12 November 2025. JLM
 ! xc_tau, 23 April 2026. JLM
+! alpha clipped at zero, as in TASK. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -245,18 +246,26 @@ subroutine xc_mgga_x_lak(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   d_alpha_dgr = -d_tausingle_dgr/tauunif
   d_alpha_dtau = UM/tauunif
 
-  if(abs(alpha) > EPS) then
+! alpha >= 0 for tau from orbitals.  Negative values come from numerical
+! noise (or approximate tau) and are clipped as in TASK.
+
+  if(alpha < ZERO) then
+    alpha = ZERO
+    d_alpha_dr = ZERO
+    d_alpha_dgr = ZERO
+    d_alpha_dtau = ZERO
+  endif
+
+  if(alpha > EPS) then
     arg = (PI/2) * ( C1*(alpha-UM)/alpha + C2*(alpha-UM)*(alpha-UM) )
     d_arg_dalpha = (PI/2) * ( C1/(alpha*alpha) + 2*C2*(alpha-UM) )
     fxalpha = (2/PI) * atan(arg)
     d_fxalpha_dalpha = (2/PI) * (UM/(UM+arg*arg)) * d_arg_dalpha
   else
-    if(alpha > 0) then
-      fxalpha =  1
-    else
-      fxalpha =  -1
-    endif
-    fxalpha = fxalpha + alpha*(CFX1 + alpha*(CFX2 + alpha*CFX3))
+
+!   expansion for small alpha >= 0, limit 1 for alpha -> 0+
+
+    fxalpha = UM + alpha*(CFX1 + alpha*(CFX2 + alpha*CFX3))
     d_fxalpha_dalpha = CFX1 + alpha*(2*CFX2 + alpha*3*CFX3)
   endif
   d_fxalpha_dr = d_fxalpha_dalpha*d_alpha_dr
@@ -322,14 +331,15 @@ end subroutine xc_mgga_x_lak
 !>  uses comments on mgga_c_lak.mpl of libxc from git November 2025
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         20 November 2025.
+!>  \version      5.13
+!>  \date         20 November 2025. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
 ! Written 20 November 2025. JLM
 ! xc_tau, 23 April 2026. JLM
+! alpha clipped at zero, as in TASK. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -451,6 +461,16 @@ subroutine xc_mgga_c_lak( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   d_alpha_dr = -d_tausingle_dr/tauunif - alpha*d_tauunif_dr/tauunif
   d_alpha_dgr = -d_tausingle_dgr/tauunif
   d_alpha_dtau = UM/tauunif
+
+! alpha >= 0 for tau from orbitals.  Negative values come from numerical
+! noise (or approximate tau) and are clipped as in TASK.
+
+  if(alpha < ZERO) then
+    alpha = ZERO
+    d_alpha_dr = ZERO
+    d_alpha_dgr = ZERO
+    d_alpha_dtau = ZERO
+  endif
 
   xnumer = UM + 0.1_REAL64*rs**0.65_REAL64
   d_xnumer_drs = 0.065_REAL64 / rs**0.35_REAL64

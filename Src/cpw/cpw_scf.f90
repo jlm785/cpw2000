@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 1993, 12 October 2026.
+!>  \date         October 1993, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -64,6 +64,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! vcomp_%vtau is the input vtau of the hamiltonian (as veff), output in vtauout. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -245,8 +246,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   complex(REAL64), allocatable       ::  rholap(:)
   complex(REAL64), allocatable       ::  tau(:)                          !  "kinetic energy density"
   complex(REAL64), allocatable       ::  tau_val(:)                      !  "kinetic energy density" for valence
-  real(REAL64), allocatable          ::  dtau_val_dbdot(:,:,:)           !  d tau_val / d bdot on the mesh of the potential
-  real(REAL64), allocatable          ::  dtau_dbdot(:,:,:)               !  d tau / d bdot for the tau passed to v_hartree_xc
+  real(REAL64), allocatable          ::  dtau_val_dadot(:,:,:)           !  d tau_val / d adot at fixed volume on the mesh of the potential
+  real(REAL64), allocatable          ::  dtau_dadot(:,:,:)               !  d tau / d adot at fixed volume for the tau passed to v_hartree_xc
 
   real(REAL64), allocatable          ::  ekl(:)                          !  kinetic energy of wave-function j, for all the k-points
 
@@ -574,9 +575,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     allocate(tau(dims_%mxdnst))
     allocate(tau_val(dims_%mxdnst))
-    allocate(dtau_val_dbdot(3,3,mxdscr))
-    allocate(dtau_dbdot(3,3,mxdscr))
-    dtau_dbdot(:,:,:) = ZERO
+    allocate(dtau_val_dadot(3,3,mxdscr))
+    allocate(dtau_dadot(3,3,mxdscr))
+    dtau_dadot(:,:,:) = ZERO
 
     if(lxctau) then
       do i = 1,recip_%ns
@@ -590,7 +591,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 
     call cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau_val,          &
-        kmscr, dtau_val_dbdot, mxdscr,                                   &
+        kmscr, dtau_val_dadot, mxdscr,                                   &
         dims_, crys_, spaceg_, recip_, kpoint_, hamallk_, psiallk_,      &
         chdens_, filename_)
 
@@ -610,17 +611,17 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !   tau of the wave-functions and of the core.  For meta-GGA
 !   generalized Kohn-Sham (tau from the wave-functions) the dependence
-!   of tau on the metric is used in the stress.  dtau_dbdot is only for
+!   of tau on the metric is used in the stress.  dtau_dadot is only for
 !   the wave-functions, the core tau contribution to forces and stress
 !   (pseudo_%tnc, pseudo_%dtauc) is in for_str_local_force/stress.
 
     if(lxctau) then
       if(lxcmgga) then
         tau(:) = tau_val(:) + chdens_%tauc_g(:)
-        dtau_dbdot(:,:,:) = dtau_val_dbdot(:,:,:)
+        dtau_dadot(:,:,:) = dtau_val_dadot(:,:,:)
       else
         tau(:) = tau_val(:)
-        dtau_dbdot(:,:,:) = ZERO
+        dtau_dadot(:,:,:) = ZERO
       endif
     endif
 
@@ -633,7 +634,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     call v_hartree_xc(ipr, xc_%author, xc_%tblaha, lkincalc,             &
         crys_%adot, kmscr, exc, strxc, rhovxc,                           &
         vcomp_%vhar, vcomp_%vxc, vtauout,                                &
-        chdens_%den, chdens_%denc, rholap, tau, dtau_dbdot,              &
+        chdens_%den, chdens_%denc, rholap, tau, dtau_dadot,              &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &
         recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,               &
         dims_%mxdgve, dims_%mxdnst, mxdscr)
@@ -656,8 +657,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     deallocate(tau)
     deallocate(tau_val)
-    deallocate(dtau_val_dbdot)
-    deallocate(dtau_dbdot)
+    deallocate(dtau_val_dadot)
+    deallocate(dtau_dadot)
     deallocate(rholap)
 
     do i=1,recip_%ns

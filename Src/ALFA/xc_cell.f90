@@ -19,11 +19,11 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         23 February 1999, 6 October 2026.
+!>  \date         23 February 1999, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
-        rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
+        rhomsh, taumsh, dtau_dadot, rholapmsh,                           &
         exc, vxc, vtau, rhovxc, strxc)
 
 ! Written 23 February 1999. jlm
@@ -46,6 +46,7 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
 ! WARNING choice of correlation for Tran-Blaha is hard coded as Perdew-Zunger
 ! WARNING correction for slab for Tran-Blaha are hard coded.
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
 
   implicit none
 
@@ -64,7 +65,7 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
   integer, intent(in)                ::  n3                              !<  fft dimension in direction 3
   real(REAL64), intent(in)           ::  rhomsh(id1,id2,n3)              !<  charge density (1/bohr^3)
   real(REAL64), intent(in)           ::  taumsh(id1,id2,n3)              !<  kinetic energy density (Hartree/bohr^3) from the wave-functions (and core)
-  real(REAL64), intent(in)           ::  dtau_dbdot(3,3,id1,id2,n3)      !<  (1/V) d (V taumsh) / d bdot on the mesh (Hartree/bohr^3), bdot with the 2 pi factors (meta-GGA with tau from the wave-functions)
+  real(REAL64), intent(in)           ::  dtau_dadot(3,3,id1,id2,n3)      !<  d taumsh / d adot at fixed volume on the mesh (Hartree/bohr^3) (meta-GGA with tau from the wave-functions)
   real(REAL64), intent(in)           ::  rholapmsh(id1,id2,n3)           !<  Laplacian of charge density (1/bohr^5)
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space (covariant components)
 
@@ -112,7 +113,6 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
   real(REAL64)        ::  d_tau_dgr                       !  d tau / d grad_rho
   real(REAL64)        ::  d_tau_dr                        !  d tau / d rho
-  real(REAL64)        ::  bdprod(3,3)                     !  dtau_dbdot * adotm1 at a mesh point
 
   character(len=4)    ::  xcbase                          !  meta-GGA functional used in xc_mgga
   character(len=4)    ::  tausrc                          !  source of tau: 'PSI ', 'TF  ', 'TFVW' or 'NONE'
@@ -381,32 +381,21 @@ subroutine xc_cell(author, adot, tblaha, lkincalc, id1,id2, n1,n2,n3,    &
 
         vxc(i1,i2,i3) = vxc(i1,i2,i3) + dexdr + decdr + d_exc_dtau*d_tau_dr
 
-        if(tausrc == 'PSI ') then
-          do i = 1,3
-          do j = 1,3
-            bdprod(j,i) = dtau_dbdot(j,1,i1,i2,i3)*adotm1(1,i) +         &
-                          dtau_dbdot(j,2,i1,i2,i3)*adotm1(2,i) +         &
-                          dtau_dbdot(j,3,i1,i2,i3)*adotm1(3,i)
-          enddo
-          enddo
-        endif
-
         do i=1,3
         do j=1,3
           strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dgr * grho
           strgga(j,i) = strgga(j,i) + drhocon(j)*drhocon(i) * d_exc_dtau * d_tau_dgr * grho
 
 !         contribution of tau from the wave-functions.  It scales as 1/volume
-!         and V taumsh depends on the metric through dtau_dbdot = (1/V) d (V taumsh) / d bdot
-!         (bdot with the 2 pi factors), so that -2 d E / d adot has
-!         d_exc_dtau * ( taumsh adotm1 + 8 pi^2 adotm1 dtau_dbdot adotm1 ).
+!         and at fixed volume depends on the metric through dtau_dadot,
+!         so that -2 d E / d adot has  d_exc_dtau * ( taumsh adotm1 - 2 dtau_dadot ).
+!         taumsh includes the core tau, the volume term of the core is here,
+!         the shape term is in for_str_local_stress.
 
           if(tausrc == 'PSI ') then
             strgga(j,i) = strgga(j,i) + d_exc_dtau * (                   &
-                     taumsh(i1,i2,i3) * adotm1(j,i) +                    &
-                     8*PI*PI * ( adotm1(j,1)*bdprod(1,i) +               &
-                                 adotm1(j,2)*bdprod(2,i) +               &
-                                 adotm1(j,3)*bdprod(3,i) ) )
+                     taumsh(i1,i2,i3) * adotm1(j,i) -                    &
+                     2*dtau_dadot(j,i,i1,i2,i3) )
           endif
         enddo
         enddo

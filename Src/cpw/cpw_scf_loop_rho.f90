@@ -16,18 +16,19 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026. 1 October 2026.
+!>  \date         12 May 2026. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
-      kmscr, dtau_dbdot, mxdscr,                                         &
+      kmscr, dtau_dadot, mxdscr,                                         &
       dims_, crys_, spaceg_, recip_, kpoint_, hamallk_, psiallk_,        &
       chdens_, filename_)
 
 ! extracted from cpw_scf (it was too long), 12 may 2026. JLM
 ! renamed occp to occ_x_wgk.  28 September 2026. JLM+claude
 ! tau_by_fft_stress. 1 October 2026. JLM+claude
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
 
 
   use cpw_variables
@@ -56,15 +57,15 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
 
   real(REAL64), intent(in)           ::  ekl(dims_%mxdnrk*dims_%mxdbnd)  !<  kinetic energy of wave-function j, for all the k-points
   logical, intent(in)                ::  lxctau                          !<  calculate tau
-  logical, intent(in)                ::  lxcmgga                         !<  meta-GGA, also calculates dtau_dbdot (used in the stress)
-  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dbdot (vscr)
+  logical, intent(in)                ::  lxcmgga                         !<  meta-GGA, also calculates dtau_dadot (used in the stress)
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dadot (vscr)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
 ! output
 
   real(REAL64), intent(out)          ::  ektot                           !<  electron kinetic energy (Hartree)
   complex(REAL64), intent(out)       ::  tau(dims_%mxdnst)               !<  "kinetic energy density"
-  real(REAL64), intent(out)          ::  dtau_dbdot(3,3,mxdscr)          !<  d tau / d bdot on the real space mesh of the potential (hartree/bohr^3), only for meta-GGA
+  real(REAL64), intent(out)          ::  dtau_dadot(3,3,mxdscr)          !<  d tau / d adot at fixed volume on the real space mesh of the potential (hartree/bohr^3), only for meta-GGA
 
 ! allocatable arrays
 
@@ -72,7 +73,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
   complex(REAL64), allocatable       ::  denk(:)
 
   complex(REAL64), allocatable       ::  tauk(:)                         !  contribution of k-point to tau
-  real(REAL64), allocatable          ::  dtau_k_dbdot(:,:,:)             !  contribution of k-point to dtau_dbdot
+  real(REAL64), allocatable          ::  dtau_k_dadot(:,:,:)             !  contribution of k-point to dtau_dadot
 
 ! local variables
 
@@ -93,10 +94,10 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
 
   if(lxctau) then
     allocate(tauk(dims_%mxdnst))
-    if(lxcmgga) allocate(dtau_k_dbdot(3,3,mxdscr))
+    if(lxcmgga) allocate(dtau_k_dadot(3,3,mxdscr))
   endif
 
-  if(lxctau .and. lxcmgga) dtau_dbdot(:,:,:) = ZERO
+  if(lxctau .and. lxcmgga) dtau_dadot(:,:,:) = ZERO
 
   ektot = zero
   iel = 0
@@ -139,14 +140,14 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
       chdens_%den(i) = chdens_%den(i) + denk(i)
     enddo
 
-!   adds to the kinetic energy density.  For meta-GGA also d tau / d bdot,
+!   adds to the kinetic energy density.  For meta-GGA also d tau / d adot,
 !   that requires the sum over the full Brillouin zone mesh.
 
     if(lxctau) then
 
       if(lxcmgga) then
 
-        call tau_by_fft_stress(tauk, .TRUE., kmscr, dtau_k_dbdot,        &
+        call tau_by_fft_stress(tauk, .TRUE., kmscr, dtau_k_dadot,        &
             kpoint_%nx, kpoint_%ny, kpoint_%nz,                          &
             kpoint_%sx, kpoint_%sy, kpoint_%sz,                          &
             mtxd, neig, occ_x_wgk,                                       &
@@ -159,7 +160,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
             dims_%mxddim, dims_%mxdbnd, dims_%mxdnrk,                    &
             dims_%mxdgve, dims_%mxdnst, mxdscr)
 
-        dtau_dbdot(:,:,:) = dtau_dbdot(:,:,:) + dtau_k_dbdot(:,:,:)
+        dtau_dadot(:,:,:) = dtau_dadot(:,:,:) + dtau_k_dadot(:,:,:)
 
       else
 
@@ -185,7 +186,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
 
   if(lxctau) then
     deallocate(tauk)
-    if(lxcmgga) deallocate(dtau_k_dbdot)
+    if(lxcmgga) deallocate(dtau_k_dadot)
   endif
 
   return

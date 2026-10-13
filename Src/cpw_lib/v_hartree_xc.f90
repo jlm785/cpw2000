@@ -17,12 +17,12 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         8 June 1987.  6 October 2026.
+!>  \date         8 June 1987.  13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
     exc, strxc, rhovxc,                                                  &
-    vhar, vxc, vtau, den, denc, rholap, tau, dtau_dbdot,                 &
+    vhar, vxc, vtau, den, denc, rholap, tau, dtau_dadot,                 &
     ng, kgv, phase, conj, ns, inds, kmax, mstar, ek,                     &
     mxdgve, mxdnst, mxdscr)
 
@@ -44,6 +44,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
 ! Pass packing of rho/tau/.. to gvec_mesh_set. 11 March 2026. JLM
 ! xc on the real space mesh of the potential (kmscr). dtau_dbdot. 1 October 2026. JLM+claude
 ! vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
 
 
   implicit none
@@ -54,7 +55,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
 
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
-  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dbdot, mesh of the potential (vscr)
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dadot, mesh of the potential (vscr)
 
   integer, intent(in)                ::  ipr                             !<  print switch
   character(len=*), intent(in)       ::  author                          !<  type of xc wanted (ca=pz , pbe, tbl)
@@ -68,7 +69,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
   complex(REAL64), intent(in)        ::  rholap(mxdnst)                  !<  Laplacian of charge density
   complex(REAL64), intent(in)        ::  tau(mxdnst)                     !<  "kinetic energy density"
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
-  real(REAL64),  intent(in)          ::  dtau_dbdot(3,3,mxdscr)          !<  derivative of kinetic energy density with respect to metric on the mesh of the potential (kmscr) [only correction for lxcmgga]
+  real(REAL64),  intent(in)          ::  dtau_dadot(3,3,mxdscr)          !<  d tau / d adot at fixed volume on the mesh of the potential (kmscr) [only correction for lxcmgga]
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -97,7 +98,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
   real(REAL64), allocatable          ::  rhomsh(:)
   real(REAL64), allocatable          ::  rholapmsh(:)
   real(REAL64), allocatable          ::  taumsh(:)
-!  real(REAL64), allocatable          ::  dtau_dbdot(:,:,:)
+!  real(REAL64), allocatable          ::  dtau_dadot(:,:,:)
   real(REAL64), allocatable          ::  wrkfft(:)
   complex(REAL64), allocatable       ::  chd(:)
   complex(REAL64), allocatable       ::  dentot(:)
@@ -142,7 +143,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
   endif
 
 ! the xc is calculated on the real space mesh of the potential (kmscr),
-! the same mesh as dtau_dbdot.  With the dual approximation it is
+! the same mesh as dtau_dadot.  With the dual approximation it is
 ! smaller than the mesh of size_fft(kmax).  gvec_mesh_set then wraps
 ! around the high G components, so the values at the mesh points are exact.
 
@@ -219,7 +220,7 @@ subroutine v_hartree_xc(ipr, author, tblaha, lkincalc, adot, kmscr,      &
 
 
   call xc_cell(author, adot, tblaha, lkincalc, id,n2, n1,n2,n3,          &
-        rhomsh, taumsh, dtau_dbdot, rholapmsh,                           &
+        rhomsh, taumsh, dtau_dadot, rholapmsh,                           &
         exc, vxcmsh, vtaumsh, rhovxc, strxc )
 
 

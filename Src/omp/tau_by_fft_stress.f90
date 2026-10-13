@@ -17,15 +17,16 @@
 !>  integration mesh that are equivalent to that k-point (kmap from int_pnt),
 !>  with the wave-functions obtained by symmetry (psi_rot_inv_shift),
 !>  so that the derivatives with respect to the metric can be calculated.
-!>  If requested, d tau / d bdot is calculated on the real space mesh of the
-!>  potential (kmscr), without folding to G-space.
+!>  If requested, d tau / d adot at fixed volume is calculated on the real
+!>  space mesh of the potential (kmscr), without folding to G-space.
+!>  The 1/volume dependence of tau is not included (it is in xc_cell).
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         14 June 2026.
+!>  \date         14 June 2026. 13 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
+subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
     nx, ny, nz, sx, sy, sz,                                              &
     mtxd, neig, occ_x_wgk, isort, psi,                                   &
     rkpt, irk, adot,                                                     &
@@ -39,6 +40,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
 ! built from the reference basis instead of hamilt_struct,
 ! weights from occ_x_wgk. 29 September 2026. JLM+claude
 ! d tau / d bdot on the real space mesh of the potential. 29 September 2026. JLM+claude
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
 
 
   implicit none
@@ -53,7 +55,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
 
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdnst                          !<  array dimension for g-space stars
-  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dbdot (vscr)
+  integer, intent(in)                ::  mxdscr                          !<  array dimension of dtau_dadot (vscr)
 
   integer, intent(in)                ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
   integer, intent(in)                ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
@@ -62,7 +64,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
   real(REAL64), intent(in)           ::  sy                              !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 2
   real(REAL64), intent(in)           ::  sz                              !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 3
 
-  logical, intent(in)                ::  ldtau                           !<  also calculates d tauk / d bdot for use in stress
+  logical, intent(in)                ::  ldtau                           !<  also calculates d tauk / d adot for use in stress
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
 
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
@@ -97,7 +99,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
 ! output
 
   complex(REAL64), intent(out)       ::  tauk(mxdnst)                    !<  symmetrized kinetic energy density (in stars of G)
-  real(REAL64), intent(out)          ::  dtau_dbdot(3,3,mxdscr)          !<  d tau / d bdot on the real space mesh of the potential (hartree/bohr^3), bdot includes the 2 pi factors
+  real(REAL64), intent(out)          ::  dtau_dadot(3,3,mxdscr)          !<  d tau / d adot at fixed volume on the real space mesh of the potential (hartree/bohr^3)
 
 ! local allocatable arrays
 
@@ -163,6 +165,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
   real(REAL64), parameter :: SMALL = 1.0E-12_REAL64
   real(REAL64), parameter :: EPS = 1.0E-8_REAL64
   real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter :: PI = 3.14159265358979323846_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_I = cmplx(ZERO,UM,REAL64)
 
@@ -182,7 +185,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
       stop
 
     endif
-    dtau_dbdot(:,:,:) = ZERO
+    dtau_dadot(:,:,:) = ZERO
   endif
 
   if (neig < 1) return
@@ -247,7 +250,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
 
   taumsh(:) = C_ZERO
 
-! mesh of the potential for d tau / d bdot
+! mesh of the potential for d tau / d adot
 
   if(ldtau) then
     call size_fft(kmscr, nsfft, mxdffs, mxdwrs)
@@ -482,8 +485,10 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
       enddo
 !$omp end parallel do
 
-!     d tau / d bdot(n,m) = fac Re( conjg(d_n psi) d_m psi ) / vcell  on the mesh of the potential.
-!     tau is linear in bdot, so sum_nm bdot(n,m) d tau / d bdot(n,m) = tau.
+!     d tau / d adot(n,m) = - fac Re( conjg(g_n psi) g_m psi ) / vcell  on the mesh of the potential,
+!     with g = 2 pi adot^-1 (k+G) = bdot (k+G) / (2 pi) the contravariant components of the gradient.
+!     At fixed volume tau is homogeneous of degree -1 in adot, so
+!     sum_nm adot(n,m) d tau / d adot(n,m) = - tau.
 
       if(ldtau) then
 
@@ -499,8 +504,11 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
 
 !$omp parallel do default(shared) private(i,qk)
           do i = 1,mtxd_tr
-            qk(n) = rkpt_tr(n) + real(kgv(n,isort_tr(i)),REAL64)
-            chds(ipoints(i),n) = C_I*qk(n)*psi_tr(i,j)
+            qk(1) = rkpt_tr(1) + real(kgv(1,isort_tr(i)),REAL64)
+            qk(2) = rkpt_tr(2) + real(kgv(2,isort_tr(i)),REAL64)
+            qk(3) = rkpt_tr(3) + real(kgv(3,isort_tr(i)),REAL64)
+            chds(ipoints(i),n) = C_I*(bdot(n,1)*qk(1) +                  &
+                bdot(n,2)*qk(2) + bdot(n,3)*qk(3))*psi_tr(i,j) / (2*PI)
           enddo
 !$omp end parallel do
 
@@ -516,7 +524,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dbdot,             &
           ind = i1 + (i2-1)*ids + (i3-1)*ids*ns2
           do m = 1,3
           do n = 1,3
-            dtau_dbdot(n,m,ind) = dtau_dbdot(n,m,ind) +                  &
+            dtau_dadot(n,m,ind) = dtau_dadot(n,m,ind) -                  &
                 facv*real(conjg(chds(ind,n))*chds(ind,m),REAL64)
           enddo
           enddo

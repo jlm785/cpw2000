@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         around 2020, 6 October 2026.
+!>  \date         around 2020, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
@@ -31,6 +31,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 ! kmscr and dtau_dbdot for v_hartree_xc (mesh of the potential). 1 October 2026. JLM+claude
 ! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc from v_first. 6 October 2026. JLM+claude
+! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -64,7 +65,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   complex(REAL64), allocatable        ::  rholap(:)                      !  Laplacian of charge density
   complex(REAL64), allocatable        ::  tau(:)                         !  Kinetic energy density (whatever that means)
-  real(REAL64), allocatable           ::  dtau_dbdot(:,:,:)           !  d tau / d bdot on the mesh of the potential (not used here)
+  real(REAL64), allocatable           ::  dtau_dadot(:,:,:)           !  d tau / d adot at fixed volume on the mesh of the potential (not used here)
 
   integer       ::  mxdscr, mxdwrk, nsfft(3)                             !  size of the mesh of the potential
 
@@ -125,8 +126,8 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   allocate(tau(dims_%mxdnst))
 
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
-  allocate(dtau_dbdot(3,3,mxdscr))
-  dtau_dbdot(:,:,:) = ZERO
+  allocate(dtau_dadot(3,3,mxdscr))
+  dtau_dadot(:,:,:) = ZERO
 
   do i = 1,recip_%ns
     tau(i) = C_ZERO
@@ -139,14 +140,14 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   call v_hartree_xc(ipr, xc_%author, xc_%tblaha, .FALSE., crys_%adot,    &
       kmscr, exc, strxc, rhovxc,                                         &
       vcomp_%vhar, vcomp_%vxc, vcomp_%vtau,                              &
-      chdens_%den, chdens_%denc, rholap, tau, dtau_dbdot,                &
+      chdens_%den, chdens_%denc, rholap, tau, dtau_dadot,                &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,                 &
       dims_%mxdgve, dims_%mxdnst, mxdscr)
 
   deallocate(rholap)
   deallocate(tau)
-  deallocate(dtau_dbdot)
+  deallocate(dtau_dadot)
 
   return
 
