@@ -15,6 +15,8 @@
 !>  potential and charge density for later processing
 !>  by cpw_post_process.  For the generalized Kohn-Sham meta-GGA
 !>  it also writes vtau.
+!>  The file is written in version 2026.1 of the format.  The
+!>  versions are described in pw_rho_v_in_crystal_calc.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13

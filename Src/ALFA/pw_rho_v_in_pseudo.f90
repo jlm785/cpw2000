@@ -13,15 +13,15 @@
 
 !>  Reads the fourier pseudo potentials and atomic orbitals
 !>  atomic core and valence charge densities tape io.
-!>  Files written before October 2026 (lnew = .FALSE.) have only one
-!>  atomic basis set and no core kinetic energy density.
+!>  Files before version 2026.0 of the format have only one atomic
+!>  basis set, and before 2026.1 no core kinetic energy density.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         1980s, 7 October 2026.
+!>  \date         1980s, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
+subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, fversion,         &
      irel, icore, icorr, iray, psdtitle,                                 &
      nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,                &
      n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,                 &
@@ -49,6 +49,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
 ! Modified, avoid bug in ifx compiler. 25 February 2024. JLM
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
 ! Modified, several basis sets, core tau, old format with lnew. 7 October 2026. JLM+claude
+! lnew replaced by fversion, version of the file format. 13 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -69,7 +70,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   character(len=*), intent(in)       ::  author                          !<  type of xc wanted (CA=PZ , PW92 , PBE)
-  logical, intent(in)                ::  lnew                            !<  file written after October 2026 (several basis sets, core tau)
+  character(len=6), intent(in)       ::  fversion                        !<  version of the file format (2013.0, ..., 2026.1), see pw_rho_v_in_crystal_calc
 
 ! output
 
@@ -404,7 +405,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
     enddo
     enddo
 
-    if(lnew) then
+    if(fversion >= '2026.0') then
       read(io) nqwf(nt), delqwf(nt), norbat(1,nt), n_bsets(nt)
     else
       read(io) nqwf(nt), delqwf(nt), norbat(1,nt)
@@ -430,7 +431,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
 
     do nb = 1,n_bsets(nt)
 
-      if(lnew) read(io) norbat(nb,nt)
+      if(fversion >= '2026.0') read(io) norbat(nb,nt)
 
       if(norbat(nb,nt) > mxdlao) then
         write(6,'("  stopped in pw_rho_v_in_pseudo,    atom ",a2,        &
@@ -495,7 +496,7 @@ subroutine pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,             &
 
 !   core kinetic energy density
 
-    if(lnew) then
+    if(fversion >= '2026.1') then
       read(io) (tauc_q(j,nt),j=0,nql)
       tauc_q(-1,nt) = tauc_q(1,nt)
     else

@@ -14,12 +14,29 @@
 !>  Reads the parameters of the calculation and descritpion of the crystal
 !>  from the "io" file (default PW_RHO_V.DAT)
 !>
+!>  The format of the file evolved with time.  The version of the
+!>  format is identified from the records and returned in fversion:
+!>
+!>  2013.0   first record ntype, ng, ns, mxdl, sixth record pwline (December 2013)
+!>  2013.1   sixth record pwline, title, subtitle (August 2014)
+!>  2013.2   sixth record meta_pwdat, meta_cpw2000 (January 2017)
+!>  2021.0   ntrans, mxdlao in the first record, symmetry operations (September 2021)
+!>  2021.1   efermi in the fifth record (November 2021)
+!>  2026.0   mxdset in the first record, several atomic basis sets
+!>           (only used in development, not recognized)
+!>  2026.1   core kinetic energy density, vtau for the generalized
+!>           Kohn-Sham meta-GGA (October 2026)
+!>
+!>  The atomic basis set is written since 2014.  Before 2021.0 the
+!>  maximum number of atomic orbitals mxdlao is not in the file
+!>  and is taken as 4 (hardcoded value until December 2015).
+!>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         May 16, 2014, 25 November 2025.
+!>  \version      5.13
+!>  \date         May 16, 2014, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine pw_rho_v_in_crystal_calc(io,                                  &
+subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
          nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
@@ -43,6 +60,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 ! Modified, back compatibility with old files. adjustl. 23 february 2024. JLM
 ! Modified, printing of the information about the xc functional. 25 November 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! fversion, version of the file format. 13 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -60,6 +78,8 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   integer, intent(in)                ::  io                              !<  number of tape to which the pseudo is added.
 
 ! output
+
+  character(len=6), intent(out)      ::  fversion                        !<  version of the file format (2013.0, ..., 2026.1)
 
   character(len=60), intent(out)     ::  pwline                          !<  identification of the calculation
   character(len=50), intent(out)     ::  title                           !<  title for plots
@@ -102,6 +122,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   character(len=9 )   ::  bdate
   character(len=8)    ::  btime
   integer             ::  mxdl
+  integer             ::  mxdlao, mxdset                                 !  not used here
   character(len=140)  ::  line140
   character(len=250)  ::  line250
   integer             ::  ioerr, ioerr2
@@ -111,10 +132,25 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   integer    ::  i, j, k
 
 
-! reads the first record from the file
+! reads the first record from the file, which identifies the main version
 
-  read(io,iostat = ioerr) ntype, ng, ns, mxdl, ntrans
+  read(io,iostat = ioerr) ntype, ng, ns, mxdl, ntrans, mxdlao, mxdset
   if(ioerr == 0) then
+    fversion = '2026.1'
+  else
+    backspace(io)
+    read(io,iostat = ioerr) ntype, ng, ns, mxdl, ntrans, mxdlao
+    if(ioerr == 0) then
+      fversion = '2021.0'
+    else
+      backspace(io)
+      read(io) ntype, ng, ns, mxdl
+      ntrans = 0
+      fversion = '2013.0'
+    endif
+  endif
+
+  if(fversion /= '2013.0') then
     if(ntrans > 48 .or. ntrans < 1) then
       write(6,*)
       write(6,'("  STOPPED in in_v_rho")')
@@ -123,10 +159,6 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
       stop
 
     endif
-  else
-    backspace(io)
-    read(io) ntype, ng, ns, mxdl
-    ntrans = 0
   endif
 
   if(ntype > mxdtyp) then
@@ -216,7 +248,9 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
 
   read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
 
-  if(ioerr /= 0) then
+  if(ioerr == 0) then
+    if(fversion == '2021.0') fversion = '2021.1'
+  else
     efermi = -1000.0
     backspace(io)
     read(io,iostat = ioerr2) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
@@ -249,6 +283,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
   read(io,iostat = ioerr) line250, meta_cpw2000
 
   if(ioerr == 0) then
+    if(fversion == '2013.0') fversion = '2013.2'
     pwline = line250(1:60)
     title = line250(61:110)
     subtitle = line250(111:250)
@@ -274,6 +309,7 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
     backspace(io)
     read(io,iostat = ioerr2) line140
     if(ioerr2 == 0) then
+      fversion = '2013.1'
       pwline = line140(1:60)
       title = line140(61:110)
       subtitle = line140(111:140)
@@ -291,6 +327,9 @@ subroutine pw_rho_v_in_crystal_calc(io,                                  &
       write(6,*) pwline
     endif
   endif
+
+  write(6,'("  The version of the file format is ",a6)') fversion
+  write(6,*)
 
 ! old files do not have spacegroup information
 

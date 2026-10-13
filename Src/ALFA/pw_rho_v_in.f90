@@ -13,14 +13,14 @@
 
 !>  This subroutines reads the file "filename",  (default PW_RHO_V.DAT),
 !>  data from a self-consistent calculation.
-!>  Files written before October 2026 are recognized by the shorter
-!>  first record (no mxdset).  They have one atomic basis set, no core
-!>  kinetic energy density and no vtau (set to zero, with a warning
-!>  for the generalized Kohn-Sham meta-GGA).
+!>  The version of the file format (fversion, see pw_rho_v_in_crystal_calc)
+!>  is identified from the records.  Files before version 2026.1 have
+!>  one atomic basis set, no core kinetic energy density and no vtau
+!>  (set to zero, with a warning for the generalized Kohn-Sham meta-GGA).
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 16, 2014, 12 October 2026.
+!>  \date         May 16, 2014, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
@@ -50,6 +50,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! vtau, several atomic basis sets, core tau, old files recognized. 7 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
+! lnew replaced by fversion, version of the file format. 13 October 2026. JLM+claude
 
 
   implicit none
@@ -144,9 +145,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 
 ! local variables
 
-  logical             ::  lnew                                           !  file written after October 2026
-  integer             ::  i1, i2, i3, i4, i5, i6, i7
-  integer             ::  ioerr
+  character(len=6)    ::  fversion                                       !  version of the file format (2013.0, ..., 2026.1)
   character(len=4)    ::  xcbase                                         !  meta-GGA functional used in xc_mgga
   character(len=4)    ::  tausrc                                         !  source of tau, 'PSI ' for generalized Kohn-Sham
 
@@ -164,16 +163,9 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 
   open(unit=io,file=trim(filename),status='old',form='UNFORMATTED')
 
-! newer files have mxdset in the first record
-
-  read(io,iostat=ioerr) i1, i2, i3, i4, i5, i6, i7
-  lnew = .FALSE.
-  if(ioerr == 0) lnew = .TRUE.
-  rewind(io)
-
 ! reads the first part of the file up to the geometry
 
-  call pw_rho_v_in_crystal_calc(io,                                      &
+  call pw_rho_v_in_crystal_calc(io, fversion,                            &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
          nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
@@ -197,7 +189,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 
   call xc_author_tau(author, xcbase, tausrc)
 
-  if(tausrc == 'PSI ' .and. lnew) then
+  if(tausrc == 'PSI ' .and. fversion >= '2026.1') then
     read(io) (vtau(i),i=1,ns)
   else
     do i = 1,ns
@@ -205,16 +197,16 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
     enddo
     if(tausrc == 'PSI ') then
       write(6,*)
-      write(6,'("   WARNING in pw_rho_v_in:  file ",a," is in the old ", &
-         &      "format, vtau of the ",a4," meta-GGA set to zero")')     &
-             trim(filename), author
+      write(6,'("   WARNING in pw_rho_v_in:  file ",a," is in the ",     &
+         &      a6," format, vtau of the ",a4," meta-GGA set to zero")') &
+             trim(filename), fversion, author
       write(6,*)
     endif
   endif
 
 ! reads the pseudopotentials
 
-  call pw_rho_v_in_pseudo(io, ipr, ealraw, author, lnew,                 &
+  call pw_rho_v_in_pseudo(io, ipr, ealraw, author, fversion,             &
          irel, icore, icorr, iray, psdtitle,                             &
          nqnl, delqnl, vkbraw, nkb, vloc, dcor, dval, tauc_q,            &
          n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,             &
