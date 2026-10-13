@@ -11,25 +11,27 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Spinor version of dvtaudk_psi_c16.  vtau_sp has the same
+!>  Spinor version of dhtaudk_psi_c16.  vtau_sp has the same
 !>  convention as vscr_sp, components (1, sigma_z, sigma_x, sigma_y),
 !>  so the vtau term is  -1/2 nabla . (vtau_1 + vtau . sigma) nabla.
 !>  As the operator is linear in vtau, the result is the Pauli
-!>  combination of dvtaudk_psi_c16 applied to the two spinor
+!>  combination of dhtaudk_psi_c16 applied to the two spinor
 !>  components (interleaved, 2*i-1 and 2*i) for each component of vtau_sp.
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         8 October 2026, 12 October 2026.
+!>  \date         8 October 2026, 13 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
-    dvtaupsi_sp,                                                         &
+subroutine dhtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,          &
+    dhtaupsi_sp,                                                         &
     rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                         &
     mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
 ! Written 8 October 2026. claude
 ! vtau_sp with spin components (1,2,4) as vscr_sp. 12 October 2026. claude
+! OpenMP directives. 13 October 2026. JLM+claude
+! Renamed from dvtaudk_psi_spin_c16, the derivative is of H_tau, vtau does not depend on k. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -59,13 +61,13 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
 ! output
 
   complex(REAL64), intent(out)       ::  vtaupsi_sp(2*mxddim,mxdbnd)     !<  vtau |psi_sp>
-  complex(REAL64), intent(out)       ::  dvtaupsi_sp(2*mxddim,mxdbnd,3)  !<  (d H_tau / d k_l) |psi_sp>, k in lattice coordinates
+  complex(REAL64), intent(out)       ::  dhtaupsi_sp(2*mxddim,mxdbnd,3)  !<  (d H_tau / d k_l) |psi_sp>, k in lattice coordinates
 
 ! local allocatable arrays
 
   complex(REAL64), allocatable       ::  psi(:,:)                        !  spin components as independent wave-functions (up: 1..neig, down: neig+1..2*neig)
   complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  result for one component of vtau_sp
-  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  result for one component of vtau_sp
+  complex(REAL64), allocatable       ::  dhtaupsi(:,:,:)                 !  result for one component of vtau_sp
 
 ! local variables
 
@@ -84,7 +86,7 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
 
   if(nsp /= 1 .and. nsp /= 2 .and. nsp /= 4) then
     write(6,*)
-    write(6,'("   STOPPED in dvtaudk_psi_spin_c16.  nsp = ",i8,          &
+    write(6,'("   STOPPED in dhtaudk_psi_spin_c16.  nsp = ",i8,          &
            &  " is an incorrect value, should be 1,2,4")') nsp
     write(6,*)
 
@@ -94,21 +96,33 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
 
   allocate(psi(mtxd,2*neig))
   allocate(vtaupsi(mtxd,2*neig))
-  allocate(dvtaupsi(mtxd,2*neig,3))
+  allocate(dhtaupsi(mtxd,2*neig,3))
 
+!$omp parallel do default(shared) private(n, m)
   do n = 1,neig
     do m = 1,mtxd
       psi(m,n     ) = psi_sp(2*m-1,n)
       psi(m,n+neig) = psi_sp(2*m  ,n)
     enddo
   enddo
+!$omp end parallel do
 
-  vtaupsi_sp(1:2*mtxd,1:neig) = C_ZERO
-  dvtaupsi_sp(1:2*mtxd,1:neig,:) = C_ZERO
+!$omp parallel do default(shared) private(n, m, l)
+  do n = 1,neig
+    do m = 1,2*mtxd
+      vtaupsi_sp(m,n) = C_ZERO
+    enddo
+    do l = 1,3
+      do m = 1,2*mtxd
+        dhtaupsi_sp(m,n,l) = C_ZERO
+      enddo
+    enddo
+  enddo
+!$omp end parallel do
 
   do isp = 1,nsp
 
-    call dvtaudk_psi_c16(mtxd, 2*neig, psi, vtaupsi, dvtaupsi,           &
+    call dhtaudk_psi_c16(mtxd, 2*neig, psi, vtaupsi, dhtaupsi,           &
         rkpt, adot, isort, kgv, vtau_sp(:,isp), kmscr,                   &
         mtxd, 2*neig, mxdgve, mxdscr)
 
@@ -122,20 +136,23 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
       if(isp == 1) cdn = cmplx(UM,ZERO,REAL64)
       if(isp == 2) cdn = cmplx(-UM,ZERO,REAL64)
 
+!$omp parallel do default(shared) private(n, m, l)
       do n = 1,neig
         do m = 1,mtxd
           vtaupsi_sp(2*m-1,n) = vtaupsi_sp(2*m-1,n) + vtaupsi(m,n     )
-          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) + cdn*vtaupsi(m,n+neig)
+          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) +                    &
+                                      cdn*vtaupsi(m,n+neig)
         enddo
-      enddo
-      do l = 1,3
-        do n = 1,neig
+        do l = 1,3
           do m = 1,mtxd
-            dvtaupsi_sp(2*m-1,n,l) = dvtaupsi_sp(2*m-1,n,l) + dvtaupsi(m,n     ,l)
-            dvtaupsi_sp(2*m  ,n,l) = dvtaupsi_sp(2*m  ,n,l) + cdn*dvtaupsi(m,n+neig,l)
+            dhtaupsi_sp(2*m-1,n,l) = dhtaupsi_sp(2*m-1,n,l) +            &
+                                      dhtaupsi(m,n     ,l)
+            dhtaupsi_sp(2*m  ,n,l) = dhtaupsi_sp(2*m  ,n,l) +            &
+                                      cdn*dhtaupsi(m,n+neig,l)
           enddo
         enddo
       enddo
+!$omp end parallel do
 
     else
 
@@ -147,20 +164,24 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
         cdn = C_I
       endif
 
+!$omp parallel do default(shared) private(n, m, l)
       do n = 1,neig
         do m = 1,mtxd
-          vtaupsi_sp(2*m-1,n) = vtaupsi_sp(2*m-1,n) + cup*vtaupsi(m,n+neig)
-          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) + cdn*vtaupsi(m,n     )
+          vtaupsi_sp(2*m-1,n) = vtaupsi_sp(2*m-1,n) +                    &
+                                      cup*vtaupsi(m,n+neig)
+          vtaupsi_sp(2*m  ,n) = vtaupsi_sp(2*m  ,n) +                    &
+                                      cdn*vtaupsi(m,n     )
         enddo
-      enddo
-      do l = 1,3
-        do n = 1,neig
+        do l = 1,3
           do m = 1,mtxd
-            dvtaupsi_sp(2*m-1,n,l) = dvtaupsi_sp(2*m-1,n,l) + cup*dvtaupsi(m,n+neig,l)
-            dvtaupsi_sp(2*m  ,n,l) = dvtaupsi_sp(2*m  ,n,l) + cdn*dvtaupsi(m,n     ,l)
+            dhtaupsi_sp(2*m-1,n,l) = dhtaupsi_sp(2*m-1,n,l) +            &
+                                      cup*dhtaupsi(m,n+neig,l)
+            dhtaupsi_sp(2*m  ,n,l) = dhtaupsi_sp(2*m  ,n,l) +            &
+                                      cdn*dhtaupsi(m,n     ,l)
           enddo
         enddo
       enddo
+!$omp end parallel do
 
     endif
 
@@ -168,8 +189,8 @@ subroutine dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,         &
 
   deallocate(psi)
   deallocate(vtaupsi)
-  deallocate(dvtaupsi)
+  deallocate(dhtaupsi)
 
   return
 
-end subroutine dvtaudk_psi_spin_c16
+end subroutine dhtaudk_psi_spin_c16

@@ -29,6 +29,7 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 ! adapted from psi_vnl_psi_der, psi_p_psi and CLR phonon hk_psi_nl_lr_c16
 ! Non-local part in a separate subroutine. 15 December 2023. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau term. 8 October 2026. JLM+claude
+! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
 
 
   implicit none
@@ -71,7 +72,7 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
 
   real(REAL64), allocatable          ::  qcontra(:,:)                    !  contravariant rkpt+kgv
   complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  vtau |psi>
-  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
+  complex(REAL64), allocatable       ::  dhtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
   real(REAL64), allocatable          ::  bdot(:,:)                       !  metric in reciprocal space.  It is allocatable to keep subroutine thread-safe
 
 ! local variables
@@ -128,22 +129,22 @@ subroutine berry_dhdk_psi(rkpt, adot, mtxd, neig, psi, dhdkpsi,          &
   if(lgks) then
 
     allocate(vtaupsi(mxddim,mxdbnd))
-    allocate(dvtaupsi(mxddim,mxdbnd,3))
+    allocate(dhtaupsi(mxddim,mxdbnd,3))
 
-    call dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,              &
+    call dhtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dhtaupsi,             &
         rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
         mxddim, mxdbnd, mxdgve, mxdscr)
 
     do j = 1,3
       do n = 1,neig
         do m = 1,mtxd
-          dhdkpsi(m,n,j) = dhdkpsi(m,n,j) + dvtaupsi(m,n,j)
+          dhdkpsi(m,n,j) = dhdkpsi(m,n,j) + dhtaupsi(m,n,j)
         enddo
       enddo
     enddo
 
     deallocate(vtaupsi)
-    deallocate(dvtaupsi)
+    deallocate(dhtaupsi)
 
   endif
 

@@ -32,6 +32,7 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
 ! adapted from non-spin version, 15 December 2023. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau term. 8 October 2026. JLM+claude
 ! vtau_sp with spin components (as vscr_sp) instead of vtaumsh, nsp. 12 October 2026. JLM+claude
+! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
 
 
   implicit none
@@ -92,7 +93,7 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
 ! generalized Kohn-Sham meta-GGA
 
   complex(REAL64), allocatable       ::  vtaupsi_sp(:,:)                 !  vtau |psi_sp>
-  complex(REAL64), allocatable       ::  dvtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>
+  complex(REAL64), allocatable       ::  dhtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>
 
 ! counters
 
@@ -136,23 +137,23 @@ subroutine berry_dhdk_psi_spin(rkpt, adot, mtxd, neig,                   &
   if(lgks) then
 
     allocate(vtaupsi_sp(2*mxddim,mxdbnd))
-    allocate(dvtaupsi_sp(2*mxddim,mxdbnd,3))
+    allocate(dhtaupsi_sp(2*mxddim,mxdbnd,3))
 
-    call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,            &
-        dvtaupsi_sp,                                                     &
+    call dhtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,            &
+        dhtaupsi_sp,                                                     &
         rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                     &
         mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
 
     do j = 1,3
       do n = 1,neig
         do m = 1,2*mtxd
-          dhdkpsi_sp(m,n,j) = dhdkpsi_sp(m,n,j) + dvtaupsi_sp(m,n,j)
+          dhdkpsi_sp(m,n,j) = dhdkpsi_sp(m,n,j) + dhtaupsi_sp(m,n,j)
         enddo
       enddo
     enddo
 
     deallocate(vtaupsi_sp)
-    deallocate(dvtaupsi_sp)
+    deallocate(dhtaupsi_sp)
 
   endif
   deallocate(bdot)

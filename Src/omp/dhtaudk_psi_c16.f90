@@ -31,11 +31,12 @@
 !>  \date         8 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
+subroutine dhtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dhtaupsi,           &
     rkpt, adot, isort, kgv, vtaumsh, kmscr,                              &
     mxddim, mxdbnd, mxdgve, mxdscr)
 
 ! Written 8 October 2026 from hk_psi_mgga_c16. JLM+claude
+! Renamed from dvtaudk_psi_c16, the derivative is of H_tau, vtau does not depend on k. 13 October 2026. JLM+claude
 
   implicit none
 
@@ -63,7 +64,7 @@ subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
 ! output
 
   complex(REAL64), intent(out)       ::  vtaupsi(mxddim,mxdbnd)          !<  vtau |psi> (convolution in G-space)
-  complex(REAL64), intent(out)       ::  dvtaupsi(mxddim,mxdbnd,3)       !<  (d H_tau / d k_l) |psi>, k in lattice coordinates
+  complex(REAL64), intent(out)       ::  dhtaupsi(mxddim,mxdbnd,3)       !<  (d H_tau / d k_l) |psi>, k in lattice coordinates
 
 ! local allocatable arrays
 
@@ -99,7 +100,7 @@ subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
 
   if(mxdwrk > mxdscr) then
     write(6,*)
-    write(6,'("   STOPPED in dvtaudk_psi_c16.  mxdwrk = ",i8,            &
+    write(6,'("   STOPPED in dhtaudk_psi_c16.  mxdwrk = ",i8,            &
            &  " is greater than mxdscr = ",i8)') mxdwrk, mxdscr
 
     stop
@@ -151,7 +152,7 @@ subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
 
   if(kd1 > (n1-1)/2 .or. kd2 > (n2-1)/2 .or. kd3 > (n3-1)/2) then
 
-    write(6,'("   STOPPED in dvtaudk_psi_c16:   dimension of k ",        &
+    write(6,'("   STOPPED in dhtaudk_psi_c16:   dimension of k ",        &
          &  "index= ",3i5," exceeds ",3i5)') kd1,kd2,kd3,                &
                      (n1-1)/2,(n2-1)/2,(n3-1)/2
 
@@ -219,7 +220,7 @@ subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
 
 !$omp parallel do default(shared) private(i)
       do i = 1,mtxd
-        dvtaupsi(i,n,l) = (bq(l,i)*vtaupsi(i,n) + chd(ipoint(i))) / 2
+        dhtaupsi(i,n,l) = (bq(l,i)*vtaupsi(i,n) + chd(ipoint(i))) / 2
       enddo
 !$omp end parallel do
 
@@ -234,4 +235,4 @@ subroutine dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,           &
 
   return
 
-end subroutine dvtaudk_psi_c16
+end subroutine dhtaudk_psi_c16

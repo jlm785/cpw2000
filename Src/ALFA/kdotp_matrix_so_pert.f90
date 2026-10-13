@@ -31,6 +31,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 ! spin_orbir_perturb and kdotp_matrix_so.  JLM
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau term in the derivatives. 8 October 2026. JLM+claude
+! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
 
 
   implicit none
@@ -121,7 +122,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 ! generalized Kohn-Sham meta-GGA
 
   complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  vtau |psi>
-  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
+  complex(REAL64), allocatable       ::  dhtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>
   complex(REAL64), allocatable       ::  vtmat(:,:)                      !  matrix elements of the vtau terms
 
 ! counters
@@ -281,16 +282,16 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
   if(lgks) then
 
     allocate(vtaupsi(mxddim,mxdbnd))
-    allocate(dvtaupsi(mxddim,mxdbnd,3))
+    allocate(dhtaupsi(mxddim,mxdbnd,3))
     allocate(vtmat(mxdbnd,mxdbnd))
 
-    call dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,              &
+    call dhtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dhtaupsi,             &
         rkpt, adot, isort, kgv, vtaumsh, kmscr,                          &
         mxddim, mxdbnd, mxdgve, mxdscr)
 
     do m = 1,3
       call zgemm('C', 'N', neig, neig, mtxd, C_UM, psi, mxddim,          &
-          dvtaupsi(:,:,m), mxddim, C_ZERO, vtmat, mxdbnd)
+          dhtaupsi(:,:,m), mxddim, C_ZERO, vtmat, mxdbnd)
       do i = 1,neig
       do j = 1,neig
         dhso0drk(j     ,i     ,m) = dhso0drk(j     ,i     ,m) + vtmat(j,i)
@@ -317,7 +318,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
     endif
 
     deallocate(vtaupsi)
-    deallocate(dvtaupsi)
+    deallocate(dhtaupsi)
     deallocate(vtmat)
 
   endif

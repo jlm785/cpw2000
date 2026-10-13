@@ -44,6 +44,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 ! Modified, dimensions (t)bcurv, (t)qmetric. 4 April 2024. JLM
 ! Modified, complex tensors, quantities calculated elsewhere. 11 April 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau terms. 8 October 2026. JLM+claude
+! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
 
 
 
@@ -133,7 +134,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
   real(REAL64)      ::  vcell, bdot(3,3)                                 !  cell volume, metric reciprocal space
 
   complex(REAL64), allocatable       ::  vtaupsi(:,:)                    !  vtau |psi>
-  complex(REAL64), allocatable       ::  dvtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>, not used
+  complex(REAL64), allocatable       ::  dhtaupsi(:,:,:)                 !  (d H_tau / d k) |psi>, not used
 
 ! parameters
 
@@ -270,8 +271,8 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
     if(lgks) then
       allocate(vtaupsi(mxddim,mxdbnd))
-      allocate(dvtaupsi(mxddim,mxdbnd,3))
-      call dvtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dvtaupsi,            &
+      allocate(dhtaupsi(mxddim,mxdbnd,3))
+      call dhtaudk_psi_c16(mtxd, neig, psi, vtaupsi, dhtaupsi,           &
           rkpt, adot, isort, kgv, vtaumsh, kmscr,                        &
           mxddim, mxdbnd, mxdgve, mxdscr)
     endif
@@ -312,7 +313,7 @@ subroutine berry_derivative(rkpt, mtxd, neig, isort, ekpg, lpsi,         &
 
     if(lgks) then
       deallocate(vtaupsi)
-      deallocate(dvtaupsi)
+      deallocate(dhtaupsi)
     endif
 
     deallocate(hmedpsidk)

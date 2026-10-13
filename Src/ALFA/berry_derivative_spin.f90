@@ -45,6 +45,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 ! Modified, complex tensors, quantities calculated elsewhere. 11 April 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau terms, hk_psi_spin_driver_c16. 8 October 2026. JLM+claude
 ! vtau_sp with spin components (as vscr_sp) instead of vtaumsh. 12 October 2026. JLM+claude
+! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
 
 
   implicit none
@@ -141,7 +142,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
   logical           ::  lnewanl                                        !  anlsp recalculated (not used in default implementation)
 
   complex(REAL64), allocatable       ::  vtaupsi_sp(:,:)                 !  vtau |psi_sp>
-  complex(REAL64), allocatable       ::  dvtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>, not used
+  complex(REAL64), allocatable       ::  dhtaupsi_sp(:,:,:)              !  (d H_tau / d k) |psi_sp>, not used
 
 ! counters
 
@@ -274,9 +275,9 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
     if(lgks) then
       allocate(vtaupsi_sp(2*mxddim,mxdbnd))
-      allocate(dvtaupsi_sp(2*mxddim,mxdbnd,3))
-      call dvtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,          &
-          dvtaupsi_sp,                                                   &
+      allocate(dhtaupsi_sp(2*mxddim,mxdbnd,3))
+      call dhtaudk_psi_spin_c16(mtxd, neig, psi_sp, vtaupsi_sp,          &
+          dhtaupsi_sp,                                                   &
           rkpt, adot, isort, kgv, vtau_sp, kmscr, nsp,                   &
           mxddim, mxdbnd, mxdgve, mxdscr, mxdnsp)
     endif
@@ -317,7 +318,7 @@ subroutine berry_derivative_spin(rkpt, mtxd, neig, isort, ekpg, lpsi,    &
 
     if(lgks) then
       deallocate(vtaupsi_sp)
-      deallocate(dvtaupsi_sp)
+      deallocate(dhtaupsi_sp)
     endif
 
     deallocate(hmedpsidk_sp)
