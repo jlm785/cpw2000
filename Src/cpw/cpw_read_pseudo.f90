@@ -26,6 +26,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! Modified, filenames for pseudos.  10 October 2025. JLM
 ! Modified, prepare for more than one type of atomic basis. 18 February 2026. JLM
 ! core kinetic energy density, 3 March 2026. JLM
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -63,8 +64,8 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
   dims_%mxdlqp = dims_%mxdlqp + 10
 
-  allocate(pseudo_%nq(dims_%mxdtyp))
-  allocate(pseudo_%delq(dims_%mxdtyp))
+  allocate(pseudo_%nqnl(dims_%mxdtyp))
+  allocate(pseudo_%delqnl(dims_%mxdtyp))
   allocate(pseudo_%zv(dims_%mxdtyp))
   allocate(pseudo_%nkb(0:3,-1:1,dims_%mxdtyp))
   allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
@@ -72,7 +73,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%tauc_q(-1:dims_%mxdlqp,dims_%mxdtyp))
 
-  allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
+  allocate(pseudo_%vkbraw(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
 
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
@@ -90,7 +91,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! gets the stomic orbitals in new format
 
   call read_pseudo(ipr, author,                                          &
-       pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vkb,            &
+       pseudo_%ealraw, pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw,     &
        pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
        pseudo_%tauc_q,                                                   &
        new_atorb_%latorb, new_atorb_%nqwf, new_atorb_%delqwf,            &

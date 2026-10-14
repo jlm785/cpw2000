@@ -29,6 +29,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau passed. 7 October 2026. JLM+claude
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -117,20 +118,20 @@ subroutine cpw_pp_band(ioreplay,                                         &
     write(6,*)  '  Output will be in files band*'
     write(6,*)
 
-    call out_band(title, subtitle,                              &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot, efermi,                        &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao, atorb_%lorb,                                  &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band(title, subtitle,                                       &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot, efermi,                             &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
 
@@ -142,20 +143,20 @@ subroutine cpw_pp_band(ioreplay,                                         &
     write(6,*)
 
 
-    call out_band_kdotp_var(title, subtitle,                    &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot, efermi,                        &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao, atorb_%lorb,                                  &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_kdotp_var(title, subtitle,                             &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot, efermi,                             &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
   elseif(imeth == 3) then
@@ -163,25 +164,25 @@ subroutine cpw_pp_band(ioreplay,                                         &
     write(6,*)
     write(6,*)  '  Using k.p method'
     write(6,*)  '  Output will be in files band*'
-    write(6,*)  '  Files matrix_kdotp* for use in the ',        &
+    write(6,*)  '  Files matrix_kdotp* for use in the ',                 &
                 '  off-line (Silvaco) software will be created'
     write(6,*)
 
 
-    call out_band_kdotp_2nd(title, subtitle,                    &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot, efermi,                        &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao, atorb_%lorb,                                  &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_kdotp_2nd(title, subtitle,                             &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot, efermi,                             &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
   elseif(imeth == 4) then
@@ -294,21 +295,21 @@ subroutine cpw_pp_band(ioreplay,                                         &
     endif
 
 
-    call out_band_glk(title, subtitle,                          &
-    ninterp, nignore, xsvd, csvd,                               &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot, efermi,                        &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao,atorb_%lorb,                                   &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_glk(title, subtitle,                                   &
+        ninterp, nignore, xsvd, csvd,                                    &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot, efermi,                             &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
   elseif(imeth == 5) then
@@ -354,21 +355,21 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
 
 
-    call out_band_fold(diag_type, lworkers,                     &
-    meta_cpw2000, title, subtitle,                              &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot,                                &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao,atorb_%lorb,                                   &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_fold(diag_type, lworkers,                              &
+        meta_cpw2000, title, subtitle,                                   &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot,                                     &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
   elseif(imeth == 6) then
 
@@ -414,22 +415,22 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
 
 
-    call out_band_atom_info_fold(diag_type, lworkers,           &
-    meta_cpw2000, title, subtitle,                              &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot, efermi,                        &
-    crys_%adot, crys_%ntype, crys_%natom,                       &
-    crys_%nameat, crys_%rat,                                    &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao,atorb_%lorb,                                   &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_atom_info_fold(diag_type, lworkers,                    &
+        meta_cpw2000, title, subtitle,                                   &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot, efermi,                             &
+        crys_%adot, crys_%ntype, crys_%natom,                            &
+        crys_%nameat, crys_%rat,                                         &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
   elseif(imeth == 7) then
 
@@ -534,25 +535,26 @@ subroutine cpw_pp_band(ioreplay,                                         &
 
     endif
 
-    call out_band_fold_glk(diag_type, lworkers, xsvd, csvd,     &
-    meta_cpw2000, title, subtitle,                              &
-    pwexp_%emax, flags_%flgdal, flags_%flgpsd,                  &
-    epspsi, icmax, pseudo_%ztot,                                &
-    crys_%adot, crys_%ntype, crys_%natom, crys_%rat,            &
-    recip_%ng, recip_%kgv, recip_%phase, recip_%conj,           &
-    recip_%ns, recip_%inds, recip_%kmax,                        &
-    recip_%indv, recip_%ek,                                     &
-    strfac_%sfact, strfac_%icmplx,                              &
-    vcomp_%veff, lgks, vcomp_%vtau,                                      &
-    pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,         &
-    atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,   &
-    atorb_%wvfao,atorb_%lorb,                                   &
-    dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,     &
-    dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+    call out_band_fold_glk(diag_type, lworkers, xsvd, csvd,              &
+        meta_cpw2000, title, subtitle,                                   &
+        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
+        epspsi, icmax, pseudo_%ztot,                                     &
+        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
+        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
+        recip_%ns, recip_%inds, recip_%kmax,                             &
+        recip_%indv, recip_%ek,                                          &
+        strfac_%sfact, strfac_%icmplx,                                   &
+        vcomp_%veff, lgks, vcomp_%vtau,                                  &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
+        atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,        &
+        atorb_%wvfao, atorb_%lorb,                                       &
+        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
+        dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
 
 
   endif
 
   return
+
 end subroutine cpw_pp_band
 

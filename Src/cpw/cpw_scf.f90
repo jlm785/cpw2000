@@ -17,14 +17,14 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 1993, 13 October 2026.
+!>  \date         October 1993, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_, filename_, spaceg_)
+      total_, ewald_, chdens_, psding_, filename_, spaceg_)
 
 
 ! version 4.0. 19 october 1993. jlm
@@ -65,6 +65,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
 
   use cpw_variables
 
@@ -149,6 +150,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   type(pseudo_t)                     ::  pseudo_                          !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
 
 !  CHECK THE CONSISTENCY   NQ <----> NQNL,  DELQ <----> DELQNL
 
@@ -613,11 +615,11 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !   generalized Kohn-Sham (tau from the wave-functions) the dependence
 !   of tau on the metric is used in the stress.  dtau_dadot is only for
 !   the wave-functions, the core tau contribution to forces and stress
-!   (pseudo_%tnc, pseudo_%dtauc) is in for_str_local_force/stress.
+!   (psding_%tnc, psding_%dtauc) is in for_str_local_force/stress.
 
     if(lxctau) then
       if(lxcmgga) then
-        tau(:) = tau_val(:) + chdens_%tauc_g(:)
+        tau(:) = tau_val(:) + psding_%tauc_g(:)
         dtau_dadot(:,:,:) = dtau_val_dadot(:,:,:)
       else
         tau(:) = tau_val(:)
@@ -634,7 +636,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     call v_hartree_xc(ipr, xc_%author, xc_%tblaha, lkincalc,             &
         crys_%adot, kmscr, exc, strxc, rhovxc,                           &
         vcomp_%vhar, vcomp_%vxc, vtauout,                                &
-        chdens_%den, chdens_%denc, rholap, tau, dtau_dadot,              &
+        chdens_%den, psding_%denc, rholap, tau, dtau_dadot,              &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,     &
         recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,               &
         dims_%mxdgve, dims_%mxdnst, mxdscr)

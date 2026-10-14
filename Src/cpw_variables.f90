@@ -16,13 +16,15 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         November   2019, 6 October 2026.
+!>  \date         November   2019, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
 
 ! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc, core tau in forces and stress. 6 October 2026. JLM+claude
+! pseudo_t split, psding_t with the pseudopotential quantities in the crystal,
+!   denc and tauc_g moved from chdens_t, nq, delq, vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   implicit none
@@ -154,7 +156,7 @@ module cpw_variables
   end type recip_t
 
 
-! pseudo-potential
+! pseudo-potential, as read from the atomic files (independent of the atomic positions)
 
   type  ::  pseudo_t
 
@@ -167,26 +169,34 @@ module cpw_variables
     real(REAL64), allocatable          ::  tauc_q(:,:)                   !<  partial core kinetic energy density (hartree/bohr^3) for atom k
 
     real(REAL64), allocatable          ::  zv(:)                         !<  Valence of atom with type i
-
     real(REAL64)                       ::  ztot                          !<  total charge density (electrons/cell)
-    integer, allocatable               ::  nq(:)                         !<  number of points for pseudo interpolation for atom k
-    real(REAL64), allocatable          ::  delq(:)                       !<  step used in the interpolation for atom k
+
+    integer, allocatable               ::  nqnl(:)                       !<  number of points for pseudo interpolation for atom k
+    real(REAL64), allocatable          ::  delqnl(:)                     !<  step used in the interpolation for atom k
     integer, allocatable               ::  nkb(:,:,:)                    !<  KB pseudo.  normalization for atom k, ang. mom. l-1
-
-!   local pseudopotential in G-space
-
-    real(REAL64), allocatable          ::  vql(:,:)                      !<  local pseudopotential for atom type i and prototype g-vector in star j
-    real(REAL64), allocatable          ::  dnc(:,:)                      !<  core charge for atom type i and prototype g-vector in star j
-    complex(REAL64), allocatable       ::  dvql(:)                       !<  derivative of the local pseudopotential for the prototype g-vector in star j
-    complex(REAL64), allocatable       ::  ddc(:)                        !<  derivative of the core charge for the prototype g-vector in star j
-    real(REAL64), allocatable          ::  tnc(:,:)                      !<  core kinetic energy density for atom type i and prototype g-vector in star j
-    complex(REAL64), allocatable       ::  dtauc(:)                      !<  derivative of the core kinetic energy density for the prototype g-vector in star j
-
-!   KB non-local pseudo-potential in g-space
-
-    real(REAL64), allocatable          ::  vkb(:,:,:,:)                  !<  KB nonlocal pseudo. for atom k, ang. mom. l-1 (not normalized to vcell, Hartree)
+    real(REAL64), allocatable          ::  vkbraw(:,:,:,:)               !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l-1 (not normalized to vcell, Hartree)
 
   end type pseudo_t
+
+
+! pseudopotential quantities in G-space for the crystal (set by v_first, depend on the atomic positions)
+
+  type  ::  psding_t
+
+    real(REAL64), allocatable          ::  vql(:,:)                      !<  local pseudopotential for atom type i and prototype g-vector in star j
+    complex(REAL64), allocatable       ::  dvql(:)                       !<  derivative of the local pseudopotential for the prototype g-vector in star j
+
+    complex(REAL64), allocatable       ::  denc(:)                       !<  core charge density for the prototype G-vector in star j
+    real(REAL64), allocatable          ::  dnc(:,:)                      !<  core charge for atom type i and prototype g-vector in star j
+    complex(REAL64), allocatable       ::  ddc(:)                        !<  derivative of the core charge for the prototype g-vector in star j
+
+    complex(REAL64), allocatable       ::  tauc_g(:)                     !<  partial core kinetic energy density (hartree/bohr^3) for prototype g-vector in star j
+    real(REAL64), allocatable          ::  tnc(:,:)                      !<  partial core kinetic energy density for atom type i and prototype g-vector in star j
+    complex(REAL64), allocatable       ::  dtauc(:)                      !<  derivative of the partial core kinetic energy density for the prototype g-vector in star j
+
+
+
+  end type psding_t
 
 
 ! structure factors
@@ -204,11 +214,9 @@ module cpw_variables
   type  ::  chdens_t
 
     complex(REAL64), allocatable       ::  den(:)                        !<  total charge density for the prototype G-vector in star j
-    complex(REAL64), allocatable       ::  denc(:)                       !<  core charge density for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  dens(:)                       !<  spherical atomic valence charge density for the prototype G-vector in star j
     complex(REAL64), allocatable       ::  dend(:)                       !<  bonding charge density from previous md step
     complex(REAL64), allocatable       ::  dend1(:)                      !<  bonding charge density from second previous md step
-    complex(REAL64), allocatable       ::  tauc_g(:)                     !<  partial core kinetic energy density (hartree/bohr^3) for prototype g-vector in star j
 
   end type chdens_t
 

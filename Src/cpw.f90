@@ -15,14 +15,15 @@
 !>  Total Energy Plane Wave Calculation
 !>
 !>  \author       Jose Luis Martins and many others
-!>  \version      5.12
-!>  \date         18 February 2026
+!>  \version      5.13
+!>  \date         Late 1980s, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 program cpw2000
 
 ! spaceg_ passed to cpw_scf for tau_by_fft_stress. 29 September 2026. JLM+claude
 ! kmscr passed to cpw_scf_prepare (xc on the mesh of the potential). 29 September 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -56,6 +57,7 @@ program cpw2000
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
 
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
 
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
 
@@ -170,12 +172,12 @@ program cpw2000
 
 
 
-! constructs reciprocal space and allocates recip_,strfac_,pseudo_,chdens_,vcomp_
+! constructs reciprocal space and allocates recip_,strfac_,psding_,chdens_,vcomp_
 
 
   call cpw_gspace(iprglob, kmscr,                                        &
-     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
-     vcomp_, flags_)
+     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, psding_,            &
+     chdens_, vcomp_, flags_)
 
 
 ! allow some extra space for degeneracy
@@ -242,7 +244,7 @@ program cpw2000
     if(newcel) then
 
       call cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
-      dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,           &
+      dims_, recip_, crys_, spaceg_, pwexp_, strfac_, psding_,           &
       chdens_, vcomp_, flags_, kpoint_, atorb_,                          &
       hamallk_, psiallk_, filename_)
 
@@ -254,8 +256,8 @@ program cpw2000
     call cpw_scf_prepare(ealpha, iprglob, newcalc,                       &
        nsave, chdsave, kmscr,                                            &
        exc, strxc, rhovxc,                                               &
-       dims_, crys_, recip_, strfac_, pseudo_, chdens_, vcomp_, flags_,  &
-       ewald_, xc_)
+       dims_, crys_, recip_, strfac_, pseudo_, psding_, chdens_, vcomp_, &
+       flags_, ewald_, xc_)
 
     deallocate(chdsave)
 
@@ -283,7 +285,7 @@ program cpw2000
             efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,          &
             dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,    &
             vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,        &
-            total_, ewald_, chdens_, filename_, spaceg_)
+            total_, ewald_, chdens_, psding_, filename_, spaceg_)
 
         iguess = 1
 
@@ -307,7 +309,7 @@ program cpw2000
       efermi, elects, exc, strxc, ealpha, lkpg, lsafescf,                &
       dims_, crys_, flags_, pwexp_, recip_, acc_, xc_, strfac_,          &
       vcomp_, pseudo_, atorb_, kpoint_, hamallk_, psiallk_,              &
-      total_, ewald_, chdens_, filename_, spaceg_)
+      total_, ewald_, chdens_, psding_, filename_, spaceg_)
 
 
     endif
@@ -320,7 +322,8 @@ program cpw2000
     call cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,             &
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
-    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_, filename_)
+    psding_, vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_,      &
+    filename_)
 
 
     if(flags_%flgcal /= 'ONE   ') then
@@ -424,7 +427,7 @@ program cpw2000
 
   endif
 
-  call cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,               &
+  call cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,      &
       vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
       hamallk_, psiallk_)
 

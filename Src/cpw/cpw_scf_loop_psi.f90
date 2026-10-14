@@ -29,6 +29,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 ! extracted from cpw_scf (it was too long), 12 may 2026. JLM
 ! generalized Kohn-Sham meta-GGA, h_kb_dia_all_gks. 6 October 2026. JLM+claude
 ! h_kb_dia_all_gks merged into h_kb_dia_all. 7 October 2026. JLM+claude
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -184,7 +185,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           recip_%ns, recip_%inds, recip_%kmax,                           &
           recip_%indv, recip_%ek,                                        &
           strfac_%sfact, vcomp_%veff, strfac_%icmplx,                    &
-          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
+          pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
           crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                  &
           mtxd, hdiag, hamallk_%isort_allk(:,irk),                       &
           qmod, ekpg, lkpg,                                              &
@@ -224,7 +225,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           recip_%ns, recip_%inds, recip_%kmax,                           &
           recip_%indv, recip_%ek,                                        &
           strfac_%sfact, vcomp_%veff, strfac_%icmplx,                    &
-          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
+          pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
           crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                  &
           mtxd, hdiag, hamallk_%isort_allk(:,irk),                       &
           qmod, ekpg, lkpg,                                              &

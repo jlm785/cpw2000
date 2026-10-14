@@ -34,6 +34,7 @@ subroutine plot_psi_sub(ioreplay)
 ! Generalized Kohn-Sham meta-GGA, lgks from author, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -398,7 +399,7 @@ subroutine plot_psi_sub(ioreplay)
         recip_%ns, recip_%inds, recip_%kmax,                             &
         recip_%indv, recip_%ek,                                          &
         strfac_%sfact, vcomp_%veff, strfac_%icmplx,                      &
-        pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,              &
+        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,       &
         crys_%ntype,crys_%natom,crys_%rat,crys_%adot,                    &
         mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
         psi, hpsi, ei,                                                   &
@@ -434,7 +435,7 @@ subroutine plot_psi_sub(ioreplay)
       call spin_orbit_perturb(rk0, mtxd, isort,                          &
           neig, psi, ei, ei_so, psi_so, .TRUE.,                          &
           recip_%ng, recip_%kgv,                                         &
-          pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,            &
+          pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
           crys_%ntype, crys_%natom, crys_%rat,crys_% adot,               &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp,                      &
           mxddim, mxdbnd, dims_%mxdgve)

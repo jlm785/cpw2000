@@ -14,10 +14,10 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         18 February 2026, 6 October 2026.
+!>  \date         18 February 2026, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
+subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
       vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
       hamallk_, psiallk_)
 
@@ -27,6 +27,8 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 ! core kinetic energy densidty. 3 March 2026. JLM
 ! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc. 6 October 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -40,6 +42,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
   type(new_atorb_t)                  ::  new_atorb_                      !<  atomic orbitals in G-space
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
@@ -64,8 +67,8 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 
   deallocate(ewald_%force)
 
-  deallocate(pseudo_%nq)
-  deallocate(pseudo_%delq)
+  deallocate(pseudo_%nqnl)
+  deallocate(pseudo_%delqnl)
   deallocate(pseudo_%zv)
   deallocate(pseudo_%nkb)
   deallocate(pseudo_%vloc)
@@ -73,7 +76,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
   deallocate(pseudo_%dval)
   deallocate(pseudo_%tauc_q)
 
-  deallocate(pseudo_%vkb)
+  deallocate(pseudo_%vkbraw)
 
   deallocate(atorb_%norbat)
   deallocate(atorb_%nqwf)
@@ -112,19 +115,19 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_,           &
 
   deallocate(strfac_%sfact)
 
-  deallocate(pseudo_%vql)
-  deallocate(pseudo_%dnc)
-  deallocate(pseudo_%dvql)
-  deallocate(pseudo_%ddc)
-  deallocate(pseudo_%tnc)
-  deallocate(pseudo_%dtauc)
+  deallocate(psding_%vql)
+  deallocate(psding_%dnc)
+  deallocate(psding_%dvql)
+  deallocate(psding_%ddc)
+  deallocate(psding_%tnc)
+  deallocate(psding_%dtauc)
 
   deallocate(chdens_%den)
-  deallocate(chdens_%denc)
+  deallocate(psding_%denc)
   deallocate(chdens_%dens)
   deallocate(chdens_%dend)
   deallocate(chdens_%dend1)
-  deallocate(chdens_%tauc_g)
+  deallocate(psding_%tauc_g)
 
   deallocate(vcomp_%vion)
   deallocate(vcomp_%vhar)

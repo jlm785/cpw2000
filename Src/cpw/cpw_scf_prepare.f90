@@ -16,13 +16,13 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         around 2020, 13 October 2026.
+!>  \date         around 2020, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
      nsave, chdsave, kmscr,                                              &
      exc,strxc,rhovxc,                                                   &
-     dims_,crys_,recip_,strfac_,pseudo_,chdens_,vcomp_,flags_,           &
+     dims_,crys_,recip_,strfac_,pseudo_,psding_,chdens_,vcomp_,flags_,   &
      ewald_,xc_)
 
 ! Adapted from the code without cpw_variables. around 2020. JLM
@@ -32,6 +32,8 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 ! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc from v_first. 6 October 2026. JLM+claude
 ! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -45,6 +47,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
   type(xc_t)                         ::  xc_                             !<  exchange and correlation choice
 
@@ -86,12 +89,12 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
 
   call v_first(recip_%ns, recip_%ek, strfac_%sfact, ealpha,              &
-      pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vloc,            &
+      pseudo_%ealraw, pseudo_%nqnl, pseudo_%delqnl, pseudo_%vloc,        &
       pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,                        &
       crys_%ntype, crys_%adot,                                           &
-      vcomp_%vion, chdens_%denc, chdens_%dens, chdens_%tauc_g,           &
-      pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
-      pseudo_%tnc, pseudo_%dtauc,                                        &
+      vcomp_%vion, psding_%denc, chdens_%dens, psding_%tauc_g,           &
+      psding_%vql, psding_%dvql, psding_%dnc, psding_%ddc,               &
+      psding_%tnc, psding_%dtauc,                                        &
       dims_%mxdtyp, dims_%mxdlqp, dims_%mxdnst)
 
 
@@ -140,7 +143,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
   call v_hartree_xc(ipr, xc_%author, xc_%tblaha, .FALSE., crys_%adot,    &
       kmscr, exc, strxc, rhovxc,                                         &
       vcomp_%vhar, vcomp_%vxc, vcomp_%vtau,                              &
-      chdens_%den, chdens_%denc, rholap, tau, dtau_dadot,                &
+      chdens_%den, psding_%denc, rholap, tau, dtau_dadot,                &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,                 &
       dims_%mxdgve, dims_%mxdnst, mxdscr)

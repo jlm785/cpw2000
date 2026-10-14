@@ -14,7 +14,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         Before February 2020. 6 October 2026.
+!>  \date         Before February 2020. 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 ! Written before February 2020.
@@ -22,10 +22,11 @@
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! vcomp_%vtau, vtau for the generalized Kohn-Sham meta-GGA. 6 October 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc. 6 October 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API (replaces pseudo_)
 
   subroutine cpw_gspace(iprglob, kmscr,                                  &
-     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,chdens_,    &
-     vcomp_, flags_)
+     dims_, crys_, spaceg_, pwexp_, recip_, strfac_, psding_,            &
+     chdens_, vcomp_, flags_)
 
   use cpw_variables
 
@@ -39,7 +40,7 @@
   type(strfac_t)                     ::  strfac_                         !<  structure factors
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
-  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(spaceg_t)                     ::  spaceg_                         !<  space group information
 
   integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
@@ -74,16 +75,16 @@
 
     allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
 
-    allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
-    allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
-    allocate(pseudo_%dvql(dims_%mxdnst))
-    allocate(pseudo_%ddc(dims_%mxdnst))
-    allocate(pseudo_%tnc(dims_%mxdtyp,dims_%mxdnst))
-    allocate(pseudo_%dtauc(dims_%mxdnst))
+    allocate(psding_%vql(dims_%mxdtyp,dims_%mxdnst))
+    allocate(psding_%dnc(dims_%mxdtyp,dims_%mxdnst))
+    allocate(psding_%dvql(dims_%mxdnst))
+    allocate(psding_%ddc(dims_%mxdnst))
+    allocate(psding_%tnc(dims_%mxdtyp,dims_%mxdnst))
+    allocate(psding_%dtauc(dims_%mxdnst))
 
     allocate(chdens_%den(dims_%mxdnst))
-    allocate(chdens_%denc(dims_%mxdnst))
-    allocate(chdens_%tauc_g(dims_%mxdnst))
+    allocate(psding_%denc(dims_%mxdnst))
+    allocate(psding_%tauc_g(dims_%mxdnst))
     allocate(chdens_%dens(dims_%mxdnst))
     allocate(chdens_%dend(dims_%mxdnst))
     allocate(chdens_%dend1(dims_%mxdnst))
@@ -133,16 +134,16 @@
 
       deallocate(strfac_%sfact)
 
-      deallocate(pseudo_%vql)
-      deallocate(pseudo_%dnc)
-      deallocate(pseudo_%dvql)
-      deallocate(pseudo_%ddc)
-      deallocate(pseudo_%tnc)
-      deallocate(pseudo_%dtauc)
+      deallocate(psding_%vql)
+      deallocate(psding_%dnc)
+      deallocate(psding_%dvql)
+      deallocate(psding_%ddc)
+      deallocate(psding_%tnc)
+      deallocate(psding_%dtauc)
 
       deallocate(chdens_%den)
-      deallocate(chdens_%denc)
-      deallocate(chdens_%tauc_g)
+      deallocate(psding_%denc)
+      deallocate(psding_%tauc_g)
       deallocate(chdens_%dens)
       deallocate(chdens_%dend)
       deallocate(chdens_%dend1)
@@ -159,16 +160,16 @@
 
       allocate(strfac_%sfact(dims_%mxdtyp,dims_%mxdnst))
 
-      allocate(pseudo_%vql(dims_%mxdtyp,dims_%mxdnst))
-      allocate(pseudo_%dnc(dims_%mxdtyp,dims_%mxdnst))
-      allocate(pseudo_%dvql(dims_%mxdnst))
-      allocate(pseudo_%ddc(dims_%mxdnst))
-      allocate(pseudo_%tnc(dims_%mxdtyp,dims_%mxdnst))
-      allocate(pseudo_%dtauc(dims_%mxdnst))
+      allocate(psding_%vql(dims_%mxdtyp,dims_%mxdnst))
+      allocate(psding_%dnc(dims_%mxdtyp,dims_%mxdnst))
+      allocate(psding_%dvql(dims_%mxdnst))
+      allocate(psding_%ddc(dims_%mxdnst))
+      allocate(psding_%tnc(dims_%mxdtyp,dims_%mxdnst))
+      allocate(psding_%dtauc(dims_%mxdnst))
 
       allocate(chdens_%den(dims_%mxdnst))
-      allocate(chdens_%denc(dims_%mxdnst))
-      allocate(chdens_%tauc_g(dims_%mxdnst))
+      allocate(psding_%denc(dims_%mxdnst))
+      allocate(psding_%tauc_g(dims_%mxdnst))
       allocate(chdens_%dens(dims_%mxdnst))
       allocate(chdens_%dend(dims_%mxdnst))
       allocate(chdens_%dend1(dims_%mxdnst))

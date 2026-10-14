@@ -17,13 +17,14 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         20 October 93, 6 October 2026.
+!>  \date         20 October 93, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
-    vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_, filename_)
+    psding_, vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_,      &
+    filename_)
 
 ! Written November 2019. JLM
 ! Modified upstream in January 2010. vff_add_keating. JLM
@@ -32,6 +33,8 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
 ! Modified, option to read wave-functions from disk. 12 October 2024.
 ! Modified, equation of state option. 31 March 2026. JLM
 ! core tau with vtau in forces and stress (generalized Kohn-Sham meta-GGA). 6 October 2026. JLM+claude
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
 
@@ -47,6 +50,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
   type(spaceg_t)                     ::  spaceg_                         !<  space group information
   type(recip_t)                      ::  recip_                          !<  reciprocal space information
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(hamallk_t)                    ::  hamallk_                        !<  hamiltonian size and indexation for all k-points
@@ -85,12 +89,12 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
       spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                         &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%mstar, recip_%ek,                                           &
-      pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,                &
+      pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,         &
       vcomp_%vion, vcomp_%vhar, vcomp_%vxc, chdens_%den,                 &
       hamallk_%mtxd_allk, hamallk_%isort_allk,                           &
       psiallk_%psi_allk, psiallk_%occ_allk,                              &
-      pseudo_%vql, pseudo_%dnc, pseudo_%dvql, pseudo_%ddc,               &
-      vcomp_%vtau, pseudo_%tnc, pseudo_%dtauc,                           &
+      psding_%vql, psding_%dnc, psding_%dvql, psding_%ddc,               &
+      vcomp_%vtau, psding_%tnc, psding_%dtauc,                           &
       kpoint_%nrk, kpoint_%nband, kpoint_%rk, kpoint_%wgk,               &
       filename_%itape_save_psi, mxd_psi_allk,                            &
       dims_%mxdtyp, dims_%mxdatm, dims_%mxdlqp, dims_%mxddim,            &

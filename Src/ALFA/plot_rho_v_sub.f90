@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         September 5, 2012, 27 July 2026.
+!>  \date         September 5, 2012, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 ! For the double average see  PRL 61, 734 (1988).
@@ -27,6 +27,7 @@
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, cpw_pp_plot_prepare (bitrot vxc,etc...), 14 March 2025. JLM
 ! Modified, inconsistent cpw_pp_band_prepare, 27 July 2026. Lukas Bauer
+! psding_ and psding_in_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude
 
 subroutine plot_rho_v_sub(ioreplay)
 
@@ -168,6 +169,9 @@ subroutine plot_rho_v_sub(ioreplay)
 
   type(chdens_t)                     ::  chdens_                         !  charge densities
 
+  type(psding_t)                     ::  psding_in_                      !  pseudopotential quantities in G-space for the input crystal mesh
+  type(psding_t)                     ::  psding_                         !  pseudopotential quantities in G-space for the crystal
+
   type(vcomp_t)                      ::  vcomp_in_                       !  input local potential contributions
 
 !  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
@@ -246,9 +250,9 @@ subroutine plot_rho_v_sub(ioreplay)
        dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
        dims_in_, recip_in_, vcomp_in_)
 
-  call cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,               &
+  call cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_, psding_,      &
        crys_, strfac_,  pseudo_,                                         &
-       dims_in_, recip_in_, vcomp_in_, chdens_in_)
+       dims_in_, recip_in_, vcomp_in_, chdens_in_, psding_in_)
 
 
   allocate(qplot(dims_%mxdnst))

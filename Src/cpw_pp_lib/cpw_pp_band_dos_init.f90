@@ -33,6 +33,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 ! Modified, ititle -> psdtitle. 20 February 2025. JLM
 ! Modified, order of input variables, dims_in_. 12 March 2025. JLM
 ! vtau, core tau, all atomic basis sets read (the first is used). 7 October 2026. JLM+claude
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -127,9 +128,9 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
   allocate(vcomp_in_%vtau(dims_in_%mxdnst))
 
 
-  allocate(pseudo_%nq(dims_%mxdtyp))
-  allocate(pseudo_%delq(dims_%mxdtyp))
-  allocate(pseudo_%vkb(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
+  allocate(pseudo_%nqnl(dims_%mxdtyp))
+  allocate(pseudo_%delqnl(dims_%mxdtyp))
+  allocate(pseudo_%vkbraw(-2:dims_%mxdlqp,0:3,-1:1,dims_%mxdtyp))
   allocate(pseudo_%nkb(0:3,-1:1,dims_%mxdtyp))
   allocate(pseudo_%vloc(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%dcor(-1:dims_%mxdlqp,dims_%mxdtyp))
@@ -171,7 +172,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
          chdens_in_%den, chdens_in_%dend,                                &
          irel, icore, icorr, iray, psdtitle,                             &
          pseudo_%ealraw, pseudo_%zv, pseudo_%ztot,                       &
-         pseudo_%nq, pseudo_%delq, pseudo_%vkb, pseudo_%nkb,             &
+         pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,      &
          pseudo_%vloc, pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,       &
          n_bsets, norbat, atorb_%nqwf, atorb_%delqwf, wvfao,             &
          lorb, atorb_%latorb,                                            &

@@ -23,6 +23,7 @@
 
 ! written 15 September 2023. JLM
 ! vtau and core tau. 7 October 2026. JLM+claude
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -54,9 +55,9 @@
   deallocate(vcompin_%vtau)
 
 
-  deallocate(pseudo_%nq)
-  deallocate(pseudo_%delq)
-  deallocate(pseudo_%vkb)
+  deallocate(pseudo_%nqnl)
+  deallocate(pseudo_%delqnl)
+  deallocate(pseudo_%vkbraw)
   deallocate(pseudo_%nkb)
   deallocate(pseudo_%vloc)
   deallocate(pseudo_%dcor)

@@ -15,18 +15,20 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         13 March 2025. 6 October 2026.
+!>  \date         13 March 2025. 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 
-subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
+subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_, psding_,  &
     crys_, strfac_,  pseudo_,                                            &
-    dims_in_, recip_in_, vcomp_in_, chdens_in_)
+    dims_in_, recip_in_, vcomp_in_, chdens_in_, psding_in_)
 
 ! written 13 March 2025. JLM
 ! core kinetic energy density. 15 April 2026. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! pseudo_%tnc, pseudo_%dtauc from v_first. 6 October 2026. JLM+claude
+! psding_ and psding_in_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
+! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -44,12 +46,14 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 !  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
   type(strfac_t)                     ::  strfac_                         !<  structure factors
   type(chdens_t)                     ::  chdens_                         !<  charge densities (converted)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal (converted)
   type(vcomp_t)                      ::  vcomp_                          !<  local potential contributions
 
   type(dims_t)                       ::  dims_in_                        !<  input array dimensions
 
   type(recip_t)                      ::  recip_in_                       !<  input reciprocal space information
   type(chdens_t)                     ::  chdens_in_                      !<  input charge densities
+  type(psding_t)                     ::  psding_in_                      !<  pseudopotential quantities in G-space for the input crystal mesh
   type(vcomp_t)                      ::  vcomp_in_                       !<  input local potential contributions
 
 ! local variables
@@ -95,15 +99,15 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 
   allocate(recip_in_%ek(dims_in_%mxdnst))
   allocate(vcomp_in_%vion(dims_in_%mxdnst))
-  allocate(chdens_in_%denc(dims_in_%mxdnst))
-  allocate(chdens_in_%tauc_g(dims_in_%mxdnst))
+  allocate(psding_in_%denc(dims_in_%mxdnst))
+  allocate(psding_in_%tauc_g(dims_in_%mxdnst))
   allocate(chdens_in_%dens(dims_in_%mxdnst))
-  allocate(pseudo_%vql(dims_%mxdtyp,dims_in_%mxdnst))
-  allocate(pseudo_%dvql(dims_in_%mxdnst))
-  allocate(pseudo_%dnc(dims_%mxdtyp,dims_in_%mxdnst))
-  allocate(pseudo_%ddc(dims_in_%mxdnst))
-  allocate(pseudo_%tnc(dims_%mxdtyp,dims_in_%mxdnst))
-  allocate(pseudo_%dtauc(dims_in_%mxdnst))
+  allocate(psding_in_%vql(dims_%mxdtyp,dims_in_%mxdnst))
+  allocate(psding_in_%dvql(dims_in_%mxdnst))
+  allocate(psding_in_%dnc(dims_%mxdtyp,dims_in_%mxdnst))
+  allocate(psding_in_%ddc(dims_in_%mxdnst))
+  allocate(psding_in_%tnc(dims_%mxdtyp,dims_in_%mxdnst))
+  allocate(psding_in_%dtauc(dims_in_%mxdnst))
 
   call adot_to_bdot(crys_%adot, vcell, bdot)
 
@@ -120,13 +124,13 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
   enddo
 
   call v_first(recip_in_%ns, recip_in_%ek, strfac_%sfact, ealpha,        &
-      pseudo_%ealraw, pseudo_%nq, pseudo_%delq, pseudo_%vloc,            &
+      pseudo_%ealraw, pseudo_%nqnl, pseudo_%delqnl, pseudo_%vloc,        &
       pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,                        &
       crys_%ntype, crys_%adot,                                           &
-      vcomp_in_%vion, chdens_in_%denc, chdens_in_%dens,                  &
-      chdens_in_%tauc_g,                                                 &
-      pseudo_%vql, pseudo_%dvql, pseudo_%dnc, pseudo_%ddc,               &
-      pseudo_%tnc, pseudo_%dtauc,                                        &
+      vcomp_in_%vion, psding_in_%denc, chdens_in_%dens,                  &
+      psding_in_%tauc_g,                                                 &
+      psding_in_%vql, psding_in_%dvql, psding_in_%dnc, psding_in_%ddc,   &
+      psding_in_%tnc, psding_in_%dtauc,                                  &
       dims_%mxdtyp, dims_%mxdlqp, dims_in_%mxdnst)
 
 ! Hartree potential
@@ -162,9 +166,9 @@ subroutine cpw_pp_plot_prepare(dims_, recip_, vcomp_, chdens_,           &
 
 ! Converts core charge
 
-  allocate(chdens_%denc(dims_%mxdnst))
+  allocate(psding_%denc(dims_%mxdnst))
 
-  call cpw_pp_convert(chdens_%denc, recip_%kmax, chdens_in_%denc,        &
+  call cpw_pp_convert(psding_%denc, recip_%kmax, psding_in_%denc,        &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &
       recip_%mstar,                                                      &
       recip_in_%kgv, recip_in_%phase, recip_in_%conj, recip_in_%ns,      &

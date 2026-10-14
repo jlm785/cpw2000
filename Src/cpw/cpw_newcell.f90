@@ -15,18 +15,19 @@
 !>  appears in a minimization/molecular dynamics simulation
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         Before February 2020, 12 October 2025
+!>  \version      5.13
+!>  \date         Before February 2020, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
-     dims_, recip_, crys_, spaceg_, pwexp_, strfac_, pseudo_,            &
+     dims_, recip_, crys_, spaceg_, pwexp_, strfac_, psding_,            &
      chdens_, vcomp_, flags_, kpoint_, atorb_,                           &
      hamallk_, psiallk_, filename_)
 
 ! Written from previous code before February 2020 (November 2019?). JLM
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
+! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API (replaces pseudo_)
 
 
   use cpw_variables
@@ -41,7 +42,7 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
   type(strfac_t)                     ::  strfac_                         !<  structure factors
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(vcomp_t)                      ::  vcomp_                          !<  Componemts of local potential
-  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
+  type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
   type(hamallk_t)                    ::  hamallk_                        !<  hamiltonian size and indexation for all k-points
@@ -115,11 +116,11 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
     dims_%mxdtyp, dims_%mxdatm)
 
 
-!   reconstructs reciprocal space and allocates/deallocates recip_, strfac_, pseudo_, chdens_, vcomp_
+!   reconstructs reciprocal space and allocates/deallocates recip_, strfac_, psding_, chdens_, vcomp_
 
 
     call cpw_gspace(iprglob, kmscr,                                 &
-        dims_, crys_, spaceg_, pwexp_, recip_, strfac_, pseudo_,    &
+        dims_, crys_, spaceg_, pwexp_, recip_, strfac_, psding_,         &
         chdens_, vcomp_, flags_)
 
 
