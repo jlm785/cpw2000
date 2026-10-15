@@ -69,6 +69,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! vtau also restarted when the mixing is restarted. 15 October 2026. JLM+claude
 ! Restart from lowest energy potential (no pmix), else in energy test, itmix = 1
 ! in first iteration of meta-GGA. 15 October 2026. JLM+claude
+! Restart after a jump of the potential uses vhxcoutlow, no repeated diagonalization. 15 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -312,6 +313,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   real(REAL64)           ::  oldenergy                                   !  energy of the previous iteration
   real(REAL64)           ::  enerlow                                     !  lowest energy in previous scf iterations
+  real(REAL64)           ::  emix                                        !  energy of the input potential of the mixer
+  logical                ::  ljump                                       !  mixer restarted in this iteration after a jump of the potential
   real(REAL64)           ::  eharrfou                                    !  total energy of the Harris-Weinert-Foulkes functional
 
   integer                ::  itmix                                       !  iteration number for mixer, itmix = -1 indicates a reset.
@@ -445,12 +448,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
     enddo
 
-!   vtau used in the hamiltonian (as veff, saved for post-processing)
-
-    do i=1,recip_%ns
-      vcomp_%vtau(i) = vtauin(i)
-    enddo
-
     ipr = 0
     if(iprglob > 1) ipr = 1
     if(iprglob == 4) ipr = 2
@@ -461,6 +458,121 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
         recip_%ns, recip_%inds,                                          &
         mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+!   checks if there is a problem, restart the convergence procedure
+
+!   With functionals with kinetic energy density, first iteration is
+!   with a different functional.  Mixer starts again in second iteration.
+
+    if(iter == 2 .and. lxctau) itmix =  1
+
+    ljump = .FALSE.
+
+    if(itmix > 2) then
+      if((abs(vmin-vminold) > DELTA .or. abs(vmax-vmaxold) > DELTA)      &
+              .and. itmix /= itlow+1) then
+
+        if(nfailmix < maxnfailmix) then
+
+          write(6,*)
+          write(6,'("   Restarted in cpw_scf:  cycle is diverging",      &
+             &      " local potential jumped by",g14.6)')                &
+                    max(abs(vmin-vminold),abs(vmax-vmaxold))
+
+          nfailmix = nfailmix + 1
+          ljump = .TRUE.
+
+!         restarts the mixers (itmix = -1, smaller mixing coefficients) from
+!         the input and output potentials of the lowest energy iteration,
+!         which becomes the first iteration of the new mixer history.
+!         No diagonalization is repeated.
+
+          do i = 1,recip_%ns
+            vhxc(i) = vhxclow(i)
+          enddo
+          do i = 1,recip_%ns
+            vhxcout(i) = vhxcoutlow(i)
+          enddo
+
+          if(flags_%flgmix == 'BROYD1') then
+
+            call mixer_broyden1_c16(-1, crys_%adot, pseudo_%ztot,        &
+                recip_%ng, recip_%phase, recip_%conj, recip_%ns,         &
+                recip_%mstar, recip_%ek,                                 &
+                vhxc, vhxcout, delvhxc,                                  &
+                dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+
+          else
+
+            call mixer_bfgs_c16(-1, lxccalc, crys_%adot, pseudo_%ztot,   &
+                bandwid, penngap, enerlow,                               &
+                recip_%ng, recip_%phase, recip_%conj, recip_%ns,         &
+                recip_%mstar, recip_%ek,                                 &
+                vhxc, vhxcout, delvhxc,                                  &
+                dims_%mxdgve, dims_%mxdnst, mxdupd, mxdscf)
+
+          endif
+
+          do i = 2,recip_%ns
+            vhxc(i) = vhxc(i) + delvhxc(i)
+          enddo
+          vhxc(1) = vhxcout(1)
+
+!         same for vtau, restarts its mixing history
+
+          if(lgks) then
+
+            do i = 1,recip_%ns
+              vtauin(i) = vtaulow(i)
+            enddo
+            do i = 1,recip_%ns
+              vtauout(i) = vtauoutlow(i)
+            enddo
+
+            call mixer_anderson_c16(2, IDTAU, BETATAU,                   &
+                vtauout, vtauin, vtaumem,                                &
+                recip_%ns, recip_%mstar, dims_%mxdnst)
+            itmixtau = 3
+
+          endif
+
+!         this iteration is the second of the new mixer history
+
+          itmix = 2
+          itlow = 1
+
+          do i=1,recip_%ns
+            vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
+          enddo
+
+          call pot_local(ipr, 'local potential',                         &
+              vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,         &
+              recip_%ng, recip_%kgv, recip_%phase, recip_%conj,          &
+              recip_%ns, recip_%inds,                                    &
+              mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+          else
+
+            write(6,'("   STOPPED in cpw_scf:  cycle is diverging",      &
+               &      " local potential jumped by",g14.6)')              &
+                      max(abs(vmin-vminold),abs(vmax-vmaxold))
+            write(6,'("   and maximum number of restarts exceeded")')
+
+            stop
+
+        endif
+
+      endif
+    endif
+
+    vmaxold = vmax
+    vminold = vmin
+
+!   vtau used in the hamiltonian (as veff, saved for post-processing)
+
+    do i=1,recip_%ns
+      vcomp_%vtau(i) = vtauin(i)
+    enddo
 
 !   vtau in the fft mesh, 1 + vtau must be positive
 
@@ -483,86 +595,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       endif
 
     endif
-
-!   checks if there is a problem, restart the convergence procedure
-
-!   With functionals with kinetic energy density, first iteration is
-!   with a different functional.  Mixer starts again in second iteration.
-
-    if(iter == 2 .and. lxctau) itmix =  1
-
-    if(itmix > 2) then
-      if((abs(vmin-vminold) > DELTA .or. abs(vmax-vmaxold) > DELTA)      &
-              .and. itmix /= itlow+1) then
-
-        if(nfailmix < maxnfailmix) then
-
-          write(6,*)
-          write(6,'("   Restarted in cpw_scf:  cycle is diverging",      &
-             &      " local potential jumped by",g14.6)')                &
-                    max(abs(vmin-vminold),abs(vmax-vmaxold))
-
-!         negative itmix indicates restarting
-
-          itmix = -1
-          nfailmix = nfailmix + 1
-
-!         restarts from the lowest energy potential.  The cycle is not
-!         repeated as the mixer restarts with smaller mixing coefficients.
-
-          do i=1,recip_%ns
-            vhxc(i) = vhxclow(i)
-          enddo
-
-          do i=1,recip_%ns
-            vcomp_%veff(i) = vcomp_%vion(i) + vhxc(i)
-          enddo
-
-          call pot_local(ipr, 'local potential',                         &
-              vscr, vmax, vmin, vcomp_%veff, kmscr, recip_%kmax,         &
-              recip_%ng, recip_%kgv, recip_%phase, recip_%conj,               &
-              recip_%ns, recip_%inds,                                         &
-              mxdscr, dims_%mxdgve, dims_%mxdnst)
-
-!         same for vtau, restarts its mixing history.  1 + vtau is
-!         positive as vtaulow passed the test.
-
-          if(lgks) then
-
-            do i = 1,recip_%ns
-              vtauin(i) = vtaulow(i)
-            enddo
-
-            do i = 1,recip_%ns
-              vcomp_%vtau(i) = vtauin(i)
-            enddo
-
-            call pot_local(0, 'KE density potential',                    &
-                vtaumsh, vtmax, vtmin, vtauin, kmscr,                    &
-                recip_%kmax, recip_%ng, recip_%kgv, recip_%phase,        &
-                recip_%conj, recip_%ns, recip_%inds,                     &
-                mxdscr, dims_%mxdgve, dims_%mxdnst)
-
-            itmixtau = 2
-
-          endif
-
-          else
-
-            write(6,'("   STOPPED in cpw_scf:  cycle is diverging",      &
-               &      " local potential jumped by",g14.6)')              &
-                      max(abs(vmin-vminold),abs(vmax-vmaxold))
-            write(6,'("   and maximum number of restarts exceeded")')
-
-            stop
-
-        endif
-
-      endif
-    endif
-
-    vmaxold = vmax
-    vminold = vmin
 
 !   first loop over k-points. calculate wave-function psi and related quantities
 
@@ -592,7 +624,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !  calculates the Harris-Foulkes functional energy
 
-    if(abs(itmix) /= 1) then
+    if(abs(itmix) /= 1 .and. .not. ljump) then
       call harris_weinert_foulkes(eharrfou, eband, etauvold, exc,        &
           ewald_%energy,                                                 &
           recip_%ns, recip_%mstar, recip_%ek,                            &
@@ -709,6 +741,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     if(iter /= 1) oldenergy = total_%energy
 
     itmixabs = abs(itmix)
+    if(ljump) itmixabs = 1
     call total_ks_energy(ipr, strfac_%icmplx, iter, itmixabs, eharrfou,  &
         iconv, errvhxc, epsconv,                                         &
         total_%energy, eband, etauv, ektot, exc, ealpha, ewald_%energy,  &
@@ -780,6 +813,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
                &      " energy increased by",g14.6)') total_%energy - oldenergy
 
             itmix = -1
+            itlow = 1
             nfailmix = nfailmix + 1
 
 !           restarts from the lowest energy potentials.  The cycle is not
@@ -824,6 +858,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     ipr = 0
     if(iprglob == 4) ipr = 1
 
+    emix = total_%energy
+    if(itmix == -1) emix = enerlow
+
     if(flags_%flgmix == 'BROYD1') then
 
       call mixer_broyden1_c16(itmix, crys_%adot, pseudo_%ztot,           &
@@ -835,7 +872,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     else
 
       call mixer_bfgs_c16(itmix, lxccalc, crys_%adot, pseudo_%ztot,      &
-          bandwid, penngap, total_%energy,                               &
+          bandwid, penngap, emix,                                        &
           recip_%ng, recip_%phase, recip_%conj, recip_%ns,               &
           recip_%mstar, recip_%ek,                                       &
           vhxc, vhxcout, delvhxc,                                        &
