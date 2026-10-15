@@ -15,8 +15,8 @@
 !>   from the input and the output potential.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         May 20,1999. 12 February 2026.
+!>  \version      5.13
+!>  \date         May 20,1999. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -45,6 +45,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
 ! Modified, do not use oldenergy if E_xc is not calculated. 14 October 2025. JLM
 ! Modified, reallocate on restart (for kinetic energy functionals). 25 November 2025. JLM
 ! Cleanup of allocations, 12 February 2026. JLM
+! Default mixing coefficients only for itmix = 1, reduction on restarts is cumulative. 15 October 2026. JLM+claude
 
   implicit none
 
@@ -58,7 +59,7 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
   integer, intent(in)                ::  mxdupd                          !<  array dimension for Jacobian update of scf potential
   integer, intent(in)                ::  mxdscf                          !<  array dimension of old scf-iteration information
 
-  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial value is iter in cpw_scf. itmix = -1 indicates a restart.
+  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial value is iter in cpw_scf. itmix = -1 indicates a restart. First call with itmix = 1.
   logical, intent(in)                ::  lexccalc                        !<  exchange energy calculated.  False in Tran-Blaha, etc...
 
 
@@ -161,16 +162,19 @@ subroutine mixer_bfgs_c16(itmix, lexccalc, adot, ztot,                   &
     if(allocated(uvec)) deallocate(uvec)
     allocate(uvec(mxdupd,mxdscf))
 
-!   this values seem to work
+  endif
 
+! this values seem to work.  Not reset on restart, so the reductions
+! of successive restarts are cumulative.
+
+  if(itmix == 1) then
     xmix_simple_max = UM
     xmix_simple_min = 0.3
     xmix_jac_max = 0.6
     xmix_penn_scale = UM
-
   endif
 
-! case of restarting
+! case of restarting (the first call should have itmix = 1)
 
   if(itmix ==-1) then
     xmix_simple_max = 0.8*xmix_simple_max

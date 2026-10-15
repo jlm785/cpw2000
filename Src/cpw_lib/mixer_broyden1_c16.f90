@@ -21,8 +21,8 @@
 !>  for the other stars it uses a dielectric model.
 !>
 !>  \author       Sverre Froyen, Jose Luis Martins
-!>  \version      5.12
-!>  \date         May 20,1999. 12 February 2026
+!>  \version      5.13
+!>  \date         May 20,1999. 15 October 2026
 !>  \copyright    GNU Public License v2
 
 
@@ -35,6 +35,7 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
 ! Written May 20,1999.
 ! Modified to complex, 29 September 2025. JLM
 ! Cleanup of allocations, 12 February 2026. JLM
+! itmix = -1 restarts (was crashing on first call), cumulative damping xdamp. 15 October 2026. JLM+claude
 
   implicit none
 
@@ -48,7 +49,7 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
   integer, intent(in)                ::  mxdupd                          !<  array dimension for Jacobian update of scf potential
   integer, intent(in)                ::  mxdscf                          !<  array dimension of old scf-iteration information
 
-  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial efault is iter in cpw_scf. itmix = 1 restarts.
+  integer, intent(in)                ::  itmix                           !<  iteration number of mixer. Initial default is iter in cpw_scf. itmix = 1 starts, itmix = -1 restarts with damping.
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
 
@@ -82,6 +83,7 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
   integer             ::  nj
   real(REAL64)        ::  vcell,bdot(3,3)
   real(REAL64)        ::  xmix
+  real(REAL64), save  ::  xdamp = 1.0_REAL64                             !  damping of the initial jacobian, reduced at each restart
   real(REAL64)        ::  xsum
   real(REAL64)        ::  vnorm
   complex(REAL64)     ::  vnew
@@ -116,9 +118,14 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
 
   endif
 
-  icount = itmix - 1
+  icount = abs(itmix) - 1
 
-! allocations on first iteration
+! damping, cumulative on successive restarts
+
+  if(itmix == 1) xdamp = UM
+  if(itmix == -1) xdamp = 0.8*xdamp
+
+! allocations on first iteration (or restart)
 
   if(icount == 0) then
     if(allocated(hessd)) deallocate(hessd)
@@ -182,7 +189,7 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
       hessd(1) = ZERO
       do i=2,nj
         call mixer_screening(xmix, .FALSE., ek(i), ztot, vcell)
-        hessd(i) = - xmix
+        hessd(i) = - xdamp*xmix
       enddo
     endif
 
@@ -299,7 +306,7 @@ subroutine mixer_broyden1_c16(itmix, adot, ztot,                         &
   if (ns > nj) then
     do i=nj+1,ns
       call mixer_screening(xmix, .FALSE., ek(i), ztot, vcell)
-      delvhxc(i) = xmix*(vhxcout(i)-vhxc(i))
+      delvhxc(i) = xdamp*xmix*(vhxcout(i)-vhxc(i))
     enddo
   endif
 

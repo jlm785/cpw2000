@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 1993, 14 October 2026.
+!>  \date         October 1993, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -66,6 +66,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
+! vtau also restarted when the mixing is restarted. 15 October 2026. JLM+claude
+! Restart from lowest energy potential (no pmix), else in energy test, itmix = 1
+! in first iteration of meta-GGA. 15 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -271,6 +274,9 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   complex(REAL64), allocatable       ::  vtaumem(:,:)                    !  history of the Anderson mixing of vtau
   real(REAL64), parameter            ::  BETATAU = 0.5_REAL64            !  mixing coefficient of vtau
   integer, parameter                 ::  IDTAU = 3                       !  Anderson mixing of vtau with two previous iterations
+  integer                            ::  itmixtau                        !  cycle number for the vtau mixer, itmixtau = 2 (re)starts the history
+  complex(REAL64), allocatable       ::  vtaulow(:)                      !  vtau that entered the diagonalization that yelded the lowest energy
+  complex(REAL64), allocatable       ::  vtauoutlow(:)                   !  vtau that came out of the diagonalization that yelded the lowest energy
 
   complex(REAL64), allocatable       ::  vhxclow(:)                      !  Hartre+xc potential that entered the diagonalization that yelded the lowest energy
   complex(REAL64), allocatable       ::  vhxcoutlow(:)                   !  Hartre+xc potential that came out of the diagonalization that yelded the lowest energy
@@ -314,7 +320,6 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
   real(REAL64)           ::  tin, tout
 
-  real(REAL64)           ::  pmix                                        !  mixing coefficient for diverging calculations
 
   logical                ::  lxccalc                                     !  exchange energy calculated.  False in Tran-Blaha, etc...
   logical                ::  lxclda, lxcgga, lxcmgga, lxcmggavxc         !  family of xc functionals
@@ -387,9 +392,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   allocate(tauold(dims_%mxdnst))
   allocate(vtaumsh(mxdscr))
   allocate(vtaumem(dims_%mxdnst,4))
+  allocate(vtaulow(dims_%mxdnst))
+  allocate(vtauoutlow(dims_%mxdnst))
   do i = 1,recip_%ns
     vtauin(i) = C_ZERO
     tauold(i) = C_ZERO
+    vtaulow(i) = C_ZERO
+    vtauoutlow(i) = C_ZERO
   enddo
   vtaumem(:,:) = C_ZERO
   vtaumsh(:) = ZERO
@@ -423,6 +432,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   lsafescf = .FALSE.
   itmix = 1
   itlow = 0
+  itmixtau = 2
 
   do iter = 1,acc_%itmax
 
@@ -477,9 +487,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !   checks if there is a problem, restart the convergence procedure
 
 !   With functionals with kinetic energy density, first iteration is
-!   with a different functional.  Skip data for first iteration.
+!   with a different functional.  Mixer starts again in second iteration.
 
-    if(iter == 1 .and. lxctau) itmix = -1
     if(iter == 2 .and. lxctau) itmix =  1
 
     if(itmix > 2) then
@@ -496,13 +505,13 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 !         negative itmix indicates restarting
 
           itmix = -1
-          pmix = 0.5*(UM*nfailmix) / (UM*maxnfailmix)
           nfailmix = nfailmix + 1
 
-!         avoids restarting from same place
+!         restarts from the lowest energy potential.  The cycle is not
+!         repeated as the mixer restarts with smaller mixing coefficients.
 
           do i=1,recip_%ns
-            vhxc(i) = (UM-pmix)*vhxclow(i) + pmix*vhxc(i)
+            vhxc(i) = vhxclow(i)
           enddo
 
           do i=1,recip_%ns
@@ -514,6 +523,29 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
               recip_%ng, recip_%kgv, recip_%phase, recip_%conj,               &
               recip_%ns, recip_%inds,                                         &
               mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+!         same for vtau, restarts its mixing history.  1 + vtau is
+!         positive as vtaulow passed the test.
+
+          if(lgks) then
+
+            do i = 1,recip_%ns
+              vtauin(i) = vtaulow(i)
+            enddo
+
+            do i = 1,recip_%ns
+              vcomp_%vtau(i) = vtauin(i)
+            enddo
+
+            call pot_local(0, 'KE density potential',                    &
+                vtaumsh, vtmax, vtmin, vtauin, kmscr,                    &
+                recip_%kmax, recip_%ng, recip_%kgv, recip_%phase,        &
+                recip_%conj, recip_%ns, recip_%inds,                     &
+                mxdscr, dims_%mxdgve, dims_%mxdnst)
+
+            itmixtau = 2
+
+          endif
 
           else
 
@@ -710,21 +742,36 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
       do i = 1,recip_%ns
         vhxcoutlow(i) = vhxcout(i)
       enddo
+      if(lgks) then
+        do i = 1,recip_%ns
+          vtaulow(i) = vtauin(i)
+          vtauoutlow(i) = vtauout(i)
+        enddo
+      endif
 
     else
 
-      if(total_%energy < enerlow .and. lxccalc) then
+      if(lxccalc) then
 
-        enerlow = total_%energy
-        itlow = itmix
-        do i = 1,recip_%ns
-          vhxclow(i) = vhxc(i)
-        enddo
-        do i = 1,recip_%ns
-          vhxcoutlow(i) = vhxcout(i)
-        enddo
+        if(total_%energy < enerlow) then
 
-        if(oldenergy < total_%energy - 0.01*abs(oldenergy) .and. itmix > 2) then
+          enerlow = total_%energy
+          itlow = itmix
+          do i = 1,recip_%ns
+            vhxclow(i) = vhxc(i)
+          enddo
+          do i = 1,recip_%ns
+            vhxcoutlow(i) = vhxcout(i)
+          enddo
+          if(lgks) then
+            do i = 1,recip_%ns
+              vtaulow(i) = vtauin(i)
+              vtauoutlow(i) = vtauout(i)
+            enddo
+          endif
+
+        elseif(oldenergy < total_%energy - 0.01*abs(oldenergy)           &
+               .and. itmix > 2) then
 
           if(nfailmix < maxnfailmix) then
 
@@ -733,17 +780,27 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
                &      " energy increased by",g14.6)') total_%energy - oldenergy
 
             itmix = -1
-            pmix = 0.05*(UM*nfailmix) / (UM*maxnfailmix)
             nfailmix = nfailmix + 1
 
-!           avoids restarting from same place
+!           restarts from the lowest energy potentials.  The cycle is not
+!           repeated as the mixer restarts with smaller mixing coefficients.
 
             do i = 1,recip_%ns
-              vhxc(i) = (UM-pmix)*vhxclow(i) + pmix*vhxc(i)
+              vhxc(i) = vhxclow(i)
             enddo
             do i = 1,recip_%ns
-              vhxcout(i) = (UM-pmix)*vhxcoutlow(i) + pmix*vhxcout(i)
+              vhxcout(i) = vhxcoutlow(i)
             enddo
+
+            if(lgks) then
+              do i = 1,recip_%ns
+                vtauin(i) = vtaulow(i)
+              enddo
+              do i = 1,recip_%ns
+                vtauout(i) = vtauoutlow(i)
+              enddo
+              itmixtau = 2
+            endif
 
           else
 
@@ -796,12 +853,15 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
     vhxc(1) = vhxcout(1)
 
 !   Anderson mixing of vtau (including G=0).  The history is restarted
-!   in the second iteration, as the first one starts with vtau = 0.
+!   in the second iteration, as the first one starts with vtau = 0,
+!   and when the mixing of vhxc is restarted.
 
     if(lgks) then
-      call mixer_anderson_c16(max(2,iter), IDTAU, BETATAU,               &
+      if(iter <= 2) itmixtau = 2
+      call mixer_anderson_c16(itmixtau, IDTAU, BETATAU,                  &
           vtauout, vtauin, vtaumem,                                      &
           recip_%ns, recip_%mstar, dims_%mxdnst)
+      itmixtau = itmixtau + 1
     endif
 
 
@@ -856,6 +916,8 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
   deallocate(tauold)
   deallocate(vtaumsh)
   deallocate(vtaumem)
+  deallocate(vtaulow)
+  deallocate(vtauoutlow)
 
 ! if self-consistency not reached
 
