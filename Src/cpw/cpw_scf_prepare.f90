@@ -19,11 +19,11 @@
 !>  \date         around 2020, 14 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
+subroutine cpw_scf_prepare(ealpha, iprglob, newcalc,                     &
      nsave, chdsave, kmscr,                                              &
-     exc,strxc,rhovxc,                                                   &
-     dims_,crys_,recip_,strfac_,pseudo_,psding_,chdens_,vcomp_,flags_,   &
-     ewald_,xc_)
+     exc, strxc, rhovxc,                                                 &
+     dims_, crys_, recip_, strfac_, pseudo_, psding_, chdens_,           &
+     vcomp_, flags_, ewald_, xc_)
 
 ! Adapted from the code without cpw_variables. around 2020. JLM
 ! New variable for v_Hartree_xc. Indentation. 24 November 2025. JLM
@@ -68,7 +68,7 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   complex(REAL64), allocatable        ::  rholap(:)                      !  Laplacian of charge density
   complex(REAL64), allocatable        ::  tau(:)                         !  Kinetic energy density (whatever that means)
-  real(REAL64), allocatable           ::  dtau_dadot(:,:,:)           !  d tau / d adot at fixed volume on the mesh of the potential (not used here)
+  real(REAL64), allocatable           ::  dtau_dadot(:,:,:)              !  d tau / d adot at fixed volume on the mesh of the potential (not used here)
 
   integer       ::  mxdscr, mxdwrk, nsfft(3)                             !  size of the mesh of the potential
 
@@ -76,6 +76,17 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
 
   real(REAL64), parameter  ::  ZERO = 0.0D0
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+
+! output through data strustures:
+
+! sfact(mxdtyp,mxdnst), icmplx
+! ealpha, vion(mxdnst), denc(mxdnst), dens(mxdnst), tauc_g(mxdnst)
+! vql(mxdtyp,mxdnst), dnc(mxdtyp,mxdnst), dvql(mxdnst)
+! ddc(mxdnst), tnc(mxdtyp,mxdnst), dtauc(mxdnst)
+! enerew, forcew(3,mxdatm,mxdtyp), strew(3,3)
+! den, dend
+! exc, rhovxc, strxc(3,3), vhar(mxdnst), vxc(mxdnst), vtau(mxdnst)
+
 
 ! calculates the structure factors
 
@@ -125,11 +136,14 @@ subroutine cpw_scf_prepare(ealpha,iprglob,newcalc,                       &
       dims_%mxdgve, dims_%mxdnst)
 
 
+! initial xc potential
+
   allocate(rholap(dims_%mxdnst))
   allocate(tau(dims_%mxdnst))
 
   call size_fft(kmscr, nsfft, mxdscr, mxdwrk)
   allocate(dtau_dadot(3,3,mxdscr))
+
   dtau_dadot(:,:,:) = ZERO
 
   do i = 1,recip_%ns

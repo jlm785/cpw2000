@@ -134,6 +134,7 @@
 !   compute ionic local potential
 
     do j = 2,ns
+
       vql(nt,j) = ZERO
 
 !     quadratic interpolation of q**2 * potential
@@ -141,7 +142,9 @@
       qj = sqrt(2*ek(j))
       xn = qj / delql
       n  =  int(xn + UM/2)
+
       if (n < nql) then
+
         if (n < 0) n = 0
         xn = xn - n*UM
         q2vn = (n*n)*vloc(n,nt)
@@ -153,15 +156,19 @@
         dvqj = -2 * q2vn * xn                                            &
              + q2vp * ((UM/2)+xn) - q2vm * ((UM/2)-xn)
         dvqj = (delql*dvqj/(2*vcell*qj) - vqj) / (2*ek(j))
+
         vion(j) = vion(j) + vqj*sfact(nt,j)
         dvql(j) = dvql(j) + dvqj*sfact(nt,j)
         vql(nt,j) = vqj
-      ENDIF
-    ENDDO
+
+      endif
+
+    enddo
 
 !   compute core charge
 
     do j = 1,ns
+
       dnc(nt,j) = ZERO
 
 !     interpolate vda
@@ -169,7 +176,9 @@
       qj = sqrt(2*ek(j))
       xn = qj/delql
       n = int(xn + UM/2)
+
       if (n < nql) then
+
         if(n < 0) n = 0
         xn = xn - n*UM
         dcj = dcor(n,nt) * (UM+xn) * (UM-xn)                             &
@@ -177,6 +186,7 @@
                        -dcor(n-1,nt)*(UM-xn)) * xn
         dnc(nt,j) = dcj
         denc(j) = denc(j) + dcj*sfact(nt,j)
+
         if (j /= 1) then
           ddcj = -2*dcor(n,nt) * xn                                      &
                + dcor(n+1,nt)*((UM/2)+xn)                                &
@@ -184,8 +194,11 @@
           ddcj = ddcj/(2*delql*qj)
           ddc(j) = ddc(j) + ddcj*sfact(nt,j)
         endif
+
       endif
+
     enddo
+
     ddcj = (dcor(1,nt)-dcor(0,nt))  / (delql*delql)
     ddcj = ddcj * real(sfact(nt,1),REAL64)
     ddc(1) = ddc(1) + cmplx(ddcj,ZERO,REAL64)
@@ -198,6 +211,7 @@
 
       xn = sqrt(2*ek(j))/delql
       n = int(xn + UM/2)
+
       if (n < nql) then
 
         if(n < 0) n = 0
@@ -211,6 +225,7 @@
         dens(j) = dens(j) + dvj*sfact(nt,j)
 
       endif
+
     enddo
 
 !   compute core kinetic energy density tau and its derivative
@@ -224,6 +239,7 @@
       qj = sqrt(2*ek(j))
       xn = qj/delql
       n = int(xn + UM/2)
+
       if (n < nql) then
 
         if(n < 0) n = 0
@@ -246,7 +262,9 @@
         endif
 
       endif
+
     enddo
+
     ddtj = (tauc_q(1,nt)-tauc_q(0,nt))  / (delql*delql)
     ddtj = ddtj * real(sfact(nt,1),REAL64)
     dtauc(1) = dtauc(1) + cmplx(ddtj,ZERO,REAL64)
