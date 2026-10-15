@@ -77,7 +77,7 @@ subroutine cpw_scf_prepare(ealpha, iprglob, newcalc,                     &
   real(REAL64), parameter  ::  ZERO = 0.0D0
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
 
-! output through data strustures:
+! output through data structures:
 
 ! sfact(mxdtyp,mxdnst), icmplx
 ! ealpha, vion(mxdnst), denc(mxdnst), dens(mxdnst), tauc_g(mxdnst)

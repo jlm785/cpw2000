@@ -93,7 +93,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
   real(REAL64), intent(out)          ::  ekl(dims_%mxdnrk*dims_%mxdbnd)  !<  kinetic energy of wave-function j, for all the k-points
   integer, intent(out)               ::  minifail                        !<  minimum value of non-zero ifail, or 100 if all ifail is 0
 
-! output through data strustures:
+! output through data structures:
 
 ! nband(irk), psi_allk(:,:,irk), mtxd_allk(irk), isort_allk(:,irk), eig_allk(iel)
 

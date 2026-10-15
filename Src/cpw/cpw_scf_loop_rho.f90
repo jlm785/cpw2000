@@ -67,7 +67,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
   complex(REAL64), intent(out)       ::  tau(dims_%mxdnst)               !<  "kinetic energy density"
   real(REAL64), intent(out)          ::  dtau_dadot(3,3,mxdscr)          !<  d tau / d adot at fixed volume on the real space mesh of the potential (hartree/bohr^3), only for meta-GGA
 
-! output through data strustures:
+! output through data structures:
 
 ! den(i)
 
