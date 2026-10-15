@@ -378,7 +378,7 @@ subroutine out_qgeom(ioreplay,                                           &
 
       if(info /= 0) then
         write(6,*)
-        write(6,*) '   Stopped in out_mass_berry.  Failed diagonalization'
+        write(6,*) '   Stopped in out_qgeom.  Failed diagonalization'
         write(6,*) '   info = ',info
 
         stop
