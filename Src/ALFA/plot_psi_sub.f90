@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         16 February 2018, 12 October 2026.
+!>  \date         16 February 2018, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -35,6 +35,7 @@ subroutine plot_psi_sub(ioreplay)
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -393,7 +394,7 @@ subroutine plot_psi_sub(ioreplay)
     nocc = neig
     icmax = 100
 
-    call h_kb_dia_all(diag_type, pwexp_%emax, rk0, neig, nocc,           &
+    call h_kb_dia_all(diag_type, pwexp_%emax, ZERO, rk0, neig, nocc,     &
         flags_%flgpsd, ipr, ifail, icmax, iguess, epspsi,                &
         recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                &
         recip_%ns, recip_%inds, recip_%kmax,                             &

@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         23 September 2020, 7 October 2026.
+!>  \date         23 September 2020, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_glk_prepare(diag_type, io66,                              &
@@ -39,6 +39,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 ! Extracted from out_dos_glk, 23 September 2020. JLM
 ! Name change, indentation. 12 November 2023.
 ! Generalized Kohn-Sham meta-GGA, lgks, vtau, vtaumsh arguments. 7 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
   implicit none
 
@@ -145,6 +146,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
 
 ! parameters
 
+  real(REAL64), parameter            ::  ZERO = 0.0_REAL64
   real(REAL64), parameter            ::  UM = 1.0_REAL64
 
 ! counters
@@ -177,7 +179,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
     rkpt(2) = rk_ref(2,irk)
     rkpt(3) = rk_ref(3,irk)
 
-    call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,                 &
+    call h_kb_dia_all(diag_type, emax, ZERO, rkpt, neig, nocc,           &
         flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &

@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2015. 8 October 2026.
+!>  \date         before 2015. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
@@ -44,6 +44,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Modified, removed mxdbnd, hdiag, etc... from API. 1 November 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16 (dh0drk without vtau). 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in dh0drk from kdotp_matrix. 8 October 2026. JLM+claude
+! esmear = 0 in hamilt_pw (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
   implicit none
 
@@ -166,7 +167,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   lkplusg = .FALSE.
 
-  call hamilt_pw(emax, rkpt, lkplusg, veffr1, nanl,                      &
+  call hamilt_pw(emax, ZERO, rkpt, lkplusg, veffr1, nanl,                &
       mtxd, isort, qmod, ekpg, hdiag,                                    &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &

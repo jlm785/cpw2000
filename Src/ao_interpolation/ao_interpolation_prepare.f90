@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 12 October 2026.
+!>  \date         2014. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -56,6 +56,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau in ao_h_and_s_spin_orbit, warning removed. 8 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -481,7 +482,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !   THERE IS A LOT OF DUPLICATION HERE
 
-    call h_kb_dia_all('ao  ', emax, rkpt, norb_ao, nocc, flgpsd,         &
+    call h_kb_dia_all('ao  ', emax, ZERO, rkpt, norb_ao, nocc, flgpsd,   &
         ipr, ifail, icmax, iguess, epspsi,                               &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
@@ -497,7 +498,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
     nocc = neig
 
-    call h_kb_dia_all('pw  ', emax, rkpt, neig, nocc, flgpsd,            &
+    call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig, nocc, flgpsd,      &
         ipr, ifail, icmax, iguess, epspsi,                               &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &

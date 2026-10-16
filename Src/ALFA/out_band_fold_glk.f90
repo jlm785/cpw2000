@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 May 2004. 12 October 2026.
+!>  \date         8 May 2004. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
@@ -54,6 +54,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 ! Modified size_kmscr. 24 September 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
 
   implicit none
@@ -452,7 +453,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
     rkpt(:) = rk_fld(:,irk_map(irk))
 
 
-    call h_kb_dia_all(diag_type, emax, rkpt, neig, nocc,                 &
+    call h_kb_dia_all(diag_type, emax, ZERO, rkpt, neig, nocc,           &
         flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &

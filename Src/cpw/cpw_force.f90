@@ -17,14 +17,14 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         20 October 93, 14 October 2026.
+!>  \date         20 October 93, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
     psding_, vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_,      &
-    filename_)
+    pwexp_, filename_)
 
 ! Written November 2019. JLM
 ! Modified upstream in January 2010. vff_add_keating. JLM
@@ -35,6 +35,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
 ! core tau with vtau in forces and stress (generalized Kohn-Sham meta-GGA). 6 October 2026. JLM+claude
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! pwexp_ for the smearing of the kinetic energy cutoff in the stress. 15 October 2026. JLM+claude WARNING NEW API
 
 
 
@@ -57,6 +58,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
   type(psiallk_t)                    ::  psiallk_                        !<  psi for all k-points
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
   type(vcsdyn_t)                     ::  vcsdyn_                         !<  variational cell shape molecular dynamics variables
+  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
   type(filename_t)                   ::  filename_                       !<  Information about used files
 
   integer, intent(in)                ::  iprglob                         !<  controls the amount of printing by subroutines
@@ -85,6 +87,7 @@ subroutine cpw_force(iprglob,strxc, ealpha, deltentpy, errfrc,           &
 
   call force_stress_kb(total_%force, total_%stress,                      &
       ewald_%force, ewald_%stress, strxc, ealpha, flags_%flgpsd,         &
+      pwexp_%emax, pwexp_%esmear,                                        &
       crys_%ntype, crys_%natom, crys_%rat, crys_%adot,                   &
       spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                         &
       recip_%ng, recip_%kgv, recip_%phase, recip_%conj, recip_%ns,       &

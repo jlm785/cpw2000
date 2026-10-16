@@ -15,11 +15,12 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 October 93, 6 October 2026.
+!>  \date         20 October 93, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine force_stress_kb(force, stress,                              &
       forcew, strew, strxc, ealpha, flgpsd,                              &
+      emax, esmear,                                                      &
       ntype, natom, rat, adot,                                           &
       ntrans, mtrx, tnp,                                                 &
       ng, kgv, phase, conj, ns, mstar, ek,                               &
@@ -41,6 +42,7 @@
 ! Modified, option to read wave-functions from disk. 12 October 2025. JLM
 ! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
 ! core tau with vtau (generalized Kohn-Sham meta-GGA). 6 October 2026. claude
+! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -64,6 +66,8 @@
   real(REAL64), intent(in)           ::  strew(3,3)                      !<  d enerew / d adot,  Ewald contribution to stress tensor (contravariant components)
   real(REAL64), intent(in)           ::  ealpha                          !<  G=0 contribution to the total energy (Hartree)
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
+  real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (hartree)
+  real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -276,9 +280,10 @@
     enddo
 !
     call for_str_kinetic_stress(strkin,                                  &
+        emax, esmear,                                                    &
         mtxd, rkpt, neig, occ_x_wgk,                                     &
         isort_allk(:,irk) ,psi_allk(:,:,irkpsi),                         &
-        kgv,                                                             &
+        kgv, adot,                                                       &
         mxdgve, mxddim, mxdbnd)
 
     do i = 1,3

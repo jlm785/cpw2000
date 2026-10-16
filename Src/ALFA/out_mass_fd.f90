@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 November 2023. 12 October 2026.
+!>  \date         8 November 2023. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd(ioreplay,                                         &
@@ -39,6 +39,7 @@ subroutine out_mass_fd(ioreplay,                                         &
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
   implicit none
 
@@ -262,7 +263,7 @@ subroutine out_mass_fd(ioreplay,                                         &
   allocate(hpsi(mxddim,mxdbnd))
   allocate(ekpsi(mxdbnd))
 
-  call h_kb_dia_all('pw  ', emax, rk0, neigin, neigin,                   &
+  call h_kb_dia_all('pw  ', emax, ZERO, rk0, neigin, neigin,             &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
       ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
       sfact, veff, icmplx,                                               &

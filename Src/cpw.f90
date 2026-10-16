@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         Late 1980s, 14 October 2026.
+!>  \date         Late 1980s, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -24,6 +24,7 @@ program cpw2000
 ! spaceg_ passed to cpw_scf for tau_by_fft_stress. 29 September 2026. JLM+claude
 ! kmscr passed to cpw_scf_prepare (xc on the mesh of the potential). 29 September 2026. JLM+claude
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude
+! pwexp_ in cpw_force (smearing of the kinetic energy cutoff). 15 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -323,7 +324,7 @@ program cpw2000
     errstr,                                                              &
     dims_, crys_, total_, ewald_, flags_, spaceg_, recip_, pseudo_,      &
     psding_, vcomp_, chdens_, hamallk_, psiallk_, kpoint_, vcsdyn_,      &
-    filename_)
+    pwexp_, filename_)
 
 
     if(flags_%flgcal /= 'ONE   ') then

@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         4 April 2024. 12 October 2026.
+!>  \date         4 April 2024. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_qgeom(ioreplay,                                           &
@@ -40,6 +40,7 @@ subroutine out_qgeom(ioreplay,                                           &
 ! Generalized Kohn-Sham meta-GGA, vtau in berry_derivative(_spin) and spin-orbit hamiltonians. 8 October 2026. JLM+claude
 ! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
 
   implicit none
@@ -272,7 +273,7 @@ subroutine out_qgeom(ioreplay,                                           &
 
   ipr = 1
 
-  call h_kb_dia_all('pw  ', emax, rkpt, neigin, nocc,                    &
+  call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neigin, nocc,              &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
       ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
       sfact, veff, icmplx,                                               &

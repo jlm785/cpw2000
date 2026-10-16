@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         7 November 2023. 12 October 2026.
+!>  \date         7 November 2023. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
@@ -42,6 +42,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 ! vtau_sp (as vscr_sp) passed to the spin-orbit routines. 12 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! neigk, neig is intent(in) but intent(inout) in h_kb_dia_all. 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
   implicit none
 
@@ -324,7 +325,7 @@ subroutine out_mass_fd_xk(rkpt, xk, neig, npt, delta, lso, imethod,      &
 
     ipr = 1
 
-    call h_kb_dia_all('pw  ', emax, rk_l(:,n), neigk, nocc,              &
+    call h_kb_dia_all('pw  ', emax, ZERO, rk_l(:,n), neigk, nocc,        &
         flgpsd, ipr, ifail, icmax, iguess, epsloc,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &

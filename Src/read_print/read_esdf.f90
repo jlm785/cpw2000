@@ -14,14 +14,14 @@
 !>  Reads the parameters of the calculation
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
-!>  \version      5.12
-!>  \date         5 August 2002. 10 October 2025.
+!>  \version      5.13
+!>  \date         5 August 2002. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     flgpsd, flgscf, flgdal, flgmix,                                      &
     adot, ntype, natom, nameat, rat, atmass, alatt, lgeom,               &
-    emax, nbandin, nx, ny, nz, sx, sy, sz, lbz,                          &
+    emax, esmear, nbandin, nx, ny, nz, sx, sy, sz, lbz,                  &
     meta_cpw2000,                                                        &
     symkip, symtol,                                                      &
     author, tblaha, iprglob, itmax, icdiagmax, epscv, epscvao, epspsi,   &
@@ -42,6 +42,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! Modified, icdiagmax, indentation. 14 May 2025. JLM
 ! Modified, filenames for pseudo and saving psi to disk. 10 October 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! esmear, smearing of the kinetic energy cutoff (MD.PWCutoffSmearing). 15 October 2026. JLM+claude WARNING NEW API
 
 
   use esdf
@@ -79,6 +80,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   logical, intent(out)               ::  lgeom                           !<  indicates if geometry was successfully read.
 
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
+  real(REAL64), intent(out)          ::  esmear                          !<  smearing of the kinetic energy cutoff (Hartree), no smearing if zero
 
   integer, intent(out)               ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
   integer, intent(out)               ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
@@ -138,7 +140,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
 ! parameters
 
-  real(REAL64), parameter ::  UM = 1.0_REAL64
+  real(REAL64), parameter ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
 
 
 ! checks consistency between cpw2000 and this subroutine
@@ -278,6 +280,38 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
   call read_esdf_bz(ipr,                                                 &
       emax, nbandin, nx, ny, nz, sx, sy, sz, lbz)
+
+! smearing of the kinetic energy cutoff (see kinetic_smear).  By default
+! only for runs with variable cell, with the value recommended by ABINIT
+! for ecutsm (0.5 Hartree), but not more than 5% of the cutoff.
+
+  esmear = ZERO
+  if(flgcal(1:3) == 'VCS' .or. flgcal(1:3) == 'EPI' .or.                 &
+     flgcal(1:3) == 'EOS' .or. flgcal == 'RSTRT ') then
+    esmear = min(UM/2, emax/20)
+  endif
+
+  if(esdf_defined('MD.PWCutoffSmearing')) then
+    esmear = esdf_physical('MD.PWCutoffSmearing', esmear, 'hartree')
+  endif
+
+  if(esmear < ZERO .or. esmear >= emax) then
+    write(6,*)
+    write(6,'("   STOPPED in read_esdf:  MD.PWCutoffSmearing = ",        &
+       &      f12.4," should be positive and smaller than the cutoff")')  &
+              esmear
+    write(6,*)
+
+    stop
+
+  endif
+
+  if(ipr > 0 .and. esmear > ZERO) then
+    write(6,*)
+    write(6,'("   The kinetic energy cutoff is smeared by ",f10.4,       &
+       &      " hartree")') esmear
+    write(6,*)
+  endif
 
   call read_esdf_rede(ipr, meta_cpw2000, lrede)
 

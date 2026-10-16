@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 May 2004. 12 October 2026.
+!>  \date         8 May 2004. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_onek(ioreplay,                                       &
@@ -51,6 +51,7 @@ subroutine out_band_onek(ioreplay,                                       &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in kdotp_matrix(_so_pert), warning removed. 8 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
+! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 
   implicit none
 
@@ -267,7 +268,7 @@ subroutine out_band_onek(ioreplay,                                       &
 
   nocc = neig
 
-  call h_kb_dia_all('pw  ', emax, rk0, neig, nocc,                       &
+  call h_kb_dia_all('pw  ', emax, ZERO, rk0, neig, nocc,                 &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &
       ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                    &
       sfact, veff, icmplx,                                               &

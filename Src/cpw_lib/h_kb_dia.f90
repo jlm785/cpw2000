@@ -16,10 +16,10 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 6 October 2026.
+!>  \date         18 october 1993. 15 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
+subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
     ipr, ifail, icmax, iguess, epspsi,                                   &
     ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                      &
     sfact, veff, icmplx,                                                 &
@@ -48,6 +48,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
 ! Modified, nanlspin, 30 November 2023. JLM
 ! Added the commented out alternative call to hamilt_kb_alt. 16 Mrch 2024. JLM
 ! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh, hamilt_mgga_add). 6 October 2026. JLM+claude
+! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -67,6 +68,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
   integer, intent(in)                ::  mxdscr                          !<  array dimension for vscr
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
+  real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
 
@@ -165,7 +167,7 @@ subroutine h_kb_dia(emax, rkpt, neig, flgpsd,                            &
   allocate(anlga(mxddim,mxdanl))
 
 
-  call hamilt_pw(emax,  rkpt,  lkpg,  veffr1,  nanl,                     &
+  call hamilt_pw(emax, esmear,  rkpt,  lkpg,  veffr1,  nanl,             &
       mtxd, isort, qmod, ekpg, hdiag,                                    &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &

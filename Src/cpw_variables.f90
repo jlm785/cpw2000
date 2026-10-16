@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         November   2019, 14 October 2026.
+!>  \date         November   2019, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
@@ -25,6 +25,7 @@ module cpw_variables
 ! pseudo_%tnc, pseudo_%dtauc, core tau in forces and stress. 6 October 2026. JLM+claude
 ! pseudo_t split, psding_t with the pseudopotential quantities in the crystal,
 !   denc and tauc_g moved from chdens_t, nq, delq, vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! pwexp_%esmear, smearing of the kinetic energy cutoff. 15 October 2026. JLM+claude
 
 
   implicit none
@@ -102,6 +103,7 @@ module cpw_variables
   type  ::  pwexp_t
 
     real(REAL64)                       ::  emax                          !<  kinetic energy cutoff of plane wave expansion (Hartree).
+    real(REAL64)                       ::  esmear                        !<  smearing of the kinetic energy cutoff (Hartree), no smearing if zero
     real(REAL64)                       ::  teleck                        !<  Temperature of electrons (kelvin)
 
     integer                            ::  nbandin                       !<  target for number of bands

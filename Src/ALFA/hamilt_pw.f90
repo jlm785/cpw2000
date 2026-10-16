@@ -16,11 +16,11 @@
 !>  Consolidates 3 subroutines that are often called together.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      4.98
-!>  \date         8 February 1990, 2 Jume 2020.
+!>  \version      5.13
+!>  \date         8 February 1990, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine hamilt_pw(emax, rkpt, lkpg, veffr1, nanl,                     &
+subroutine hamilt_pw(emax, esmear, rkpt, lkpg, veffr1, nanl,             &
       mtxd, isort, qmod, ekpg, hdiag,                                    &
       ng, kgv,                                                           &
       nqnl, delqnl, vkb, nkb,                                            &
@@ -30,6 +30,7 @@ subroutine hamilt_pw(emax, rkpt, lkpg, veffr1, nanl,                     &
 
 ! Adapted 2 June 2020 from h_kb_dia.f90. JLM
 ! Modified, indentation, 16 March 2024. JLM
+! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -46,6 +47,7 @@ subroutine hamilt_pw(emax, rkpt, lkpg, veffr1, nanl,                     &
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
+  real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   logical, intent(in)                ::  lkpg                            !<  If true use the previous G-vectors (same mtxd and isort)
   real(REAL64), intent(in)           ::  veffr1                          !<  Average value (veff(1)) of the effective potential.
@@ -79,10 +81,32 @@ subroutine hamilt_pw(emax, rkpt, lkpg, veffr1, nanl,                     &
   complex(REAL64), intent(out)       ::  anlga(mxddim,mxdanl)            !<  KB projectors without spin-orbit
   real(REAL64), intent(out)          ::  xnlkb(mxdanl)                   !<  KB normalization without spin-orbit
 
+! local variables
+
+  real(REAL64)       ::  tkin                                            !  smeared kinetic energy
+  real(REAL64)       ::  dtkin                                           !  derivative of the smeared kinetic energy (not used here)
+
+! constants
+
+  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
+
+! counters
+
+  integer   ::  i
+
 
   call hamilt_struct(emax, rkpt, mtxd, isort, qmod, ekpg, lkpg,          &
       ng, kgv, adot,                                                     &
       mxdgve, mxddim)
+
+! smearing of the kinetic energy near the cutoff (qmod is not modified)
+
+  if(esmear > ZERO) then
+    do i = 1,mtxd
+      call kinetic_smear(ekpg(i), emax, esmear, tkin, dtkin)
+      ekpg(i) = tkin
+    enddo
+  endif
 
   call hamilt_diag_kb(mtxd, hdiag, qmod, ekpg, veffr1,                   &
       nqnl, delqnl, vkb, nkb,                                            &

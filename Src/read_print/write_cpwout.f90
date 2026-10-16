@@ -15,8 +15,8 @@
 !>  basis for next cpw.in input file with new geometry
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         June 2017, 2 December 2025.
+!>  \version      5.13
+!>  \date         June 2017, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -32,6 +32,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Adds more options for xc functionals. 22 November 2025. JLM
 ! New date format. 2 december 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! MD.PWCutoffSmearing in the inactive options. 15 October 2026. JLM+claude
 
 
   implicit none
@@ -370,6 +371,8 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,*)
   write(io,'("#MD.CellMass                  10.0            #")')
   write(io,'("#MD.Seed                      76978           #")')
+  write(io,'("#MD.PWCutoffSmearing          0.5 hartree     #",            &
+     &    " default min(0.5, 5% cutoff) VCS*, EPI*, EOS*, RSTRT, 0 others")')
 
   write(io,*)
   write(io,'("#------------------------------------------------")')

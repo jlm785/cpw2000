@@ -15,8 +15,8 @@
 !>  Interfaces between variables in modules and real ones.
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
-!>  \version      5.12
-!>  \date         November 2019, 10 October 2025.
+!>  \version      5.13
+!>  \date         November 2019, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
@@ -29,6 +29,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 ! Modified, close unit, 11 June 2020. JLM
 ! Modified, icdiagmax, indentation, 14 May 2025. JLM
 ! Modified, filenames for pseudos and psi to disk. 10 October 2025. JLM
+! pwexp_%esmear (smearing of the kinetic energy cutoff) from read_esdf. 15 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -100,7 +101,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
       crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,     &
           crys_%atmass, crys_%alatt,                                     &
       lgeom,                                                             &
-      pwexp_%emax, pwexp_%nbandin,                                       &
+      pwexp_%emax, pwexp_%esmear, pwexp_%nbandin,                        &
       kpoint_%nx, kpoint_%ny, kpoint_%nz, kpoint_%sx, kpoint_%sy,        &
           kpoint_%sz,                                                    &
           lbz,                                                           &

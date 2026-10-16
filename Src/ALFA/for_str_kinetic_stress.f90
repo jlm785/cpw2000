@@ -16,13 +16,14 @@
 !>
 !>  \author       Sverre Froyen, Jose Luis Martins
 !>  \version      5.13
-!>  \date         January 22 1988,  January 2020.
+!>  \date         January 22 1988, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_kinetic_stress(strkin,                                &
+    emax, esmear,                                                        &
     mtxd, rkpt, neig, occ_x_wgk,                                         &
     isort, psi,                                                          &
-    kgv,                                                                 &
+    kgv, adot,                                                           &
     mxdgve, mxddim, mxdbnd)
 
 ! Adapted from Sverre Froyen plane wave program
@@ -31,6 +32,7 @@ subroutine for_str_kinetic_stress(strkin,                                &
 ! Modified, documentation, January 2020. JLM
 ! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude.
 ! Indentation. 28 September 2026. JLM
+! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -51,6 +53,10 @@ subroutine for_str_kinetic_stress(strkin,                                &
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  component j of vector i
 
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
+  real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in direct space
+
+  real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (hartree)
+  real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
 
 ! output
 
@@ -59,6 +65,9 @@ subroutine for_str_kinetic_stress(strkin,                                &
 ! local variables
 
   real(REAL64)           ::  qki(3), zsumr
+  real(REAL64)           ::  vcell, bdot(3,3)
+  real(REAL64)           ::  ekin                                        !  kinetic energy of the plane-wave
+  real(REAL64)           ::  tkin, dtkin                                 !  smeared kinetic energy and its derivative with respect to ekin
   integer                ::  jmin, jmax, iadd
 
 ! constants
@@ -90,6 +99,8 @@ subroutine for_str_kinetic_stress(strkin,                                &
 
   if (jmin == 0) return
 
+  call adot_to_bdot(adot, vcell, bdot)
+
 ! start loop over g(i)
 
   do i = 1,mtxd
@@ -108,6 +119,20 @@ subroutine for_str_kinetic_stress(strkin,                                &
       zsumr = zsumr + occ_x_wgk(k)*real(psi(i,k)*conjg(psi(i,k)),REAL64)
     enddo
     zsumr = 2 * zsumr
+
+!   the smeared kinetic energy depends on adot through ekin
+
+    if(esmear > ZERO) then
+      ekin = ZERO
+      do j = 1,3
+      do k = 1,3
+        ekin = ekin + qki(k)*bdot(k,j)*qki(j)
+      enddo
+      enddo
+      ekin = ekin / 2
+      call kinetic_smear(ekin, emax, esmear, tkin, dtkin)
+      zsumr = zsumr * dtkin
+    endif
 
 !   stress contribution from kinetic energy
 

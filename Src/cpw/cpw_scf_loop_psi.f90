@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026, 7 October 2026.
+!>  \date         12 May 2026, 15 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
@@ -30,6 +30,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 ! generalized Kohn-Sham meta-GGA, h_kb_dia_all_gks. 6 October 2026. JLM+claude
 ! h_kb_dia_all_gks merged into h_kb_dia_all. 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! pwexp_%esmear (smearing of the kinetic energy cutoff) in h_kb_dia_all. 15 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -181,8 +182,8 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
       diag_type = 'pw  '
       nocc = neig
 
-      call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,        &
-          flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                     &
+      call h_kb_dia_all(diag_type, pwexp_%emax, pwexp_%esmear, rkpt,     &
+          neig, nocc, flags_%flgpsd, ipr, ifail, acc_%icdiagmax,         &
           iguess, acc_%epspsi,                                           &
           recip_%ng, recip_%kgv, recip_%phase, recip_%conj,              &
           recip_%ns, recip_%inds, recip_%kmax,                           &
@@ -221,8 +222,8 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
       if(flags_%flgscf == 'AOJC  ') diag_type = 'aojc'
       if(flags_%flgscf == 'AO    ') diag_type = 'ao  '
 
-      call h_kb_dia_all(diag_type, pwexp_%emax, rkpt, neig, nocc,        &
-          flags_%flgpsd, ipr, ifail, acc_%icdiagmax,                     &
+      call h_kb_dia_all(diag_type, pwexp_%emax, pwexp_%esmear, rkpt,     &
+          neig, nocc, flags_%flgpsd, ipr, ifail, acc_%icdiagmax,         &
           iguess, acc_%epspsi,                                           &
           recip_%ng, recip_%kgv, recip_%phase, recip_%conj,              &
           recip_%ns, recip_%inds, recip_%kmax,                           &
