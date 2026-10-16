@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         November 2019, 15 October 2026.
+!>  \date         November 2019, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
@@ -30,6 +30,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 ! Modified, icdiagmax, indentation, 14 May 2025. JLM
 ! Modified, filenames for pseudos and psi to disk. 10 October 2025. JLM
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) from read_esdf. 15 October 2026. JLM+claude
+! filename_%file_restart, filename_%iotape_restart to read_esdf. 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -120,6 +121,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
       filename_%pseudo_path, filename_%pseudo_suffix,                    &
       filename_%itape_pseudo,                                            &
       filename_%save_psi_path, filename_%itape_save_psi,                 &
+      filename_%file_restart, filename_%iotape_restart,                  &
       dims_%mxdtyp, dims_%mxdatm)
 
 

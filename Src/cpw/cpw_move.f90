@@ -15,17 +15,18 @@
 !>  Interface between cpw_variables module and explicit variables.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.06
-!>  \date         February 2020, 14 October 2022.
+!>  \version      5.13
+!>  \date         February 2020, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,               &
       nsave, chdsave,                                                    &
       dims_, crys_, flags_, vcsdyn_, total_, moldyn_, spaceg_,           &
-      chdens_, recip_)
+      chdens_, recip_, filename_)
 
 ! Written February 2020.  JLM
 ! Modified, restart_out, 14 October 2022. JLM
+! filename_ (restart file name and tape). 16 October 2026. JLM+claude WARNING NEW API
 
   use cpw_variables
 
@@ -40,6 +41,7 @@ subroutine cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,               &
   type(spaceg_t)                     ::  spaceg_                         !<  space group information
   type(chdens_t)                     ::  chdens_                         !<  charge densities
   type(recip_t)                      ::  recip_                          !<  reciprocal space information
+  type(filename_t)                   ::  filename_                       !<  Information about used files
 
   integer,intent(in)                 ::  istep                           !<  md step. Equal to 1 in first step of molecular dynamics
   logical, intent(out)               ::  newcel                          !<  indicates that adot has changed on output
@@ -73,7 +75,8 @@ subroutine cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,               &
 
 ! Allows restart of the calculation
 
-  call move_restart_out(7, 'RESTART.DAT', flags_%flgcal,                 &
+  call move_restart_out(filename_%iotape_restart,                        &
+    filename_%file_restart, flags_%flgcal,                               &
     crys_%ntype, crys_%natom, crys_%nameat, crys_%atmass,                &
     crys_%rat, moldyn_%vat, crys_%adot, vcsdyn_%vadot,                   &
     istep, moldyn_%tstep, moldyn_%beta, moldyn_%tempk,                   &

@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         June 2017, 15 October 2026.
+!>  \date         June 2017, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -33,6 +33,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! New date format. 2 december 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! MD.PWCutoffSmearing in the inactive options. 15 October 2026. JLM+claude
+! MD.PWCutoffSmearing comment, RSTRT uses the type of the restarted run. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -371,8 +372,8 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,*)
   write(io,'("#MD.CellMass                  10.0            #")')
   write(io,'("#MD.Seed                      76978           #")')
-  write(io,'("#MD.PWCutoffSmearing          0.5 hartree     #",            &
-     &    " default min(0.5, 5% cutoff) VCS*, EPI*, EOS*, RSTRT, 0 others")')
+  write(io,'("#MD.PWCutoffSmearing          0.5 hartree     #",          &
+     &    " default min(0.5, 5% cutoff) VCS*, EPI*, EOS*, 0 others")')
 
   write(io,*)
   write(io,'("#------------------------------------------------")')

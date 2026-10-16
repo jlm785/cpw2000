@@ -16,14 +16,16 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         before November 2019. 31 March 2026.
+!>  \date         before November 2019. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_init_mov_print_sym(ist0, iprglob, symkip, symtol,         &
-    crys_, flags_, dims_, spaceg_, pwexp_, acc_, xc_, moldyn_, vcsdyn_)
+    crys_, flags_, dims_, spaceg_, pwexp_, acc_, xc_, moldyn_, vcsdyn_,  &
+    filename_)
 
 ! Written before 19 November 2019. JLM
 ! Indentation, filename in move_restart_in. 31 March 2026. JLM
+! filename_ (restart file name and tape). 16 October 2026. JLM+claude WARNING NEW API
   use cpw_variables
 
   implicit none
@@ -32,6 +34,7 @@ subroutine cpw_init_mov_print_sym(ist0, iprglob, symkip, symtol,         &
   type(crys_t)                       ::  crys_                           !<  crystal structure
   type(moldyn_t)                     ::  moldyn_                         !<  molecular dynamics variables
   type(vcsdyn_t)                     ::  vcsdyn_                         !<  variational cell shape molecular dynamics variables
+  type(filename_t)                   ::  filename_                       !<  Information about used files
   type(flags_t)                      ::  flags_                          !<  computational flags
   type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
   type(xc_t)                         ::  xc_                             !<  exchange and correlation choice
@@ -55,7 +58,8 @@ subroutine cpw_init_mov_print_sym(ist0, iprglob, symkip, symtol,         &
 
   if(flags_%flgcal == 'RSTRT ') then
 
-    call move_restart_in(flags_%flgcal, 7, 'RESTART.DAT',                &
+    call move_restart_in(flags_%flgcal, filename_%iotape_restart,        &
+        filename_%file_restart,                                          &
         crys_%ntype, crys_%natom, crys_%nameat, crys_%atmass, crys_%rat, &
         moldyn_%vat, crys_%adot, vcsdyn_%vadot,                          &
         ist0, moldyn_%tstep, moldyn_%beta, moldyn_%tempk, moldyn_%iseed, &

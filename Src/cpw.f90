@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         Late 1980s, 15 October 2026.
+!>  \date         Late 1980s, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -25,6 +25,7 @@ program cpw2000
 ! kmscr passed to cpw_scf_prepare (xc on the mesh of the potential). 29 September 2026. JLM+claude
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude
 ! pwexp_ in cpw_force (smearing of the kinetic energy cutoff). 15 October 2026. JLM+claude
+! filename_%file_restart and filename_%iotape_restart defined here. 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -144,6 +145,11 @@ program cpw2000
 
 
 
+! restart file
+
+  filename_%file_restart = 'RESTART.DAT'
+  filename_%iotape_restart = 7
+
 ! reads the input file and does the respective allocations
 
   call cpw_read_data('cpw.in', 'PW.DAT', 5, vdriv,                       &
@@ -169,7 +175,7 @@ program cpw2000
 
   call cpw_init_mov_print_sym(ist0, iprglob, symkip, symtol,             &
        crys_, flags_, dims_, spaceg_, pwexp_, acc_, xc_,                 &
-       moldyn_, vcsdyn_)
+       moldyn_, vcsdyn_, filename_)
 
 
 
@@ -344,7 +350,7 @@ program cpw2000
       call cpw_move(newcel, newcalc, iconv, istep ,mxdlbf,               &
       nsave, chdsave,                                                    &
       dims_, crys_, flags_, vcsdyn_, total_, moldyn_, spaceg_,           &
-      chdens_, recip_)
+      chdens_, recip_, filename_)
 
       newcalc = .FALSE.
 
@@ -400,7 +406,8 @@ program cpw2000
 
     if(iconv == 1) exit
 
-    call move_restart_out(7, 'tmp_rst.dat', flags_%flgcal,               &
+    call move_restart_out(filename_%iotape_restart, 'tmp_rst.dat',       &
+    flags_%flgcal,                                                       &
     crys_%ntype, crys_%natom, crys_%nameat, crys_%atmass,                &
     crys_%rat, moldyn_%vat, crys_%adot, vcsdyn_%vadot,                   &
     istep, moldyn_%tstep, moldyn_%beta, moldyn_%tempk,                   &

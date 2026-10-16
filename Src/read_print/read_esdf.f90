@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         5 August 2002. 15 October 2026.
+!>  \date         5 August 2002. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
@@ -29,6 +29,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     press, strext, celmas, flgkplusg, epskplusg,                         &
     pseudo_path, pseudo_suffix, itape_pseudo,                            &
     save_psi_path, itape_save_psi,                                       &
+    file_restart, iotape_restart,                                        &
     mxdtyp, mxdatm)
 
 ! Written August 5, 2002. jlm
@@ -43,6 +44,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! Modified, filenames for pseudo and saving psi to disk. 10 October 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (MD.PWCutoffSmearing). 15 October 2026. JLM+claude WARNING NEW API
+! RSTRT default of esmear from the restart file, file_restart, iotape_restart, EPS. 16 October 2026. JLM+claude WARNING NEW API
 
 
   use esdf
@@ -58,6 +60,9 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 
   character(len=*), intent(in)       ::  fname                           !<  filename with input data
   character(len=4), intent(in)       ::  vdriv                           !<  version of the calling program
+
+  character(len=*), intent(in)       ::  file_restart                    !<  name of the file with the restart information (to find the type of run if flgcal = RSTRT)
+  integer, intent(in)                ::  iotape_restart                  !<  tape number of the restart file
 
 ! output
 
@@ -138,9 +143,13 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   integer                    ::  ipr
   logical                    ::  lrede
 
+  character(len=6)           ::  flgold                                  !  type of calculation in the restart file
+  integer                    ::  ios
+
 ! parameters
 
   real(REAL64), parameter ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter ::  EPS = 1.0E-7_REAL64                       !  smaller values of esmear are set to zero
 
 
 ! checks consistency between cpw2000 and this subroutine
@@ -284,10 +293,29 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! smearing of the kinetic energy cutoff (see kinetic_smear).  By default
 ! only for runs with variable cell, with the value recommended by ABINIT
 ! for ecutsm (0.5 Hartree), but not more than 5% of the cutoff.
+! A restart uses the default of the type of run in the restart file.
+
+  flgold = flgcal
+  if(flgcal == 'RSTRT ') then
+    open(unit = iotape_restart, file = adjustl(trim(file_restart)),      &
+         status = 'old', form = 'formatted', iostat = ios)
+    if(ios == 0) read(iotape_restart,'(2x,a6)', iostat = ios) flgold
+    if(ios /= 0) then
+      write(6,*)
+      write(6,'("   STOPPED in read_esdf:  could not read the type of ", &
+         &      "calculation from the restart file ",a)')                &
+                adjustl(trim(file_restart))
+      write(6,*)
+
+      stop
+
+    endif
+    close(unit = iotape_restart)
+  endif
 
   esmear = ZERO
-  if(flgcal(1:3) == 'VCS' .or. flgcal(1:3) == 'EPI' .or.                 &
-     flgcal(1:3) == 'EOS' .or. flgcal == 'RSTRT ') then
+  if(flgold(1:3) == 'VCS' .or. flgold(1:3) == 'EPI' .or.                 &
+     flgold(1:3) == 'EOS') then
     esmear = min(UM/2, emax/20)
   endif
 
@@ -295,10 +323,12 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     esmear = esdf_physical('MD.PWCutoffSmearing', esmear, 'hartree')
   endif
 
+  if(esmear >= ZERO .and. esmear < EPS) esmear = ZERO
+
   if(esmear < ZERO .or. esmear >= emax) then
     write(6,*)
     write(6,'("   STOPPED in read_esdf:  MD.PWCutoffSmearing = ",        &
-       &      f12.4," should be positive and smaller than the cutoff")')  &
+       &      f12.4," should be positive and smaller than the cutoff")') &
               esmear
     write(6,*)
 

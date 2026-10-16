@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         November   2019, 15 October 2026.
+!>  \date         November   2019, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
@@ -26,6 +26,7 @@ module cpw_variables
 ! pseudo_t split, psding_t with the pseudopotential quantities in the crystal,
 !   denc and tauc_g moved from chdens_t, nq, delq, vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! pwexp_%esmear, smearing of the kinetic energy cutoff. 15 October 2026. JLM+claude
+! filename_%file_restart, filename_%iotape_restart. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -363,6 +364,8 @@ module cpw_variables
     integer                            ::  itape_pseudo                  !<  tape number to read pseudo
     character(len=200)                 ::  save_psi_path                 !<  path to save psi files to disk
     integer                            ::  itape_save_psi                !<  tape number to read and write psi.  If < 10 (default 0) do not use.
+    character(len=200)                 ::  file_restart                  !<  name of the file with the restart information
+    integer                            ::  iotape_restart                !<  tape number for the restart file
 
   end type filename_t
 
