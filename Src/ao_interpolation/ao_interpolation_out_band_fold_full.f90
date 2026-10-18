@@ -38,6 +38,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
+! Singular superlattice matrix (zero determinant) means no unfolding. 18 October 2026. JLM+claude
 
 
 
@@ -146,6 +147,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 
   integer            ::  idum(3,3)
   character(len=6)   ::  fdum
+  integer            ::  idetsl                                          !  determinant of the superlattice matrix
   integer            ::  ioerr
   character(len=60)  ::  pwlinloc                                        !  local version of pwline
 
@@ -183,14 +185,29 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 
   true_pkn = .false.
 
-  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                          &
-  ((idum(i,j),i=1,3),j=1,3),fdum
+  do j = 1,3
+  do i = 1,3
+    idum(i,j) = 0
+  enddo
+  enddo
 
-  if(ioerr ==0 .and. adjustl(trim(fdum)) == 'fcc SL') then
+  fdum = '      '
+  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                          &
+             ((idum(i,j),i=1,3),j=1,3),fdum
+
+  idetsl = idum(1,1)*(idum(2,2)*idum(3,3) - idum(3,2)*idum(2,3))         &
+         + idum(2,1)*(idum(3,2)*idum(1,3) - idum(1,2)*idum(3,3))         &
+         + idum(3,1)*(idum(1,2)*idum(2,3) - idum(2,2)*idum(1,3))
+
+  if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL' .and.              &
+     idetsl /= 0) then
     pwlinloc = pwline
   else
     write(6,*)
     write(6,*)  '  Not using unfolding'
+    if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
+      write(6,*)  '  The superlattice matrix in the metadata is singular'
+    endif
     write(6,*)
     do i = 1,60
       pwlinloc(i:i) = ' '

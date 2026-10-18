@@ -14,18 +14,23 @@
 !>  Sets up the defults for PW energy cutoff,
 !>  eigenvalue precision, Fermi energy estimate
 !>  and dual approximation.
+!>  If not using the defaults, and some atom type has
+!>  several atomic basis sets, asks which one to use.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         2 March 2026, 3 October 2026.
+!>  \date         2 March 2026, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_questions(ioreplay,                               &
      emax_in, epspsi_in, efermi_in,                                      &
-     emax, flgdal, epspsi, efermi)
+     ntype, nameat, n_bsets, norbat, lorb,                               &
+     emax, flgdal, epspsi, efermi, jbset,                                &
+     mxdtyp, mxdlao, mxdset)
 
 ! written 2 March 2026 from cpw_pp_band_dos_opt cpw_pp_prepare. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! Choice of atomic basis set, jbset. 18 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -33,11 +38,21 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 
 ! input
 
+  integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
+  integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension of number of atomic basis sets
+
   integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
 
   real(REAL64), intent(in)           ::  emax_in                         !<  default value of plane wave cutoff
   real(REAL64), intent(in)           ::  epspsi_in                       !<  requested precision of the eigenvectors
   real(REAL64), intent(in)           ::  efermi_in                       !<  default value of Fermi energy or highest occupied state (T=0)
+
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
+  character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of atomic basis sets for atom type nt
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals in basis set ib of atom type nt
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n in basis set ib of atom type nt
 
 ! output
 
@@ -45,6 +60,7 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
   character(len=4), intent(out)      ::  flgdal                          !<  dual approximation if equal to 'DUAL'
   real(REAL64), intent(out)          ::  epspsi                          !<  requested precision of the eigenvectors
   real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  integer, intent(out)               ::  jbset(mxdtyp)                   !<  basis set chosen for atom type nt
 
 ! local variables
 
@@ -55,10 +71,32 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 
   character(len=1)   ::  yesno, yesno2
 
+  integer            ::  nsetmax                                         !  largest number of basis sets of an atom type
+  integer            ::  ioerr
+  character(len=1)   ::  lname(0:3)                                      !  spectroscopic name of angular momentum
+
 ! constants
 
   real(REAL64), parameter  :: UM = 1.0_REAL64
   real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
+
+! counters
+
+  integer            ::  nt, ib, n
+
+  data lname / 's', 'p', 'd', 'f' /
+
+
+! default is the first atomic basis set
+
+  do nt = 1,mxdtyp
+    jbset(nt) = 1
+  enddo
+
+  nsetmax = 1
+  do nt = 1,ntype
+    nsetmax = max(nsetmax,n_bsets(nt))
+  enddo
 
 
   write(6,*)
@@ -184,6 +222,65 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
         write(6,*)
       endif
       efermi = efermi / HARTREE
+    endif
+
+!   choice of atomic basis set
+
+    if(nsetmax > 1) then
+
+      write(6,*)
+      write(6,*) '  Some atoms have several atomic basis sets.'
+      write(6,*) '  Do you want to use other than the first (y/n)?'
+      write(6,*)
+
+      read(5,*) yesno2
+      write(ioreplay,*) yesno2,'   choose atomic basis set'
+
+      if(yesno2 == 'y' .or. yesno2 == 'Y') then
+
+        do nt = 1,ntype
+
+          if(n_bsets(nt) > 1) then
+
+            write(6,*)
+            write(6,'("   The atom ",a2," (type ",i3,") has ",i3,        &
+                &     " atomic basis sets:")') nameat(nt), nt, n_bsets(nt)
+            write(6,*)
+            do ib = 1,n_bsets(nt)
+              write(6,'(6x,i3,":",i5," orbitals   ",40(1x,a1))')         &
+                   ib, norbat(ib,nt),                                    &
+                   (lname(min(max(lorb(n,ib,nt),0),3)),n=1,norbat(ib,nt))
+            enddo
+            write(6,*)
+            write(6,'("   Enter the basis set for ",a2)') nameat(nt)
+
+            read(5,*,iostat=ioerr) jbset(nt)
+
+            if(ioerr /= 0) then
+              jbset(nt) = 1
+              write(6,*)
+              write(6,*) '  Error reading the basis set, using the first'
+            endif
+
+            write(ioreplay,*) jbset(nt),'   atomic basis set for ',nameat(nt)
+
+            if(jbset(nt) < 1 .or. jbset(nt) > n_bsets(nt)) then
+              jbset(nt) = min(max(jbset(nt),1),n_bsets(nt))
+              write(6,*)
+              write(6,'("   Basis set not available, will use the ",     &
+                  &     "nearest, ",i3)') jbset(nt)
+            endif
+
+            write(6,*)
+            write(6,'("   Will use basis set ",i3," for ",a2)')          &
+                 jbset(nt), nameat(nt)
+
+          endif
+
+        enddo
+
+      endif
+
     endif
 
   endif

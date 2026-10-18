@@ -57,6 +57,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
+! Singular superlattice matrix (zero determinant) means no unfolding. 18 October 2026. JLM+claude
 
 
   implicit none
@@ -216,6 +217,7 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
   integer                   ::  idum(3,3)
   character(len=6)          ::  fdum
+  integer                   ::  idetsl                                   !  determinant of the superlattice matrix
   integer                   ::  ioerr
   character(len=60)         ::  pwlinloc                                 !  local version of pwline
 
@@ -291,11 +293,22 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
 ! checks it is the debugged version
 
+  do j = 1,3
+  do i = 1,3
+    idum(i,j) = 0
+  enddo
+  enddo
+
   fdum = '      '
-  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                     &
+  read(pwline,'(3(3i4,2x),2x,a6)',IOSTAT=ioerr)                          &
             ((idum(i,j),i=1,3),j=1,3),fdum
 
-  if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
+  idetsl = idum(1,1)*(idum(2,2)*idum(3,3) - idum(3,2)*idum(2,3))         &
+         + idum(2,1)*(idum(3,2)*idum(1,3) - idum(1,2)*idum(3,3))         &
+         + idum(3,1)*(idum(1,2)*idum(2,3) - idum(2,2)*idum(1,3))
+
+  if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL' .and.              &
+     idetsl /= 0) then
 
     pwlinloc = pwline
 
@@ -303,6 +316,9 @@ subroutine out_band_fold_glk(diag_type, lworkers, xsvd, csvd,            &
 
     write(6,*)
     write(6,*)  '  Not using unfolding'
+    if(ioerr == 0 .and. adjustl(trim(fdum)) == 'fcc SL') then
+      write(6,*)  '  The superlattice matrix in the metadata is singular'
+    endif
     write(6,*)
 
     do i = 1,60

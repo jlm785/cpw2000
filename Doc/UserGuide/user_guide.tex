@@ -1729,29 +1729,59 @@ Looking at the examples
 
 This is the part of the post-processing that has the most options.
 The code gives a summary of the main parameters of the SCF calculation (geometry, pseudopotentials, etc,$\ldots$)
-and then informs the user what cutoff was used for the plane-wave expansion
-in the SCF calcualtion and asks the user what cutoff (s)he wants to use.
-Choosing the same cutoff is a safe option.  In this case only Hartree units are allowed.
-The code then asks if it can use the dual approximation, again answering ``yes'' is safe.
-It then asks if the user wants to modify other parameters.
-those are
+and then asks if the user wants the default values for the plane-wave cutoff, eigenvalue precision,
+Fermi energy estimate, atomic basis sets, and the use of the dual approximation.
+Answering ``yes'' is safe and is the right choice in most cases.
+The code will then use the same cutoff as the SCF calculation, the dual approximation,
+an eigenvalue precision of 0.0005 Hartree, the estimate of the Fermi energy
+from the SCF calculation, and the first atomic basis set of each atom.
+
+If the answer is ``no'' the code asks about each parameter in turn.
 \begin{itemize}
+
+   \item{Plane-wave cutoff}
+
+   The code informs the user what cutoff was used for the plane-wave expansion
+   in the SCF calculation and asks the user what cutoff (s)he wants to use.
+   Choosing the same cutoff is a safe option.  Only Hartree units are allowed.
+
+   \item{Dual approximation}
+
+   The code asks if it can use the dual approximation, again answering ``yes'' is safe.
+   The choice can be changed later with the option ``Reset dual approximation flag''.
 
    \item{Eigenvalue precision}
 
    You can change the eigenvalue precision of the iterative diagonalization
    if you are not confortable with the default.  You can manage with a low
-   precision in most cases.
+   precision in most cases.  If you want to change it the code asks for the number of
+   decimals (in eV) of the precision, a value between 3 and 8.
 
    \item{Fermi energy}
 
    The code will read from the file a reasonable guess of the Fermi energy.
    In several cases it will shift the calculated eigenvalues by that value.
    The estimate is not precise, and if you have a better
-   estimate you can enter it.
+   estimate, for example from a band structure or density of states, you can enter it (in eV).
+   The code warns you if the new value differs by more than 2 eV from the estimate.
+   It only affects the shift of the eigenvalues, all other quantities are unaffected.
+
+   \item{Atomic basis set}
+
+   This question is only asked if the pseudopotential file of some atom has several
+   atomic basis sets.  The code asks if you want to use other than the first basis set.
+   In the affirmative case, for each atom with several basis sets, it lists
+   the number of orbitals and their angular momentum
+   (\texttt{s}, \texttt{p}, \texttt{d}, \texttt{f}) in each basis set,
+   and asks which one to use.  If the chosen basis set does not exist the nearest
+   available one is used.
+   The choice made in the SCF calculation with \texttt{ChoiceOfDefaultAtomicBasisSet}
+   is not stored in the \texttt{PW\_RHO\_V.DAT} file, so the default is always
+   the first basis set.  The atomic basis set is used by the diagonalizations in atomic orbitals,
+   in the starting guess of the iterative diagonalization, and when the results are
+   projected on atomic orbitals.
 
 \end{itemize}
-In most cases you can answer `no' to the question.
 
 The code then gives a choice of several types of calculations.
 

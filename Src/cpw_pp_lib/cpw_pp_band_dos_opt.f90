@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 16 October 2026.
+!>  \date         December 18, 2013, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -50,6 +50,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! Choice of atomic basis set in cpw_pp_band_questions. 18 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -276,7 +277,10 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
   epspsi_in = 0.0005
   call cpw_pp_band_questions(ioreplay,                                   &
       emax_in, epspsi_in, efermi_in,                                     &
-      pwexp_%emax, flags_%flgdal, epspsi, efermi)
+      crys_%ntype, crys_%nameat,                                         &
+      atorb_%n_bsets, atorb_%norbat, atorb_%lorb,                        &
+      pwexp_%emax, flags_%flgdal, epspsi, efermi, atorb_%jbset,          &
+      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
 
 
   call cpw_pp_band_prepare(                                              &
