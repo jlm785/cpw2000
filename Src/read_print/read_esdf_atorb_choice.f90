@@ -11,8 +11,9 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  Reads from the input file the choice of atomic basis set
-!>  for each type of atom (block ChoiceOfDefaultAtomicBasisSet).
+!>  Reads the choice of atomic basis set for each type of atom
+!>  (block ChoiceOfDefaultAtomicBasisSet) from a file
+!>  opened by a previous esdf_init.
 !>  Each line of the block has the species index (as in
 !>  Chemical_Species_Label) and the chosen basis set.
 !>  Species not listed, or no block, use the first basis set.
@@ -25,7 +26,7 @@
 !>  \date         18 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine read_esdf_atorb_choice(ipr, fname, ntype, nameat, ibset,      &
+subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
     mxdtyp)
 
 ! Written 18 October 2026. claude
@@ -39,7 +40,6 @@ subroutine read_esdf_atorb_choice(ipr, fname, ntype, nameat, ibset,      &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
 
   integer, intent(in)                ::  ipr                             !<  print control: ipr < 1 no printing, except warnings.
-  character(len=*), intent(in)       ::  fname                           !<  name of the input file (cpw.in)
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   character(len=2), intent(in)       ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
@@ -62,8 +62,6 @@ subroutine read_esdf_atorb_choice(ipr, fname, ntype, nameat, ibset,      &
   do nt = 1,mxdtyp
     ibset(nt) = 1
   enddo
-
-  call esdf_init(fname)
 
   lblock = esdf_block('ChoiceOfDefaultAtomicBasisSet',nlines)
 
@@ -96,8 +94,6 @@ subroutine read_esdf_atorb_choice(ipr, fname, ntype, nameat, ibset,      &
     enddo
 
   endif
-
-  call esdf_close
 
   if(lblock .and. ipr > 0) then
     write(6,*)

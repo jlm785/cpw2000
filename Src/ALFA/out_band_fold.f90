@@ -17,7 +17,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 May 2004. 16 October 2026.
+!>  \date         8 May 2004. 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_fold(diag_type, lworkers,                            &
@@ -54,6 +54,7 @@ subroutine out_band_fold(diag_type, lworkers,                            &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
 
   implicit none
 
@@ -274,29 +275,14 @@ subroutine out_band_fold(diag_type, lworkers,                            &
   else
 
     write(6,*)
-    write(6,*) '  Trying to use PW.DAT for the file identifier'
+    write(6,*)  '  Not using unfolding'
     write(6,*)
 
-    open(unit=11, file='PW.DAT', status='OLD', form='FORMATTED', IOSTAT=ioerr)
+    do i = 1,60
+      pwlinloc(i:i) = ' '
+    enddo
 
-    if(ioerr == 0) then
-
-      read(11,'(a60)',IOSTAT=ioerr) pwlinloc
-      close(unit=11)
-
-    else
-
-      write(6,*)
-      write(6,*)  '  Not using unfolding'
-      write(6,*)
-
-      do i = 1,60
-        pwlinloc(i:i) = ' '
-      enddo
-
-      write(pwlinloc,'(3(3i4,2x),2x,a6)') 1,0,0,  0,1,0,  0,0,1,  'fcc SL'
-
-    endif
+    write(pwlinloc,'(3(3i4,2x),2x,a6)') 1,0,0,  0,1,0,  0,0,1,  'fcc SL'
 
 
   endif

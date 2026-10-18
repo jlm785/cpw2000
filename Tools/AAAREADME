@@ -42,9 +42,14 @@ pw_rho_v_2_xsf.f90
 
 pwdat2cpwin.f90
 
-   Converts the old fixed format PW.DAT file into the new cpw.in input file in a format for being parsed.  Examples are in the Structures/OLD_format.
+   Converts the old fixed format PW.DAT file (no longer accepted by cpw2000) into a cpw.in input file,
+   written in cpw_from_pwdat.in.  If the old cpw.in (without the crystal structure) used with PW.DAT
+   is present, the type of run, Keating correction and TBL choice are taken from it.
 
-   It must be compiled against the main libpw library
+   It must be compiled against the main libpw library and have the esdf modules.  For example:
+   cp ../src/esdf.mod esdf.mod
+   cp ../src/esdf_key.mod esdf_key.mod
+   ifort -mkl pwdat2cpwin.f90 ../libpw.a
 
 zz_potkb.f90
 

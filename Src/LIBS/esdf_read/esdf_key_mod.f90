@@ -11,6 +11,7 @@
 !     Keywords added in May 2025.
 !     Keyword MD.PWCutoffSmearing added 15 October 2026. JLM+claude
 !     Keyword ChoiceOfDefaultAtomicBasisSet added 18 October 2026. JLM+claude
+!     Keyword Read.PW.DAT removed (old PW.DAT format), gap at 29 closed, renumbered. 18 October 2026. JLM+claude
 
 ! Module to hold keyword list. This must be updated as
 ! new keywords are brought into existence.
@@ -48,7 +49,7 @@ Module esdf_key
      Character(3000) :: dscrpt
   End Type kw_type
 
-  Integer, Parameter :: numkw=65
+  Integer, Parameter :: numkw=63
   Type(kw_type) :: kw(numkw)
 
 ! Now define the keywords
@@ -204,187 +205,167 @@ Module esdf_key
       data kw(28)%dscrpt                                                 &
      &   /'EMAX    PLANE WAVE KINETIC ENERGY CUTOFF (HARTREE)  '/
 
-      data kw(30)%label     /'KPointGrid'/
-      data kw(30)%typ       /'B:B' /
-      data kw(30)%dscrpt    /'     '/
+      data kw(29)%label     /'KPointGrid'/
+      data kw(29)%typ       /'B:B' /
+      data kw(29)%dscrpt    /'     '/
 
-      data kw(31)%label     /'LatticeConstant'/
-      data kw(31)%typ       /'P:B' /
-      data kw(31)%dscrpt    /'LATTICE CONSTANT     '/
+      data kw(30)%label     /'LatticeConstant'/
+      data kw(30)%typ       /'P:B' /
+      data kw(30)%dscrpt    /'LATTICE CONSTANT     '/
 
-      data kw(32)%label     /'LatticeVectors'/
-      data kw(32)%typ       /'B:B' /
-      data kw(32)%dscrpt                                                 &
+      data kw(31)%label     /'LatticeVectors'/
+      data kw(31)%typ       /'B:B' /
+      data kw(31)%dscrpt                                                 &
      &     /'LATTICE VECTORS IN UNITS OF LATTICE CONSTANT'/
 
-      data kw(33)%label     /'NumberOfSpecies'/
+      data kw(32)%label     /'NumberOfSpecies'/
+      data kw(32)%typ       /'I:B' /
+      data kw(32)%dscrpt    /'NUMBER OF DIFFERENT ATOMIC SPECIES'/
+
+      data kw(33)%label     /'NumberOfAtoms'/
       data kw(33)%typ       /'I:B' /
-      data kw(33)%dscrpt    /'NUMBER OF DIFFERENT ATOMIC SPECIES'/
+      data kw(33)%dscrpt    /'TOTAL NUMBER OF ATOMS'/
 
-      data kw(34)%label     /'NumberOfAtoms'/
-      data kw(34)%typ       /'I:B' /
-      data kw(34)%dscrpt    /'TOTAL NUMBER OF ATOMS'/
-
-      data kw(35)%label     /'Chemical_Species_Label'/
-      data kw(35)%typ       /'B:B' /
-      data kw(35)%dscrpt                                                 &
+      data kw(34)%label     /'Chemical_Species_Label'/
+      data kw(34)%typ       /'B:B' /
+      data kw(34)%dscrpt                                                 &
      & /'INDEX OF CHEMICAL SPECIES, ATOMIC NUMBER, CHEMICAL SYMBOL'/
 
-      data kw(36)%label     /'AtomicCoordinatesAndAtomicSpecies'/
-      data kw(36)%typ       /'B:B' /
-      data kw(36)%dscrpt                                                 &
+      data kw(35)%label     /'AtomicCoordinatesAndAtomicSpecies'/
+      data kw(35)%typ       /'B:B' /
+      data kw(35)%dscrpt                                                 &
      & /'Coordinates of the atoms and index of species'/
 
-      data kw(37)%label     /'Read.PW.DAT'/
+      data kw(36)%label     /'SystemName'/
+      data kw(36)%typ       /'T:B' /
+      data kw(36)%dscrpt    /'     '/
+
+      data kw(37)%label     /'MD.UseKeatingCorrections'/
       data kw(37)%typ       /'L:B' /
-      data kw(37)%dscrpt                                                 &
-     & /'READS FILE COMPATIBLE WITH BERKELEY/SVERRE DATA FILES'/
+      data kw(37)%dscrpt    /'     '/
 
-      data kw(38)%label     /'SystemName'/
-      data kw(38)%typ       /'T:B' /
-      data kw(38)%dscrpt    /'     '/
+      data kw(38)%label     /'Xc.TBL.C'/
+      data kw(38)%typ       /'D:B' /
+      data kw(38)%dscrpt    /'        '/
 
-      data kw(39)%label     /'MD.UseKeatingCorrections'/
-      data kw(39)%typ       /'L:B' /
+      data kw(39)%label     /'NumberOfBands'/
+      data kw(39)%typ       /'I:B' /
       data kw(39)%dscrpt    /'     '/
 
-      data kw(40)%label     /'Xc.TBL.C'/
-      data kw(40)%typ       /'D:B' /
-      data kw(40)%dscrpt    /'        '/
+      data kw(40)%label     /'AtomSpecies'/
+      data kw(40)%typ       /'B:B' /
+      data kw(40)%dscrpt    /'     '/
 
-      data kw(41)%label     /'NumberOfBands'/
-      data kw(41)%typ       /'I:B' /
-      data kw(41)%dscrpt    /'     '/
+      data kw(41)%label     /'PWEnergyCutoff'/
+      data kw(41)%typ       /'P:B' /
+      data kw(41)%dscrpt    /'Plane-wave energy cutoff     '/
 
-      data kw(42)%label     /'AtomSpecies'/
-      data kw(42)%typ       /'B:B' /
-      data kw(42)%dscrpt    /'     '/
+      data kw(42)%label     /'NumberOfEigenStates'/
+      data kw(42)%typ       /'I:B' /
+      data kw(42)%dscrpt    /'Number of desired eigenstates     '/
 
-      data kw(43)%label     /'PWEnergyCutoff'/
-      data kw(43)%typ       /'P:B' /
-      data kw(43)%dscrpt    /'Plane-wave energy cutoff     '/
-
-      data kw(44)%label     /'NumberOfEigenStates'/
-      data kw(44)%typ       /'I:B' /
-      data kw(44)%dscrpt    /'Number of desired eigenstates     '/
-
-      data kw(45)%label     /'kgrid_Monkhorst_Pack'/
-      data kw(45)%typ       /'B:B' /
-      data kw(45)%dscrpt                                                 &
+      data kw(43)%label     /'kgrid_Monkhorst_Pack'/
+      data kw(43)%typ       /'B:B' /
+      data kw(43)%dscrpt                                                 &
      &       /'Grid for Brillouin Zone Gauss-Fourier integration  '/
 
-      data kw(46)%label     /'Rede.NumberOfLatticePlanes'/
-      data kw(46)%typ       /'I:I' /
-      data kw(46)%dscrpt                                                 &
+      data kw(44)%label     /'Rede.NumberOfLatticePlanes'/
+      data kw(44)%typ       /'I:I' /
+      data kw(44)%dscrpt                                                 &
      & /'Number of lattice planes in the superlattice (rede.f90)'/
 
-      data kw(47)%label     /'Rede.Version'/
+      data kw(45)%label     /'Rede.Version'/
+      data kw(45)%typ       /'T:I' /
+      data kw(45)%dscrpt    /'Version of rede.f90 that generated SL'/
+
+      data kw(46)%label     /'Rede.Title'/
+      data kw(46)%typ       /'T:I' /
+      data kw(46)%dscrpt    /'Title for the calculation (rede.f90)'/
+
+      data kw(47)%label     /'Rede.Date'/
       data kw(47)%typ       /'T:I' /
-      data kw(47)%dscrpt    /'Version of rede.f90 that generated SL'/
+      data kw(47)%dscrpt    /'Day when rede.f90 was run'/
 
-      data kw(48)%label     /'Rede.Title'/
+      data kw(48)%label     /'Rede.Time'/
       data kw(48)%typ       /'T:I' /
-      data kw(48)%dscrpt    /'Title for the calculation (rede.f90)'/
+      data kw(48)%dscrpt    /'Time when rede.f90 was run'/
 
-      data kw(49)%label     /'Rede.Date'/
+      data kw(49)%label     /'Rede.Name'/
       data kw(49)%typ       /'T:I' /
-      data kw(49)%dscrpt    /'Day when rede.f90 was run'/
+      data kw(49)%dscrpt    /'Name generated by rede.f90 from input'/
 
-      data kw(50)%label     /'Rede.Time'/
-      data kw(50)%typ       /'T:I' /
-      data kw(50)%dscrpt    /'Time when rede.f90 was run'/
-
-      data kw(51)%label     /'Rede.Name'/
-      data kw(51)%typ       /'T:I' /
-      data kw(51)%dscrpt    /'Name generated by rede.f90 from input'/
-
-      data kw(52)%label     /'Rede.Superlattice'/
-      data kw(52)%typ       /'B:I' /
-      data kw(52)%dscrpt                                                 &
+      data kw(50)%label     /'Rede.Superlattice'/
+      data kw(50)%typ       /'B:I' /
+      data kw(50)%dscrpt                                                 &
      &    /'Information about the SL vectors (rede.f90)'/
 
-      data kw(53)%label     /'MD.FrictionFracInvTimeStep'/
-      data kw(53)%typ       /'D:I' /
-      data kw(53)%dscrpt                                                 &
+      data kw(51)%label     /'MD.FrictionFracInvTimeStep'/
+      data kw(51)%typ       /'D:I' /
+      data kw(51)%dscrpt                                                 &
      &    /'Friction coefficient as a function of time step,    beta =   &
      &    (1/ Delta t)/coeff. Recommended:  coeff = 20.0'/
 
-      data kw(54)%label     /'SystemLabel'/
-      data kw(54)%typ       /'T:B' /
-      data kw(54)%dscrpt    /'Label that can be used to open files'/
+      data kw(52)%label     /'SystemLabel'/
+      data kw(52)%typ       /'T:B' /
+      data kw(52)%dscrpt    /'Label that can be used to open files'/
 
 !      LKPLUSG     FINISH CELL MINIMIZATION WITH FIXED k+G
-      data kw(55)%label     /'MD.CG.UseFixedkplusG'/
-      data kw(55)%typ       /'L:I' /
-      data kw(55)%dscrpt                                                 &
+      data kw(53)%label     /'MD.CG.UseFixedkplusG'/
+      data kw(53)%typ       /'L:I' /
+      data kw(53)%dscrpt                                                 &
      & /'LKPLUSG  (.FALSE.)  FINISH VCS/EPI L-BFGS OPT. WITH FIXED k+G'/
 
 !      EPSKPLUSG     CRITERIA FOR SWITCHING TO FIXED k+G
-      data kw(56)%label     /'MD.CG.FixedkplusGTol'/
-      data kw(56)%typ       /'P:I' /
-      data kw(56)%dscrpt                                                 &
+      data kw(54)%label     /'MD.CG.FixedkplusGTol'/
+      data kw(54)%typ       /'P:I' /
+      data kw(54)%dscrpt                                                 &
      & /'EPSKPLUSG  (1.0D-2)   CRITERIA FOR SWITCHING TO FIXED k+G'/
 
 !     FLGMOD     TYPE OF EMPIRICAL POTENTIAL MODEL
-      data kw(57)%label     /'MD.PotentialModel'/
-      data kw(57)%typ       /'T:B' /
-      data kw(57)%dscrpt                                                  &
+      data kw(55)%label     /'MD.PotentialModel'/
+      data kw(55)%typ       /'T:B' /
+      data kw(55)%dscrpt                                                  &
      & /'FLGMOD (LENJON,LJCLST,KEATNG)'/
 
 !      ITDIAGMAX      MAXIMUM NUMBER OF SELF CONSISTENCY CYCLES
-      data kw(58)%label     /'MaxDiagIterations'/
-      data kw(58)%typ       /'I:B' /
-      data kw(58)%dscrpt    /'ITMAX (40)'/
+      data kw(56)%label     /'MaxDiagIterations'/
+      data kw(56)%typ       /'I:B' /
+      data kw(56)%dscrpt    /'ITMAX (40)'/
 
 !     PSEUDO_PATH    PATH TO PSEUDOPOTENTIAL FILES
-      data kw(59)%label     /'PathToPseudos'/
-      data kw(59)%typ       /'T:I' /
-      data kw(59)%dscrpt    /'PSEUDO_PATH  (empty) '/
+      data kw(57)%label     /'PathToPseudos'/
+      data kw(57)%typ       /'T:I' /
+      data kw(57)%dscrpt    /'PSEUDO_PATH  (empty) '/
 
 !     PSEUDO_SUFFIX    SUFFIX OF THE PSEUDO FILES (ADDED TO CHEMICAL SYMBOL
-      data kw(60)%label     /'PseudoSuffix'/
-      data kw(60)%typ       /'T:I' /
-      data kw(60)%dscrpt    /'PSEUDO_SUFFIX   _POTKB_F.DAT'/
+      data kw(58)%label     /'PseudoSuffix'/
+      data kw(58)%typ       /'T:I' /
+      data kw(58)%dscrpt    /'PSEUDO_SUFFIX   _POTKB_F.DAT'/
 
 !     ITAPE_PSEUDO     TAPE NUMBER FOR READING PSEUDOPOTENTIAL FILES
-      data kw(61)%label     /'TapeToReadPseudo'/
-      data kw(61)%typ       /'I:I' /
-      data kw(61)%dscrpt    /'ITAPE_PSEUDO     40'/
+      data kw(59)%label     /'TapeToReadPseudo'/
+      data kw(59)%typ       /'I:I' /
+      data kw(59)%dscrpt    /'ITAPE_PSEUDO     40'/
 
 !     ITAPE_SAVE_PSI     TAPE NUMBER FOR SAVING WAVE-FUNCTIONS TO DISK (IF > 10)
-      data kw(62)%label     /'TapeToSavePsi'/
-      data kw(62)%typ       /'I:I' /
-      data kw(62)%dscrpt    /'ITAPE_SAVE_PSI     0'/
+      data kw(60)%label     /'TapeToSavePsi'/
+      data kw(60)%typ       /'I:I' /
+      data kw(60)%dscrpt    /'ITAPE_SAVE_PSI     0'/
 
 !     SAVE_PSI_PATH     PATH FOR EVENTUAL SAVING WAVE-FUNCTIONS TO DISK
-      data kw(63)%label     /'PathToSavePsi'/
-      data kw(63)%typ       /'T:I' /
-      data kw(63)%dscrpt    /'SAVE_PSI_PATH  (empty) '/
+      data kw(61)%label     /'PathToSavePsi'/
+      data kw(61)%typ       /'T:I' /
+      data kw(61)%dscrpt    /'SAVE_PSI_PATH  (empty) '/
 
 !     ESMEAR     SMEARING OF THE KINETIC ENERGY CUTOFF
-      data kw(64)%label     /'MD.PWCutoffSmearing'/
-      data kw(64)%typ       /'P:I' /
-      data kw(64)%dscrpt    /'ESMEAR (min(0.5 Ha, 5% cutoff) or 0)'/
+      data kw(62)%label     /'MD.PWCutoffSmearing'/
+      data kw(62)%typ       /'P:I' /
+      data kw(62)%dscrpt    /'ESMEAR (min(0.5 Ha, 5% cutoff) or 0)'/
 
 !     IBSET      CHOICE OF ATOMIC BASIS SET FOR EACH SPECIES
-      data kw(65)%label     /'ChoiceOfDefaultAtomicBasisSet'/
-      data kw(65)%typ       /'B:I' /
-      data kw(65)%dscrpt    /'IBSET (species index, basis set; default 1)'/
-
-
-
-!      EPSCVAO    CONVERGENCE CRITERIA FOR SELF CONSISTENCY OF ATOMIC ORBITALS
-!      data kw%label(16)     /'ScfToleranceAO'/
-!      data kw%typ(16)       /'D:B' /
-!      data kw%dscrpt(16)
-!     & /'EPSCVAO ()'/
-
-!      BETA       FRICTION COEFFICIENT/MASS (IN A.U.)
-!      data kw%label(21)     /'MD.FrictionCoef'/
-!      data kw%typ(21)       /'P:B' /
-!      data kw%dscrpt(21)
-!     & /'BETA () '
-
+      data kw(63)%label     /'ChoiceOfDefaultAtomicBasisSet'/
+      data kw(63)%typ       /'B:I' /
+      data kw(63)%dscrpt    /'IBSET (species index, basis set; default 1)'/
 
 
       end module esdf_key

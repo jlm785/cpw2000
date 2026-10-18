@@ -235,8 +235,11 @@ texttt{https://siesta-project.org/siesta/index.html} so you may find description
 for other crystals in the ``net''.  {\bf Beware} that presently the code only accepts
 {\bf fractional} lattice coordinates.
 
-For back-compatibility, a file \texttt{PW.DAT} can be used to read the crystal structure,
-k-point sampling and energy cutoff.  But other parameters cannot be set by that file.
+The old fixed format \texttt{PW.DAT} file is no longer accepted.  It can be converted
+with the tool \texttt{Tools/pwdat2cpwin.f90}, which writes the file \texttt{cpw\_from\_pwdat.in}.
+If the old \texttt{cpw.in} file used with \texttt{PW.DAT} is present, the type of run, the Keating
+correction and the TBL choice of exchange and correlation are taken from it, the other options
+have to be copied by hand.
 
 There is also a tool, \texttt{Tools/gen{\_}PW.f90},  to obtain a \texttt{cpw.in} file by answering a few questions.
 

@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         May 2020. 16 October 2026.
+!>  \date         May 2020. 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
@@ -37,6 +37,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 ! Modified, dimension labels, 24 September 2025. JLM
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
 
 
 
@@ -189,21 +190,12 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
     pwlinloc = pwline
   else
     write(6,*)
-    write(6,*) '  Trying to use PW.DAT for the file identifier'
+    write(6,*)  '  Not using unfolding'
     write(6,*)
-    open(unit=11,file='PW.DAT',status='OLD',form='FORMATTED',IOSTAT=ioerr)
-    if(ioerr == 0) then
-      read(11,'(a60)',IOSTAT=ioerr) pwlinloc
-      close(unit=11)
-    else
-      write(6,*)
-      write(6,*)  '  Not using unfolding'
-      write(6,*)
-      do i = 1,60
-        pwlinloc(i:i) = ' '
-      enddo
-      write(pwlinloc,'(3(3i4,2x),2x,a6)') 1,0,0,  0,1,0,  0,0,1,  'fcc SL'
-    endif
+    do i = 1,60
+      pwlinloc(i:i) = ' '
+    enddo
+    write(pwlinloc,'(3(3i4,2x),2x,a6)') 1,0,0,  0,1,0,  0,0,1,  'fcc SL'
   endif
 
 ! PrepFold needs avec

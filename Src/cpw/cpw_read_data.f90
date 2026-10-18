@@ -19,7 +19,7 @@
 !>  \date         November 2019, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
+subroutine cpw_read_data(fcpwin, vdriv,                                  &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
      flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
      total_, ewald_, atorb_, filename_, dims_)
@@ -32,6 +32,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) from read_esdf. 15 October 2026. JLM+claude
 ! filename_%file_restart, filename_%iotape_restart to read_esdf. 16 October 2026. JLM+claude
 ! atorb_%ibset, choice of atomic basis set, read_esdf_atorb_choice. 18 October 2026. JLM+claude
+! Old PW.DAT format removed (fpwdat, iopw), ibset from read_esdf. 18 October 2026. JLM+claude WARNING NEW API
 
   use cpw_variables
 
@@ -52,22 +53,18 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space (only ibset is set here)
 
   character(len=*), intent(in)       ::  fcpwin                          !<  filename with input data (new style)
-  character(len=*), intent(in)       ::  fpwdat                          !<  filename with input data (old style)
 
   character(len=4), intent(in)       ::  vdriv                           !<  version of the calling program
-  integer, intent(in)                ::  iopw                            !<  tape number
 
   integer, intent(out)               ::  iprglob                         !<  controls the amount of printing by subroutines
 
   character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata coded in cpw2000
-  character(len=250), intent(out)    ::  meta_pwdat                      !<  metadata from pw.dat
+  character(len=250), intent(out)    ::  meta_pwdat                      !<  metadata (same as meta_cpw2000)
 
   logical, intent(out)               ::  symkip                          !<  whether symmetry should be conserved
   real(REAL64), intent(out)          ::  symtol                          !<  tolerance for symmetry recognition subroutines
 
-  integer      ::  ioerr
   logical               ::  lgeom                                        !  indicates if geometry was successfully read.
-  logical               ::  lbz                                          !  indicates if Brillouin Zone data was successfully read.
   integer      ::  ipr
 
   integer    ::    i
@@ -82,7 +79,15 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
   enddo
 
   if(.NOT. lgeom) then
-    call size_mxdtyp_mxdatm(fpwdat,iopw,dims_%mxdtyp,dims_%mxdatm)
+    write(6,*)
+    write(6,'("   STOPPED in cpw_read_data:  the crystal structure was ",&
+       &      "not found in ",a)') trim(fcpwin)
+    write(6,'("   The old PW.DAT format is no longer accepted, ",        &
+       &      "convert it with Tools/pwdat2cpwin.f90")')
+    write(6,*)
+
+    stop
+
   endif
 
   allocate(crys_%natom(dims_%mxdtyp))
@@ -97,17 +102,17 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
   allocate(total_%force(3,dims_%mxdatm,dims_%mxdtyp))
   allocate(ewald_%force(3,dims_%mxdatm,dims_%mxdtyp))
 
+  allocate(atorb_%ibset(dims_%mxdtyp))
+
 
   call read_esdf(fcpwin, vdriv,                                          &
       flags_%flgcal, flags_%flgkeat, flags_%flgpsd, flags_%flgscf,       &
           flags_%flgdal, flags_%flgmix,                                  &
       crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,     &
           crys_%atmass, crys_%alatt,                                     &
-      lgeom,                                                             &
       pwexp_%emax, pwexp_%esmear, pwexp_%nbandin,                        &
       kpoint_%nx, kpoint_%ny, kpoint_%nz, kpoint_%sx, kpoint_%sy,        &
           kpoint_%sz,                                                    &
-          lbz,                                                           &
       meta_cpw2000,                                                      &
       symkip, symtol,                                                    &
       xc_%author, xc_%tblaha,                                            &
@@ -124,6 +129,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
       filename_%itape_pseudo,                                            &
       filename_%save_psi_path, filename_%itape_save_psi,                 &
       filename_%file_restart, filename_%iotape_restart,                  &
+      atorb_%ibset,                                                      &
       dims_%mxdtyp, dims_%mxdatm)
 
 
@@ -133,69 +139,6 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 ! prints type of calculation near the top of output file
 
   call tpage_calc(flags_%flgcal)
-
-  if(.NOT. lgeom) then
-
-!   compatibility with some old versions
-
-    write(6,*)
-    write(6,*) ' WARNING '
-    write(6,*) ' Using ',fpwdat,' file'
-    write(6,*)
-
-    open(UNIT=iopw, FILE=fpwdat, STATUS='OLD', FORM='FORMATTED', IOSTAT=ioerr)
-
-    if(ioerr /= 0) then
-      write(6,*)
-      write(6,*)
-      write(6,*) '  cpw:   Unable to open PW.DAT file ',fpwdat
-
-      stop
-
-    endif
-
-    read(iopw,'(a250)', iostat=ioerr) meta_pwdat
-    if(ioerr == 0) then
-      write(6,*) meta_pwdat(1:60)
-      write(6,*) meta_pwdat(61:110)
-      write(6,*) meta_pwdat(111:250)
-    else
-      write(6,*) '  cpw:   Unable to read titles'
-    endif
-    write(6,*)
-    write(6,*)
-
-!   gets crystal data
-
-    call read_data(crys_%adot, crys_%ntype, crys_%natom,                 &
-       crys_%nameat, crys_%rat, crys_%atmass, crys_%alatt,               &
-       dims_%mxdtyp, dims_%mxdatm)
-
-    if(.NOT. lbz) then
-      read(iopw,'(1x,f9.4)') pwexp_%emax
-
-      read(iopw, '(i5, 15x, 3i5, 5x, 3f5.2)') pwexp_%nbandin,            &
-        kpoint_%nx, kpoint_%ny, kpoint_%nz,                              &
-        kpoint_%sx, kpoint_%sy, kpoint_%sz
-
-    endif
-
-    close(UNIT=iopw)
-
-!   copies meta_pwdat to meta_cpw2000
-
-    meta_cpw2000 = meta_pwdat
-
-
-  endif
-
-! choice of atomic basis set for each type of atom
-
-  allocate(atorb_%ibset(dims_%mxdtyp))
-
-  call read_esdf_atorb_choice(1, fcpwin, crys_%ntype, crys_%nameat,      &
-      atorb_%ibset,                                                      &
-      dims_%mxdtyp)
 
   return
 

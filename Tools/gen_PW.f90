@@ -1,16 +1,20 @@
-!>  generates a formatted PW_try.DAT file to use in the old cpw
-!>  program. The hermetic and formatted PW.DAT file was
-!>  supposed to restrict the use of cpw to the initiated...
-!>  For the new code cpw2000 it generates a cpw.in input file
+!>  Generates a cpw.in input file for cpw2000
 !>  which has a modern format (SIESTA style) that can be parsed.
+!>  It no longer writes the old hermetic and formatted PW.DAT file
+!>  that was supposed to restrict the use of cpw to the initiated...
+!>
+!>  \author       Jose Luis Martins, Jorge M. Pacheco
+!>  \version      5.13
+!>  \date         July 2001, 18 October 2026.
+!>  \copyright    GNU Public License v2
 
 program gen_PW
 
 ! written by J.L.Martins and J.M.Pacheco
 ! July-October 2001
 ! Modernized and cpw.in, 15 February 2021. JLM
+! The old PW_try.DAT file is no longer written. 18 October 2026. JLM+claude
 
-! version 4.99
 
   implicit none
 
@@ -46,8 +50,6 @@ program gen_PW
   character(len = 1)            ::  iop(3,3)
   integer                       ::  ncount
 
-  integer                       ::  iopw
-  character(len = 10)           ::  filepw
 
   integer                       ::  ioreplay
   character(len = 16)           ::  filereplay
@@ -55,14 +57,6 @@ program gen_PW
   integer                       ::  iocpw
   character(len = 6)            ::  filecpw
 
-! counter
-
-  integer               ::  i, j
-
-
-  iopw = 10
-  filepw = 'PW_try.DAT'
-  open(unit = iopw, file = filepw, form = 'FORMATTED', status='UNKNOWN')
 
   ioreplay = 35
   filereplay = 'replay_genpw.dat'
@@ -77,16 +71,10 @@ program gen_PW
 
   read(5,*) title
   write(ioreplay,'(a20,10x,"title")' ) title
-  write(iopw,'(a20)' ) title
 
 ! now do the lattice
 
   call gen_latt(ioreplay, alatt, iop, vec, avec, conv)
-
-  write(iopw,'(f12.6)') alatt
-  do i=1,3
-    write(iopw,'(3(2x,a1,f12.6))') (iop(j,i),vec(j,i),j=1,3)
-  enddo
 
 
   call gen_basis_ntype(ioreplay, ntype)
@@ -109,8 +97,6 @@ program gen_PW
   read(5,*) emax
   write(ioreplay,'(1x,f9.4,5x,"emax")') emax
 
-  write(iopw,'(1x,f9.4)') emax
-
   write(6,*)' enter number of one-electron states'
   read(5,*) nband
   write(ioreplay,'(1x,i10,5x,"nband")') nband
@@ -123,8 +109,6 @@ program gen_PW
   read(5,*) sx,sy,sz
   write(ioreplay,'(5x,3f14.8,5x,"shiftxyz")') sx,sy,sz
 
-  write(iopw,'(i5,15x,3i5,5x,3f5.2)') nband, nx,ny,nz, sx,sy,sz
-
   write(6,*)' enter (in quotes if URL) the source of your structure (max 200 char)'
   read(5,*) source
   write(ioreplay,*) '"',trim(adjustl(source)),'"'
@@ -135,11 +119,11 @@ program gen_PW
       mxdtyp, mxdatm)
 
 
-  close(unit = iopw)
   close(unit = ioreplay)
   close(unit = iocpw)
 
   stop
+
 end program gen_PW
 
 
@@ -164,11 +148,10 @@ subroutine gen_basis_ntype(ioreplay, ntype)
 
   write(6,*)' enter number of diff elements'
   read(5,*) ntype
-  write(10,'(i5)') ntype
   write(ioreplay,'(1x,i5,5x,"ntype")') ntype
 
-
   return
+
 end subroutine gen_basis_ntype
 
 
@@ -217,6 +200,7 @@ subroutine gen_basis_comp(ioreplay, ntype, natom, nameat, ncount, mxdtyp)
   enddo
 
   return
+
 end subroutine gen_basis_comp
 
 
@@ -253,19 +237,16 @@ subroutine gen_basis(ioreplay, avec, conv, ntype, natom, nameat, rat,    &
   real(REAL64)                  ::  bvec(3,3), vcell
   integer                       ::  iflag
 
-  character(len=1)              ::  jop(3) ,yesno
+  character(len=1)              ::  yesno
   character(len=2)              ::  elem
   character(len=40)             ::  filnam
   real(REAL64)                  ::  coor(3),cart(3)
-  real(REAL64)                  ::  xx
-  integer                       ::  ixx
   integer                       ::  ncount
 
 ! constants
 
   real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   real(REAL64), parameter  ::  EPS = 1.0E-10_REAL64
-  real(REAL64), parameter  ::  EPS2 = 1.0E-04_REAL64
 
 ! counters
 
@@ -332,8 +313,6 @@ subroutine gen_basis(ioreplay, avec, conv, ntype, natom, nameat, rat,    &
   do nt = 1,ntype
     write(6,*) ' for atoms of ', nameat(nt)
 
-    write(10,'(i5,3x,a2)') natom(nt), nameat(nt)
-
     do j = 1,natom(nt)
 
       write(6,*)' enter coordinates of atom number',j
@@ -373,23 +352,11 @@ subroutine gen_basis(ioreplay, avec, conv, ntype, natom, nameat, rat,    &
         rat(k,j,nt) = rat(k,j,nt) - nint(rat(k,j,nt))*UM
       enddo
 
-      do k=1,3
-        jop(k) = ' '
-        coor(k) = rat(k,j,nt)
-        xx = 3*rat(k,j,nt)
-        ixx = nint(xx)
-        if(abs(xx - ixx*UM) < EPS2 .AND. mod(ixx,3) /= 0) then
-          coor(k) = ixx*UM
-          jop(k) = 'T'
-        endif
-      enddo
-
-      write(10,'(3(2x,a1,f12.6))')(jop(k),coor(k),k=1,3)
-
     enddo
   enddo
 
   return
+
 end subroutine gen_basis
 
 
@@ -857,7 +824,7 @@ subroutine gen_latt(ioreplay, alatt, iop, vec, avec, conv)
     enddo
 
     write(6,*)
-    write(6,*) '  The following lines will be added to PW.DAT'
+    write(6,*) '  Lattice constant and lattice vectors (old format)'
     write(6,*)
 
     write(6,'(f12.6)') alatt
@@ -891,6 +858,7 @@ subroutine gen_latt(ioreplay, alatt, iop, vec, avec, conv)
   enddo
 
   return
+
 end subroutine gen_latt
 
 
@@ -1134,6 +1102,7 @@ subroutine write_cpwin(io, title, source, alatt,                         &
   write(io,'("#SymmTolerance                1.0E-5          #")')
 
   return
+
 end subroutine write_cpwin
 
 
@@ -1406,4 +1375,5 @@ subroutine p_tbl_charge(name,iz)
   endif
 
   return
+
 end subroutine p_tbl_charge

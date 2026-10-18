@@ -15,13 +15,13 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         5 August 2002. 16 October 2026.
+!>  \date         5 August 2002. 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     flgpsd, flgscf, flgdal, flgmix,                                      &
-    adot, ntype, natom, nameat, rat, atmass, alatt, lgeom,               &
-    emax, esmear, nbandin, nx, ny, nz, sx, sy, sz, lbz,                  &
+    adot, ntype, natom, nameat, rat, atmass, alatt,                      &
+    emax, esmear, nbandin, nx, ny, nz, sx, sy, sz,                       &
     meta_cpw2000,                                                        &
     symkip, symtol,                                                      &
     author, tblaha, iprglob, itmax, icdiagmax, epscv, epscvao, epspsi,   &
@@ -30,6 +30,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     pseudo_path, pseudo_suffix, itape_pseudo,                            &
     save_psi_path, itape_save_psi,                                       &
     file_restart, iotape_restart,                                        &
+    ibset,                                                               &
     mxdtyp, mxdatm)
 
 ! Written August 5, 2002. jlm
@@ -45,6 +46,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (MD.PWCutoffSmearing). 15 October 2026. JLM+claude WARNING NEW API
 ! RSTRT default of esmear from the restart file, file_restart, iotape_restart, EPS. 16 October 2026. JLM+claude WARNING NEW API
+! Old PW.DAT no longer accepted, lgeom, lbz removed, ibset (read_esdf_atorb_choice). 18 October 2026. JLM+claude WARNING NEW API
 
 
   use esdf
@@ -82,7 +84,6 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   real(REAL64), intent(out)          ::  atmass(mxdtyp)                  !<  atomic mass (in a.u.) of atom of type i
 
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
-  logical, intent(out)               ::  lgeom                           !<  indicates if geometry was successfully read.
 
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
   real(REAL64), intent(out)          ::  esmear                          !<  smearing of the kinetic energy cutoff (Hartree), no smearing if zero
@@ -95,7 +96,6 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   real(REAL64), intent(out)          ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
 
   integer, intent(out)               ::  nbandin                         !<  target for number of bands
-  logical, intent(out)               ::  lbz                             !<  indicates if Brillouin Zone data was successfully read.
 
   character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata coded in cpw2000
 
@@ -136,7 +136,12 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   character(len=200), intent(out)    ::  save_psi_path                   !<  path to save psi files to disk
   integer, intent(out)               ::  itape_save_psi                  !<  tape number to read and write psi.  If < 10 (default 0) do not use.
 
+  integer, intent(out)               ::  ibset(mxdtyp)                   !<  atomic basis set chosen for atom type nt
+
 ! local variables
+
+  logical                    ::  lgeom                                   !  indicates if geometry was successfully read.
+  logical                    ::  lbz                                     !  indicates if Brillouin Zone data was successfully read.
 
   character(len=4)           ::  vdrloc
   logical                    ::  ldevel                                  !  development branch, minor version may be incompatible
@@ -287,6 +292,18 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
       atmass, alatt, lgeom,                                              &
       mxdtyp, mxdatm)
 
+  if(.NOT. lgeom) then
+    write(6,*)
+    write(6,'("   STOPPED in read_esdf:  the crystal structure was not ",&
+       &      "found in ",a)') trim(fname)
+    write(6,'("   The old PW.DAT format is no longer accepted, ",        &
+       &      "convert it with Tools/pwdat2cpwin.f90")')
+    write(6,*)
+
+    stop
+
+  endif
+
   call read_esdf_bz(ipr,                                                 &
       emax, nbandin, nx, ny, nz, sx, sy, sz, lbz)
 
@@ -361,6 +378,9 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   call read_esdf_filenames(ipr,                                          &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &
       save_psi_path, itape_save_psi)
+
+  call read_esdf_atorb_choice(ipr, ntype, nameat, ibset,                 &
+      mxdtyp)
 
 
 ! deallocates the esdf arrays

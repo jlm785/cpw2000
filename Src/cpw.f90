@@ -28,6 +28,7 @@ program cpw2000
 ! filename_%file_restart and filename_%iotape_restart defined here. 16 October 2026. JLM+claude
 ! new_atorb_ removed, atorb_ has several basis sets. 16 October 2026. JLM+claude
 ! atorb_ in cpw_read_data (choice of atomic basis set). 18 October 2026. JLM+claude
+! Old PW.DAT format no longer accepted. 18 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -81,7 +82,7 @@ program cpw2000
 
   character(len=4)                   ::  vdriv                           !<  version of this program
   character(len=250)                 ::  meta_cpw2000                    !<  metadata from cpw.in
-  character(len=250)                 ::  meta_pwdat                      !<  metadata from PW.DAT
+  character(len=250)                 ::  meta_pwdat                      !<  metadata (same as meta_cpw2000)
   integer                            ::  iprglob                         !<  level of detail of printout
 
   real(REAL64)                       ::  ealpha                          !<  G=0 contribution to the total energy (Hartree)
@@ -152,7 +153,7 @@ program cpw2000
 
 ! reads the input file and does the respective allocations
 
-  call cpw_read_data('cpw.in', 'PW.DAT', 5, vdriv,                       &
+  call cpw_read_data('cpw.in', vdriv,                                    &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
      flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
      total_, ewald_, atorb_, filename_, dims_)

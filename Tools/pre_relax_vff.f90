@@ -28,6 +28,7 @@ program pre_relax_vff
 ! Specialized for VFF relaxation
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, AUTOGPA, BOHR, ECHARGE). 3 October 2026. JLM+claude
 ! Indentation, REAL64 literals. 4 October 2026. JLM+claude
+! Commented code for the old PW.DAT format removed. 18 October 2026. JLM+claude
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -67,7 +68,6 @@ program pre_relax_vff
 !  character(len=50)                  ::  title
 !  integer                            ::  io
   character(len=20)                  ::  filename
-!  character(len=20)                  ::  filepw
   character(len=13)                   ::  callcode                       !<  identification of the calling code
 
   logical                            ::  lgeom
@@ -122,12 +122,7 @@ program pre_relax_vff
 
   ipr = 3
   filename = 'cpw.in'
-!  filepw = 'LJ.DAT'
   call size_mxdtyp_mxdatm_esdf(ipr,filename,lgeom,mxdtyp,mxdatm)
-!   if(.NOT. lgeom) then
-!     io = 20
-!     call size_mxdtyp_mxdatm(filepw,io,mxdtyp,mxdatm)
-!   endif
 
   allocate(natom(mxdtyp))
   allocate(nameat(mxdtyp))
@@ -140,36 +135,17 @@ program pre_relax_vff
   allocate(rat1(3,mxdatm,mxdtyp))
   allocate(frc1(3,mxdatm,mxdtyp))
 
-!  if(lgeom) then
+  call read_md_esdf(ipr,filename,flgcal,flgmod,                          &
+      adot,ntype,natom,nameat,rat,atmass,alatt,lgeom,                    &
+      emax,nbandin,nx,ny,nz,sx,sy,sz,                                    &
+      meta_pwdat,                                                        &
+      tempk,tempinik,nstep,tstep,beta,iseed,pgtol,dxmax,                 &
+      press,strext,celmas,                                               &
+      mxdtyp,mxdatm)
 
-    call read_md_esdf(ipr,filename,flgcal,flgmod,                        &
-        adot,ntype,natom,nameat,rat,atmass,alatt,lgeom,                  &
-        emax,nbandin,nx,ny,nz,sx,sy,sz,                                  &
-        meta_pwdat,                                                      &
-        tempk,tempinik,nstep,tstep,beta,iseed,pgtol,dxmax,               &
-        press,strext,celmas,                                             &
-        mxdtyp,mxdatm)
+! use higher accuracy
 
-!   use higher accuracy
-
-    pgtol = 0.001_REAL64*pgtol
-
-!   else
-!
-!   read data from old file
-!
-!     write(6,*)
-!     write(6,*) ' WARNING '
-!     write(6,*) ' Using file ',filepw
-!     write(6,*)
-!
-!     open(unit=5,file=filepw,form='formatted',status='old')
-!     read(5,'(a50)') title
-!
-!     call read_data(adot,ntype,natom,nameat,rat,atmass,alatt,        &
-! &   mxdtyp,mxdatm)
-!
-!   endif
+  pgtol = 0.001_REAL64*pgtol
 
 
 ! Random initial velocities
