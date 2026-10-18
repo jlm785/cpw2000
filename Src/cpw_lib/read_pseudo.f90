@@ -16,10 +16,11 @@
 !>  files whose name depend on the chemical symbol.
 !>  it then computes the same quantities on the prototype
 !>  g-vectors.
+!>  It also reads atomic basis sets and partial core kinetic energy.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         1980s, 18 February 2026.
+!>  \date         1980s, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_pseudo(ipr, author,                                      &
@@ -46,6 +47,7 @@ subroutine read_pseudo(ipr, author,                                      &
 ! Modified, filenames for pseudos. 10 October 2025. JLM
 ! Reads more than one atomic basis set. 18 February 2026. JLM
 ! Reads the partial core kinetic energy density. 3 March 2026. JLM
+! norbat(NB,nt) > mxdlao. 18 October 2026. JLM
 
 
   implicit none
@@ -66,7 +68,7 @@ subroutine read_pseudo(ipr, author,                                      &
 
   character(len=200), intent(in)     ::  pseudo_path                     !<  path to pseudopotentials
   character(len=50), intent(in)      ::  pseudo_suffix                   !<  suffix for the pseudopotentials
-  integer, intent(in)                ::  itape_pseudo                    !<  tape number to read pseudo
+  integer, intent(in)                ::  itape_pseudo                    !<  tap   if(norbat(1,nt) > mxdlao) thene number to read pseudo
 
 
 ! output
@@ -78,7 +80,7 @@ subroutine read_pseudo(ipr, author,                                      &
   integer, intent(out)               ::  nkb(0:3,-1:1,mxdtyp)            !<   kb pseudo.  normalization for atom k, ang. mom. l
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
-  real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
+  real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !   if(norbat(1,nt) > mxdlao) then<  valence charge density for atom k
 
   real(REAL64), intent(out)          ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density  (hartree/bohr^3)
 
@@ -460,7 +462,7 @@ subroutine read_pseudo(ipr, author,                                      &
       if(l2026) then
 
         read(it,*) lorb(1,nb,nt), eorbwv(1), norbat(nb,nt)
-        if(norbat(1,nt) > mxdlao) then
+        if(norbat(nb,nt) > mxdlao) then
           write(6,'("  stopped in read_pseudo  reading data for ",           &
             &    a2,i4,"  program does not accept ",i4,                      &
             &    " orbitals (max",i4,")")') nameat(nt), nb, norbat(nb,nt),mxdlao
