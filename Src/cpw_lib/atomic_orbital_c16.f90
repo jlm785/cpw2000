@@ -22,7 +22,7 @@
 subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
     nbaslcao, baslcao, infolcao,                                         &
     ng, kgv,                                                             &
-    n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                   &
+    n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                   &
     ntype, natom, rat, adot,                                             &
     mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
@@ -37,7 +37,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 ! Modified documentation, January 2020. JLM
 ! Merge with version 2 (infolcao). JLM
 ! Indentation. 28 September 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -65,7 +65,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -134,7 +134,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   allocate(ib(mxdtyp))
 
   do k = 1,ntype
-    ib(k) = max(1,min(ibset(k),n_bsets(k)))
+    ib(k) = max(1,min(jbset(k),n_bsets(k)))
   enddo
 
 ! cell stuff

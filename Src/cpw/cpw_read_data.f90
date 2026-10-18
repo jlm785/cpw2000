@@ -31,8 +31,8 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
 ! Modified, filenames for pseudos and psi to disk. 10 October 2025. JLM
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) from read_esdf. 15 October 2026. JLM+claude
 ! filename_%file_restart, filename_%iotape_restart to read_esdf. 16 October 2026. JLM+claude
-! atorb_%ibset, choice of atomic basis set, read_esdf_atorb_choice. 18 October 2026. JLM+claude
-! Old PW.DAT format removed (fpwdat, iopw), ibset from read_esdf. 18 October 2026. JLM+claude WARNING NEW API
+! atorb_%jbset, choice of atomic basis set, read_esdf_atorb_choice. 18 October 2026. JLM+claude
+! Old PW.DAT format removed (fpwdat, iopw), jbset from read_esdf. 18 October 2026. JLM+claude WARNING NEW API
 
   use cpw_variables
 
@@ -50,7 +50,7 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
   type(filename_t)                   ::  filename_                       !<  Information about used files
-  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space (only ibset is set here)
+  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space (only jbset is set here)
 
   character(len=*), intent(in)       ::  fcpwin                          !<  filename with input data (new style)
 
@@ -102,7 +102,7 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
   allocate(total_%force(3,dims_%mxdatm,dims_%mxdtyp))
   allocate(ewald_%force(3,dims_%mxdatm,dims_%mxdtyp))
 
-  allocate(atorb_%ibset(dims_%mxdtyp))
+  allocate(atorb_%jbset(dims_%mxdtyp))
 
 
   call read_esdf(fcpwin, vdriv,                                          &
@@ -129,7 +129,7 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
       filename_%itape_pseudo,                                            &
       filename_%save_psi_path, filename_%itape_save_psi,                 &
       filename_%file_restart, filename_%iotape_restart,                  &
-      atorb_%ibset,                                                      &
+      atorb_%jbset,                                                      &
       dims_%mxdtyp, dims_%mxdatm)
 
 

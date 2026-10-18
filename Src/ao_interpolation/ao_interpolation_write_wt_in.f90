@@ -22,7 +22,7 @@
 
 subroutine ao_interpolation_write_wt_in(mtb,                             &
     ztot, adot, ntype, natom, nameat, rat,                               &
-    n_bsets, ibset, norbat, lorb,                                        &
+    n_bsets, jbset, norbat, lorb,                                        &
     mxdtyp, mxdatm, mxdlao, mxdset)
 
 ! Written by Carlos Lois Reis at an unknown date.
@@ -30,7 +30,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
 ! Modified, length of label. 24 September 2025. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   use NonOrthoInterp
 
@@ -58,7 +58,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
@@ -161,7 +161,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   do iatom=1, natom(itype)
 
     nproj = 0
-    ib = max(1,min(ibset(itype),n_bsets(itype)))
+    ib = max(1,min(jbset(itype),n_bsets(itype)))
     do k = 1,  norbat(ib,itype)
       nproj = nproj + (2*lorb(k,ib,itype) +1)
     enddo

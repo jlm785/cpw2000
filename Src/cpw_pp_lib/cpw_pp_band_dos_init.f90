@@ -34,7 +34,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 ! Modified, order of input variables, dims_in_. 12 March 2025. JLM
 ! vtau, core tau, all atomic basis sets read (the first is used). 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
-! atorb_ has all basis sets, atorb_%ibset (default first set). 16 October 2026. JLM+claude
+! atorb_ has all basis sets, atorb_%jbset (default first set). 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -126,7 +126,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
   allocate(pseudo_%tauc_q(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%zv(dims_%mxdtyp))
   allocate(atorb_%n_bsets(dims_%mxdtyp))
-  allocate(atorb_%ibset(dims_%mxdtyp))
+  allocate(atorb_%jbset(dims_%mxdtyp))
   allocate(atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
   allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
   allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
@@ -166,7 +166,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 
 ! default is the first atomic basis set
 
-  atorb_%ibset(:) = 1
+  atorb_%jbset(:) = 1
 
 ! processes crystal structure
 

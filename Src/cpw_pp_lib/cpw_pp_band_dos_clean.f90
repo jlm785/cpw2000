@@ -24,7 +24,7 @@
 ! written 15 September 2023. JLM
 ! vtau and core tau. 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
-! atorb_%n_bsets, atorb_%ibset. 16 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%jbset. 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -66,7 +66,7 @@
   deallocate(pseudo_%tauc_q)
   deallocate(pseudo_%zv)
   deallocate(atorb_%n_bsets)
-  deallocate(atorb_%ibset)
+  deallocate(atorb_%jbset)
   deallocate(atorb_%norbat)
   deallocate(atorb_%lorb)
   deallocate(atorb_%wvfao)

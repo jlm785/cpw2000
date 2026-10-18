@@ -33,7 +33,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         sfact, icmplx,                                                   &
         veff, lgks, vtau,                                                &
         nqnl,delqnl, vkb, nkb,                                           &
-        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
+        n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao, mxdset)
 
 ! Written by Carlos Loia Reis adapting previous code.
@@ -57,7 +57,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Generalized Kohn-Sham meta-GGA, vtau in ao_h_and_s_spin_orbit, warning removed. 8 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -120,7 +120,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   KB pseudo.  normalization for atom k, ang. mom. l
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -389,7 +389,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   norb_ao = 0
   lmax = 0
   do k = 1,ntype
-    ib = max(1,min(ibset(k),n_bsets(k)))
+    ib = max(1,min(jbset(k),n_bsets(k)))
     do j = 1,norbat(ib,k)
       norb_ao = norb_ao + (2*lorb(j,ib,k)+1)*natom(k)
       lmax = max(lorb(j,ib,k),lmax)
@@ -498,7 +498,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         psi_ao, hpsi_ao, ei_ao,                                          &
         vscr, kmscr,                                                     &
         lgks, vtau, vtaumsh,                                             &
-        .TRUE., n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,       &
+        .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdorb, mxdscr, mxdlao, mxdset)
 
@@ -514,7 +514,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
         lgks, vtau, vtaumsh,                                             &
-        .TRUE., n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,       &
+        .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao, mxdset)
 
@@ -621,7 +621,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
 !          mtxd, hdiag, isort, qmod, ekpg,                                &
-          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
+          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
           psi_ao, hpsi_ao,                                               &
           Hao, S, dh0drk_AO,                                             &
           vscr, kmscr,                                                   &
@@ -666,7 +666,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           veff, icmplx,                                                   &
           nqnl, delqnl, vkb, nkb,                                         &
           ntype, natom, rat, adot,                                        &
-          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
+          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
           psi_ao, hpsi_ao,                                                &
           Hao, S, dh0drk_AO,                                              &
           vscr, kmscr,                                                    &

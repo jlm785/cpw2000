@@ -49,7 +49,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
-! atorb_%n_bsets, atorb_%ibset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -363,7 +363,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
           strfac_%sfact, strfac_%icmplx,                                 &
           vcomp_%veff, lgks, vcomp_%vtau,                                &
           pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
-          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%latorb, atorb_%n_bsets, atorb_%jbset,                   &
           atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                     &
           atorb_%wvfao,atorb_%lorb,                                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &

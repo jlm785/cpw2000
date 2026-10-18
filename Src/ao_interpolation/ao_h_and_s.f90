@@ -24,7 +24,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     veff, icmplx,                                                        &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                   &
+    n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                   &
     psi, hpsi,                                                           &
     Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
@@ -45,7 +45,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16 (dh0drk without vtau). 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in dh0drk from kdotp_matrix. 8 October 2026. JLM+claude
 ! esmear = 0 in hamilt_pw (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -89,7 +89,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -186,7 +186,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                     &
       nbaslcao, psi, infolcao,                                           &
       ng, kgv,                                                           &
-      n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                 &
+      n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       ntype, natom, rat, adot,                                           &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 

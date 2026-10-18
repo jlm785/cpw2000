@@ -25,7 +25,7 @@ subroutine cpw_size_alloc_hampsi(lnewnrk,                                &
 
 ! Written 21 November 2019.  JLM
 ! Modified, indentation, write psi to disk. 12 October 2025. JLM
-! atorb_%n_bsets, atorb_%ibset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -71,7 +71,7 @@ subroutine cpw_size_alloc_hampsi(lnewnrk,                                &
 
     if(atorb_%latorb) then
       call size_nbaslcao(crys_%ntype, crys_%natom,                       &
-          atorb_%n_bsets, atorb_%ibset, atorb_%norbat, atorb_%lorb,      &
+          atorb_%n_bsets, atorb_%jbset, atorb_%norbat, atorb_%lorb,      &
           nbaslcao,                                                      &
           dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
       dims_%mxdsml = max(dims_%mxdsml,nbaslcao)

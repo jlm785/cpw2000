@@ -32,7 +32,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
   psi, hpsi, ei,                                                         &
   vscr, kmscr,                                                           &
   lgks, vtau, vtaumsh,                                                   &
-  latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
+  latorb, n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
   mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,                &
   mxdbnd, mxdscr, mxdlao, mxdset)
 
@@ -44,7 +44,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 ! default value of ifail. 11 November 2023. JLM
 ! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh). 7 October 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -113,7 +113,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -217,7 +217,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
     norbtot = 0
     if(latorb) then
-      call size_nbaslcao(ntype, natom, n_bsets, ibset,                   &
+      call size_nbaslcao(ntype, natom, n_bsets, jbset,                   &
            norbat, lorb, norbtot,                                        &
            mxdtyp, mxdlao, mxdset)
     endif
@@ -231,7 +231,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
           veffr1, icmplx, lhpsi,                                         &
           ng, kgv,                                                       &
           nqnl, delqnl, vkb, nkb,                                        &
-          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
+          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
           ntype, natom, rat, adot,                                       &
           mtxd, hdiag, isort, qmod, ekpg, lkpg,                          &
           psi, hpsi, ei,                                                 &
@@ -289,7 +289,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
         veffr1, icmplx, lhpsi,                                           &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
-        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
+        n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
         ntype, natom, rat, adot,                                         &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &
@@ -305,7 +305,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
         veffr1, icmplx, lhpsi,                                           &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
-        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
+        n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
         ntype, natom, rat, adot,                                         &
         mtxd, hdiag, isort, qmod, ekpg, lkpg,                            &
         psi, hpsi, ei,                                                   &

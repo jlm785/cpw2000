@@ -79,7 +79,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
   deallocate(pseudo_%vkbraw)
 
   deallocate(atorb_%n_bsets)
-  deallocate(atorb_%ibset)
+  deallocate(atorb_%jbset)
   deallocate(atorb_%norbat)
   deallocate(atorb_%nqwf)
   deallocate(atorb_%delqwf)

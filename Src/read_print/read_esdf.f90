@@ -30,7 +30,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     pseudo_path, pseudo_suffix, itape_pseudo,                            &
     save_psi_path, itape_save_psi,                                       &
     file_restart, iotape_restart,                                        &
-    ibset,                                                               &
+    jbset,                                                               &
     mxdtyp, mxdatm)
 
 ! Written August 5, 2002. jlm
@@ -46,7 +46,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (MD.PWCutoffSmearing). 15 October 2026. JLM+claude WARNING NEW API
 ! RSTRT default of esmear from the restart file, file_restart, iotape_restart, EPS. 16 October 2026. JLM+claude WARNING NEW API
-! Old PW.DAT no longer accepted, lgeom, lbz removed, ibset (read_esdf_atorb_choice). 18 October 2026. JLM+claude WARNING NEW API
+! Old PW.DAT no longer accepted, lgeom, lbz removed, jbset (read_esdf_atorb_choice). 18 October 2026. JLM+claude WARNING NEW API
 
 
   use esdf
@@ -136,7 +136,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   character(len=200), intent(out)    ::  save_psi_path                   !<  path to save psi files to disk
   integer, intent(out)               ::  itape_save_psi                  !<  tape number to read and write psi.  If < 10 (default 0) do not use.
 
-  integer, intent(out)               ::  ibset(mxdtyp)                   !<  atomic basis set chosen for atom type nt
+  integer, intent(out)               ::  jbset(mxdtyp)                   !<  atomic basis set chosen for atom type nt
 
 ! local variables
 
@@ -379,7 +379,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &
       save_psi_path, itape_save_psi)
 
-  call read_esdf_atorb_choice(ipr, ntype, nameat, ibset,                 &
+  call read_esdf_atorb_choice(ipr, ntype, nameat, jbset,                 &
       mxdtyp)
 
 

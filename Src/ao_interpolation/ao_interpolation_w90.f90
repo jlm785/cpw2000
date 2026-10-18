@@ -23,7 +23,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       adot, ntype, natom, nameat, rat,                                   &
       ng, kgv,                                                           &
       icmplx,                                                            &
-      n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                 &
+      n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao, mxdset)
 
 ! Written by Carlos Loia Reis, May 2020, based on previous code,
@@ -33,7 +33,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Modified, length of labels, 24 September 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 ! Debug prints commented. 4 October 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -69,7 +69,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -396,7 +396,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   mxdorb = 0
   lmax = 0
   do k=1,ntype
-    ib = max(1,min(ibset(k),n_bsets(k)))
+    ib = max(1,min(jbset(k),n_bsets(k)))
     do j=1,norbat(ib,k)
       mxdorb = mxdorb + (2*lorb(j,ib,k)+1)*natom(k)
       lmax = max(lorb(j,ib,k),lmax)
@@ -485,7 +485,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
     call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                   &
         mxdorb, ao_basis, infolcao,                                      &
         ng, kgv,                                                         &
-        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
+        n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
         ntype, natom, rat, adot,                                         &
         mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
@@ -613,7 +613,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
       call atomic_orbital_c16(rkpt2, mtxd2, isort2, icmplx,              &
           mxdorb, ao_basis, infolcao,                                    &
           ng, kgv,                                                       &
-          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
+          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao,        &
           mxdset)

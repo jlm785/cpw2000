@@ -18,14 +18,14 @@
 !>  \date         21 April 2014, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine size_nbaslcao(ntype, natom, n_bsets, ibset, norbat, lorb,     &
+subroutine size_nbaslcao(ntype, natom, n_bsets, jbset, norbat, lorb,     &
     nbaslcao,                                                            &
     mxdtyp, mxdlao, mxdset)
 
 ! written April 21, 2014. JLM
 ! Modified, documentation, January 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -37,7 +37,7 @@ subroutine size_nbaslcao(ntype, natom, n_bsets, ibset, norbat, lorb,     &
   integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
@@ -59,7 +59,7 @@ subroutine size_nbaslcao(ntype, natom, n_bsets, ibset, norbat, lorb,     &
 
   ind = 0
   do nt=1,ntype
-    ib = max(1,min(ibset(nt),n_bsets(nt)))
+    ib = max(1,min(jbset(nt),n_bsets(nt)))
     do j=1,norbat(ib,nt)
       ind = ind + (2*lorb(j,ib,nt)+1)*natom(nt)
     enddo

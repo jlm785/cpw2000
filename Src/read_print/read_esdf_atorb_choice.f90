@@ -26,7 +26,7 @@
 !>  \date         18 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
+subroutine read_esdf_atorb_choice(ipr, ntype, nameat, jbset,             &
     mxdtyp)
 
 ! Written 18 October 2026. claude
@@ -46,7 +46,7 @@ subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
 
 ! output
 
-  integer, intent(out)               ::  ibset(mxdtyp)                   !<  basis set chosen for atom type nt
+  integer, intent(out)               ::  jbset(mxdtyp)                   !<  basis set chosen for atom type nt
 
 ! local variables
 
@@ -60,7 +60,7 @@ subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
 
 
   do nt = 1,mxdtyp
-    ibset(nt) = 1
+    jbset(nt) = 1
   enddo
 
   lblock = esdf_block('ChoiceOfDefaultAtomicBasisSet',nlines)
@@ -88,7 +88,7 @@ subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
         write(6,'("   In ChoiceOfDefaultAtomicBasisSet species index ",  &
            &      i4," is outside 1...",i4,", line ignored")') nt, ntype
       else
-        ibset(nt) = ib
+        jbset(nt) = ib
       endif
 
     enddo
@@ -101,7 +101,7 @@ subroutine read_esdf_atorb_choice(ipr, ntype, nameat, ibset,             &
         &     "one is replaced by the nearest available):")')
     write(6,*)
     do nt = 1,ntype
-      write(6,'(6x,i4,2x,a2,"   basis set ",i4)') nt, nameat(nt), ibset(nt)
+      write(6,'(6x,i4,2x,a2,"   basis set ",i4)') nt, nameat(nt), jbset(nt)
     enddo
     write(6,*)
   endif

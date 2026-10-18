@@ -362,10 +362,10 @@ Module esdf_key
       data kw(62)%typ       /'P:I' /
       data kw(62)%dscrpt    /'ESMEAR (min(0.5 Ha, 5% cutoff) or 0)'/
 
-!     IBSET      CHOICE OF ATOMIC BASIS SET FOR EACH SPECIES
+!     JBSET      CHOICE OF ATOMIC BASIS SET FOR EACH SPECIES
       data kw(63)%label     /'ChoiceOfDefaultAtomicBasisSet'/
       data kw(63)%typ       /'B:I' /
-      data kw(63)%dscrpt    /'IBSET (species index, basis set; default 1)'/
+      data kw(63)%dscrpt    /'JBSET (species index, basis set; default 1)'/
 
 
       end module esdf_key

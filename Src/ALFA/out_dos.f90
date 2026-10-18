@@ -29,7 +29,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
     sfact, icmplx,                                                       &
     veff, lgks, vtau,                                                    &
     nqnl, delqnl, vkb, nkb,                                              &
-    latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,           &
+    latorb, n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao, mxdset)
 
 
@@ -52,7 +52,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
-! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -116,7 +116,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
-  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
@@ -354,7 +354,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 
   if (lproj) then
 
-    call size_nbaslcao(ntype,natom,n_bsets, ibset, norbat,lorb,nbaslcao, &
+    call size_nbaslcao(ntype,natom,n_bsets, jbset, norbat,lorb,nbaslcao, &
     mxdtyp,mxdlao, mxdset)
 
     mxdorb = nbaslcao
@@ -471,7 +471,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
           psi, hpsi, ei,                                                 &
           vscr, kmscr,                                                   &
           lgks, vtau, vtaumsh,                                           &
-          latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao,lorb,      &
+          latorb, n_bsets, jbset, norbat, nqwf, delqwf, wvfao,lorb,      &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdbnd, mxdscr, mxdlao, mxdset)
 
@@ -482,7 +482,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
         call atomic_orbital_c16(rkpt, mtxd, isort, 1,                    &
             nbaslcao, baslcao_aux, infolcao,                             &
             ng, kgv,                                                     &
-            n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,           &
+            n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
             ntype, natom, rat, adot,                                     &
             mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao,      &
             mxdset)

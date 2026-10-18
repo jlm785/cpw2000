@@ -27,8 +27,8 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! Modified, prepare for more than one type of atomic basis. 18 February 2026. JLM
 ! core kinetic energy density, 3 March 2026. JLM
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
-! new_atorb_ removed, atorb_ has several basis sets, ibset. 16 October 2026. JLM+claude
-! atorb_%ibset allocated and read in cpw_read_data. 18 October 2026. JLM+claude
+! new_atorb_ removed, atorb_ has several basis sets, jbset. 16 October 2026. JLM+claude
+! atorb_%jbset allocated and read in cpw_read_data. 18 October 2026. JLM+claude
 
 
   use cpw_variables
