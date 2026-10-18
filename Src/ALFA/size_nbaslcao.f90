@@ -15,15 +15,17 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         21 April 2014.
+!>  \date         21 April 2014, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,           &
-    mxdtyp, mxdlao)
+subroutine size_nbaslcao(ntype, natom, n_bsets, ibset, norbat, lorb,     &
+    nbaslcao,                                                            &
+    mxdtyp, mxdlao, mxdset)
 
 ! written April 21, 2014. JLM
 ! Modified, documentation, January 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -32,9 +34,12 @@ subroutine size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,           &
 
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -46,6 +51,7 @@ subroutine size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,           &
 ! local variables
 
   integer   ::  ind
+  integer   ::  ib                                                       !  basis set used, consistent with atomic_orbital_c16
 
 ! counters
 
@@ -53,8 +59,9 @@ subroutine size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,           &
 
   ind = 0
   do nt=1,ntype
-    do j=1,norbat(nt)
-      ind = ind + (2*lorb(j,nt)+1)*natom(nt)
+    ib = max(1,min(ibset(nt),n_bsets(nt)))
+    do j=1,norbat(ib,nt)
+      ind = ind + (2*lorb(j,ib,nt)+1)*natom(nt)
     enddo
   enddo
   nbaslcao = ind

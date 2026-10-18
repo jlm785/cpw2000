@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         23 September 2020, 15 October 2026.
+!>  \date         23 September 2020, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_glk_prepare(diag_type, io66,                              &
@@ -31,15 +31,16 @@ subroutine out_glk_prepare(diag_type, io66,                              &
       nqnl, delqnl, vkb, nkb,                                            &
       vscr, kmscr,                                                       &
       lgks, vtau, vtaumsh,                                               &
-      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
+      latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,         &
       mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxddim,            &
-      mxdbnd, mxdscr, mxdlao)
+      mxdbnd, mxdscr, mxdlao, mxdset)
 
 
 ! Extracted from out_dos_glk, 23 September 2020. JLM
 ! Name change, indentation. 12 November 2023.
 ! Generalized Kohn-Sham meta-GGA, lgks, vtau, vtaumsh arguments. 7 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -55,6 +56,7 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdscr                          !<  array dimension for vscr
 
@@ -106,11 +108,13 @@ subroutine out_glk_prepare(diag_type, io66,                              &
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l (normalized to vcell)
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  wavefunction for atom k, basis nb, ang. mom. l (normalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
 ! input and output
 
@@ -189,9 +193,9 @@ subroutine out_glk_prepare(diag_type, io66,                              &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
         lgks, vtau, vtaumsh,                                             &
-        latorb, norbat, nqwf, delqwf, wvfao, lorb,                       &
+        latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
-        mxdbnd, mxdscr, mxdlao)
+        mxdbnd, mxdscr, mxdlao, mxdset)
 
 
     call kinetic_energy(neig, mtxd, ekpg, psi, ekpsi,                    &

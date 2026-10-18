@@ -27,6 +27,7 @@ module cpw_variables
 !   denc and tauc_g moved from chdens_t, nq, delq, vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! pwexp_%esmear, smearing of the kinetic energy cutoff. 15 October 2026. JLM+claude
 ! filename_%file_restart, filename_%iotape_restart. 16 October 2026. JLM+claude
+! atorb_t with several atomic basis sets (old new_atorb_t), ibset. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -246,28 +247,13 @@ module cpw_variables
     integer, allocatable               ::  nqwf(:)                       !<  number of points for wavefunction interpolation for atom k
     real(REAL64), allocatable          ::  delqwf(:)                     !<  step used in the wavefunction interpolation for atom k
 
-    integer, allocatable               ::  norbat(:)                     !<  number of atomic orbitals for atom k
-    integer, allocatable               ::  lorb(:,:)                     !<  angular momentum of orbital n of atom k
-    real(REAL64), allocatable          ::  wvfao(:,:,:)                  !<  wavefunction for atom k, ang. mom. l
-
-  end type atorb_t
-
-
-! new version of atomic orbitals in G-space
-
-  type  ::  new_atorb_t
-
-    logical                            ::  latorb                        !<  indicates if all atoms have information about atomic orbitals
-
-    integer, allocatable               ::  nqwf(:)                       !<  number of points for wavefunction interpolation for atom k
-    real(REAL64), allocatable          ::  delqwf(:)                     !<  step used in the wavefunction interpolation for atom k
-
     integer, allocatable               ::  n_bsets(:)                    !<  number of basis sets for each atom k
+    integer, allocatable               ::  ibset(:)                      !<  basis set chosen for atom k (clamped to 1...n_bsets where used)
     integer, allocatable               ::  norbat(:,:)                   !<  number of atomic orbitals for basis set nb and atom k
     integer, allocatable               ::  lorb(:,:,:)                   !<  angular momentum of orbital n of basis nb and atom k
-    real(REAL64), allocatable          ::  wvfao(:,:,:,:)                !<  wavefunction for atom k, ang. mom. l
+    real(REAL64), allocatable          ::  wvfao(:,:,:,:)                !<  wavefunction for atom k, basis nb, ang. mom. l
 
-  end type new_atorb_t
+  end type atorb_t
 
 
 ! k-point data

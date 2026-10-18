@@ -15,20 +15,22 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2020, 3 October 2026.
+!>  \date         before 2020, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 
 subroutine ao_interpolation_write_wt_in(mtb,                             &
-    ztot, adot, ntype, natom, nameat, rat, norbat, lorb,                 &
-    mxdtyp, mxdatm, mxdlao)
+    ztot, adot, ntype, natom, nameat, rat,                               &
+    n_bsets, ibset, norbat, lorb,                                        &
+    mxdtyp, mxdatm, mxdlao, mxdset)
 
 ! Written by Carlos Lois Reis at an unknown date.
 ! Documentation, indentation, 7 October 2024. JLM
 ! Modified, length of label. 24 September 2025. JLM
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   use NonOrthoInterp
 
@@ -44,6 +46,7 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
 
@@ -54,14 +57,17 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   character(len=2)                   ::  nameat(mxdtyp)                  !<  chemical symbol for the type i
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
 ! local variables
 
   real(REAL64)         ::  avec(3,3), bvec(3,3)
   integer              ::  ntotal_atoms, nproj, numoccupied
   integer              ::  itype, iatom, k, iorb, iline
+  integer              ::  ib                                            !  basis set used, consistent with atomic_orbital_c16
 
   character(len=40)    ::  hrfile
   logical              ::  BulkBand_calc
@@ -155,8 +161,9 @@ subroutine ao_interpolation_write_wt_in(mtb,                             &
   do iatom=1, natom(itype)
 
     nproj = 0
-    do k = 1,  norbat(itype)
-      nproj = nproj + (2*lorb(k,itype) +1)
+    ib = max(1,min(ibset(itype),n_bsets(itype)))
+    do k = 1,  norbat(ib,itype)
+      nproj = nproj + (2*lorb(k,ib,itype) +1)
     enddo
 
     write(22,'(i5)', advance='no') nproj

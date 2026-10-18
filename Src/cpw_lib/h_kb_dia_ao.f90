@@ -17,7 +17,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 15 October 2026.
+!>  \date         18 october 1993. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -26,13 +26,14 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
     veffr1, icmplx, lhpsi,                                               &
     ng, kgv,                                                             &
     nqnl, delqnl, vkb, nkb,                                              &
-    norbat, nqwf, delqwf, wvfao, lorb,                                   &
+    n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                   &
     ntype, natom, rat, adot,                                             &
     mtxd, hdiag, isort, qmod, ekpg, lkpg,                                &
     psi, hpsi, ei,                                                       &
     vscr, kmscr,                                                         &
     lgks, vtaur1, vtaumsh,                                               &
-    mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao)
+    mxdtyp, mxdatm, mxdgve, mxdlqp, mxddim, mxdbnd, mxdscr, mxdlao,      &
+    mxdset)
 
 ! version 4.0. 18 october 1993. jlm
 ! modified 25 march 1999, 19 april 1999.
@@ -54,6 +55,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 ! prefix diag_rq_jac. 17 March 2024. JLM
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -70,6 +72,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   integer, intent(in)                ::  mxdbnd                          !<  array dimension for number of bands
   integer, intent(in)                ::  mxdscr                          !<  array dimension for vscr
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
@@ -89,11 +92,13 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   real(REAL64), intent(in)           ::  vkb(-2:mxdlqp,0:3,-1:1,mxdtyp)  !<  (1/q**l) * kb nonlocal pseudo. for atom k, ang. mom. l. NOT normalized to vcell, hartree
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   kb pseudo.  normalization for atom k, ang. mom. l
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  wavefunction for atom k, ang. mom. l
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  wavefunction for atom k, basis nb, ang. mom. l
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -198,7 +203,8 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 
   lnewanl = .TRUE.
 
-  call size_nbaslcao(ntype, natom, norbat, lorb, mxdorb, mxdtyp, mxdlao)
+  call size_nbaslcao(ntype, natom, n_bsets, ibset,                       &
+      norbat, lorb, mxdorb, mxdtyp, mxdlao, mxdset)
 
   allocate(bas(mxddim,mxdorb))
   allocate(hbas(mxddim,mxdorb))
@@ -208,9 +214,9 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                     &
       nbasorb, bas, infolcao,                                            &
       ng, kgv,                                                           &
-      norbat, nqwf, delqwf, wvfao, lorb,                                 &
+      n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       ntype, natom, rat, adot,                                           &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
   deallocate(infolcao)
 

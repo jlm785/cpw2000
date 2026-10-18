@@ -16,15 +16,15 @@
 !>
 !>  \author       José Luís Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         January 2008, 30 May 2019.
+!>  \date         January 2008, 30 May 2019, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
     nbaslcao, baslcao, infolcao,                                         &
     ng, kgv,                                                             &
-    norbat, nqwf, delqwf, wvfao, lorb,                                   &
+    n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                   &
     ntype, natom, rat, adot,                                             &
-    mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+    mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
 ! written f90/complex  19 June 2012, from the version written January 2008. JLM
 ! Modified 7 January 2014, style. JLM
@@ -37,6 +37,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 ! Modified documentation, January 2020. JLM
 ! Merge with version 2 (infolcao). JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude
 
 
   implicit none
@@ -52,6 +53,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   integer, intent(in)                ::  mxdorb                          !<  array dimension of number of local orbitals
   integer, intent(in)                ::  mxdgve                          !<  array dimension of G-space vectors
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
@@ -62,11 +64,13 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   integer, intent(in)                ::  ng                              !<  size of g-space
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k (if outside 1...n_bsets the nearest is used)
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)       !<  wavefunction for atom k, ang. mom. l (normalized to vcell)
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)   !<  wavefunction for atom k, basis nb, ang. mom. l (normalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
   integer, intent(in)                ::  ntype                           !<  number of types of atoms
   integer, intent(in)                ::  natom(mxdtyp)                   !<  number of atoms of type i
@@ -84,6 +88,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   complex(REAL64), allocatable  ::  st(:)
   integer, allocatable  ::  irow(:)
   integer, allocatable  ::  nq(:)
+  integer, allocatable  ::  ib(:)                                        !  basis set used for atom k
 
 ! local variables
 
@@ -124,6 +129,14 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 
   allocate(st(mxdatm))
 
+! basis set used, defaults to the nearest available
+
+  allocate(ib(mxdtyp))
+
+  do k = 1,ntype
+    ib(k) = max(1,min(ibset(k),n_bsets(k)))
+  enddo
+
 ! cell stuff
 
   call adot_to_avec(adot, avec, bvec)
@@ -137,9 +150,9 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   ind = 0
   lmax = 0
   do k = 1,ntype
-  do j = 1,norbat(k)
-    ind = ind + (2*lorb(j,k)+1)*natom(k)
-    lmax = max(lmax,lorb(j,k))
+  do j = 1,norbat(ib(k),k)
+    ind = ind + (2*lorb(j,ib(k),k)+1)*natom(k)
+    lmax = max(lmax,lorb(j,ib(k),k))
   enddo
   enddo
   nbaslcao = ind
@@ -192,8 +205,8 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
         st(kk) = cmplx(cos(fi),sin(fi),REAL64)
       enddo
 
-      do j = 1,norbat(k)
-        l = lorb(j,k)
+      do j = 1,norbat(ib(k),k)
+        l = lorb(j,ib(k),k)
 
         xni = qi/delqwf(k)
         ni = nint(xni)
@@ -202,9 +215,9 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
         vq0 = ZERO
         if(ni < nqwf(k)-1) then
           xi  = xni - UM*ni
-          vq0 = wvfao(ni,j,k) * (UM+xi) * (UM-xi)                        &
-               + (UM/2) * (wvfao(ni+1,j,k)*(UM+xi)                       &
-                          -wvfao(ni-1,j,k)*(UM-xi)) * xi
+          vq0 = wvfao(ni,j,ib(k),k) * (UM+xi) * (UM-xi)                  &
+               + (UM/2) * (wvfao(ni+1,j,ib(k),k)*(UM+xi)                 &
+                          -wvfao(ni-1,j,ib(k),k)*(UM-xi)) * xi
           vq0 = volfac * vq0
         endif
 
@@ -222,7 +235,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
         enddo
 
 
-      enddo         !  j=1,norbat(k)
+      enddo         !  j=1,norbat(ib(k),k)
 
     enddo           !  k=1,ntype
 
@@ -266,8 +279,8 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
         endif
       enddo
 
-      do n=1,norbat(nt)
-        l = lorb(n,nt)
+      do n=1,norbat(ib(nt),nt)
+        l = lorb(n,ib(nt),nt)
         do m=-l,l
           do i=1,natom(nt)
             if(irow(i) > i) then
@@ -309,8 +322,8 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 
   lmax = 0
   do k = 1,ntype
-  do j = 1,norbat(k)
-    if(lmax < lorb(j,k)) lmax = lorb(j,k)
+  do j = 1,norbat(ib(k),k)
+    if(lmax < lorb(j,ib(k),k)) lmax = lorb(j,ib(k),k)
   enddo
   enddo
 
@@ -324,9 +337,9 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
       nq(l) = 0
     enddo
 
-    do j = 1,norbat(k)
+    do j = 1,norbat(ib(k),k)
 
-      l = lorb(j,k)
+      l = lorb(j,ib(k),k)
       nq(l) = nq(l) + 1
 
       do m = -l,l
@@ -342,11 +355,12 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
         enddo
       enddo
 
-    enddo         !  j=1,norbat(k)
+    enddo         !  j=1,norbat(ib(k),k)
 
   enddo           !  k=1,ntype
 
   deallocate(nq)
+  deallocate(ib)
 
   return
 

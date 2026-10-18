@@ -15,11 +15,11 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         19 November 2019. 3 March 2026.
+!>  \date         19 November 2019. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
-       crys_, pseudo_, atorb_, new_atorb_, filename_, dims_)
+       crys_, pseudo_, atorb_, filename_, dims_)
 
 ! Written 19 November 2019. JLM
 ! Modified, indentation, author, 13 January 2024. JLM
@@ -27,6 +27,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! Modified, prepare for more than one type of atomic basis. 18 February 2026. JLM
 ! core kinetic energy density, 3 March 2026. JLM
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! new_atorb_ removed, atorb_ has several basis sets, ibset. 16 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -38,7 +39,6 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
 
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
-  type(new_atorb_t)                  ::  new_atorb_                      !<  new format of atomic orbitals in G-space
 
   type(filename_t)                   ::  filename_                       !<  Information about used files
 
@@ -49,7 +49,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
 ! counters
 
-  integer              ::  nt, l, n, j
+  integer              ::  nt, l
 
 
   ipr = 0
@@ -77,48 +77,30 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
-  allocate(atorb_%norbat(dims_%mxdtyp))
-  allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
-  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
+  allocate(atorb_%n_bsets(dims_%mxdtyp))
+  allocate(atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
+  allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
 
-  allocate(new_atorb_%nqwf(dims_%mxdtyp))
-  allocate(new_atorb_%delqwf(dims_%mxdtyp))
-  allocate(new_atorb_%n_bsets(dims_%mxdtyp))
-  allocate(new_atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
-  allocate(new_atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
-  allocate(new_atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+! for the time being uses the first basis set
 
-! gets the stomic orbitals in new format
+  allocate(atorb_%ibset(dims_%mxdtyp))
+  atorb_%ibset(:) = 1
+
+! gets the atomic orbitals for all basis sets
 
   call read_pseudo(ipr, author,                                          &
        pseudo_%ealraw, pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw,     &
        pseudo_%nkb,pseudo_%vloc, pseudo_%dcor, pseudo_%dval,             &
        pseudo_%tauc_q,                                                   &
-       new_atorb_%latorb, new_atorb_%nqwf, new_atorb_%delqwf,            &
-       new_atorb_%n_bsets, new_atorb_%norbat,                            &
-       new_atorb_%lorb, new_atorb_%wvfao,                                &
+       atorb_%latorb, atorb_%nqwf, atorb_%delqwf,                        &
+       atorb_%n_bsets, atorb_%norbat,                                    &
+       atorb_%lorb, atorb_%wvfao,                                        &
        crys_%ntype, crys_%natom, crys_%nameat,                           &
        pseudo_%zv, pseudo_%ztot,                                         &
        filename_%pseudo_path, filename_%pseudo_suffix,                   &
        filename_%itape_pseudo,                                           &
        dims_%mxdtyp, dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
-
-! fills the old format
-
-  atorb_%latorb = new_atorb_%latorb
-
-  do nt = 1,crys_%ntype
-    atorb_%nqwf(nt) = new_atorb_%nqwf(nt)
-    atorb_%delqwf(nt) = new_atorb_%delqwf(nt)
-    atorb_%norbat(nt) = new_atorb_%norbat(1,nt)
-    do n = 1,new_atorb_%norbat(1,nt)
-      atorb_%lorb(n,nt) = new_atorb_%lorb(n,1,nt)
-      do j = -2,dims_%mxdlqp
-        atorb_%wvfao(j,n,nt) = new_atorb_%wvfao(j,n,1,nt)
-      enddo
-    enddo
-  enddo
-
 
   do nt = 1,crys_%ntype
   do l = 0,3

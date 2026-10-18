@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 15 October 2026.
+!>  \date         2014. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -33,8 +33,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         sfact, icmplx,                                                   &
         veff, lgks, vtau,                                                &
         nqnl,delqnl, vkb, nkb,                                           &
-        norbat, nqwf, delqwf, wvfao, lorb,                               &
-        mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
+        mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao, mxdset)
 
 ! Written by Carlos Loia Reis adapting previous code.
 ! First stable version in 4.54.1 2014.
@@ -57,6 +57,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Generalized Kohn-Sham meta-GGA, vtau in ao_h_and_s_spin_orbit, warning removed. 8 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -78,6 +79,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   character(len=4)                   ::  flgdal                          !<  dual approximation if equal to 'DUAL'
@@ -117,11 +119,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   real(REAL64), intent(in)           ::  vkb(-2:mxdlqp,0:3,-1:1,mxdtyp)  !<  (1/q**l) * KB nonlocal pseudo. for atom k, ang. mom. l. normalized to vcell, hartree
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   KB pseudo.  normalization for atom k, ang. mom. l
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (unnormalized to vcell)
 
 ! allocatable arrays with larger scope
 
@@ -155,6 +159,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! local variables
 
   integer                            ::  mxdorb                          !  array dimension for orbitals
+  integer                            ::  ib                              !  basis set used, consistent with atomic_orbital_c16
   integer                            ::  mxdbnd                          !  array dimension for pw bands
   integer                            ::  mxdscr                          !  array dimension for screening potential
 
@@ -384,9 +389,10 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   norb_ao = 0
   lmax = 0
   do k = 1,ntype
-    do j = 1,norbat(k)
-      norb_ao = norb_ao + (2*lorb(j,k)+1)*natom(k)
-      lmax = max(lorb(j,k),lmax)
+    ib = max(1,min(ibset(k),n_bsets(k)))
+    do j = 1,norbat(ib,k)
+      norb_ao = norb_ao + (2*lorb(j,ib,k)+1)*natom(k)
+      lmax = max(lorb(j,ib,k),lmax)
     enddo
   enddo
 
@@ -492,9 +498,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         psi_ao, hpsi_ao, ei_ao,                                          &
         vscr, kmscr,                                                     &
         lgks, vtau, vtaumsh,                                             &
-        .TRUE., norbat, nqwf, delqwf, wvfao, lorb,                       &
+        .TRUE., n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
-        mxdorb, mxdscr, mxdlao)
+        mxdorb, mxdscr, mxdlao, mxdset)
 
     nocc = neig
 
@@ -508,9 +514,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         psi, hpsi, ei,                                                   &
         vscr, kmscr,                                                     &
         lgks, vtau, vtaumsh,                                             &
-        .TRUE., norbat, nqwf, delqwf, wvfao, lorb,                       &
+        .TRUE., n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,       &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
-        mxdbnd, mxdscr, mxdlao)
+        mxdbnd, mxdscr, mxdlao, mxdset)
 
     call ao_match_state(imatch, xover, mtxd,                             &
         neig, psi, ei, norb_ao, psi_ao, ei_ao,                           &
@@ -615,13 +621,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
 !          mtxd, hdiag, isort, qmod, ekpg,                                &
-          norbat, nqwf, delqwf, wvfao, lorb,                             &
+          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
           psi_ao, hpsi_ao,                                               &
           Hao, S, dh0drk_AO,                                             &
           vscr, kmscr,                                                   &
           lgks, vtaumsh,                                                 &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,        &
-          mxdscr, mxdlao)
+          mxdscr, mxdlao, mxdset)
 
       call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
 
@@ -660,13 +666,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           veff, icmplx,                                                   &
           nqnl, delqnl, vkb, nkb,                                         &
           ntype, natom, rat, adot,                                        &
-          norbat, nqwf, delqwf, wvfao, lorb,                              &
+          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
           psi_ao, hpsi_ao,                                                &
           Hao, S, dh0drk_AO,                                              &
           vscr, kmscr,                                                    &
           lgks, vtaumsh,                                                 &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,         &
-          mxdscr, mxdlao)
+          mxdscr, mxdlao, mxdset)
 
       call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
 

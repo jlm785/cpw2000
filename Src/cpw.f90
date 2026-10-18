@@ -26,6 +26,7 @@ program cpw2000
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude
 ! pwexp_ in cpw_force (smearing of the kinetic energy cutoff). 15 October 2026. JLM+claude
 ! filename_%file_restart and filename_%iotape_restart defined here. 16 October 2026. JLM+claude
+! new_atorb_ removed, atorb_ has several basis sets. 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -62,8 +63,6 @@ program cpw2000
   type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
 
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
-
-  type(new_atorb_t)                  ::  new_atorb_                      !<  atomic orbitals in G-space
 
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
 
@@ -161,7 +160,7 @@ program cpw2000
 ! reads the pseudopotential data
 
   call cpw_read_pseudo(iprglob, xc_%author,                              &
-       crys_, pseudo_, atorb_, new_atorb_, filename_, dims_)
+       crys_, pseudo_, atorb_, filename_, dims_)
 
   call cpw_reset_nbandin(6, crys_%ntype, pseudo_%zv, pwexp_%nbandin,     &
      dims_%mxdtyp)
@@ -436,7 +435,7 @@ program cpw2000
   endif
 
   call cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,      &
-      vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
+      vcomp_, pseudo_, atorb_, total_, ewald_, kpoint_,                  &
       hamallk_, psiallk_)
 
 

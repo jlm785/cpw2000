@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         February 2020, 7 October 2026.
+!>  \date         February 2020, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_init(filename, iotape,                        &
@@ -34,6 +34,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 ! Modified, order of input variables, dims_in_. 12 March 2025. JLM
 ! vtau, core tau, all atomic basis sets read (the first is used). 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! atorb_ has all basis sets, atorb_%ibset (default first set). 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -86,20 +87,7 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
 
 ! other variables
 
-  integer, allocatable               ::  n_bsets(:)                      !  number of basis sets for each atom k
-  integer, allocatable               ::  norbat(:,:)                     !  number of atomic orbitals for basis set nb and atom k
-  integer, allocatable               ::  lorb(:,:,:)                     !  angular momentum of orbital n of basis nb of atom k
-  real(REAL64), allocatable          ::  wvfao(:,:,:,:)                  !  wavefunction for atom k, basis nb, ang. mom. l
-
   integer           ::  ipr
-
-! constants
-
-  real(REAL64), parameter  ::  ZERO = 0.0_REAL64
-
-! counters
-
-  integer           ::  nt, n
 
 
 ! writes preamble to standard output
@@ -137,16 +125,13 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
   allocate(pseudo_%dval(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%tauc_q(-1:dims_%mxdlqp,dims_%mxdtyp))
   allocate(pseudo_%zv(dims_%mxdtyp))
-  allocate(atorb_%norbat(dims_%mxdtyp))
-  allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdtyp))
-  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdtyp))
+  allocate(atorb_%n_bsets(dims_%mxdtyp))
+  allocate(atorb_%ibset(dims_%mxdtyp))
+  allocate(atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
+  allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
+  allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
   allocate(atorb_%nqwf(dims_%mxdtyp))
   allocate(atorb_%delqwf(dims_%mxdtyp))
-
-  allocate(n_bsets(dims_%mxdtyp))
-  allocate(norbat(dims_%mxdset,dims_%mxdtyp))
-  allocate(lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
-  allocate(wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
 
   allocate(irel(dims_%mxdtyp))
   allocate(icore(dims_%mxdtyp))
@@ -174,26 +159,14 @@ subroutine cpw_pp_band_dos_init(filename, iotape,                        &
          pseudo_%ealraw, pseudo_%zv, pseudo_%ztot,                       &
          pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,      &
          pseudo_%vloc, pseudo_%dcor, pseudo_%dval, pseudo_%tauc_q,       &
-         n_bsets, norbat, atorb_%nqwf, atorb_%delqwf, wvfao,             &
-         lorb, atorb_%latorb,                                            &
+         atorb_%n_bsets, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
+         atorb_%wvfao, atorb_%lorb, atorb_%latorb,                       &
          dims_%mxdtyp, dims_%mxdatm, dims_in_%mxdgve, dims_in_%mxdnst,   &
          dims_%mxdlqp, dims_%mxdlao, dims_%mxdset)
 
-! for the time being uses only the first atomic basis set
+! default is the first atomic basis set
 
-  atorb_%wvfao(:,:,:) = ZERO
-  do nt = 1,crys_%ntype
-    atorb_%norbat(nt) = norbat(1,nt)
-    do n = 1,norbat(1,nt)
-      atorb_%lorb(n,nt) = lorb(n,1,nt)
-      atorb_%wvfao(:,n,nt) = wvfao(:,n,1,nt)
-    enddo
-  enddo
-
-  deallocate(n_bsets)
-  deallocate(norbat)
-  deallocate(lorb)
-  deallocate(wvfao)
+  atorb_%ibset(:) = 1
 
 ! processes crystal structure
 

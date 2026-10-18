@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos, Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 15 October 2026.
+!>  \date         8 may 2004, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
@@ -27,8 +27,8 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
       sfact, icmplx,                                                     &
       veff, lgks, vtau,                                                  &
       nqnl, delqnl, vkb, nkb,                                            &
-      latorb, norbat, nqwf, delqwf, wvfao, lorb,                         &
-      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao)
+      latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,         &
+      mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdcub, mxdlao, mxdset)
 
 !  Adapted 2 June 2019. JLM.
 !  Modified for unfolding June 2019. CLR.
@@ -48,6 +48,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau arguments, vtau in the fft mesh. 7 October 2026. JLM+claude
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -62,6 +63,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   character(len=4), intent(in)       ::  diag_type                       !<  selects diagonalization, 'pw  ','ao  ','aojc'
   logical, intent(in)                ::  lworkers                        !<  use lworkers
@@ -111,11 +113,13 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   integer, intent(in)                ::  nkb(0:3,-1:1,mxdtyp)            !<   KB pseudo.  normalization for atom k, ang. mom. l
 
   logical, intent(in)                ::  latorb                          !<  indicates if all atoms have information about atomic orbitals
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)       !<  wavefunction for atom k, ang. mom. l (normalized to vcell)
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
+  real(REAL64), intent(in)      ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  wavefunction for atom k, basis nb, ang. mom. l (normalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
 
   ! input and output
 
@@ -393,8 +397,9 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
   allocate(isort_so(2*mxddim))
   allocate(psi_so(2*mxddim,2*mxdbnd))
 
-  call size_nbaslcao(ntype, natom, norbat, lorb, nbaslcao,               &
-      mxdtyp, mxdlao)
+  call size_nbaslcao(ntype, natom, n_bsets, ibset,                       &
+      norbat, lorb, nbaslcao,                                            &
+      mxdtyp, mxdlao, mxdset)
 
 
   mxdorb = nbaslcao
@@ -516,9 +521,9 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
           psi, hpsi, ei,                                                 &
           vscr, kmscr,                                                   &
           lgks, vtau, vtaumsh,                                           &
-          latorb, norbat, nqwf, delqwf, wvfao, lorb,                     &
+          latorb, n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,     &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
-          mxdbnd, mxdscr, mxdlao)
+          mxdbnd, mxdscr, mxdlao, mxdset)
 
       do j=1, neig
         ev(j) = ei(j)
@@ -532,9 +537,10 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
       call atomic_orbital_c16(rkpt, mtxd, isort, 1,                      &
           nbaslcao, baslcao_aux, infolcao,                               &
           ng, kgv,                                                       &
-          norbat, nqwf, delqwf, wvfao, lorb,                             &
+          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao,        &
+          mxdset)
 
       call zgemm('C', 'N', nbaslcao, nbaslcao, mtxd, C_UM, baslcao_aux,  &
           mxddim, baslcao_aux, mxddim, C_ZERO, S, mxdorb)

@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         6 November 2023, 7 October 2026.
+!>  \date         6 November 2023, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_mass(ioreplay,                                         &
@@ -26,6 +26,7 @@ subroutine cpw_pp_mass(ioreplay,                                         &
 ! adapted from cpw_pp_dos. 6 November 2023.
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau passed. 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%ibset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -97,10 +98,11 @@ subroutine cpw_pp_mass(ioreplay,                                         &
           strfac_%sfact, strfac_%icmplx,                                 &
           vcomp_%veff, lgks, vcomp_%vtau,                                &
           pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
+          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                     &
           atorb_%wvfao,atorb_%lorb,                                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
-          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
 
   else if(imethod == 2) then
 
@@ -116,10 +118,11 @@ subroutine cpw_pp_mass(ioreplay,                                         &
           strfac_%sfact, strfac_%icmplx,                                 &
           vcomp_%veff, lgks, vcomp_%vtau,                                &
           pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
+          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                     &
           atorb_%wvfao,atorb_%lorb,                                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
-          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
 
   else if(imethod == 3) then
 
@@ -136,10 +139,11 @@ subroutine cpw_pp_mass(ioreplay,                                         &
           strfac_%sfact, strfac_%icmplx,                                 &
           vcomp_%veff, lgks, vcomp_%vtau,                                &
           pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf, atorb_%delqwf,      &
+          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                     &
           atorb_%wvfao,atorb_%lorb,                                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
-          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
 
   endif
 

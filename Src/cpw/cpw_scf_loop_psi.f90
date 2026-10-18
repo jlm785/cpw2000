@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026, 15 October 2026.
+!>  \date         12 May 2026, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
@@ -31,6 +31,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 ! h_kb_dia_all_gks merged into h_kb_dia_all. 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) in h_kb_dia_all. 15 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%ibset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -196,11 +197,12 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                       &
           vscr, kmscr,                                                   &
           lgks, vtauin, vtaumsh,                                         &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf,                     &
+          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%norbat, atorb_%nqwf,                                    &
           atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
           dims_%mxdcub, dims_%mxdlqp, dims_%mxddim, dims_%mxdbnd,        &
-          mxdscr, dims_%mxdlao)
+          mxdscr, dims_%mxdlao, dims_%mxdset)
 
       if(ifail /= 0) minifail = min(ifail,minifail)
 
@@ -236,11 +238,12 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
           psiallk_%psi_allk(:,:,irkpsi), hpsi, ei,                       &
           vscr, kmscr,                                                   &
           lgks, vtauin, vtaumsh,                                         &
-          atorb_%latorb, atorb_%norbat, atorb_%nqwf,                     &
+          atorb_%latorb, atorb_%n_bsets, atorb_%ibset,                   &
+          atorb_%norbat, atorb_%nqwf,                                    &
           atorb_%delqwf, atorb_%wvfao, atorb_%lorb,                      &
           dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
           dims_%mxdcub, dims_%mxdlqp, dims_%mxddim, dims_%mxdbnd,        &
-          mxdscr, dims_%mxdlao)
+          mxdscr, dims_%mxdlao, dims_%mxdset)
 
     else
 

@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 12 October 2026.
+!>  \date         December 18, 2013, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -39,6 +39,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Generalized Kohn-Sham meta-GGA, lgks from author. 7 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! atorb_%n_bsets, atorb_%ibset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -344,10 +345,11 @@ subroutine ao_interpolation_sub(ioreplay)
        strfac_%sfact, strfac_%icmplx,                                    &
        vcomp_%veff, lgks, vcomp_%vtau,                                   &
        pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,        &
+       atorb_%n_bsets, atorb_%ibset,                                     &
        atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                        &
        atorb_%wvfao, atorb_%lorb,                                        &
        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,           &
-       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao)
+       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
 
   endif
 
@@ -371,10 +373,11 @@ subroutine ao_interpolation_sub(ioreplay)
         crys_%rat,                                                       &
         recip_%ng, recip_%kgv,                                           &
         strfac_%icmplx,                                                  &
+        atorb_%n_bsets, atorb_%ibset,                                    &
         atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
         atorb_%wvfao, atorb_%lorb,                                       &
         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve,dims_%mxdlqp,           &
-        dims_%mxdlao)
+        dims_%mxdlao, dims_%mxdset)
 
     write(6,*) '     '
     write(6,*) '     completed'
@@ -463,10 +466,11 @@ subroutine ao_interpolation_sub(ioreplay)
         crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,               &
         recip_%ng, recip_%kgv,                                           &
         strfac_%icmplx,                                                  &
+        atorb_%n_bsets, atorb_%ibset,                                    &
         atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
         atorb_%wvfao, atorb_%lorb,                                       &
         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve,dims_%mxdlqp,           &
-        dims_%mxdlao)
+        dims_%mxdlao, dims_%mxdset)
 
   endif
 
@@ -483,8 +487,9 @@ subroutine ao_interpolation_sub(ioreplay)
 
      call ao_interpolation_write_wt_in(noiData, pseudo_%ztot,            &
           crys_%adot, crys_%ntype, crys_%natom,                          &
-          crys_%nameat, crys_%rat, atorb_%norbat, atorb_%lorb,           &
-          dims_%mxdtyp, dims_%mxdatm, dims_%mxdlao)
+          crys_%nameat, crys_%rat, atorb_%n_bsets, atorb_%ibset,         &
+          atorb_%norbat, atorb_%lorb,                                    &
+          dims_%mxdtyp, dims_%mxdatm, dims_%mxdlao, dims_%mxdset)
 
      write(6,*) '     '
      write(6,*) '     completed'

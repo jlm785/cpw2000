@@ -14,11 +14,11 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         18 February 2026, 14 October 2026.
+!>  \date         18 February 2026, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
-      vcomp_, pseudo_, atorb_, new_atorb_, total_, ewald_, kpoint_,      &
+      vcomp_, pseudo_, atorb_, total_, ewald_, kpoint_,                  &
       hamallk_, psiallk_)
 
 
@@ -29,6 +29,7 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
 ! pseudo_%tnc, pseudo_%dtauc. 6 October 2026. JLM+claude
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
+! new_atorb_ removed, atorb_ has several basis sets. 16 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -44,7 +45,6 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
   type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
   type(psding_t)                     ::  psding_                         !<  pseudopotential quantities in G-space for the crystal
   type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
-  type(new_atorb_t)                  ::  new_atorb_                      !<  atomic orbitals in G-space
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
   type(kpoint_t)                     ::  kpoint_                         !<  k-point data
@@ -78,18 +78,13 @@ subroutine cpw_clean(crys_, moldyn_, recip_, strfac_, chdens_, psding_,  &
 
   deallocate(pseudo_%vkbraw)
 
+  deallocate(atorb_%n_bsets)
+  deallocate(atorb_%ibset)
   deallocate(atorb_%norbat)
   deallocate(atorb_%nqwf)
   deallocate(atorb_%delqwf)
   deallocate(atorb_%wvfao)
   deallocate(atorb_%lorb)
-
-  deallocate(new_atorb_%n_bsets)
-  deallocate(new_atorb_%norbat)
-  deallocate(new_atorb_%nqwf)
-  deallocate(new_atorb_%delqwf)
-  deallocate(new_atorb_%wvfao)
-  deallocate(new_atorb_%lorb)
 
   deallocate(kpoint_%rk)
   deallocate(kpoint_%wgk)

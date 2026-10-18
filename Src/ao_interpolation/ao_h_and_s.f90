@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2015. 15 October 2026.
+!>  \date         before 2015. 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
@@ -24,13 +24,13 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     veff, icmplx,                                                        &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
-    norbat, nqwf, delqwf, wvfao, lorb,                                   &
+    n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                   &
     psi, hpsi,                                                           &
     Hao, S, dh0drk,                                                      &
     vscr, kmscr,                                                         &
     lgks, vtaumsh,                                                       &
     mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,              &
-    mxdscr, mxdlao)
+    mxdscr, mxdlao, mxdset)
 
 ! Written by Carlos Loia Reis adapting previous code.
 ! Modified 25 November 2015. JLM
@@ -45,6 +45,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16 (dh0drk without vtau). 7 October 2026. JLM+claude
 ! Generalized Kohn-Sham meta-GGA, vtau term in dh0drk from kdotp_matrix. 8 October 2026. JLM+claude
 ! esmear = 0 in hamilt_pw (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -61,6 +62,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   integer, intent(in)                ::  mxdscr                          !<  array dimension of vscr
   integer, intent(in)                ::  mxdorb                          !<  array dimension for fft transform workspace
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
@@ -86,11 +88,13 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   real(REAL64), intent(in)           ::  vtaumsh(mxdscr)                 !<  d (rho eps_xc) / d tau in the fft real space mesh (only used if lgks)
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (unnormalized to vcell)
 
 ! output
 
@@ -182,9 +186,9 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
   call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                     &
       nbaslcao, psi, infolcao,                                           &
       ng, kgv,                                                           &
-      norbat, nqwf, delqwf, wvfao, lorb,                                 &
+      n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       ntype, natom, rat, adot,                                           &
-      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+      mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
   deallocate(infolcao)
 

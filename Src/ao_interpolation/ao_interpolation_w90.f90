@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         May 2020, 4 October 2026.
+!>  \date         May 2020, 16 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
@@ -23,8 +23,8 @@ subroutine ao_interpolation_w90(mtb,                                     &
       adot, ntype, natom, nameat, rat,                                   &
       ng, kgv,                                                           &
       icmplx,                                                            &
-      norbat, nqwf, delqwf, wvfao, lorb,                                 &
-      mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao)
+      n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,                 &
+      mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao, mxdset)
 
 ! Written by Carlos Loia Reis, May 2020, based on previous code,
 ! ao_interpolation_out_band_fold.
@@ -33,6 +33,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Modified, length of labels, 24 September 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 ! Debug prints commented. 4 October 2026. JLM+claude
+! Several atomic basis sets, n_bsets, ibset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -49,6 +50,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   integer, intent(in)                ::  mxdgve                          !<  array dimension for g-space vectors
   integer, intent(in)                ::  mxdlqp                          !<  array dimension for local potential
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
+  integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
 
   type(noiData_t)                    ::  mtb                             !<  see NonOrthoInterp
 
@@ -66,11 +68,13 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
   integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
-  integer, intent(in)                ::  norbat(mxdtyp)                  !<  number of atomic orbitals for atom k
+  integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
+  integer, intent(in)                ::  ibset(mxdtyp)                   !<  basis set chosen for atom k
+  integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
   integer, intent(in)                ::  nqwf(mxdtyp)                    !<  number of points for wavefunction interpolation for atom k
   real(REAL64), intent(in)           ::  delqwf(mxdtyp)                  !<  step used in the wavefunction interpolation for atom k
-  integer, intent(in)                ::  lorb(mxdlao,mxdtyp)             !<  angular momentum of orbital n of atom k
-  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, ang. mom. l (unnormalized to vcell)
+  integer, intent(in)                ::  lorb(mxdlao,mxdset,mxdtyp)      !<  angular momentum of orbital n of basis nb of atom k
+  real(REAL64), intent(in)           ::  wvfao(-2:mxdlqp,mxdlao,mxdset,mxdtyp)  !<  (1/q**l) * wavefunction for atom k, basis nb, ang. mom. l (unnormalized to vcell)
 
 ! allocatable arrays
 
@@ -119,6 +123,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
   real(REAL64)                       ::  bdot(3,3),vcell
   integer                            ::  mtxd                            !  dimension of the hamiltonian
   integer                            ::  nd, mxdorb, lmax, k
+  integer                            ::  ib                              !  basis set used, consistent with atomic_orbital_c16
   logical                            ::  lnewanl
 
   logical                            ::  true_pkn
@@ -391,9 +396,10 @@ subroutine ao_interpolation_w90(mtb,                                     &
   mxdorb = 0
   lmax = 0
   do k=1,ntype
-    do j=1,norbat(k)
-      mxdorb = mxdorb + (2*lorb(j,k)+1)*natom(k)
-      lmax = max(lorb(j,k),lmax)
+    ib = max(1,min(ibset(k),n_bsets(k)))
+    do j=1,norbat(ib,k)
+      mxdorb = mxdorb + (2*lorb(j,ib,k)+1)*natom(k)
+      lmax = max(lorb(j,ib,k),lmax)
     enddo
   enddo
 
@@ -479,9 +485,9 @@ subroutine ao_interpolation_w90(mtb,                                     &
     call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                   &
         mxdorb, ao_basis, infolcao,                                      &
         ng, kgv,                                                         &
-        norbat, nqwf, delqwf, wvfao, lorb,                               &
+        n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,               &
         ntype, natom, rat, adot,                                         &
-        mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+        mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
 
 !    if (irk==1) then
@@ -607,9 +613,10 @@ subroutine ao_interpolation_w90(mtb,                                     &
       call atomic_orbital_c16(rkpt2, mtxd2, isort2, icmplx,              &
           mxdorb, ao_basis, infolcao,                                    &
           ng, kgv,                                                       &
-          norbat, nqwf, delqwf, wvfao, lorb,                             &
+          n_bsets, ibset, norbat, nqwf, delqwf, wvfao, lorb,             &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao)
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao,        &
+          mxdset)
 
       if(mtb%lso==1) then
 
