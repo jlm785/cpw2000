@@ -10,6 +10,7 @@
 !     Keywords added in June 2017.
 !     Keywords added in May 2025.
 !     Keyword MD.PWCutoffSmearing added 15 October 2026. JLM+claude
+!     Keyword ChoiceOfDefaultAtomicBasisSet added 18 October 2026. JLM+claude
 
 ! Module to hold keyword list. This must be updated as
 ! new keywords are brought into existence.
@@ -47,7 +48,7 @@ Module esdf_key
      Character(3000) :: dscrpt
   End Type kw_type
 
-  Integer, Parameter :: numkw=88
+  Integer, Parameter :: numkw=65
   Type(kw_type) :: kw(numkw)
 
 ! Now define the keywords
@@ -364,6 +365,11 @@ Module esdf_key
       data kw(64)%label     /'MD.PWCutoffSmearing'/
       data kw(64)%typ       /'P:I' /
       data kw(64)%dscrpt    /'ESMEAR (min(0.5 Ha, 5% cutoff) or 0)'/
+
+!     IBSET      CHOICE OF ATOMIC BASIS SET FOR EACH SPECIES
+      data kw(65)%label     /'ChoiceOfDefaultAtomicBasisSet'/
+      data kw(65)%typ       /'B:I' /
+      data kw(65)%dscrpt    /'IBSET (species index, basis set; default 1)'/
 
 
 

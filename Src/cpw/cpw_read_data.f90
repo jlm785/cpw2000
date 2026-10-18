@@ -16,13 +16,13 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         November 2019, 16 October 2026.
+!>  \date         November 2019, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
      flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
-     total_, ewald_, filename_, dims_)
+     total_, ewald_, atorb_, filename_, dims_)
 
 ! Adapted November 2019 from cpw.f90. JLM
 ! Modified, metadata bug, May 2020. JLM, CLR
@@ -31,6 +31,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 ! Modified, filenames for pseudos and psi to disk. 10 October 2025. JLM
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) from read_esdf. 15 October 2026. JLM+claude
 ! filename_%file_restart, filename_%iotape_restart to read_esdf. 16 October 2026. JLM+claude
+! atorb_%ibset, choice of atomic basis set, read_esdf_atorb_choice. 18 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -48,6 +49,7 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
   type(enfrst_t)                     ::  total_                          !<  Total energy force stress
   type(enfrst_t)                     ::  ewald_                          !<  Ewald energy force stress
   type(filename_t)                   ::  filename_                       !<  Information about used files
+  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space (only ibset is set here)
 
   character(len=*), intent(in)       ::  fcpwin                          !<  filename with input data (new style)
   character(len=*), intent(in)       ::  fpwdat                          !<  filename with input data (old style)
@@ -186,6 +188,14 @@ subroutine cpw_read_data(fcpwin, fpwdat, iopw, vdriv,                    &
 
 
   endif
+
+! choice of atomic basis set for each type of atom
+
+  allocate(atorb_%ibset(dims_%mxdtyp))
+
+  call read_esdf_atorb_choice(1, fcpwin, crys_%ntype, crys_%nameat,      &
+      atorb_%ibset,                                                      &
+      dims_%mxdtyp)
 
   return
 

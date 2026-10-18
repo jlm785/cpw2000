@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         Late 1980s, 16 October 2026.
+!>  \date         Late 1980s, 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 program cpw2000
@@ -27,6 +27,7 @@ program cpw2000
 ! pwexp_ in cpw_force (smearing of the kinetic energy cutoff). 15 October 2026. JLM+claude
 ! filename_%file_restart and filename_%iotape_restart defined here. 16 October 2026. JLM+claude
 ! new_atorb_ removed, atorb_ has several basis sets. 16 October 2026. JLM+claude
+! atorb_ in cpw_read_data (choice of atomic basis set). 18 October 2026. JLM+claude
 
   use cpw_variables
 
@@ -154,7 +155,7 @@ program cpw2000
   call cpw_read_data('cpw.in', 'PW.DAT', 5, vdriv,                       &
      iprglob, meta_cpw2000, meta_pwdat, symkip, symtol,                  &
      flags_, crys_, pwexp_, kpoint_, xc_, acc_, moldyn_, vcsdyn_,        &
-     total_, ewald_, filename_, dims_)
+     total_, ewald_, atorb_, filename_, dims_)
 
 
 ! reads the pseudopotential data

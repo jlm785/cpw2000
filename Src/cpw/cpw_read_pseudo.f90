@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         19 November 2019. 16 October 2026.
+!>  \date         19 November 2019. 18 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_pseudo(iprglob, author,                              &
@@ -28,6 +28,7 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
 ! core kinetic energy density, 3 March 2026. JLM
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! new_atorb_ removed, atorb_ has several basis sets, ibset. 16 October 2026. JLM+claude
+! atorb_%ibset allocated and read in cpw_read_data. 18 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -81,11 +82,6 @@ subroutine cpw_read_pseudo(iprglob, author,                              &
   allocate(atorb_%norbat(dims_%mxdset,dims_%mxdtyp))
   allocate(atorb_%lorb(dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
   allocate(atorb_%wvfao(-2:dims_%mxdlqp,dims_%mxdlao,dims_%mxdset,dims_%mxdtyp))
-
-! for the time being uses the first basis set
-
-  allocate(atorb_%ibset(dims_%mxdtyp))
-  atorb_%ibset(:) = 1
 
 ! gets the atomic orbitals for all basis sets
 

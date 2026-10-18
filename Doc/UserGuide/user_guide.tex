@@ -724,7 +724,8 @@ This are the parameters whose values you would mention in a paper to allow repro
     \item{AO}
 
     Uses the atomic orbitals included in the pseudopotential file.  Not available in very
-    old files.  It corresponds to a Linear Combination of Atomic Orbitals (LCAO) calculation.
+    old files.  If the file has several atomic basis sets the choice is made with
+    \texttt{ChoiceOfDefaultAtomicBasisSet}.  It corresponds to a Linear Combination of Atomic Orbitals (LCAO) calculation.
     It is very fast, but with limited accuracy.  Use for {\it exploratory} runs
     on complex structures.
 
@@ -1114,6 +1115,30 @@ The default name of the file is \texttt{Xy{\_}POTKB{\_}F.DAT} where
 
   It the PathToPseudos is \texttt{tmp} and the PseudoSuffix is \texttt{{\_}POT.DAT}
   the file used for Si would be \texttt{tmp/Si{\_}POT.DAT}.
+
+\item{\bf ChoiceOfDefaultAtomicBasisSet} (block)
+
+  Recent pseudopotential files may contain more than one set of atomic orbitals
+  (atomic basis sets).  This block chooses which one is used for each species.
+
+  \textit{Default value:}  the first atomic basis set for all species.
+
+  One line for each species whose choice differs from the default.
+  The first number in a line is the species number, as in
+  \texttt{ChemicalSpeciesLabel}, it is followed by the index of the atomic basis set.
+  Species that are not listed use the first basis set.
+\begin{verbatim}
+%block ChoiceOfDefaultAtomicBasisSet
+     2     2
+%endblock ChoiceOfDefaultAtomicBasisSet
+\end{verbatim}
+  If the chosen basis set is not available in the pseudopotential file
+  the nearest available one is used, the first if the index is smaller than 1, the last
+  if it is larger than the number of basis sets in the file.
+
+  The atomic orbitals are used in the AO, AOJC and AOJCPW options of
+  \texttt{TypeOfScfDiag}, and for the starting wave-functions of a PW calculation.
+  A smaller basis set is faster but less accurate.
 
 \end{itemize}
 
