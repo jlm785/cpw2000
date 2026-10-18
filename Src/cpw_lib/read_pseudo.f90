@@ -68,7 +68,7 @@ subroutine read_pseudo(ipr, author,                                      &
 
   character(len=200), intent(in)     ::  pseudo_path                     !<  path to pseudopotentials
   character(len=50), intent(in)      ::  pseudo_suffix                   !<  suffix for the pseudopotentials
-  integer, intent(in)                ::  itape_pseudo                    !<  tap   if(norbat(1,nt) > mxdlao) thene number to read pseudo
+  integer, intent(in)                ::  itape_pseudo                    !<  tape number to read pseudo
 
 
 ! output
@@ -80,7 +80,7 @@ subroutine read_pseudo(ipr, author,                                      &
   integer, intent(out)               ::  nkb(0:3,-1:1,mxdtyp)            !<   kb pseudo.  normalization for atom k, ang. mom. l
   real(REAL64), intent(out)          ::  vloc(-1:mxdlqp,mxdtyp)          !<  local pseudopotential for atom k (hartree)
   real(REAL64), intent(out)          ::  dcor(-1:mxdlqp,mxdtyp)          !<  core charge density for atom k
-  real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !   if(norbat(1,nt) > mxdlao) then<  valence charge density for atom k
+  real(REAL64), intent(out)          ::  dval(-1:mxdlqp,mxdtyp)          !<  valence charge density for atom k
 
   real(REAL64), intent(out)          ::  tauc_q(-1:mxdlqp,mxdtyp)        !<  partial core kinetic energy density  (hartree/bohr^3)
 
