@@ -14,10 +14,12 @@
 !>  This subroutines reads a file with the atomic structure and
 !>  the effective potential, calculates the wave-functions for a
 !>  k-point and makes 1D, 2D, and 3D plots.
+!>  As accuracy is not paramount for plots, the wave-functions
+!>  may be calculated with atomic orbitals.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         16 February 2018, 16 October 2026.
+!>  \date         16 February 2018, 19 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -37,6 +39,7 @@ subroutine plot_psi_sub(ioreplay)
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! cpw_pp_band_questions (cutoff, dual, precision, basis set), choice of diag_type. 19 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -254,8 +257,13 @@ subroutine plot_psi_sub(ioreplay)
 
   integer                ::  iguess
   real(real64)           ::  epspsi
-  character(len=4)       ::  flgdal                                      !  dual approximation if equal to 'DUAL'
+  real(REAL64)           ::  epspsi_in                                   !  default value of epspsi
   real(REAL64)           ::  efermi                                      !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
+  real(REAL64)           ::  efermi_in                                   !  value of efermi in the input file
+
+  integer                ::  idiag                                       !  choice of diagonalization
+  integer                ::  norbtot                                     !  number of atomic orbitals in the unit cell
+  integer                ::  ios
 
   real(REAL64)           ::  rk0(3)
 
@@ -289,13 +297,58 @@ subroutine plot_psi_sub(ioreplay)
 
   call cpw_pp_band_dos_init(filename, iotape,                            &
        dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
-       atorb_, efermi,  author,                                          &
+       atorb_, efermi_in,  author,                                       &
        pwline, title, subtitle ,meta_cpw2000,                            &
        dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
 
-! prepares calculation
+! for plots precision does not need to be large.
 
-  pwexp_%emax = emax_in
+  epspsi_in = 0.0005
+
+  call cpw_pp_band_questions(ioreplay,                                   &
+      emax_in, epspsi_in, efermi_in,                                     &
+      crys_%ntype, crys_%nameat,                                         &
+      atorb_%n_bsets, atorb_%norbat, atorb_%lorb,                        &
+      pwexp_%emax, flags_%flgdal, epspsi, efermi, atorb_%jbset,          &
+      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+
+! choice of diagonalization, atomic orbitals are faster but less accurate
+
+  diag_type = 'pw  '
+  norbtot = 0
+
+  if(atorb_%latorb) then
+
+    call size_nbaslcao(crys_%ntype, crys_%natom, atorb_%n_bsets,         &
+        atorb_%jbset, atorb_%norbat, atorb_%lorb, norbtot,               &
+        dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+
+    write(6,*)
+    write(6,*)  '  which diagonalization do you want to use'
+    write(6,*)  '  1)  full pw diagonalization'
+    write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+    write(6,*)  '  3)  diagonalization in atomic orbitals'
+    write(6,*)
+    write(6,'("   With atomic orbitals at most ",i5," bands can be ",    &
+        &     "calculated")') norbtot
+
+    read(5,*,iostat=ios) idiag
+    if(ios /= 0) idiag = 1
+    write(ioreplay,'(2x,i10,"   diagonalization method")') idiag
+
+    if(idiag == 2) then
+      diag_type = 'aojc'
+      write(6,*) '  using aojc diagonalization'
+    elseif(idiag == 3) then
+      diag_type = 'ao  '
+      write(6,*) '  using ao diagonalization'
+    else
+      write(6,*) '  using pw diagonalization'
+    endif
+
+  endif
+
+! prepares calculation
 
   call cpw_pp_band_prepare(                                              &
        dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,          &
@@ -306,14 +359,8 @@ subroutine plot_psi_sub(ioreplay)
   flags_%flgpsd = 'PSEUKB'
   iguess = 0
 
-! for plots precision does not need to be large.  Modify if you want higher precision
-
-  epspsi = 0.0005
-
-    flgdal = 'DUAL'
-
   idshift = 0
-  call size_kmscr(recip_%kmax, flgdal, 2, idshift, kmscr)
+  call size_kmscr(recip_%kmax, flags_%flgdal, 2, idshift, kmscr)
 
   call size_fft(kmscr,nsfft,mxdscr,mxdwrk)
 
@@ -367,6 +414,14 @@ subroutine plot_psi_sub(ioreplay)
 
     endif
 
+    if(diag_type /= 'pw  ' .and. neig > norbtot) then
+      neig = norbtot
+      write(6,*)
+      write(6,'("   Not enough atomic orbitals, the number of bands ",   &
+          &     "is reduced to ",i5)') neig
+      write(6,*)
+    endif
+
     mxdbnd = neig
 
     typeofk = 'reference k-point'
@@ -391,7 +446,6 @@ subroutine plot_psi_sub(ioreplay)
 !   diagonalizes the ahmiltoniana
 
     ipr = 1
-    diag_type = 'pw  '
     nocc = neig
     icmax = 100
 

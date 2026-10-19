@@ -2269,6 +2269,16 @@ to be plotted is complex, adding an extra choice of real part, imaginary part,
 or module, plus obviously the choice of which state to plot.
 Both 2D and 3D options are available.
 
+Before the plots the code asks the same questions about the default parameters
+(plane-wave cutoff, dual approximation, eigenvalue precision, atomic basis set)
+as the band structure section.
+As accuracy is not paramount for a plot, if the pseudopotential files have atomic orbitals,
+the code then offers the choice of diagonalizing the hamiltonian with the full plane-wave basis,
+in the atomic orbitals followed by a jacobian relaxation, or only in the atomic orbitals.
+The last two are much faster.  With atomic orbitals the number of bands cannot exceed the number of
+atomic orbitals in the unit cell, if more bands are requested the number is reduced accordingly.
+A smaller atomic basis set makes the calculation faster but less accurate.
+
 \subsection{Crystalography}
 
 This section allows a reveryough examination of the crystal structure.
