@@ -2273,6 +2273,30 @@ For a fast dense sampling of the Brillouin zone, a modified tight-binding scheme
 can be used.  It has many similarities with Wannier interpolation, and in fact
 can be used to write the files required to call {\sc wannier90}.
 
+The hamiltonian and overlap in the atomic orbital basis are calculated in a uniform
+grid of k-points and Fourier interpolated.  If the pseudopotential files have several
+atomic basis sets the code asks which one to use.  At the grid points the hamiltonian is
+modified so that its eigenvalues are those of the plane-wave calculation, and the code
+asks how it should be done.
+\begin{itemize}
+   \item{Projection of the plane-wave states (recommended)}
+
+   The plane-wave states are projected on the atomic orbitals, and those that are well
+   represented (at least half of the state in the atomic orbital space) become, after a
+   symmetric orthonormalization, the eigenvectors of the hamiltonian with the plane-wave
+   energies.  The rest of the atomic orbital space keeps the atomic orbital hamiltonian.
+   Plane-wave states that cannot be described by the atomic orbitals, for example the
+   interlayer states of layered materials, are left out.
+
+   \item{Matching of atomic orbital and plane-wave states}
+
+   The older method.  Each atomic orbital state gets the energy of the plane-wave state
+   with the largest overlap, if the overlap is large enough.
+\end{itemize}
+The grid must be dense enough for the Fourier interpolation of the atomic orbital
+hamiltonian.  For hexagonal crystals use in plane a multiple of three, for example
+\texttt{6 6 4} for graphite instead of \texttt{4 4 4}.
+
 \subsection{Plot of charge densities and potentials}
 
 Plots or prepares the plots of real functions electron density, $\rho(\vec r)$, effective potential,

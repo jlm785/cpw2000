@@ -3,6 +3,7 @@ ROOT = ..
 include $(ROOT)/make.inc
 
 src90 = ao_h_and_s.f90                           ao_interpolation_sub.f90          \
+        ao_int_proj_hamilt.f90                                                     \
         ao_h_and_s_spin_orbit.f90                ao_interpolation_w90.f90          \
         ao_interpolation_core.f90                ao_match_state.f90                \
         ao_interpolation_out_band.f90            ao_interpolation_write_hr.f90     \
@@ -41,6 +42,9 @@ ao_interpolation_core.o:  ao_interpolation_core.f90
 
 ao_match_state.o:  ao_match_state.f90
 	$(F77) -c $(FCOPTS) ao_match_state.f90
+
+ao_int_proj_hamilt.o:  ao_int_proj_hamilt.f90
+	$(F77) -c $(FCOPTS) ao_int_proj_hamilt.f90
 
 ao_interpolation_out_band.o:  ao_interpolation_out_band.f90 nonorthointerp.o
 	$(F77) -c $(FCOPTS) ao_interpolation_out_band.f90

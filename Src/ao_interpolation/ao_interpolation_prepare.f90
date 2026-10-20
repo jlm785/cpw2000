@@ -19,15 +19,19 @@
 !>  With the latter it is then possible to obtain H(k') and S(k') in
 !>  an arbitrary k' point with idft.
 !>
+!>  The plane-wave energies are transferred to H(k) either by projection
+!>  of the plane-wave states on the atomic orbitals (ao_int_proj_hamilt),
+!>  or by matching atomic orbital and plane-wave states (ao_match_state).
+!>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 19 October 2026.
+!>  \date         2014. 20 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,               &
-        adot, ntype, natom, rat, ntrans, mtrx,                           &
+        adot, ntype, natom, rat, ntrans, mtrx, tnp,                      &
         ng, kgv, phase, conj,                                            &
         ns, inds, kmax, indv, ek,                                        &
         sfact, icmplx,                                                   &
@@ -59,6 +63,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! New ao_match_state (degenerate levels), spin-orbit states matched directly, neig_pw. 19 October 2026. JLM+claude
+! Projection of the plane-wave states (ao_int_proj_hamilt), rotated from irreducible points, tnp. 20 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -96,6 +101,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   real(REAL64), intent(in)           ::  rat(3,mxdatm,mxdtyp)            !<  k-th component (in lattice coordinates) of the position of the n-th atom of type i
   integer, intent(in)                ::  ntrans                          !<  number of symmetry operations in the factor group
   integer, intent(in)                ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
+  real(REAL64), intent(in)           ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
@@ -189,6 +195,29 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   logical                            ::  lkpg                            !  If true use the previous G-vectors (same mtxd and isort)
 
+! projection of the plane-wave states
+
+  logical                            ::  lproj                           !  modified tight-binding by projection (otherwise by matching states)
+  integer                            ::  imtb                            !  choice of method
+  integer                            ::  ios
+  integer, allocatable               ::  igofkg(:,:,:)                   !  index of G-vector from its components
+  integer, allocatable               ::  isort_t(:)                      !  isort of the grid point
+  complex(REAL64), allocatable       ::  psi_t(:,:)                      !  plane-wave states rotated to the grid point
+  complex(REAL64), allocatable       ::  bas(:,:)                        !  atomic orbitals in the plane-wave basis
+  complex(REAL64), allocatable       ::  bas_so(:,:)                     !  atomic orbital spinors in the plane-wave basis
+  integer, allocatable               ::  infolcao(:,:)                   !  information about the atomic orbitals
+  complex(REAL64), allocatable       ::  bmat(:,:)                       !  <ao|pw>
+  complex(REAL64), allocatable       ::  hmtb(:,:)                       !  modified tight-binding hamiltonian
+  complex(REAL64), allocatable       ::  s_ao(:,:)                       !  overlap of the atomic orbitals (check)
+  integer                            ::  ikg                             !  index of the grid point
+  integer                            ::  jsym, kmap2                     !  symmetry operation and time reversal
+  integer                            ::  kgshift(3)                      !  shift of the rotated k-point to the grid point
+  integer                            ::  kgr(3)                          !  rotated G-vector
+  real(REAL64)                       ::  rkr(3)                          !  rotated k-point
+  integer                            ::  nsel, nselmin, nselmax          !  number of selected plane-wave states
+  integer                            ::  ndone                           !  grid points done
+  real(REAL64)                       ::  xdiff                           !  difference of overlaps
+
 
 !--------------------------------------------------------------------
   integer           ::  nk1,nk2,nk3
@@ -225,6 +254,11 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   real(REAL64), parameter :: ZERO = 0.0_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
   real(REAL64), parameter :: XMIN = 0.5_REAL64                           !  minimum weight for matching atomic orbital and plane-wave states
+  real(REAL64), parameter :: XNMIN = 0.5_REAL64                          !  minimum norm in the atomic orbital space of projected plane-wave states
+  real(REAL64), parameter :: EPS = 1.0E-8_REAL64                         !  tolerance for k-points
+  real(REAL64), parameter :: EPSS = 1.0E-8_REAL64                        !  tolerance for the overlap check
+  complex(REAL64), parameter :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter :: C_UM = cmplx(UM,ZERO,REAL64)
 
 ! counters
 
@@ -358,6 +392,29 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
     write(6,*)
   endif
 
+  write(6,*)
+  write(6,*) '  How should the plane-wave energies be transferred to the'
+  write(6,*) '  atomic orbital hamiltonian?'
+  write(6,*) '  1)  projection of the plane-wave states (recommended)'
+  write(6,*) '  2)  matching of atomic orbital and plane-wave states (older method)'
+  write(6,*)
+  read(5,*,iostat=ios) imtb
+  if(ios /= 0) imtb = 1
+  write(ioreplay,*) imtb,'     MTB method'
+
+  lproj = .TRUE.
+  if(imtb == 2) lproj = .FALSE.
+
+  if(lproj) then
+    write(6,*)
+    write(6,*) '  plane-wave states projected on the atomic orbitals'
+    write(6,*)
+  else
+    write(6,*)
+    write(6,*) '  atomic orbital and plane-wave states are matched'
+    write(6,*)
+  endif
+
 ! allocates and fills the uniform grid
 
   allocate(rk_grid(3,nk1*nk2*nk3))
@@ -475,233 +532,508 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !-------------------------------------------------------------------------
 
-  if (lso) then
+  if(lproj) then
+
+!   modified tight-binding by projection of the plane-wave states.
+!   The plane-wave states are calculated in the irreducible k-points and
+!   rotated to the equivalent points of the grid.
 
     write(6,*)
-    write(6,*) '  Computing full precision eigenvalues ev(i) including Spin-Orbit'
+    write(6,*) '  Computing the plane-wave states and their projections'
+    write(6,*) '  on the atomic orbitals'
     write(6,*)
 
-  else
+    allocate(igofkg(-kmax(1):kmax(1),-kmax(2):kmax(2),-kmax(3):kmax(3)))
+    igofkg(:,:,:) = 0
+    do i = 1,ng
+      igofkg(kgv(1,i),kgv(2,i),kgv(3,i)) = i
+    enddo
 
-    write(6,*)
-    write(6,*) '  Computing full precision eigenvalues ev(i) without spin orbit'
-    write(6,*)
+    allocate(isort_t(mxddim))
+    allocate(psi_t(mxddim,mxdbnd))
+    allocate(bas(mxddim,mxdorb))
+    allocate(infolcao(5,mxdorb))
+    allocate(bmat(nspin*mxdorb,nspin*mxdbnd))
+    allocate(hmtb(nspin*norb_ao,nspin*norb_ao))
+    allocate(s_ao(nspin*norb_ao,nspin*norb_ao))
+    if(lso) allocate(bas_so(2*mxddim,2*mxdorb))
 
-  endif
+    nselmin = nspin*mxdbnd
+    nselmax = 0
+    ndone = 0
 
-  do irk = 1,nrk_irred
+    do irk = 1,nrk_irred
 
-    rkpt(1) = rk_irred(1,irk)
-    rkpt(2) = rk_irred(2,irk)
-    rkpt(3) = rk_irred(3,irk)
+      rkpt(1) = rk_irred(1,irk)
+      rkpt(2) = rk_irred(2,irk)
+      rkpt(3) = rk_irred(3,irk)
 
-    write(6,'(2i5,3f8.5)') nrk_irred, irk, rkpt(1),rkpt(2),rkpt(3)
+      ipr = 0
+      nocc = neig_pw
 
-    lkpg = .FALSE.
-    ipr = 0
-
-    nocc = norb_ao
-
-!   THERE IS A LOT OF DUPLICATION HERE
-
-    call h_kb_dia_all('ao  ', emax, ZERO, rkpt, norb_ao, nocc, flgpsd,   &
-        ipr, ifail, icmax, iguess, epspsi,                               &
-        ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
-        sfact, veff, icmplx,                                             &
-        nqnl, delqnl, vkb, nkb,                                          &
-        ntype, natom, rat, adot,                                         &
-        mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
-        psi_ao, hpsi_ao, ei_ao,                                          &
-        vscr, kmscr,                                                     &
-        lgks, vtau, vtaumsh,                                             &
-        .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,       &
-        mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
-        mxdorb, mxdscr, mxdlao, mxdset)
-
-    nocc = neig_pw
-
-    call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc, flgpsd,   &
-        ipr, ifail, icmax, iguess, epspsi,                               &
-        ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
-        sfact, veff, icmplx,                                             &
-        nqnl, delqnl, vkb, nkb,                                          &
-        ntype, natom, rat, adot,                                         &
-        mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                         &
-        psi, hpsi, ei,                                                   &
-        vscr, kmscr,                                                     &
-        lgks, vtau, vtaumsh,                                             &
-        .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,       &
-        mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
-        mxdbnd, mxdscr, mxdlao, mxdset)
-
-    if(lso) then
-
-!     spin-orbit states are matched directly, as spin-orbit may change the order
-
-      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
-          neig_pw, psi, ei, ei_so, psi_so, .TRUE.,                       &
-          ng, kgv,                                                       &
+      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc,         &
+          flgpsd, ipr, ifail, icmax, iguess, epspsi,                     &
+          ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
+          sfact, veff, icmplx,                                           &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+          mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                       &
+          psi, hpsi, ei,                                                 &
+          vscr, kmscr,                                                   &
+          lgks, vtau, vtaumsh,                                           &
+          .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,     &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
+          mxdbnd, mxdscr, mxdlao, mxdset)
 
-      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
-          norb_ao, psi_ao, ei_ao, ei_ao_so, psi_ao_so, .TRUE.,           &
-          ng, kgv,                                                       &
-          nqnl, delqnl, vkb, nkb,                                        &
-          ntype, natom, rat, adot,                                       &
-          mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve)
+!     loop over the grid points equivalent to irk
 
-      call ao_match_state(iprmatch, XMIN, 2*mtxd,                        &
-          2*neig_pw, psi_so, ei_so, 2*norb_ao, psi_ao_so, ei_ao_so,      &
-          ei_match, imatch, xover,                                       &
-          2*mxddim, 2*mxdbnd, 2*mxdorb)
+      do ix = 1,nk1
+      do iy = 1,nk2
+      do iz = 1,nk3
 
-    else
+        if(kmap(1,ix,iy,iz) /= irk) cycle
 
-      call ao_match_state(iprmatch, XMIN, mtxd,                          &
-          neig_pw, psi, ei, norb_ao, psi_ao, ei_ao,                      &
-          ei_match, imatch, xover,                                       &
-          mxddim, mxdbnd, mxdorb)
+        ikg = (ix-1)*nk2*nk3 + (iy-1)*nk3 + iz
+
+        jsym = kmap(3,ix,iy,iz)
+        kmap2 = kmap(2,ix,iy,iz)
+
+        if(jsym < 1 .or. jsym > ntrans) then
+          write(6,*)
+          write(6,*) '   STOPPED in ao_interpolation_prepare:  wrong symmetry operation ', jsym
+          write(6,*)
+
+          stop
+
+        endif
+
+!       rotated k-point and shift to the grid point
+
+        do j = 1,3
+          rkr(j) = mtrx(j,1,jsym)*rkpt(1) + mtrx(j,2,jsym)*rkpt(2) +     &
+                   mtrx(j,3,jsym)*rkpt(3)
+        enddo
+        if(kmap2 == 1) rkr(:) = -rkr(:)
+
+        do j = 1,3
+          kgshift(j) = nint(rk_grid(j,ikg) - rkr(j))
+          if(abs(rk_grid(j,ikg) - rkr(j) - kgshift(j)) > EPS) then
+            write(6,*)
+            write(6,*) '   STOPPED in ao_interpolation_prepare:  inconsistent kmap'
+            write(6,'("   grid point ",3f10.5,"  rotated point ",        &
+                &     3f10.5)') rk_grid(:,ikg), rkr(:)
+            write(6,*)
+
+            stop
+
+          endif
+        enddo
+
+!       basis of the grid point, rotated and shifted G-vectors
+
+        do i = 1,mtxd
+          do j = 1,3
+            kgr(j) = mtrx(j,1,jsym)*kgv(1,isort(i)) +                    &
+                     mtrx(j,2,jsym)*kgv(2,isort(i)) +                    &
+                     mtrx(j,3,jsym)*kgv(3,isort(i))
+          enddo
+          if(kmap2 == 1) kgr(:) = -kgr(:)
+          kgr(:) = kgr(:) - kgshift(:)
+          if(abs(kgr(1)) > kmax(1) .or. abs(kgr(2)) > kmax(2) .or.       &
+             abs(kgr(3)) > kmax(3)) then
+            isort_t(i) = 0
+          else
+            isort_t(i) = igofkg(kgr(1),kgr(2),kgr(3))
+          endif
+          if(isort_t(i) == 0) then
+            write(6,*)
+            write(6,*) '   STOPPED in ao_interpolation_prepare:  rotated G-vector not found'
+            write(6,*)
+
+            stop
+
+          endif
+        enddo
+
+        call psi_rot_inv_shift(mtrx(:,:,jsym), tnp(:,jsym),              &
+            kmap2, kgshift, neig_pw,                                     &
+            rkpt, mtxd, isort, psi,                                      &
+            rk_grid(:,ikg), mtxd, isort_t, psi_t,                        &
+            ng, kgv,                                                     &
+            mxdgve, mxddim, mxdbnd)
+
+!       atomic orbitals in the same basis
+
+        call atomic_orbital_c16(rk_grid(:,ikg), mtxd, isort_t, icmplx,   &
+            nd, bas, infolcao,                                           &
+            ng, kgv,                                                     &
+            n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
+
+        if(lso) then
+
+!         spin-orbit at the grid point, spinors as in ao_h_and_s_spin_orbit
+
+          call spin_orbit_perturb(rk_grid(:,ikg), mtxd, isort_t,         &
+              neig_pw, psi_t, ei, ei_so, psi_so, .TRUE.,                 &
+              ng, kgv,                                                   &
+              nqnl, delqnl, vkb, nkb,                                    &
+              ntype, natom, rat, adot,                                   &
+              mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+          do i = 1,norb_ao
+          do j = 1,mtxd
+            bas_so(2*j-1,2*i  ) = bas(j,i)
+            bas_so(2*j  ,2*i  ) = C_ZERO
+            bas_so(2*j-1,2*i-1) = C_ZERO
+            bas_so(2*j  ,2*i-1) = bas(j,i)
+          enddo
+          enddo
+
+          call zgemm('c', 'n', 2*norb_ao, 2*neig_pw, 2*mtxd, C_UM,       &
+              bas_so, 2*mxddim, psi_so, 2*mxddim, C_ZERO,                &
+              bmat, nspin*mxdorb)
+
+          call zgemm('c', 'n', 2*norb_ao, 2*norb_ao, 2*mtxd, C_UM,       &
+              bas_so, 2*mxddim, bas_so, 2*mxddim, C_ZERO,                &
+              s_ao, 2*norb_ao)
+
+          call ao_h_and_s_spin_orbit(emax, rk_grid(:,ikg), norb_ao,      &
+              flgpsd,                                                    &
+              ng, kgv,                                                   &
+              veff, icmplx,                                              &
+              nqnl, delqnl, vkb, nkb,                                    &
+              ntype, natom, rat, adot,                                   &
+              n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,         &
+              psi_ao, hpsi_ao,                                           &
+              Hao, S, dh0drk_AO,                                         &
+              vscr, kmscr,                                               &
+              lgks, vtaumsh,                                             &
+              mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,    &
+              mxdscr, mxdlao, mxdset)
+
+          call ao_int_proj_hamilt(0, XNMIN, 2*norb_ao, 2*neig_pw, ei_so, &
+              bmat, Hao, S, hmtb, nsel,                                  &
+              nspin*mxdorb, nspin*mxdbnd)
+
+        else
+
+          call zgemm('c', 'n', norb_ao, neig_pw, mtxd, C_UM,             &
+              bas, mxddim, psi_t, mxddim, C_ZERO,                        &
+              bmat, nspin*mxdorb)
+
+          call zgemm('c', 'n', norb_ao, norb_ao, mtxd, C_UM,             &
+              bas, mxddim, bas, mxddim, C_ZERO,                          &
+              s_ao, norb_ao)
+
+          call ao_h_and_s(emax, rk_grid(:,ikg), norb_ao, flgpsd,         &
+              ng, kgv,                                                   &
+              veff, icmplx,                                              &
+              nqnl, delqnl, vkb, nkb,                                    &
+              ntype, natom, rat, adot,                                   &
+              n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,         &
+              psi_ao, hpsi_ao,                                           &
+              Hao, S, dh0drk_AO,                                         &
+              vscr, kmscr,                                               &
+              lgks, vtaumsh,                                             &
+              mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,    &
+              mxdscr, mxdlao, mxdset)
+
+          call ao_int_proj_hamilt(0, XNMIN, norb_ao, neig_pw, ei,        &
+              bmat, Hao, S, hmtb, nsel,                                  &
+              nspin*mxdorb, nspin*mxdbnd)
+
+        endif
+
+!       paranoid check, the atomic orbitals must be the same as in ao_h_and_s
+
+        xdiff = maxval(abs(s_ao(:,:) - S(:,:)))
+        if(xdiff > EPSS) then
+          write(6,*)
+          write(6,*) '   STOPPED in ao_interpolation_prepare:  inconsistent atomic orbitals'
+          write(6,'("   grid point ",3f10.5,"  max overlap ",            &
+              &     "difference ",e12.4)') rk_grid(:,ikg), xdiff
+          write(6,*)
+
+          stop
+
+        endif
+
+        nselmin = min(nselmin,nsel)
+        nselmax = max(nselmax,nsel)
+
+        noiData%fiData%S_k(:,:,ikg) = S(:,:)
+        noiData%fiData%Ham_k(:,:,ikg) = hmtb(:,:)
+
+        if(loptical) then
+          noiData%fiData%dh0drk_GridK(:,:,:,ikg) = dh0drk_AO(:,:,:)
+        endif
+
+        ndone = ndone + 1
+        call progress_line(ndone, nkpt, 'k-points:', 6)
+
+      enddo
+      enddo
+      enddo
+
+    enddo
+
+    if(ndone /= nkpt) then
+      write(6,*)
+      write(6,*) '   STOPPED in ao_interpolation_prepare:  grid points missing ', ndone, nkpt
+      write(6,*)
+
+      stop
 
     endif
 
-    do i = 1,nspin*norb_ao
-      ev_pw_irred(i,irk) = ei_match(i)
-    enddo
+    write(6,*)
+    write(6,'("   number of plane-wave states in the hamiltonian: ",     &
+        &     "between ",i5," and ",i5)') nselmin, nselmax
+    write(6,*)
 
-  enddo
-
-! now unpack the eigenvalues
-
-  if(lso) then
-
-    irk = 1
-    do i = 1,nk1
-    do j = 1,nk2
-    do k = 1,nk3
-      idk = iabs(kmap(1,i,j,k))
-      do iband = 1,2*norb_ao
-        ev_pw(iband,irk) = ev_pw_irred(iband,idk)
-      enddo
-      irk = irk+1
-    enddo
-    enddo
-    enddo
+    deallocate(igofkg)
+    deallocate(isort_t)
+    deallocate(psi_t)
+    deallocate(bas)
+    deallocate(infolcao)
+    deallocate(bmat)
+    deallocate(hmtb)
+    deallocate(s_ao)
+    if(lso) deallocate(bas_so)
 
   else
 
-    irk = 1
-    do i = 1,nk1
-    do j = 1,nk2
-    do k = 1,nk3
-      idk = iabs(kmap(1,i,j,k))
-      do iband = 1,norb_ao
-        ev_pw(iband,irk) = ev_pw_irred(iband,idk)
+    if (lso) then
+
+      write(6,*)
+      write(6,*) '  Computing full precision eigenvalues ev(i) including Spin-Orbit'
+      write(6,*)
+
+    else
+
+      write(6,*)
+      write(6,*) '  Computing full precision eigenvalues ev(i) without spin orbit'
+      write(6,*)
+
+    endif
+
+    do irk = 1,nrk_irred
+
+      rkpt(1) = rk_irred(1,irk)
+      rkpt(2) = rk_irred(2,irk)
+      rkpt(3) = rk_irred(3,irk)
+
+      write(6,'(2i5,3f8.5)') nrk_irred, irk, rkpt(1),rkpt(2),rkpt(3)
+
+      lkpg = .FALSE.
+      ipr = 0
+
+      nocc = norb_ao
+
+!   THERE IS A LOT OF DUPLICATION HERE
+
+      call h_kb_dia_all('ao  ', emax, ZERO, rkpt, norb_ao, nocc, flgpsd, &
+          ipr, ifail, icmax, iguess, epspsi,                             &
+          ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
+          sfact, veff, icmplx,                                           &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                       &
+          psi_ao, hpsi_ao, ei_ao,                                        &
+          vscr, kmscr,                                                   &
+          lgks, vtau, vtaumsh,                                           &
+          .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,     &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
+          mxdorb, mxdscr, mxdlao, mxdset)
+
+      nocc = neig_pw
+
+      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc, flgpsd, &
+          ipr, ifail, icmax, iguess, epspsi,                             &
+          ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
+          sfact, veff, icmplx,                                           &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mtxd, hdiag, isort, qmod, ekpg, .FALSE.,                       &
+          psi, hpsi, ei,                                                 &
+          vscr, kmscr,                                                   &
+          lgks, vtau, vtaumsh,                                           &
+          .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,     &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
+          mxdbnd, mxdscr, mxdlao, mxdset)
+
+      if(lso) then
+
+!     spin-orbit states are matched directly, as spin-orbit may change the order
+
+        call spin_orbit_perturb(rkpt, mtxd, isort,                       &
+            neig_pw, psi, ei, ei_so, psi_so, .TRUE.,                     &
+            ng, kgv,                                                     &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+        call spin_orbit_perturb(rkpt, mtxd, isort,                       &
+            norb_ao, psi_ao, ei_ao, ei_ao_so, psi_ao_so, .TRUE.,         &
+            ng, kgv,                                                     &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve)
+
+        call ao_match_state(iprmatch, XMIN, 2*mtxd,                      &
+            2*neig_pw, psi_so, ei_so, 2*norb_ao, psi_ao_so, ei_ao_so,    &
+            ei_match, imatch, xover,                                     &
+            2*mxddim, 2*mxdbnd, 2*mxdorb)
+
+      else
+
+        call ao_match_state(iprmatch, XMIN, mtxd,                        &
+            neig_pw, psi, ei, norb_ao, psi_ao, ei_ao,                    &
+            ei_match, imatch, xover,                                     &
+            mxddim, mxdbnd, mxdorb)
+
+      endif
+
+      do i = 1,nspin*norb_ao
+        ev_pw_irred(i,irk) = ei_match(i)
       enddo
-      irk = irk+1
-    enddo
-    enddo
+
     enddo
 
-  endif
+! now unpack the eigenvalues
 
-  deallocate(kmap)
-  deallocate(rk_irred)
+    if(lso) then
+
+      irk = 1
+      do i = 1,nk1
+      do j = 1,nk2
+      do k = 1,nk3
+        idk = iabs(kmap(1,i,j,k))
+        do iband = 1,2*norb_ao
+          ev_pw(iband,irk) = ev_pw_irred(iband,idk)
+        enddo
+        irk = irk+1
+      enddo
+      enddo
+      enddo
+
+    else
+
+      irk = 1
+      do i = 1,nk1
+      do j = 1,nk2
+      do k = 1,nk3
+        idk = iabs(kmap(1,i,j,k))
+        do iband = 1,norb_ao
+          ev_pw(iband,irk) = ev_pw_irred(iband,idk)
+        enddo
+        irk = irk+1
+      enddo
+      enddo
+      enddo
+
+    endif
+
+    deallocate(kmap)
+    deallocate(rk_irred)
 
 
 !-------------------------------------------------------------------------
 
 ! Now let's get to business...
 
-  if (lso) then
+    if (lso) then
 
-    write(6,*)
-    write(6,*) '  Computing atomic orbitals: |psi> and overlaps: S=<psi|psi>, H=<psi|H|psi>'
-    write(6,*) '  SO version'
-    write(6,*)
+      write(6,*)
+      write(6,*) '  Computing atomic orbitals: |psi> and overlaps: S=<psi|psi>, H=<psi|H|psi>'
+      write(6,*) '  SO version'
+      write(6,*)
 
-    do irk=1, nkpt
+      do irk=1, nkpt
 
-      rkpt(1) = rk_grid(1,irk)
-      rkpt(2) = rk_grid(2,irk)
-      rkpt(3) = rk_grid(3,irk)
+        rkpt(1) = rk_grid(1,irk)
+        rkpt(2) = rk_grid(2,irk)
+        rkpt(3) = rk_grid(3,irk)
 
-      call progress_line(irk, nkpt, 'k-points:', 6)
+        call progress_line(irk, nkpt, 'k-points:', 6)
 
-      call ao_h_and_s_spin_orbit(emax, rkpt, norb_ao, flgpsd,            &
-          ng, kgv,                                                       &
-          veff, icmplx,                                                  &
-          nqnl, delqnl, vkb, nkb,                                        &
-          ntype, natom, rat, adot,                                       &
-          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
-          psi_ao, hpsi_ao,                                               &
-          Hao, S, dh0drk_AO,                                             &
-          vscr, kmscr,                                                   &
-          lgks, vtaumsh,                                                 &
-          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,        &
-          mxdscr, mxdlao, mxdset)
+        call ao_h_and_s_spin_orbit(emax, rkpt, norb_ao, flgpsd,          &
+            ng, kgv,                                                     &
+            veff, icmplx,                                                &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
+            psi_ao, hpsi_ao,                                             &
+            Hao, S, dh0drk_AO,                                           &
+            vscr, kmscr,                                                 &
+            lgks, vtaumsh,                                               &
+            mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,      &
+            mxdscr, mxdlao, mxdset)
 
-      call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
+        call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
 
-      if (loptical) then
+        if (loptical) then
 
-        do idir=1, 3
-          do iband=1, 2*norb_ao
-          do jband=1, 2*norb_ao
-            noiData%fiData%dh0drk_GridK(iband,jband,idir,irk) = dh0drk_AO(iband,jband,idir)
+          do idir=1, 3
+            do iband=1, 2*norb_ao
+            do jband=1, 2*norb_ao
+              noiData%fiData%dh0drk_GridK(iband,jband,idir,irk) = dh0drk_AO(iband,jband,idir)
+            enddo
+            enddo
           enddo
-          enddo
-        enddo
 
-      endif
+        endif
 
-    enddo
+      enddo
 
-  else
+    else
 
-    write(6,*)
-    write(6,*) '  Computing atomic orbitals: |psi> and overlaps: S=<psi|psi>, H=<psi|H|psi>'
-    write(6,*)
+      write(6,*)
+      write(6,*) '  Computing atomic orbitals: |psi> and overlaps: S=<psi|psi>, H=<psi|H|psi>'
+      write(6,*)
 
-    do irk=1, nkpt
+      do irk=1, nkpt
 
-      rkpt(1) = rk_grid(1,irk)
-      rkpt(2) = rk_grid(2,irk)
-      rkpt(3) = rk_grid(3,irk)
+        rkpt(1) = rk_grid(1,irk)
+        rkpt(2) = rk_grid(2,irk)
+        rkpt(3) = rk_grid(3,irk)
 
-      call progress_line(irk, nkpt, 'k-points:', 6)
+        call progress_line(irk, nkpt, 'k-points:', 6)
 
 !     hdiag etc... are not needed here.  Should simplify call
 
-      call ao_h_and_s(emax, rkpt, norb_ao, flgpsd,                       &
-          ng, kgv,                                                       &
-          veff, icmplx,                                                  &
-          nqnl, delqnl, vkb, nkb,                                        &
-          ntype, natom, rat, adot,                                       &
-          n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
-          psi_ao, hpsi_ao,                                               &
-          Hao, S, dh0drk_AO,                                             &
-          vscr, kmscr,                                                   &
-          lgks, vtaumsh,                                                 &
-          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,        &
-          mxdscr, mxdlao, mxdset)
+        call ao_h_and_s(emax, rkpt, norb_ao, flgpsd,                     &
+            ng, kgv,                                                     &
+            veff, icmplx,                                                &
+            nqnl, delqnl, vkb, nkb,                                      &
+            ntype, natom, rat, adot,                                     &
+            n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
+            psi_ao, hpsi_ao,                                             &
+            Hao, S, dh0drk_AO,                                           &
+            vscr, kmscr,                                                 &
+            lgks, vtaumsh,                                               &
+            mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,      &
+            mxdscr, mxdlao, mxdset)
 
-      call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
+        call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
 
-      if (loptical) then
+        if (loptical) then
 
-        do idir=1, 3
-          do iband=1, norb_ao
-          do jband=1, norb_ao
-            noiData%fiData%dh0drk_GridK(iband,jband,idir,irk) = dh0drk_AO(iband,jband,idir)
+          do idir=1, 3
+            do iband=1, norb_ao
+            do jband=1, norb_ao
+              noiData%fiData%dh0drk_GridK(iband,jband,idir,irk) = dh0drk_AO(iband,jband,idir)
+            enddo
+            enddo
           enddo
-          enddo
-        enddo
 
-      endif
+        endif
 
-    enddo
+      enddo
+
+    endif
 
   endif
 

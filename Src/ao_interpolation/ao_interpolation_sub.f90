@@ -41,6 +41,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 ! Choice of atomic basis set (cpw_pp_atorb_questions), consistency with hsr.dat. 20 October 2026. JLM+claude
+! tnp passed to ao_interpolation_prepare (projection method). 20 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -375,7 +376,7 @@ subroutine ao_interpolation_sub(ioreplay)
        pwexp_%emax, flags_%flgdal, flags_%flgpsd,                        &
        iguess, epspsi, icmax, pseudo_%ztot,                              &
        crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                  &
-       spaceg_%ntrans,spaceg_%mtrx,                                      &
+       spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                        &
        recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                 &
        recip_%ns, recip_%inds, recip_%kmax,                              &
        recip_%indv, recip_%ek,                                           &
