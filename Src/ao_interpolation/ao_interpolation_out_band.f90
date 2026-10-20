@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2017. 19 October 2026.
+!>  \date         before 2017. 20 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -30,6 +30,7 @@
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
 ! Number of bands with spin-orbit limited to the spinor bands available. 19 October 2026. JLM+claude
+! Old style BAND_MESH.DAT calculation removed, with its variables. 20 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -75,13 +76,6 @@
   integer           ::  irk
   integer           ::  iotape
   integer           ::  nrk2
-  logical           ::  lfile
-
-  integer           ::  ioerr
-
-! constants
-
-  real(REAL64), parameter  :: HARTREE = 27.211386246_REAL64
 
 ! counters
 
