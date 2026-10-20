@@ -19,7 +19,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.0.9
-!>  \date         28 January 2020, 7 December 2021.
+!>  \date         28 January 2020, 19 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
@@ -37,6 +37,7 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 ! openmp version 19 January 2020. JLM
 ! LMAX,lmx, 7 December 2021. JLM
 ! comments, anlspins -> anlnoso, 4 December 2023. JLM
+! dvqdqi, d2vqdqi2 initialized (were undefined for nder < 2 or outside the table). 19 October 2026. JLM+claude
 
 
   implicit none
@@ -422,6 +423,8 @@ subroutine proj_nl_kb_so_pert_der_c16(rkpt, mtxd, isort,                 &
 
         do m=-1,1
           vq(m) = ZERO
+          dvqdqi(m) = ZERO
+          d2vqdqi2(m) = ZERO
           if(ni < nqnl(k)-1) then
             xi  = xni - UM*ni
             vq(m) = vkb(ni,l,m,k) * (UM+xi) * (UM-xi)                    &

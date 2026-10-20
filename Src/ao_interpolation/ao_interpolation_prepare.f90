@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 16 October 2026.
+!>  \date         2014. 19 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -58,6 +58,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! New ao_match_state (degenerate levels), spin-orbit states matched directly, neig_pw. 19 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -142,7 +143,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   real(REAL64), allocatable          ::  vtaumsh(:)                      !  vtau in the fft real space mesh (only used if lgks)
 
   real(REAL64), allocatable          ::  ei_so(:)                        !  spin-orbit eigenvalue (hartree)
-  complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of eigenvector i (guess on input)
+  complex(REAL64), allocatable       ::  psi_so(:,:)                     !  component j of spin-orbit eigenvector i
+  real(REAL64), allocatable          ::  ei_ao_so(:)                     !  atomic orbital spin-orbit eigenvalue (hartree)
+  complex(REAL64), allocatable       ::  psi_ao_so(:,:)                  !  component j of atomic orbital spin-orbit eigenvector i
 
   real(REAL64), allocatable          ::  ei_ao(:)                        !  atomic orbital eigenvalue (hartree)
   complex(REAL64), allocatable       ::  psi_ao(:,:)                     !  component j of atomic orbital eigenvector i (guess on input)
@@ -153,8 +156,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   real(REAL64), allocatable:: rk_grid(:,:)
 
-  integer, allocatable               ::  imatch(:)                       !  points to the old state that is most similar to the new state
-  real(REAL64), allocatable          ::  xover(:)                        !  overlap of new state with old state
+  integer, allocatable               ::  imatch(:)                       !  plane-wave partner of atomic orbital state, 0 if none
+  real(REAL64), allocatable          ::  xover(:)                        !  weight of atomic orbital state in the level of its partner
+  real(REAL64), allocatable          ::  ei_match(:)                     !  energy of atomic orbital state, from plane-waves if matched
 
 ! local variables
 
@@ -184,7 +188,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   integer                            ::  ifail                           !  if ifail=0 the ditsp_c16 was successfull. Otherwise ifail indicates the number of correct digits.
 
   logical                            ::  lkpg                            !  If true use the previous G-vectors (same mtxd and isort)
-  logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions
 
 
 !--------------------------------------------------------------------
@@ -193,7 +196,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   integer           ::  nkpt, lmax
   integer           ::  norb_ao                                          !  number of orbitals for ao diagonalization
-  integer           ::  neig                                             !  number of orbitals for pw diagonalization
+  integer           ::  neig                                             !  number of eigenvalues fitted to the plane-wave ones
+  integer           ::  neig_pw                                          !  number of orbitals for pw diagonalization
+  integer           ::  iprmatch                                         !  print control for ao_match_state
   integer           ::  nocc
 
 ! Arrays replacing IrredBZ
@@ -214,12 +219,12 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   character(len=1)  ::  yesno
 
-  integer           ::  inoso, irem
 
 ! parameters
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
+  real(REAL64), parameter :: XMIN = 0.5_REAL64                           !  minimum weight for matching atomic orbital and plane-wave states
 
 ! counters
 
@@ -402,13 +407,21 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   neig = min(int(ztot)+4,norb_ao+10)
 
+! a few more plane-wave states, as ao_match_state does not use the last level
+
+  neig_pw = neig + 2
+
   mxdorb = norb_ao
-  mxdbnd = neig
+  mxdbnd = neig_pw
+
+! 1 prints warnings, 2 the table of overlaps
+
+  iprmatch = 1
 
   write(6,*)
   write(6,*) '  number k-points:', nkpt
   write(6,*) '  number of atomic orbitals:', norb_ao
-  write(6,*) '  number of eigenvalues calculated with plane waves:', neig
+  write(6,*) '  number of eigenvalues calculated with plane waves:', neig_pw
   write(6,*) '  total charge:', nint(ztot)
   write(6,*)
 
@@ -429,8 +442,10 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   allocate(hpsi_ao(mxddim,mxdorb))
 
   if(lso) then
-    allocate(ei_so(2*mxdorb))
-    allocate(psi_so(2*mxddim,2*mxdorb))
+    allocate(ei_so(2*mxdbnd))
+    allocate(psi_so(2*mxddim,2*mxdbnd))
+    allocate(ei_ao_so(2*mxdorb))
+    allocate(psi_ao_so(2*mxddim,2*mxdorb))
   endif
 
 !--------------------------------------------------------------------
@@ -453,8 +468,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   allocate(S(nspin*norb_ao,nspin*norb_ao))
   allocate(dh0drk_AO(nspin*norb_ao,nspin*norb_ao,3))
 
-  allocate(imatch(mxdorb))
-  allocate(xover(mxdorb))
+  allocate(imatch(nspin*mxdorb))
+  allocate(xover(nspin*mxdorb))
+  allocate(ei_match(nspin*mxdorb))
 
 
 !-------------------------------------------------------------------------
@@ -502,9 +518,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdorb, mxdscr, mxdlao, mxdset)
 
-    nocc = neig
+    nocc = neig_pw
 
-    call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig, nocc, flgpsd,      &
+    call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc, flgpsd,   &
         ipr, ifail, icmax, iguess, epspsi,                               &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
@@ -518,43 +534,41 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,          &
         mxdbnd, mxdscr, mxdlao, mxdset)
 
-    call ao_match_state(imatch, xover, mtxd,                             &
-        neig, psi, ei, norb_ao, psi_ao, ei_ao,                           &
-        mxddim, mxdbnd, mxdorb)
-
-
     if(lso) then
 
-      lpsiso = .false.
+!     spin-orbit states are matched directly, as spin-orbit may change the order
 
       call spin_orbit_perturb(rkpt, mtxd, isort,                         &
-          neig, psi, ei, ei_so, psi_so, lpsiso,                          &
+          neig_pw, psi, ei, ei_so, psi_so, .TRUE.,                       &
+          ng, kgv,                                                       &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
+          mxdtyp, mxdatm, mxdlqp, mxddim, mxdbnd, mxdgve)
+
+      call spin_orbit_perturb(rkpt, mtxd, isort,                         &
+          norb_ao, psi_ao, ei_ao, ei_ao_so, psi_ao_so, .TRUE.,           &
           ng, kgv,                                                       &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
           mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve)
 
-      do i = 1,2*norb_ao
-        inoso = (i+1)/2
-        irem = mod(i+1,2)
-        if(imatch(inoso) > 0) then
-          ev_pw_irred(i,irk) = ei_so(2*imatch(inoso)+irem-1)
-        else
-          ev_pw_irred(i,irk) = ei_ao(inoso)
-        endif
-      enddo
+      call ao_match_state(iprmatch, XMIN, 2*mtxd,                        &
+          2*neig_pw, psi_so, ei_so, 2*norb_ao, psi_ao_so, ei_ao_so,      &
+          ei_match, imatch, xover,                                       &
+          2*mxddim, 2*mxdbnd, 2*mxdorb)
 
     else
 
-      do i = 1,norb_ao
-        if(imatch(i) > 0) then
-          ev_pw_irred(i,irk) = ei(imatch(i))
-        else
-          ev_pw_irred(i,irk) = ei_ao(i)
-        endif
-      enddo
+      call ao_match_state(iprmatch, XMIN, mtxd,                          &
+          neig_pw, psi, ei, norb_ao, psi_ao, ei_ao,                      &
+          ei_match, imatch, xover,                                       &
+          mxddim, mxdbnd, mxdorb)
 
     endif
+
+    do i = 1,nspin*norb_ao
+      ev_pw_irred(i,irk) = ei_match(i)
+    enddo
 
   enddo
 
@@ -620,7 +634,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           veff, icmplx,                                                  &
           nqnl, delqnl, vkb, nkb,                                        &
           ntype, natom, rat, adot,                                       &
-!          mtxd, hdiag, isort, qmod, ekpg,                                &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
           psi_ao, hpsi_ao,                                               &
           Hao, S, dh0drk_AO,                                             &
@@ -661,17 +674,17 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !     hdiag etc... are not needed here.  Should simplify call
 
-      call ao_h_and_s(emax, rkpt, norb_ao, flgpsd,                        &
-          ng, kgv,                                                        &
-          veff, icmplx,                                                   &
-          nqnl, delqnl, vkb, nkb,                                         &
-          ntype, natom, rat, adot,                                        &
+      call ao_h_and_s(emax, rkpt, norb_ao, flgpsd,                       &
+          ng, kgv,                                                       &
+          veff, icmplx,                                                  &
+          nqnl, delqnl, vkb, nkb,                                        &
+          ntype, natom, rat, adot,                                       &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
-          psi_ao, hpsi_ao,                                                &
-          Hao, S, dh0drk_AO,                                              &
-          vscr, kmscr,                                                    &
+          psi_ao, hpsi_ao,                                               &
+          Hao, S, dh0drk_AO,                                             &
+          vscr, kmscr,                                                   &
           lgks, vtaumsh,                                                 &
-          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,         &
+          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,        &
           mxdscr, mxdlao, mxdset)
 
       call NonOrthoInterpSetGridData(noiData, irk, Hao, S, ev_pw(:,irk))
@@ -719,10 +732,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   deallocate(imatch)
   deallocate(xover)
+  deallocate(ei_match)
 
   if(lso) then
     deallocate(ei_so)
     deallocate(psi_so)
+    deallocate(ei_ao_so)
+    deallocate(psi_ao_so)
   endif
 
   deallocate(rk_grid)

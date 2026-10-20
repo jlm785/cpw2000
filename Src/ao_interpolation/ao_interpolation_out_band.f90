@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2017. 4 October 2026.
+!>  \date         before 2017. 19 October 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine ao_interpolation_out_band(title, subtitle,                  &
@@ -29,6 +29,7 @@
 ! Increase dimension of label. 17 September 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Progress of the k-points with progress_line. 4 October 2026. JLM+claude
+! Number of bands with spin-orbit limited to the spinor bands available. 19 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -105,9 +106,13 @@
                    xk, rk, xcvert, ljump, nkstep, label, xklab,          &
                    neig, nrk2, nlines, nvert)
 
-! checks maximum of number of bands
+! checks maximum of number of bands (with spin-orbit nband counts the spinor bands)
 
-  if(neig > noiData%nband) neig = noiData%nband
+  if(noiData%lso == 1) then
+    if(2*neig > noiData%nband) neig = noiData%nband/2
+  else
+    if(neig > noiData%nband) neig = noiData%nband
+  endif
 
   allocate(e_of_k(neig,nrk2))
   allocate(e_of_k_so(2*neig,nrk2))
@@ -138,6 +143,7 @@
      enddo
 
     endif
+
   enddo
 
   iotape = 15
@@ -145,111 +151,65 @@
 
 ! writes the output files for xmgrace and gnuplot
 
-    if(noiData%lso==1) then
-       n = min(nint(ztot + 0.01),2*neig)
-       eref = e_of_k_so(n,1)
-       do irk = 1,nrk2
-       do j=1,n
-         if(e_of_k_so(j,irk) > eref) eref = e_of_k_so(j,irk)
-       enddo
-       enddo
-  nocc = n
-!  do irk = 1,nrk2
-!    if(e_of_k(n+1,irk) < eref) then
-!      nocc = 0
-!
-!      exit
-!
-!    endif
-!  enddo
+  if(noiData%lso==1) then
 
-  call out_band_xmgrace('band_interp_so.agr', iotape,                    &
-      title, subtitle, nstyle,                                           &
-      2*neig, nrk2, xk, e_of_k_so, eref, nocc,                           &
-      nvert, xcvert, nlines, ljump, nkstep, label, xklab)
+     n = min(nint(ztot + 0.01),2*neig)
+     eref = e_of_k_so(n,1)
+     do irk = 1,nrk2
+     do j=1,n
+       if(e_of_k_so(j,irk) > eref) eref = e_of_k_so(j,irk)
+     enddo
+     enddo
 
-  call out_band_dots_xmgrace('dots_band_interp_so.agr', iotape,          &
-      nint(ztot), 2*neig, nrk2, xk, e_of_k_so,                           &
-      eref, nvert, xcvert, nlines, ljump, nkstep, label, xklab)
+     nocc = n
 
-    else
-       n = min(nint(0.5*ztot + 0.01),neig)
-       eref = e_of_k(n,1)
-       do irk = 1,nrk2
-       do j=1,n
-         if(e_of_k(j,irk) > eref) eref = e_of_k(j,irk)
-       enddo
-       enddo
+    call out_band_xmgrace('band_interp_so.agr', iotape,                  &
+        title, subtitle, nstyle,                                         &
+        2*neig, nrk2, xk, e_of_k_so, eref, nocc,                         &
+        nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-       nocc = n
-!  do irk = 1,nrk2
-!    if(e_of_k(n+1,irk) < eref) then
-!      nocc = 0
-!
-!      exit
-!
-!    endif
-!  enddo
+    call out_band_dots_xmgrace('dots_band_interp_so.agr', iotape,        &
+        nint(ztot), 2*neig, nrk2, xk, e_of_k_so,                         &
+        eref, nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-   call out_band_xmgrace('band_interp.agr', iotape,                      &
+  else
+
+     n = min(nint(0.5*ztot + 0.01),neig)
+     eref = e_of_k(n,1)
+     do irk = 1,nrk2
+     do j=1,n
+       if(e_of_k(j,irk) > eref) eref = e_of_k(j,irk)
+     enddo
+     enddo
+
+     nocc = n
+
+     call out_band_xmgrace('band_interp.agr', iotape,                    &
          title, subtitle, nstyle,                                        &
          neig, nrk2, xk, e_of_k, eref, nocc,                             &
          nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-   call out_band_dots_xmgrace('dots_band_interp.agr', iotape,            &
+     call out_band_dots_xmgrace('dots_band_interp.agr', iotape,          &
          nint(ztot)/2, neig, nrk2, xk, e_of_k,                           &
          eref, nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-    endif
+  endif
 
-!  WHAT IS THIS FOR????????????????????????
-
-! cheat code
-! loop over k-points
-  lfile = .FALSE.
-  open(unit=144,file='BAND_MESH.DAT',form='formatted', iostat = ioerr)
-  if(ioerr == 0) lfile = .TRUE.
-
-
-   if(lfile .and. (command_argument_count() >=1) ) then
-!   if(lfile .and. (IARGC()>=1)) then
-     write(*,*) 'BAND_MESH.DAT detected !!!'
-     write(*,*) 'begining band structure calculation with old style files.'
-     open(127,file="BAND_ENERGY.DAT",form="formatted")
-     read(144,*) nrk2,neig
-     if (noiData%lso==1) then
-       write(127,*) '#',nrk2,2*nint(ztot)
-     else
-       write(127,*) '#',nrk2,nint(ztot)
-     endif
-
-     write(127,*) '#   Energies in eV, k at end of line'
-
-     do irk=1,nrk2
-         read(144,*) rkpt(1),rkpt(2),rkpt(3)
-         call NonOrthoInterpRun(noiData,rkpt,ev_interp)
-         call progress_line(irk, nrk2, 'k-points:', 6)
-         if (noiData%lso==1) then
-           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*HARTREE,J=1,2*nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
-         else
-           write(127,'(200f22.8)') (irk-1)*1.0D0, (ev_interp(J)*HARTREE,J=1,nint(ztot)),rkpt(1),rkpt(2),rkpt(3)
-         endif
-     enddo
-     close(unit=127)
-     close(unit=144)
-   endif
 
 ! Cleanup
 
-  deallocate(nkstep)
-  deallocate(ljump)
-  deallocate(xcvert)
   deallocate(xk)
   deallocate(rk)
-  deallocate(e_of_k)
-  deallocate(e_of_k_so)
+  deallocate(xcvert)
+  deallocate(ljump)
+  deallocate(nkstep)
   deallocate(label)
   deallocate(xklab)
+
+  deallocate(e_of_k)
+  deallocate(e_of_k_so)
+
+  deallocate(ev_interp)
 
   return
 

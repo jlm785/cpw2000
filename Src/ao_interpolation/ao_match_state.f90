@@ -11,20 +11,51 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  imatch points to the old state that is most similar to the new states
+!>  Matches the eigenstates of an atomic orbital calculation
+!>  with those of a plane-wave calculation at the same k-point,
+!>  and gives each atomic orbital state the energy of its
+!>  plane-wave partner (modified tight-binding).
+!>
+!   The mapping is not symmetric.  The atomic orbital states are the
+!   targets, and an atomic orbital level (states with the same energy)
+!   only gets plane-wave energies if all its states are well
+!   represented by plane-wave states.  Otherwise it keeps its atomic
+!   orbital energy.  Plane-wave states without a partner are ignored.
+!
+!   The weight of an atomic orbital level in a plane-wave level is the
+!   sum of the |<pw|ao>|**2 of their states.  It does not depend on the
+!   choice of basis inside degenerate levels.  The assignment of states
+!   maximizes the sum of the weights.
+!
+!   Levels that mix (weight per atomic orbital state above XLINK) form
+!   clusters, for example near-degenerate levels mixed by spin-orbit,
+!   or a degenerate plane-wave level split by numerical noise.
+!   An atomic orbital level is accepted if its weight per state in the
+!   plane-wave levels of its cluster is at least xmin, and its partners
+!   are in the same cluster.  All the states of an atomic orbital
+!   level get the same energy, the average of their partners.
+!
+!   The last plane-wave level is not used, as the number of
+!   plane-wave states may have cut a degenerate level.
+!
+!   It can be used with spinor wave-functions (spin-orbit),
+!   with mtxd and mxddim replaced by 2*mtxd and 2*mxddim.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         29 October 2024, 3 October 2026.
+!>  \date         29 October 2024, 19 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine ao_match_state(imatch, xover, mtxd,                           &
-      neig_old, psi_old, ei_old, neig_new, psi_new, ei_new,              &
-      mxddim, mxdbnd_old, mxdbnd_new)
+subroutine ao_match_state(ipr, xmin, mtxd,                               &
+      neig_pw, psi_pw, ei_pw, neig_ao, psi_ao, ei_ao,                    &
+      ei_match, imatch, xover,                                           &
+      mxddim, mxdbnd_pw, mxdbnd_ao)
 
 
 ! Adapted from out_band_match_state, 29 October 2024. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
+! Matching of degenerate levels, assignment that maximizes the overlap (num_assign_max),
+! ei_match, ipr, xmin. 19 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -34,202 +65,351 @@ subroutine ao_match_state(imatch, xover, mtxd,                           &
 ! input
 
   integer, intent(in)                ::  mxddim                          !<  array dimension of plane-waves
-  integer, intent(in)                ::  mxdbnd_old                      !<  array dimension for number of bands
-  integer, intent(in)                ::  mxdbnd_new                      !<  array dimension for number of bands
+  integer, intent(in)                ::  mxdbnd_pw                       !<  array dimension for number of plane-wave bands
+  integer, intent(in)                ::  mxdbnd_ao                       !<  array dimension for number of atomic orbital bands
+
+  integer, intent(in)                ::  ipr                             !<  print control: 0 nothing, 1 warnings, 2 table of overlaps
+  real(REAL64), intent(in)           ::  xmin                            !<  minimum weight per state of an atomic orbital level in its cluster (1/2 recommended)
 
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian (basis set size)
 
-  integer, intent(in)                ::  neig_old                        !<  number of old eigenvectors
-  complex(REAL64), intent(in)        ::  psi_old(mxddim, mxdbnd_old)     !<  component j of old eigenvectors
-  real(REAL64), intent(in)           ::  ei_old(mxdbnd_old)              !<  eigenvalue of old eigenvectors
+  integer, intent(in)                ::  neig_pw                         !<  number of plane-wave eigenvectors
+  complex(REAL64), intent(in)        ::  psi_pw(mxddim, mxdbnd_pw)       !<  component j of plane-wave eigenvectors
+  real(REAL64), intent(in)           ::  ei_pw(mxdbnd_pw)                !<  eigenvalue of plane-wave eigenvectors (hartree)
 
-  integer, intent(in)                ::  neig_new                        !<  number of new eigenvectors
-  complex(REAL64), intent(in)        ::  psi_new(mxddim, mxdbnd_new)     !<  component j of new eigenvectors
-  real(REAL64), intent(in)           ::  ei_new(mxdbnd_new)              !<  eigenvalue of new eigenvectors
+  integer, intent(in)                ::  neig_ao                         !<  number of atomic orbital eigenvectors
+  complex(REAL64), intent(in)        ::  psi_ao(mxddim, mxdbnd_ao)       !<  component j of atomic orbital eigenvectors
+  real(REAL64), intent(in)           ::  ei_ao(mxdbnd_ao)                !<  eigenvalue of atomic orbital eigenvectors (hartree)
 
 ! output
 
-  integer, intent(out)               ::  imatch(mxdbnd_new)              !<  points to the old state that is most similar to the new state
-  real(REAL64), intent(out)          ::  xover(mxdbnd_new)               !<  overlap of new state with old state
+  real(REAL64), intent(out)          ::  ei_match(mxdbnd_ao)             !<  energy for atomic orbital state i, from plane-waves if matched (hartree)
+  integer, intent(out)               ::  imatch(mxdbnd_ao)               !<  plane-wave partner of atomic orbital state i, 0 if not matched
+  real(REAL64), intent(out)          ::  xover(mxdbnd_ao)                !<  weight per state of the level of state i in the plane-wave levels of its cluster
 
 ! local allocatable arrays
 
-  complex(REAL64), allocatable       ::  prod(:,:)                       !  old and new eigenvector products
-  real(REAL64), allocatable          ::  prodsq(:,:)                     !  old and new eigenvector products, modulo square
+  complex(REAL64), allocatable       ::  prod(:,:)                       !  <pw|ao>
+  real(REAL64), allocatable          ::  prodsq(:,:)                     !  |<pw|ao>|**2
+  real(REAL64), allocatable          ::  aonorm(:)                       !  norm of plane-wave state in the space of atomic orbital states
 
-  integer, allocatable               ::  levdeg(:)                       !  degeneracy of energy level
-  integer, allocatable               ::  leveigs(:,:)                    !  states belonging to level
+  integer, allocatable               ::  levdeg_pw(:), levdeg_ao(:)      !  degeneracy of energy level
+  integer, allocatable               ::  leveigs_pw(:,:)                 !  states belonging to level
+  integer, allocatable               ::  leveigs_ao(:,:)                 !  states belonging to level
+  integer, allocatable               ::  ilev_pw(:), ilev_ao(:)          !  level of state
 
-  integer, allocatable               ::  indlev(:)                       !  index within a level of new state
+  real(REAL64), allocatable          ::  wlev(:,:)                       !  weight of atomic orbital level in plane-wave level
+  real(REAL64), allocatable          ::  score(:,:)                      !  weight of atomic orbital state in level of plane-wave state
+  integer, allocatable               ::  iassign(:)                      !  plane-wave state assigned to atomic orbital state
+  integer, allocatable               ::  iprt(:)                         !  plane-wave states printed in the table
+  integer, allocatable               ::  iclus(:)                        !  cluster (lowest node) of atomic orbital or plane-wave level
 
 ! local variables
 
-  real(REAL64)      ::  xprod
-
-  integer           ::  neig
-  integer           ::  mxdlev                                           !  array dimension for number of levels
-  integer           ::  mxddeg                                           !  array dimension for number of levels
-
-  integer           ::  nlevel                                           !  number of energy levels (not counting degeneracies)
-  integer           ::  maxdeg                                           !  maximum number of degeneracies
+  integer           ::  nlev_pw, nlev_ao                                 !  number of energy levels
+  integer           ::  maxdeg_pw, maxdeg_ao                             !  maximum degeneracy
+  integer           ::  neig                                             !  dummy for berry_degeneracy
+  integer           ::  nused                                            !  number of plane-wave states used in the matching
+  integer           ::  nlevu                                            !  number of plane-wave levels used in the matching
+  integer           ::  ia, ip, la, lp
+  logical           ::  lok                                              !  atomic orbital level is well matched
+  real(REAL64)      ::  xsum, eavg
 
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
-  real(REAL64), parameter     ::  EPS = 1.0E-8_REAL64
-  real(REAL64), parameter     ::  TOL = 1.0E-5_REAL64
+  real(REAL64), parameter     ::  EPS = 1.0E-6_REAL64                    !  tolerance for the normalization check
+  real(REAL64), parameter     ::  TOL = 1.0E-5_REAL64                    !  tolerance for degenerate energies (hartree)
+  real(REAL64), parameter     ::  XNORM = 0.9_REAL64                     !  warns if plane-wave partner is less than that in atomic orbital space
+  real(REAL64), parameter     ::  XLINK = 0.1_REAL64                     !  minimum weight of atomic orbital state for levels in the same cluster
+  real(REAL64), parameter     ::  XPRINT = 0.05_REAL64                   !  smallest overlap in the table
   real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
 ! counters
 
-  integer   :: i, j, nl, nc
-
-! The structure of the basis is the same, but the number of bands is different.
-! This is the difference between this subroutine and out_band_match_state.
+  integer   :: i, j, n
 
 
-! calculate the products
+! overlaps
 
-  allocate(prod(neig_old,neig_new))
-  allocate(prodsq(neig_old,neig_new))
+  allocate(prod(neig_pw,neig_ao))
+  allocate(prodsq(neig_pw,neig_ao))
+  allocate(aonorm(neig_pw))
 
-  call zgemm('C', 'N', neig_old, neig_new, mtxd, C_UM, psi_old, mxddim,  &
-          psi_new, mxddim, C_ZERO, prod, neig_old)
+  call zgemm('C', 'N', neig_pw, neig_ao, mtxd, C_UM, psi_pw, mxddim,     &
+          psi_ao, mxddim, C_ZERO, prod, neig_pw)
 
-  do i = 1,neig_old
-  do j = 1,neig_new
-    prodsq(i,j) = prod(i,j)*conjg(prod(i,j))
+  do j = 1,neig_ao
+  do i = 1,neig_pw
+    prodsq(i,j) = real(prod(i,j)*conjg(prod(i,j)),REAL64)
   enddo
   enddo
 
-! paranoid check things are consistent
+  do i = 1,neig_pw
+    aonorm(i) = ZERO
+    do j = 1,neig_ao
+      aonorm(i) = aonorm(i) + prodsq(i,j)
+    enddo
+  enddo
 
-  do j = 1,neig_new
-    xprod = ZERO
-    do i = 1,neig_old
-      xprod = xprod + prodsq(i,j)
+! paranoid check that things are consistent
+
+  do j = 1,neig_ao
+    xsum = ZERO
+    do i = 1,neig_pw
+      xsum = xsum + prodsq(i,j)
     enddo
 
-    if(xprod > UM+EPS) then
-
-      write(6,*)
+    if(xsum > UM+EPS) then
       write(6,*)
       write(6,'("   STOPPED in ao_match_state: ")')
-      write(6,'("   projection is greater than one! ")')
+      write(6,'("   projection of atomic orbital state ",i5,             &
+          &     " is greater than one: ",f14.8)') j, xsum
       write(6,*)
 
-      exit
+      stop
 
     endif
 
   enddo
 
-! takes into account the degeneracy of old states.
+! degenerate levels of the plane-wave states, first the dimensions
 
+  allocate(levdeg_pw(1))
+  allocate(leveigs_pw(1,1))
 
-  allocate(levdeg(1))
-  allocate(leveigs(1,1))
+  neig = neig_pw
+  call berry_degeneracy(.TRUE., neig_pw, neig, ei_pw, TOL,               &
+         nlev_pw, maxdeg_pw, levdeg_pw, leveigs_pw,                      &
+         mxdbnd_pw, 1, 1)
 
-  neig = neig_old
+  deallocate(levdeg_pw)
+  deallocate(leveigs_pw)
 
-  call berry_degeneracy(.TRUE., neig_old, neig, ei_old, TOL,             &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd_old, 1, 1)
+  allocate(levdeg_pw(nlev_pw))
+  allocate(leveigs_pw(nlev_pw,maxdeg_pw))
 
-  mxdlev = nlevel
-  mxddeg = maxdeg
+  call berry_degeneracy(.FALSE., neig_pw, neig, ei_pw, TOL,              &
+         nlev_pw, maxdeg_pw, levdeg_pw, leveigs_pw,                      &
+         mxdbnd_pw, nlev_pw, maxdeg_pw)
 
-  deallocate(levdeg)
-  deallocate(leveigs)
+! same for the atomic orbital states
 
-  allocate(levdeg(mxdlev))
-  allocate(leveigs(mxdlev,mxddeg))
+  allocate(levdeg_ao(1))
+  allocate(leveigs_ao(1,1))
 
-  allocate(indlev(mxddeg))
+  neig = neig_ao
+  call berry_degeneracy(.TRUE., neig_ao, neig, ei_ao, TOL,               &
+         nlev_ao, maxdeg_ao, levdeg_ao, leveigs_ao,                      &
+         mxdbnd_ao, 1, 1)
 
-! fills the information
+  deallocate(levdeg_ao)
+  deallocate(leveigs_ao)
 
-  call berry_degeneracy(.FALSE., neig_old, neig, ei_old, TOL,            &
-         nlevel, maxdeg, levdeg, leveigs,                                &
-         mxdbnd_old, mxdlev, mxddeg)
+  allocate(levdeg_ao(nlev_ao))
+  allocate(leveigs_ao(nlev_ao,maxdeg_ao))
 
-! Finds projections greater than 1/2
+  call berry_degeneracy(.FALSE., neig_ao, neig, ei_ao, TOL,              &
+         nlev_ao, maxdeg_ao, levdeg_ao, leveigs_ao,                      &
+         mxdbnd_ao, nlev_ao, maxdeg_ao)
 
-  do i = 1,neig_new
-    imatch(i) = 0
-    do nl = 1,nlevel
-      xprod = prodsq(leveigs(nl,1),i)
-      if(levdeg(nl) > 1) then
-        do j = 2,levdeg(nl)
-          xprod = xprod + prodsq(leveigs(nl,j),i)
-        enddo
+! level of each state
+
+  allocate(ilev_pw(neig_pw))
+  allocate(ilev_ao(neig_ao))
+
+  do lp = 1,nlev_pw
+    do i = 1,levdeg_pw(lp)
+      ilev_pw(leveigs_pw(lp,i)) = lp
+    enddo
+  enddo
+
+  do la = 1,nlev_ao
+    do j = 1,levdeg_ao(la)
+      ilev_ao(leveigs_ao(la,j)) = la
+    enddo
+  enddo
+
+! the last plane-wave level may be incomplete
+
+  nused = neig_pw
+  if(nlev_pw > 1) nused = neig_pw - levdeg_pw(nlev_pw)
+
+! weights of atomic orbital levels in plane-wave levels
+
+  allocate(wlev(nlev_ao,nlev_pw))
+
+  do lp = 1,nlev_pw
+  do la = 1,nlev_ao
+    wlev(la,lp) = ZERO
+    do j = 1,levdeg_ao(la)
+    do i = 1,levdeg_pw(lp)
+      wlev(la,lp) = wlev(la,lp) + prodsq(leveigs_pw(lp,i),leveigs_ao(la,j))
+    enddo
+    enddo
+  enddo
+  enddo
+
+! average weight of an atomic orbital state in the level of a plane-wave state
+
+  allocate(score(neig_ao,nused))
+  allocate(iassign(neig_ao))
+
+  do ip = 1,nused
+  do ia = 1,neig_ao
+    la = ilev_ao(ia)
+    score(ia,ip) = wlev(la,ilev_pw(ip)) / levdeg_ao(la)
+  enddo
+  enddo
+
+  call num_assign_max(neig_ao, nused, score, iassign, neig_ao)
+
+! clusters of atomic orbital and plane-wave levels that mix
+! (graph nodes are the atomic orbital levels followed by the plane-wave levels)
+
+  nlevu = nlev_pw
+  if(nlev_pw > 1) nlevu = nlev_pw - 1
+
+  allocate(iclus(nlev_ao+nlevu))
+
+  do n = 1,nlev_ao+nlevu
+    iclus(n) = n
+  enddo
+
+  do lp = 1,nlevu
+  do la = 1,nlev_ao
+    if(wlev(la,lp) >= XLINK*levdeg_ao(la)) then
+      i = la
+      do while(iclus(i) /= i)
+        i = iclus(i)
+      enddo
+      j = nlev_ao + lp
+      do while(iclus(j) /= j)
+        j = iclus(j)
+      enddo
+      if(i /= j) iclus(max(i,j)) = min(i,j)
+    endif
+  enddo
+  enddo
+
+  do n = 1,nlev_ao+nlevu
+    i = n
+    do while(iclus(i) /= i)
+      i = iclus(i)
+    enddo
+    iclus(n) = i
+  enddo
+
+! accepts atomic orbital levels where all states are well matched
+
+  do la = 1,nlev_ao
+
+    lok = .TRUE.
+    eavg = ZERO
+    do j = 1,levdeg_ao(la)
+      ia = leveigs_ao(la,j)
+      if(iassign(ia) == 0) then
+        lok = .FALSE.
+      elseif(iclus(nlev_ao+ilev_pw(iassign(ia))) /= iclus(la)) then
+        lok = .FALSE.
+      else
+        eavg = eavg + ei_pw(iassign(ia))
       endif
-
-      xover(i) = xprod
-      if(xprod > UM/2) then
-        imatch(i) = leveigs(nl,1)
-
-        exit
-
-      endif
-
     enddo
 
+!   weight of the level in the plane-wave levels of its cluster.
+!   It does not depend on the choice of basis inside degenerate plane-wave levels,
+!   adds the parts of a plane-wave level split by numerical noise,
+!   and the plane-wave levels that mix with it (spin-orbit).
+
+    xsum = ZERO
+    do lp = 1,nlevu
+      if(iclus(nlev_ao+lp) == iclus(la)) xsum = xsum + wlev(la,lp)
+    enddo
+    xsum = xsum / levdeg_ao(la)
+    if(xsum < xmin) lok = .FALSE.
+
+    if(lok) then
+      eavg = eavg / levdeg_ao(la)
+      do j = 1,levdeg_ao(la)
+        ia = leveigs_ao(la,j)
+        ei_match(ia) = eavg
+        imatch(ia) = iassign(ia)
+        xover(ia) = xsum
+      enddo
+    else
+      do j = 1,levdeg_ao(la)
+        ia = leveigs_ao(la,j)
+        ei_match(ia) = ei_ao(ia)
+        imatch(ia) = 0
+        xover(ia) = xsum
+      enddo
+    endif
+
   enddo
 
-! distribute within a degenerate level (probably not necessary...)
+! warnings
 
-  do nl = 1,nlevel
-    if(levdeg(nl) > 1) then
+  if(ipr > 0) then
+    do ia = 1,neig_ao
+      if(imatch(ia) > 0) then
+        ip = imatch(ia)
+        if(abs(ei_match(ia) - ei_ao(ia)) > UM/HARTREE .or.               &
+           aonorm(ip) < XNORM) then
+          write(6,'("   WARNING ao_match_state: ao state",i5," (",f10.4, &
+              &     ") -> pw state",i5," (",f10.4,") eV, weight",f6.3,   &
+              &     ", pw state in ao space",f6.3)')                     &
+              ia, ei_ao(ia)*HARTREE, ip, ei_pw(ip)*HARTREE,              &
+              xover(ia), aonorm(ip)
+        endif
+      endif
+    enddo
+  endif
 
-      nc = 0
-      do i = 1,neig_new
-        if(imatch(i) == leveigs(nl,1)) then
-          nc = nc + 1
-!         paranoid check
-          if(nc > levdeg(nl)) then
-            write(6,*)
-            write(6,*) "  WARNING   inconsistent degeneracies in ao_match_state"
-            write(6,*) "  check atomic orbital state ",i
-            write(6,*)
-          else
-            indlev(nc) = i
-          endif
+! table of overlaps
+
+  if(ipr > 1) then
+    allocate(iprt(neig_pw))
+    write(6,*)
+    write(6,'("   ao state   e_ao      e_match   pw  weight  |",         &
+        &     "  pw states with |<pw|ao>|**2 >",f5.2)') XPRINT
+    do ia = 1,neig_ao
+      n = 0
+      do ip = 1,neig_pw
+        if(prodsq(ip,ia) > XPRINT) then
+          n = n + 1
+          iprt(n) = ip
         endif
       enddo
-
-      if(nc > 1) then
-        do j = 2,nc
-          imatch(indlev(j)) = leveigs(nl,j)
-        enddo
+      if(n > 0 .or. ia <= nused) then
+        write(6,'(3x,i5,2f10.4,i5,f8.3,"  |",20(i5,":",f5.2))')          &
+            ia, ei_ao(ia)*HARTREE, ei_match(ia)*HARTREE, imatch(ia),     &
+            xover(ia), (iprt(i), prodsq(iprt(i),ia), i = 1,n)
       endif
-
-    endif
-  enddo
-
-! warns if there is a big shift in eigenvalues
-
-  do i = 1,neig_new
-    if(imatch(i) > 0) then
-      if(abs(ei_new(i) - ei_old(imatch(i))) > UM/HARTREE) then
-            write(6,*)
-            write(6,*) "  WARNING   correction larger than 1 eV in ao_match_state"
-            write(6,*) "  check atomic orbital state ",i," and pw state ",imatch(i)
-            write(6,'(2(5x,f12.5))') ei_new(i)*HARTREE, ei_old(imatch(i))*HARTREE
-            write(6,*)
-      endif
-    endif
-  enddo
+    enddo
+    write(6,*)
+    write(6,'("   pw state   e_pw      norm in ao space")')
+    do ip = 1,neig_pw
+      write(6,'(3x,i5,f10.4,f10.3)') ip, ei_pw(ip)*HARTREE, aonorm(ip)
+    enddo
+    write(6,*)
+    deallocate(iprt)
+  endif
 
   deallocate(prod)
   deallocate(prodsq)
+  deallocate(aonorm)
 
-  deallocate(levdeg)
-  deallocate(leveigs)
+  deallocate(levdeg_pw, levdeg_ao)
+  deallocate(leveigs_pw, leveigs_ao)
+  deallocate(ilev_pw, ilev_ao)
 
-  deallocate(indlev)
+  deallocate(wlev)
+  deallocate(score)
+  deallocate(iassign)
+  deallocate(iclus)
 
   return
 

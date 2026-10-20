@@ -23,7 +23,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.0.9
-!>  \date         5 December 2023.
+!>  \date         5 December 2023, 19 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine proj_nl_kb_so_der_c16(rkpt, mtxd, isort,                      &
@@ -36,6 +36,7 @@ subroutine proj_nl_kb_so_der_c16(rkpt, mtxd, isort,                      &
 
 
 ! Written 5 December 2023, based on proj_nl_kb_so and proj_nl_kb_so_pert_der. JLM
+! dvqdqi, d2vqdqi2 initialized (were undefined for nder < 2 or outside the table). 19 October 2026. JLM+claude
 
 
   implicit none
@@ -455,6 +456,8 @@ subroutine proj_nl_kb_so_der_c16(rkpt, mtxd, isort,                      &
 
         do m = -1,1
           vq(m) = ZERO
+          dvqdqi(m) = ZERO
+          d2vqdqi2(m) = ZERO
           if(ni < nqnl(k)-1) then
             xi  = xni - UM*ni
             vq(m) = vkb(ni,l,m,k) * (UM+xi) * (UM-xi)                    &
