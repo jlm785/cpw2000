@@ -735,7 +735,7 @@ This are the parameters whose values you would mention in a paper to allow repro
     \item{AOJC}
 
     Uses the atomic orbitals included in the pseudopotential file, but improves the LCAO
-    wave-functions with a single Jacobian Correction.
+    wave-functions with a single iteration Jacobi correction.
     Slower than the AO option but still quite fast.
     It is very convenient to explore
     the Born-Oppenheimer energy surface in optimization and molecular dynamics.
@@ -1884,6 +1884,48 @@ The band structure can be calculted by several methods.
    to the file names.  There is also a \texttt{band\_lk\_ref.agr} file with the reference (fully calculated)
    bands.  It should have visible straight lines if you are using the method efficiently.
 
+   \item{Band-unfolding with full diagonalization}
+
+   For a supercell, the band structure is plotted in the Brillouin zone of the parent
+   structure, with the weight of each state in the unfolded band.  The supercell
+   is given by the \texttt{Rede.Superlattice} block (see the Unfolding section of the
+   \texttt{cpw.in} file), and \texttt{BAND\_LINES.DAT} uses the reciprocal
+   lattice coordinates of the parent structure.  If that information is absent the
+   band structure is not unfolded.
+   If the pseudopotential files have atomic orbitals, the code asks if the hamiltonian
+   should be diagonalized with plane-waves, in the atomic orbitals followed by a single
+   iteration Jacobi correction, or only in the atomic orbitals.  The files are \texttt{band.agr} and
+   \texttt{band\_so.agr}.
+
+   The code first asks ``Are you a human?'' (a nod to the movie Blade Runner).
+   A casual user answers yes.  The answer no is for a calculation split in several
+   independent jobs (workers) that restart from the partial results saved in
+   \texttt{band\_fold\_rec.dat}.  That job flow needs some previous setup.
+
+   \item{Prepare file for later ploting with information about atomic orbitals with unfolding}
+
+   It is similar to the previous option, but it also calculates the projections of the
+   states on the atomic orbitals, and writes them, with the unfolding weights, in the files
+   \texttt{BAND.DAT} and \texttt{BAND\_SO.DAT}.  Those files are used by the graphical
+   interfaces described in the Toolbox section.  The reference plots
+   \texttt{band\_fld\_ref.agr} and \texttt{band\_fld\_ref\_so.agr} are also written.
+   It needs atomic orbitals in the pseudopotential files.
+
+   \item{Band-unfolding with 2-k-point Luttinger-Kohn interpolation}
+
+   It combines the unfolding with the interpolation of the fourth option.  The code
+   asks if you want the default values of the interpolation, if unsure accept them.
+   The files are \texttt{band.agr} and \texttt{band\_so.agr}.
+
+   \item{Diagonalization in the atomic orbital basis}
+
+   The hamiltonian is diagonalized in the atomic orbitals, either alone, or followed
+   by a single iteration Jacobi correction.  The first is fast but only qualitative,
+   the second is close to the full plane-wave calculation.  The atomic basis set is the one
+   chosen in the questions about the default parameters, and the number of bands
+   cannot exceed the number of atomic orbitals in the unit cell.
+   The files have \texttt{\_ao} or \texttt{\_aojc} added to the name, for example
+   \texttt{band\_ao\_so.agr}.
 
 \end{itemize}
 
@@ -2274,7 +2316,7 @@ Before the plots the code asks the same questions about the default parameters
 as the band structure section.
 As accuracy is not paramount for a plot, if the pseudopotential files have atomic orbitals,
 the code then offers the choice of diagonalizing the hamiltonian with the full plane-wave basis,
-in the atomic orbitals followed by a jacobian relaxation, or only in the atomic orbitals.
+in the atomic orbitals followed by a single iteration Jacobi correction, or only in the atomic orbitals.
 The last two are much faster.  With atomic orbitals the number of bands cannot exceed the number of
 atomic orbitals in the unit cell, if more bands are requested the number is reduced accordingly.
 A smaller atomic basis set makes the calculation faster but less accurate.

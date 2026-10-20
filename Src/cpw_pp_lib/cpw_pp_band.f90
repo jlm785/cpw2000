@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 January 2022. 16 October 2026.
+!>  \date         20 January 2022. 20 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band(ioreplay,                                         &
@@ -31,6 +31,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
 ! Generalized Kohn-Sham meta-GGA, lgks and vtau passed. 7 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! Option 8, band structure in the atomic orbital basis (out_band with diag_type). 20 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -98,6 +99,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
   write(6,*)  '  6:  prepare file for later ploting with',      &
               '      information about atomic orbitals with unfolding'
   write(6,*)  '  7:  band-unfolding with 2-k-point Luttinger-Kohn interpolation'
+  write(6,*)  '  8:  diagonalization in the atomic orbital basis'
 
   read(5,*,iostat=ios) imeth
   write(ioreplay,*) imeth,'   method'
@@ -119,7 +121,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
     write(6,*)  '  Output will be in files band*'
     write(6,*)
 
-    call out_band(title, subtitle,                                       &
+    call out_band('pw  ', title, subtitle,                               &
         pwexp_%emax, flags_%flgdal, flags_%flgpsd,                       &
         epspsi, icmax, pseudo_%ztot, efermi,                             &
         crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                 &
@@ -341,7 +343,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
       write(6,*)
       write(6,*)  '  which diagonalization do you want to use'
       write(6,*)  '  1)  full pw diagonalization'
-      write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+      write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
       write(6,*)  '  3)  diagonalization in atomic orbitals'
 
       read(5,*,iostat=ios) idiag
@@ -402,7 +404,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
       write(6,*)
       write(6,*)  '  which diagonalization do you want to use'
       write(6,*)  '  1)  full pw diagonalization'
-      write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+      write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
       write(6,*)  '  3)  diagonalization in atomic orbitals'
 
       read(5,*,iostat=ios) idiag
@@ -475,7 +477,7 @@ subroutine cpw_pp_band(ioreplay,                                         &
         write(6,*)
         write(6,*)  '  which diagonalization do you want to use'
         write(6,*)  '  1)  full pw diagonalization'
-        write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+        write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
         write(6,*)  '  3)  diagonalization in atomic orbitals'
 
         read(5,*,iostat=ios) idiag
@@ -559,6 +561,53 @@ subroutine cpw_pp_band(ioreplay,                                         &
         dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,          &
         dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
 
+
+  elseif(imeth == 8) then
+
+    if(atorb_%latorb) then
+
+      write(6,*)
+      write(6,*)  '  which diagonalization do you want to use'
+      write(6,*)  '  1)  diagonalization in atomic orbitals'
+      write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
+      read(5,*,iostat=ios) idiag
+      write(ioreplay,*) idiag,'   diagonal. method in atomic orbitals'
+
+      diag_type = 'ao  '
+      if(ios == 0 .and. idiag == 2) diag_type = 'aojc'
+
+      write(6,*)
+      write(6,*)  '  Diagonalizing in the atomic orbital basis'
+      if(diag_type == 'aojc') then
+        write(6,*)  '  Output will be in files band_aojc*'
+      else
+        write(6,*)  '  Output will be in files band_ao*'
+      endif
+      write(6,*)
+
+      call out_band(diag_type, title, subtitle,                          &
+          pwexp_%emax, flags_%flgdal, flags_%flgpsd,                     &
+          epspsi, icmax, pseudo_%ztot, efermi,                           &
+          crys_%adot, crys_%ntype, crys_%natom, crys_%rat,               &
+          recip_%ng, recip_%kgv, recip_%phase, recip_%conj,              &
+          recip_%ns, recip_%inds, recip_%kmax,                           &
+          recip_%indv, recip_%ek,                                        &
+          strfac_%sfact, strfac_%icmplx,                                 &
+          vcomp_%veff, lgks, vcomp_%vtau,                                &
+          pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,     &
+          atorb_%latorb, atorb_%n_bsets, atorb_%jbset,                   &
+          atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                     &
+          atorb_%wvfao, atorb_%lorb,                                     &
+          dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,        &
+          dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
+
+    else
+
+      write(6,*)
+      write(6,*)  '  The pseudopotential files do not have atomic orbitals'
+      write(6,*)
+
+    endif
 
   endif
 

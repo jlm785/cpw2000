@@ -12,17 +12,19 @@
 !------------------------------------------------------------!
 
 !>  This subroutine calculates the band structure along a path
-!>  It uses a full diagonalization
+!>  It uses a full diagonalization in the plane-wave basis,
+!>  or a diagonalization in the atomic orbital basis.
 !>  Files band.agr, band_so.agr, band.gp and band_so.gp,
+!>  (band_ao* or band_aojc* for the atomic orbitals)
 !>  for later ploting with gnuplot and xmgrace are written
 !>  Circuit for band structure is defined in BAND_LINES.DAT
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 16 October 2026.
+!>  \date         8 may 2004, 20 October 2026.
 !>  \copyright    GNU Public License v2
 
-  subroutine out_band(title, subtitle,                                   &
+  subroutine out_band(diag_type, title, subtitle,                        &
       emax, flgdal, flgpsd, epspsi, icmax, ztot, efermi,                 &
       adot, ntype, natom, rat,                                           &
       ng, kgv, phase, conj,                                              &
@@ -57,6 +59,7 @@
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! diag_type, diagonalization in atomic orbitals. 20 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -73,6 +76,8 @@
   integer, intent(in)                ::  mxdcub                          !<  array dimension for 3-index g-space
   integer, intent(in)                ::  mxdlao                          !<  array dimension of orbital per atom type
   integer, intent(in)                ::  mxdset                          !<  array dimension for number of atomic basis sets
+
+  character(len=4), intent(in)       ::  diag_type                       !<  diagonalization, 'pw  ' plane-waves, 'ao  ' atomic orbitals, 'aojc' atomic orbitals and single iteration Jacobi correction
 
   character(len=50), intent(in)      ::  title                           !<  title for plots
   character(len=140), intent(in)     ::  subtitle                        !<  subtitle for plots
@@ -186,6 +191,9 @@
   integer           ::  nextline       !  indicates next line on band circuit
   integer           ::  nl             !  keeps track of next lines
 
+  integer           ::  norbtot        !  number of atomic orbitals in the unit cell
+  character(len=9)  ::  froot          !  root of the file names
+
 ! constants
 
   real(REAL64), parameter     :: ZERO = 0.0_REAL64
@@ -197,6 +205,20 @@
 
   integer    ::  j
 
+
+  if(diag_type /= 'pw  ' .and. .not. latorb) then
+    write(6,*)
+    write(6,*) '  The pseudopotential files do not have atomic orbitals'
+    write(6,*) '  No band structure calculated'
+    write(6,*)
+
+    return
+
+  endif
+
+  froot = 'band'
+  if(diag_type == 'ao  ') froot = 'band_ao'
+  if(diag_type == 'aojc') froot = 'band_aojc'
 
 ! calculates local potential in fft mesh
 
@@ -243,6 +265,19 @@
                    xk, rk, xcvert, ljump, nkstep, label, xklab,          &
                    neig, nrk2, nlines, nvert)
 
+! with atomic orbitals the number of bands is at most the number of orbitals
+
+  if(diag_type /= 'pw  ') then
+    call size_nbaslcao(ntype, natom, n_bsets, jbset, norbat, lorb,       &
+        norbtot, mxdtyp, mxdlao, mxdset)
+    if(neig > norbtot) then
+      neig = norbtot
+      write(6,*)
+      write(6,'("   Not enough atomic orbitals, the number of bands ",   &
+          &     "is reduced to ",i5)') neig
+      write(6,*)
+    endif
+  endif
 
   allocate(e_of_k(neig,nrk2))
   allocate(e_of_k_so(2*neig,nrk2))
@@ -302,7 +337,7 @@
 
     nocc = neig
 
-    call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig, nocc,              &
+    call h_kb_dia_all(diag_type, emax, ZERO, rkpt, neig, nocc,           &
         flgpsd, ipr, ifail, icmax, iguess, epspsi,                       &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
@@ -365,22 +400,22 @@
 
   call out_band_eref(neig, nrk2, rk, ztot, efermi, 2, 1, e_of_k, eref, nocc)
 
-  call out_band_gnuplot('band.gp', iotape,                               &
+  call out_band_gnuplot(trim(froot)//'.gp', iotape,                      &
          neig, nrk2, xk, e_of_k, eref,                                   &
          nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-  call out_band_xmgrace('band.agr', iotape,                              &
+  call out_band_xmgrace(trim(froot)//'.agr', iotape,                     &
          title, subtitle, nstyle,                                        &
          neig, nrk2, xk, e_of_k, eref, nocc,                             &
          nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
   call out_band_eref(neig, nrk2, rk, ztot, efermi, 1, 1, e_of_k_so, eref, nocc)
 
-  call out_band_gnuplot('band_so.gp', iotape,                            &
+  call out_band_gnuplot(trim(froot)//'_so.gp', iotape,                   &
        2*neig, nrk2, xk, e_of_k_so, eref,                                &
        nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
-  call out_band_xmgrace('band_so.agr', iotape,                           &
+  call out_band_xmgrace(trim(froot)//'_so.agr', iotape,                  &
        title, subtitle, nstyle,                                          &
        2*neig, nrk2, xk, e_of_k_so, eref, nocc,                          &
        nvert, xcvert, nlines, ljump, nkstep, label, xklab)

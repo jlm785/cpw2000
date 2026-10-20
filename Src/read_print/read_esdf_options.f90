@@ -68,7 +68,7 @@ subroutine read_esdf_options(flgcal, ipr,                                &
 
 ! PW     : old style calculation using only plane wave basis. It has therefore "full" accuracy defined by emax
 ! AO     : it uses an atomic basis orbital (although integrals are calculated with plane-waves). limited accuracy, very fast.
-! AOJC   : the results of the atomic orbital basis are improved with a single jacobian relaxation. reasonable accuracy, fast.
+! AOJC   : the results of the atomic orbital basis are improved with a single iteration Jacobi correction. reasonable accuracy, fast.
 ! AOJCPW : atomic orbital basis are used to obtain a better starting point for normal calculation. "full" accuracy, speed gain.
 
   flgscf = '    PW'

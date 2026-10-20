@@ -12,7 +12,7 @@
 !------------------------------------------------------------!
 
 !>  Calculates the hamiltonian for one k-point in the atomic basis
-!>  and diagonalizes it in an LCAO basis.  It can do also a Jacobian update improvement.
+!>  and diagonalizes it in an LCAO basis.  It can do also a single iteration Jacobi correction.
 !>  Includes the generalized Kohn-Sham term of meta-GGA (without Pulay corrections).
 !>
 !>  \author       José Luís Martins

@@ -125,7 +125,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
       write(6,*)
       write(6,*)  '  which diagonalization do you want to use'
       write(6,*)  '  1)  full pw diagonalization'
-      write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+      write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
       write(6,*)  '  3)  diagonalization in atomic orbitals'
 
       read(5,*,iostat=ios) idiag
@@ -211,7 +211,7 @@ subroutine cpw_pp_dos(ioreplay,                                          &
         write(6,*)
         write(6,*)  '  which diagonalization do you want to use'
         write(6,*)  '  1)  full pw diagonalization'
-        write(6,*)  '  2)  diagonalization in atomic orbitals followed by jacobian relaxation'
+        write(6,*)  '  2)  diagonalization in atomic orbitals followed by a single iteration Jacobi correction'
         write(6,*)  '  3)  diagonalization in atomic orbitals'
 
         read(5,*,iostat=ios) idiag
