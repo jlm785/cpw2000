@@ -19,7 +19,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         2 March 2026, 18 October 2026.
+!>  \date         2 March 2026, 20 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_questions(ioreplay,                               &
@@ -31,6 +31,7 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 ! written 2 March 2026 from cpw_pp_band_dos_opt cpw_pp_prepare. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Choice of atomic basis set, jbset. 18 October 2026. JLM+claude WARNING NEW API
+! Question about the atomic basis set moved to cpw_pp_atorb_questions. 20 October 2026. JLM+claude
 
   implicit none
 
@@ -71,10 +72,6 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 
   character(len=1)   ::  yesno, yesno2
 
-  integer            ::  nsetmax                                         !  largest number of basis sets of an atom type
-  integer            ::  ioerr
-  character(len=1)   ::  lname(0:3)                                      !  spectroscopic name of angular momentum
-
 ! constants
 
   real(REAL64), parameter  :: UM = 1.0_REAL64
@@ -82,20 +79,13 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 
 ! counters
 
-  integer            ::  nt, ib, n
-
-  data lname / 's', 'p', 'd', 'f' /
+  integer            ::  nt
 
 
 ! default is the first atomic basis set
 
   do nt = 1,mxdtyp
     jbset(nt) = 1
-  enddo
-
-  nsetmax = 1
-  do nt = 1,ntype
-    nsetmax = max(nsetmax,n_bsets(nt))
   enddo
 
 
@@ -226,62 +216,10 @@ subroutine cpw_pp_band_questions(ioreplay,                               &
 
 !   choice of atomic basis set
 
-    if(nsetmax > 1) then
-
-      write(6,*)
-      write(6,*) '  Some atoms have several atomic basis sets.'
-      write(6,*) '  Do you want to use other than the first (y/n)?'
-      write(6,*)
-
-      read(5,*) yesno2
-      write(ioreplay,*) yesno2,'   choose atomic basis set'
-
-      if(yesno2 == 'y' .or. yesno2 == 'Y') then
-
-        do nt = 1,ntype
-
-          if(n_bsets(nt) > 1) then
-
-            write(6,*)
-            write(6,'("   The atom ",a2," (type ",i3,") has ",i3,        &
-                &     " atomic basis sets:")') nameat(nt), nt, n_bsets(nt)
-            write(6,*)
-            do ib = 1,n_bsets(nt)
-              write(6,'(6x,i3,":",i5," orbitals   ",40(1x,a1))')         &
-                   ib, norbat(ib,nt),                                    &
-                   (lname(min(max(lorb(n,ib,nt),0),3)),n=1,norbat(ib,nt))
-            enddo
-            write(6,*)
-            write(6,'("   Enter the basis set for ",a2)') nameat(nt)
-
-            read(5,*,iostat=ioerr) jbset(nt)
-
-            if(ioerr /= 0) then
-              jbset(nt) = 1
-              write(6,*)
-              write(6,*) '  Error reading the basis set, using the first'
-            endif
-
-            write(ioreplay,*) jbset(nt),'   atomic basis set for ',nameat(nt)
-
-            if(jbset(nt) < 1 .or. jbset(nt) > n_bsets(nt)) then
-              jbset(nt) = min(max(jbset(nt),1),n_bsets(nt))
-              write(6,*)
-              write(6,'("   Basis set not available, will use the ",     &
-                  &     "nearest, ",i3)') jbset(nt)
-            endif
-
-            write(6,*)
-            write(6,'("   Will use basis set ",i3," for ",a2)')          &
-                 jbset(nt), nameat(nt)
-
-          endif
-
-        enddo
-
-      endif
-
-    endif
+    call cpw_pp_atorb_questions(ioreplay,                                &
+        ntype, nameat, n_bsets, norbat, lorb,                            &
+        jbset,                                                           &
+        mxdtyp, mxdlao, mxdset)
 
   endif
 

@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 16 October 2026.
+!>  \date         December 18, 2013, 20 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -40,6 +40,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! Choice of atomic basis set (cpw_pp_atorb_questions), consistency with hsr.dat. 20 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -231,6 +232,9 @@ subroutine ao_interpolation_sub(ioreplay)
 
   logical            ::  l_use_hsr
 
+  integer            ::  norbtot                                         !  number of atomic orbitals in the unit cell
+  integer            ::  nspin_hsr                                       !  1 without, 2 with spin-orbit in hsr.dat
+
 
 
 ! hard coded values, change if you know what you are doing...
@@ -289,6 +293,18 @@ subroutine ao_interpolation_sub(ioreplay)
     write(6,*)
   endif
 
+! choice of the atomic basis set
+
+  call cpw_pp_atorb_questions(ioreplay,                                  &
+      crys_%ntype, crys_%nameat,                                         &
+      atorb_%n_bsets, atorb_%norbat, atorb_%lorb,                        &
+      atorb_%jbset,                                                      &
+      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+
+  call size_nbaslcao(crys_%ntype, crys_%natom, atorb_%n_bsets,           &
+      atorb_%jbset, atorb_%norbat, atorb_%lorb, norbtot,                 &
+      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+
 
 
 !-------------------AO INTERPOLATION ------------------------------
@@ -304,6 +320,27 @@ subroutine ao_interpolation_sub(ioreplay)
      write(6,*)
 
      call NonOrthoInterpFileInfo(noiData)
+
+!    hsr.dat does not record the atomic basis set, checks the number of orbitals
+
+     nspin_hsr = 1
+     if(noiData%lso == 1) nspin_hsr = 2
+
+     if(noiData%nband /= nspin_hsr*norbtot) then
+
+       write(6,*)
+       write(6,'("   hsr.dat has ",i6," atomic orbitals, the chosen ",   &
+           &     "basis set has ",i6)') noiData%nband/nspin_hsr, norbtot
+       write(6,*) '  It was prepared with another basis set, will recalculate'
+       write(6,*)
+
+       hsr_exists = .FALSE.
+
+     endif
+
+  endif
+
+  if(hsr_exists) then
 
      write(6,*)
      write(6,*) '  Do you want to use it? (y/n)'
