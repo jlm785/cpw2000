@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos, Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 18 October 2026.
+!>  \date         8 may 2004, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
@@ -51,6 +51,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
 ! Singular superlattice matrix (zero determinant) means no unfolding. 18 October 2026. JLM+claude
+! atomic_orbital_c16 without icmplx (no inversion symmetric combinations). 23 October 2026. JLM+claude
 
   implicit none
 
@@ -542,7 +543,7 @@ subroutine out_band_atom_info_fold(diag_type, lworkers,                  &
          neig, mtxd, ng, mxdgve, mxddim, mxdbnd)
 !-----------------------------------------------------------------------
 
-      call atomic_orbital_c16(rkpt, mtxd, isort, 1,                      &
+      call atomic_orbital_c16(rkpt, mtxd, isort,                         &
           nbaslcao, baslcao_aux, infolcao,                               &
           ng, kgv,                                                       &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &

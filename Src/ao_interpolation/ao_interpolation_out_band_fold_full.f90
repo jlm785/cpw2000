@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         May 2020. 18 October 2026.
+!>  \date         May 2020. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
@@ -24,7 +24,6 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
       emax, ztot,                                                        &
       adot, ntype, natom, nameat, rat,                                   &
       ng, kgv,                                                           &
-      icmplx,                                                            &
       n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao, mxdset)
 
@@ -39,6 +38,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! Fallback to the old PW.DAT for the superlattice information removed. 18 October 2026. JLM+claude
 ! Singular superlattice matrix (zero determinant) means no unfolding. 18 October 2026. JLM+claude
+! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
 
 
 
@@ -75,8 +75,6 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
-
-  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
   integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
@@ -403,7 +401,7 @@ subroutine ao_interpolation_out_band_fold_full(ioreplay,                 &
 
       lnewanl = .TRUE.
 
-      call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
+      call atomic_orbital_c16(rkpt, mtxd, isort,                         &
           mxdorb, ao_basis, infolcao,                                    &
           ng, kgv,                                                       &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &

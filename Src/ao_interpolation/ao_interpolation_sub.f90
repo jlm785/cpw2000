@@ -18,7 +18,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 20 October 2026.
+!>  \date         December 18, 2013, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -42,6 +42,7 @@ subroutine ao_interpolation_sub(ioreplay)
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 ! Choice of atomic basis set (cpw_pp_atorb_questions), consistency with hsr.dat. 20 October 2026. JLM+claude
 ! tnp passed to ao_interpolation_prepare (projection method). 20 October 2026. JLM+claude
+! icmplx no longer passed to ao_interpolation_out_band_fold_full and ao_interpolation_w90. 23 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -410,7 +411,6 @@ subroutine ao_interpolation_sub(ioreplay)
         crys_%adot, crys_%ntype, crys_%natom, crys_%nameat,              &
         crys_%rat,                                                       &
         recip_%ng, recip_%kgv,                                           &
-        strfac_%icmplx,                                                  &
         atorb_%n_bsets, atorb_%jbset,                                    &
         atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
         atorb_%wvfao, atorb_%lorb,                                       &
@@ -503,7 +503,6 @@ subroutine ao_interpolation_sub(ioreplay)
         crys_%adot,                                                      &
         crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,               &
         recip_%ng, recip_%kgv,                                           &
-        strfac_%icmplx,                                                  &
         atorb_%n_bsets, atorb_%jbset,                                    &
         atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
         atorb_%wvfao, atorb_%lorb,                                       &

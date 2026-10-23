@@ -17,13 +17,13 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 16 October 2026.
+!>  \date         18 october 1993. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 
 subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
-    veffr1, icmplx, lhpsi,                                               &
+    veffr1, lhpsi,                                                       &
     ng, kgv,                                                             &
     nqnl, delqnl, vkb, nkb,                                              &
     n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                   &
@@ -56,6 +56,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 ! Generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -81,7 +82,6 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   character(len=6), intent(in)       ::  flgscf                          !<  type of scf calculation
 
   real(REAL64), intent(in)           ::  veffr1                          !<  Average value (veff(1)) of the effective potential.
-  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
   logical, intent(in)                ::  lhpsi                           !<  indicates that H | psi> should be also calculated
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
@@ -211,7 +211,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 
   allocate(infolcao(5,mxdorb))
 
-  call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                     &
+  call atomic_orbital_c16(rkpt, mtxd, isort,                             &
       nbasorb, bas, infolcao,                                            &
       ng, kgv,                                                           &
       n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &

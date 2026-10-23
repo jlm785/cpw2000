@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 2020. 16 October 2026.
+!>  \date         May 2020. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
@@ -45,6 +45,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 ! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh). 7 October 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! h_kb_dia_ao without icmplx. 23 October 2026. JLM+claude
 
   implicit none
 
@@ -228,7 +229,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
       lhpsi = .TRUE.
 
       call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AOJC  ',     &
-          veffr1, icmplx, lhpsi,                                         &
+          veffr1, lhpsi,                                                 &
           ng, kgv,                                                       &
           nqnl, delqnl, vkb, nkb,                                        &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
@@ -286,7 +287,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
   elseif(diag_type == "aojc") then
 
     call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AOJC  ',       &
-        veffr1, icmplx, lhpsi,                                           &
+        veffr1, lhpsi,                                                   &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
         n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
@@ -302,7 +303,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
   elseif(diag_type == "ao  ") then
 
     call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AO    ',       &
-        veffr1, icmplx, lhpsi,                                           &
+        veffr1, lhpsi,                                                   &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
         n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &

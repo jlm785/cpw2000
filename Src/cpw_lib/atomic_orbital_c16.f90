@@ -12,14 +12,14 @@
 !------------------------------------------------------------!
 
 !>  Expands the atomic orbitals in the plane-wave basis.
-!>  Orbitals may have the inversion symmetry applied to them.
+!>  Each orbital is centered on a single atom.
 !>
 !>  \author       José Luís Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         January 2008, 30 May 2019, 16 October 2026.
+!>  \date         January 2008, 30 May 2019, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
+subroutine atomic_orbital_c16(rkpt, mtxd, isort,                         &
     nbaslcao, baslcao, infolcao,                                         &
     ng, kgv,                                                             &
     n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                   &
@@ -38,6 +38,7 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 ! Merge with version 2 (infolcao). JLM
 ! Indentation. 28 September 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude
+! Inversion symmetric combinations and icmplx removed. 23 October 2026. JLM+claude
 
 
   implicit none
@@ -58,8 +59,6 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  k-point reciprocal lattice coordinates
   integer, intent(in)                ::  mtxd                            !<  wavefunction dimension
   integer, intent(in)                ::  isort(mxddim)                   !<  G-vector corresponding to coefficient i of wavefunction
-
-  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
 
   integer, intent(in)                ::  ng                              !<  size of g-space
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  G-vectors in reciprocal lattice coordinates
@@ -86,7 +85,6 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 ! local allocatable variables
 
   complex(REAL64), allocatable  ::  st(:)
-  integer, allocatable  ::  irow(:)
   integer, allocatable  ::  nq(:)
   integer, allocatable  ::  ib(:)                                        !  basis set used for atom k
 
@@ -106,21 +104,17 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
 
   complex(REAL64) ::  pitol                               !   i**l
 
-  integer         ::  lmax, ifail, icount
-  real(REAL64)    ::  diff, dist
-  complex(REAL64) ::  olda, oldb
+  integer         ::  lmax, ifail
 
 ! constants
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64, UM = 1.0_REAL64
   complex(REAL64), parameter :: C_I = cmplx(ZERO,UM,REAL64)
   real(REAL64), parameter :: PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter :: EPS = 0.00000001_REAL64
 
 ! counters
 
   integer         ::  ind,i,j,k,l,m,kk,ni
-  integer         ::  nt, n
 
 
 ! paranoid check, stops complaint about unused ng...
@@ -242,81 +236,6 @@ subroutine atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                 &
   enddo             !  i=1,mtxd
 
   deallocate(st)
-
-! performs changes of basis for special case
-
-  if(icmplx == 0) then
-
-!   constructs symetrical and antisymetrical functions
-!   for the case of real hamiltonians
-
-    allocate(irow(mxdatm))
-
-    icount = 0
-    do nt=1,ntype
-      do i=1,natom(nt)
-        irow(i) = 0
-      enddo
-      do i=1,natom(nt)
-        do j=i,natom(nt)
-          dist = ZERO
-          do k=1,3
-            diff = rat(k,j,nt)+rat(k,i,nt)
-            diff = diff - nint(diff)
-            dist = dist + diff*diff
-          enddo
-          if(dist < EPS) then
-            irow(i) = j
-            irow(j) = i
-          endif
-        enddo
-        if(irow(i) == 0) then
-          write(6,'("  Stopped in atomic_orbital_c16:   Failed ",   &
-              &                   "to find inversion")')
-
-          stop
-
-        endif
-      enddo
-
-      do n=1,norbat(ib(nt),nt)
-        l = lorb(n,ib(nt),nt)
-        do m=-l,l
-          do i=1,natom(nt)
-            if(irow(i) > i) then
-              if(mod(l,2) == 0) then
-                do j=1,mtxd
-                  olda = baslcao(j,icount+i)
-                  oldb = baslcao(j,icount+irow(i))
-                  baslcao(j,icount+i) = (olda+oldb)/sqrt(2*UM)
-                  baslcao(j,icount+irow(i)) = C_I *                      &
-                                        (olda-oldb)/sqrt(2*UM)
-               enddo
-              else
-                do j=1,mtxd
-                  olda = baslcao(j,icount+i)
-                  oldb = baslcao(j,icount+irow(i))
-                  baslcao(j,icount+i) = (olda-oldb)/sqrt(2*UM)
-                  baslcao(j,icount+irow(i)) = C_I *                      &
-                                        (olda+oldb)/sqrt(2*UM)
-                enddo
-              endif
-            elseif(irow(i) == i) then
-              if(mod(l,2) == 1) then
-                do j=1,mtxd
-                  baslcao(j,icount+i) = C_I * baslcao(j,icount+i)
-                enddo
-              endif
-            endif
-          enddo
-          icount = icount + natom(nt)
-        enddo
-      enddo
-    enddo
-
-    deallocate(irow)
-
-  endif
 
 ! fills infolcao, loops must be consistent with previous loops!
 

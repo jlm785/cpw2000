@@ -26,12 +26,13 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         10 October 2026.
+!>  \date         10 October 2026. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine metric_buerger(adot, adotb, mtb)
 
 ! Written 10 October 2026. claude
+! Pairwise reduction only when strictly shorter (fcc looped). 23 October 2026. JLM+claude
 
   implicit none
 
@@ -87,13 +88,15 @@ subroutine metric_buerger(adot, adotb, mtb)
     enddo
     enddo
 
-!   pairwise (Gauss-Lagrange) reduction
+!   pairwise (Gauss-Lagrange) reduction, only if strictly shorter
+!   (|b_i.b_j| = b_j.b_j / 2, as in fcc, would otherwise loop forever)
 
     do i = 1,3
     do j = 1,3
       if(i /= j) then
         iq = nint(adotb(i,j) / adotb(j,j))
-        if(iq /= 0) then
+        vv = adotb(i,i) - 2*iq*adotb(i,j) + iq*iq*adotb(j,j)
+        if(iq /= 0 .and. vv < adotb(i,i)*(1 - EPS)) then
           mtb(:,i) = mtb(:,i) - iq*mtb(:,j)
           call metric_buerger_update(adot, mtb, adotb)
           lchange = .TRUE.

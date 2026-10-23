@@ -15,14 +15,13 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         May 2020, 16 October 2026.
+!>  \date         May 2020, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
       emax, ztot,                                                        &
       adot, ntype, natom, nameat, rat,                                   &
       ng, kgv,                                                           &
-      icmplx,                                                            &
       n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &
       mxdtyp, mxdatm, mxdgve, mxdlqp, mxdlao, mxdset)
 
@@ -34,6 +33,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 ! Debug prints commented. 4 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -66,8 +66,6 @@ subroutine ao_interpolation_w90(mtb,                                     &
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
 
-  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
-
   integer, intent(in)                ::  n_bsets(mxdtyp)                 !<  number of basis sets for atom k
   integer, intent(in)                ::  jbset(mxdtyp)                   !<  basis set chosen for atom k
   integer, intent(in)                ::  norbat(mxdset,mxdtyp)           !<  number of atomic orbitals for basis set nb and atom k
@@ -83,7 +81,6 @@ subroutine ao_interpolation_w90(mtb,                                     &
   complex(REAL64), allocatable       ::  ao_basis_so(:,:)
 
   complex(REAL64), allocatable       ::  ao_basis_ortho(:,:)
-
 
   real(REAL64), allocatable          ::  hdiag(:)                        !  hamiltonian diagonal
   integer, allocatable               ::  isort(:)                        !  g-vector associated with row/column i of hamiltonian
@@ -482,7 +479,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
     lnewanl = .TRUE.
 
-    call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                   &
+    call atomic_orbital_c16(rkpt, mtxd, isort,                           &
         mxdorb, ao_basis, infolcao,                                      &
         ng, kgv,                                                         &
         n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,               &
@@ -610,7 +607,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
       lnewanl = .TRUE.
 
-      call atomic_orbital_c16(rkpt2, mtxd2, isort2, icmplx,              &
+      call atomic_orbital_c16(rkpt2, mtxd2, isort2,                      &
           mxdorb, ao_basis, infolcao,                                    &
           ng, kgv,                                                       &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &

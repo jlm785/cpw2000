@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         8 may 2004, 16 October 2026.
+!>  \date         8 may 2004, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
@@ -53,6 +53,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! atomic_orbital_c16 without icmplx (no inversion symmetric combinations). 23 October 2026. JLM+claude
 
   implicit none
 
@@ -479,7 +480,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 
       if (lproj) then
 
-        call atomic_orbital_c16(rkpt, mtxd, isort, 1,                    &
+        call atomic_orbital_c16(rkpt, mtxd, isort,                       &
             nbaslcao, baslcao_aux, infolcao,                             &
             ng, kgv,                                                     &
             n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &

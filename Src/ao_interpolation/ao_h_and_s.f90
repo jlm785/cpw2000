@@ -16,12 +16,12 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2015. 16 October 2026.
+!>  \date         before 2015. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
     ng, kgv,                                                             &
-    veff, icmplx,                                                        &
+    veff,                                                                &
     nqnl, delqnl, vkb, nkb,                                              &
     ntype, natom, rat, adot,                                             &
     n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                   &
@@ -46,6 +46,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 ! Generalized Kohn-Sham meta-GGA, vtau term in dh0drk from kdotp_matrix. 8 October 2026. JLM+claude
 ! esmear = 0 in hamilt_pw (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -70,7 +71,6 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   integer, intent(in)                ::  ng                              !<  total number of g-vectors with length less than gmax
   integer, intent(in)                ::  kgv(3,mxdgve)                   !<  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
-  integer, intent(in)                ::  icmplx                          !<  indicates if the structure factor is complex
   complex(REAL64), intent(in)        ::  veff(mxdnst)                    !<  real part of the ionic potential (hartree) for the prototype g-vector in star j
 
   integer, intent(in)                ::  nqnl(mxdtyp)                    !<  number of points for the non-local pseudopotential interpolation
@@ -183,7 +183,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   allocate(infolcao(5,mxdorb))
 
-  call atomic_orbital_c16(rkpt, mtxd, isort, icmplx,                     &
+  call atomic_orbital_c16(rkpt, mtxd, isort,                             &
       nbaslcao, psi, infolcao,                                           &
       ng, kgv,                                                           &
       n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,                 &

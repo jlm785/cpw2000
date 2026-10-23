@@ -25,7 +25,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 20 October 2026.
+!>  \date         2014. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -64,6 +64,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! New ao_match_state (degenerate levels), spin-orbit states matched directly, neig_pw. 19 October 2026. JLM+claude
 ! Projection of the plane-wave states (ao_int_proj_hamilt), rotated from irreducible points, tnp. 20 October 2026. JLM+claude WARNING NEW API
+! ao_h_and_s and atomic_orbital_c16 without icmplx. 23 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -664,7 +665,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !       atomic orbitals in the same basis
 
-        call atomic_orbital_c16(rk_grid(:,ikg), mtxd, isort_t, icmplx,   &
+        call atomic_orbital_c16(rk_grid(:,ikg), mtxd, isort_t,           &
             nd, bas, infolcao,                                           &
             ng, kgv,                                                     &
             n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
@@ -702,7 +703,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           call ao_h_and_s_spin_orbit(emax, rk_grid(:,ikg), norb_ao,      &
               flgpsd,                                                    &
               ng, kgv,                                                   &
-              veff, icmplx,                                              &
+              veff,                                                      &
               nqnl, delqnl, vkb, nkb,                                    &
               ntype, natom, rat, adot,                                   &
               n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,         &
@@ -729,7 +730,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
           call ao_h_and_s(emax, rk_grid(:,ikg), norb_ao, flgpsd,         &
               ng, kgv,                                                   &
-              veff, icmplx,                                              &
+              veff,                                                      &
               nqnl, delqnl, vkb, nkb,                                    &
               ntype, natom, rat, adot,                                   &
               n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,         &
@@ -961,7 +962,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
         call ao_h_and_s_spin_orbit(emax, rkpt, norb_ao, flgpsd,          &
             ng, kgv,                                                     &
-            veff, icmplx,                                                &
+            veff,                                                        &
             nqnl, delqnl, vkb, nkb,                                      &
             ntype, natom, rat, adot,                                     &
             n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
@@ -1006,7 +1007,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
         call ao_h_and_s(emax, rkpt, norb_ao, flgpsd,                     &
             ng, kgv,                                                     &
-            veff, icmplx,                                                &
+            veff,                                                        &
             nqnl, delqnl, vkb, nkb,                                      &
             ntype, natom, rat, adot,                                     &
             n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,           &
