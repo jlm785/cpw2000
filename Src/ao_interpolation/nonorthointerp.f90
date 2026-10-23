@@ -12,6 +12,8 @@
 !------------------------------------------------------------!
 
 module NonOrthoInterp
+! Atomic sites (tau, isite) replace the Wigner-Seitz search size, new hsr.dat
+! content. 23 October 2026. JLM+claude
   use FourierInterpolation
   implicit none
   integer, parameter,private          :: REAL64 = selected_real_kind(12)
@@ -48,7 +50,10 @@ module NonOrthoInterp
     deallocate(this%ev_s)
 
     deallocate(this %fiData %irvec)
-    deallocate(this %fiData %ndegen)
+    deallocate(this %fiData %tau)
+    deallocate(this %fiData %isite)
+    deallocate(this %fiData %nimg)
+    deallocate(this %fiData %irimg)
     deallocate(this %fiData %ham_r)
     deallocate(this %fiData %S_r)
     if (allocated(this %fiData %kpt_latt)) then
@@ -77,16 +82,18 @@ module NonOrthoInterp
 
   end subroutine NonOrthoInterpInternalInit
 
-  subroutine NonOrthoInterpInit(this,lso,loptical,nk1,nk2,nk3,ws_n1,ws_n2,ws_n3,adot,nkpt,nband,nequal)
+  subroutine NonOrthoInterpInit(this,lso,loptical,nk1,nk2,nk3,adot,natsite,tau,isite,nkpt,nband,nequal)
     implicit none
     type(noiData_t) :: this
     logical, intent(in)         ::  lso                                  !  if true use spin orbit
     logical, intent(in)         ::  loptical                             !  if true calculate optical matrix elements
     integer nk1,nk2,nk3,nkpt
-    integer ws_n1, ws_n2, ws_n3
+    integer natsite                                                      ! number of atomic sites
 !    integer nk1,nk2,nk3,nkpt
     real(REAL64) adot(3,3)
     integer nband, nequal
+    real(REAL64) tau(3,natsite)                                          ! lattice coordinates of the sites
+    integer isite(nband)                                                 ! site of the basis function
 
     if(lso) then
       this%lso = 1
@@ -104,7 +111,7 @@ module NonOrthoInterp
 
     call NonOrthoInterpInternalInit(this,nband)
 
-    call fi_hamiltonian_setup(this%fiData,nband,nk1,nk2,nk3,ws_n1,ws_n2,ws_n3,adot)
+    call fi_hamiltonian_setup(this%fiData,nband,nk1,nk2,nk3,adot,natsite,tau,isite)
 
     if (this%loptical == 1) then
       write(6,*) 'allocating space for optical properties computation'
@@ -158,17 +165,9 @@ module NonOrthoInterp
 
     write(777) this %eref
 
-    write(777) this %fiData %ws_search_size(1), this %fiData %ws_search_size(2), this %fiData %ws_search_size(3)
-
-    write(777) this %fiData %nrpts
-
-    do ir=1,this %fiData %nrpts
-      write(777) this %fiData %irvec(1,ir),this %fiData %irvec(2,ir),this %fiData %irvec(3,ir)
-    enddo
-
-    do ir=1,this %fiData %nrpts
-      write(777) this %fiData %ndegen(ir)
-    enddo
+    write(777) this %fiData %natsite
+    write(777) this %fiData %tau(:,:)
+    write(777) this %fiData %isite(:)
 
     do ir=1,this %fiData %nrpts
 !      do iband=1,this %nband
@@ -264,6 +263,9 @@ module NonOrthoInterp
     implicit none
     type(noiData_t) :: this
     integer ir, nrpts, nband, idir
+    integer natsite
+    real(REAL64), allocatable :: tau(:,:)
+    integer, allocatable :: isite(:)
 
     open(unit=777,file='hsr.dat',form='unformatted')
 
@@ -279,12 +281,22 @@ module NonOrthoInterp
 
     read(777) this %eref
 
-    read(777) this %fiData %ws_search_size(1), this %fiData %ws_search_size(2), this %fiData %ws_search_size(3)
+    read(777) natsite
+    allocate(tau(3,natsite))
+    allocate(isite(this %nband))
+    read(777) tau(:,:)
+    read(777) isite(:)
 
-    read(777) this %fiData %nrpts
+    nband = this %nband
+
+!   grid classes and nearest images
+
+    call fi_hamiltonian_images(this %fiData,nband,natsite,tau,isite)
+
+    deallocate(tau)
+    deallocate(isite)
 
     nrpts = this %fiData %nrpts
-    nband = this %nband
 
 !    write(*,*) 'deb2: ', nband,nrpts
 
@@ -292,22 +304,10 @@ module NonOrthoInterp
 
 !    write(*,*) 'deb3: '
 
-    allocate(this %fiData %irvec(3,nrpts))
-    allocate(this %fiData %ndegen(nrpts))
     allocate(this %fiData %ham_r(nband,nband,nrpts))
     allocate(this %fiData %S_r(nband,nband,nrpts))
 
 !    write(*,*) 'deb4: '
-
-    do ir=1,this %fiData %nrpts
-      read(777) this %fiData %irvec(1,ir),this %fiData %irvec(2,ir),this %fiData %irvec(3,ir)
-    enddo
-
-!    write(*,*) 'deb5: '
-
-    do ir=1,this %fiData %nrpts
-      read(777) this %fiData %ndegen(ir)
-    enddo
 
 !    write(*,*) 'deb6: '
 

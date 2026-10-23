@@ -15,12 +15,13 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         Before October 2018. October 2024.
+!>  \date         Before October 2018. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_int_GetS12(S, S12, S12_inv, wrk, ev_wrk, nband)
 
 ! cleaned in October 2024, JLM.  Needs some further simplification and clear documentation
+! ao_int_GetHpw averages the correction in degenerate levels. 23 October 2026. JLM+claude
 ! ao_int_OrthoH and ao_int_GetHpw are only called once and subroutine or calling subroutine
 ! have few executable lines.
 
@@ -140,6 +141,11 @@ subroutine ao_int_GetHpw(nband, nequal, Hao, S, ev_pw,                   &
 ! this subroutine outputs the Hamiltonian in the atomic basis
 ! Hpw=<ao|Hpw|ao> which when diagonalized gives the first nequal
 ! eigenvalues equal to ev_pw.
+!
+! The correction (ev_pw - ev_ao) is averaged inside each group of
+! degenerate atomic orbital levels, otherwise the arbitrary basis of the
+! degenerate level breaks the symmetry of Hpw (the target energies may
+! differ inside the level, from numerical splitting or nequal).
 
 ! input
 
@@ -170,10 +176,12 @@ subroutine ao_int_GetHpw(nband, nequal, Hao, S, ev_pw,                   &
 ! local variables
 
   integer       ::  info
+  integer       ::  i1, i2                                               !  first and last state of a degenerate level
+  real(REAL64)  ::  shift                                                !  average correction in the level
 
 !  counters
 
-  integer       ::  i,j
+  integer       ::  i,j,k
 
 ! parameters
 
@@ -181,6 +189,7 @@ subroutine ao_int_GetHpw(nband, nequal, Hao, S, ev_pw,                   &
   real(REAL64)   , parameter         :: UM = 1.0_REAL64
   complex(REAL64), parameter         :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter         :: C_UM = cmplx(UM,ZERO,REAL64)
+  real(REAL64)   , parameter         :: TOL = 1.0E-5_REAL64             !  tolerance for degenerate levels (hartree)
 
 
   call ao_int_GetS12(S, S12, S12_inv, wrk, ev_s, nband)
@@ -223,6 +232,28 @@ subroutine ao_int_GetHpw(nband, nequal, Hao, S, ev_pw,                   &
 
   do j = nequal+1,nband
       Hpw(j,j) = cmplx(ev_ao(j),ZERO,REAL64)
+  enddo
+
+! same correction for all states of a degenerate level
+
+  i1 = 1
+  do while(i1 <= nband)
+    i2 = i1
+    do while(i2 < nband)
+      if(ev_ao(i2+1) - ev_ao(i1) > TOL) exit
+      i2 = i2 + 1
+    enddo
+    if(i2 > i1) then
+      shift = ZERO
+      do k = i1,i2
+        shift = shift + real(Hpw(k,k),REAL64) - ev_ao(k)
+      enddo
+      shift = shift / (i2-i1+1)
+      do k = i1,i2
+        Hpw(k,k) = cmplx(ev_ao(k) + shift,ZERO,REAL64)
+      enddo
+    endif
+    i1 = i2 + 1
   enddo
 
 !    wrk = matmul(Uao,matmul(Hpw,transpose(Uao)))

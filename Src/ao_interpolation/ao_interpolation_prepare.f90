@@ -65,6 +65,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! New ao_match_state (degenerate levels), spin-orbit states matched directly, neig_pw. 19 October 2026. JLM+claude
 ! Projection of the plane-wave states (ao_int_proj_hamilt), rotated from irreducible points, tnp. 20 October 2026. JLM+claude WARNING NEW API
 ! ao_h_and_s and atomic_orbital_c16 without icmplx. 23 October 2026. JLM+claude
+! Wigner-Seitz search size question removed, atomic sites for the nearest images, symmetry check. 23 October 2026. JLM+claude
+! Plane-wave states in complete levels at each k-point (neig_k, ao_int_neig_level), nequal = all states. 23 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -159,6 +161,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   complex(REAL64), allocatable       ::  hpsi_ao(:,:)                    !  H | psi >
 
   real(REAL64), allocatable          ::  ev_pw(:,:), ev_pw_irred(:,:), ev_interp(:)
+  real(REAL64), allocatable          ::  ev_sym(:)                       !  eigenvalues at a symmetry related k-point
+  real(REAL64), allocatable          ::  tau_site(:,:)                   !  lattice coordinates of the atomic sites
+  integer, allocatable               ::  isite(:)                        !  atomic site of each basis function
   complex(REAL64), allocatable       ::  Hao(:,:), S(:,:), dh0drk_AO(:,:,:)
 
   real(REAL64), allocatable:: rk_grid(:,:)
@@ -222,12 +227,18 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
 !--------------------------------------------------------------------
   integer           ::  nk1,nk2,nk3
-  integer           ::  ws_n1, ws_n2, ws_n3
+  integer           ::  natsite                                          !  number of atomic sites (atoms)
+  integer           ::  isym, itr                                        !  symmetry operation, time reversal
+  real(REAL64)      ::  rksym(3)                                         !  k-point for the symmetry test
+  real(REAL64)      ::  xsymerr                                          !  largest eigenvalue difference in the star
 
   integer           ::  nkpt, lmax
   integer           ::  norb_ao                                          !  number of orbitals for ao diagonalization
   integer           ::  neig                                             !  number of eigenvalues fitted to the plane-wave ones
-  integer           ::  neig_pw                                          !  number of orbitals for pw diagonalization
+  integer           ::  neig_pw                                          !  minimum number of plane-wave states used
+  integer           ::  neig_dia                                         !  number of states in the plane-wave diagonalization
+  integer           ::  neig_k                                           !  number of plane-wave states used at the k-point (complete levels)
+  integer           ::  neig_kmin, neig_kmax                             !  range of neig_k
   integer           ::  iprmatch                                         !  print control for ao_match_state
   integer           ::  nocc
 
@@ -253,17 +264,20 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! parameters
 
   real(REAL64), parameter :: ZERO = 0.0_REAL64
+  real(REAL64), parameter :: HARTREE = 27.211386246_REAL64
   real(REAL64), parameter :: UM = 1.0_REAL64
   real(REAL64), parameter :: XMIN = 0.5_REAL64                           !  minimum weight for matching atomic orbital and plane-wave states
   real(REAL64), parameter :: XNMIN = 0.5_REAL64                          !  minimum norm in the atomic orbital space of projected plane-wave states
   real(REAL64), parameter :: EPS = 1.0E-8_REAL64                         !  tolerance for k-points
   real(REAL64), parameter :: EPSS = 1.0E-8_REAL64                        !  tolerance for the overlap check
+  integer, parameter      :: NEXTRA = 4                                  !  extra plane-wave states, so that a degenerate level is not cut
   complex(REAL64), parameter :: C_ZERO = cmplx(ZERO,ZERO,REAL64)
   complex(REAL64), parameter :: C_UM = cmplx(UM,ZERO,REAL64)
 
 ! counters
 
   integer           ::  i, j, k
+  integer           ::  n, m, kk
   integer           ::  ix,iy,iz
 
 
@@ -314,22 +328,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   write(ioreplay,*) nk1,nk2,nk3,'     k-point grid'
 
   write(6,'( "  interpolation in a mesh of", i3," x ",i3," x ",i3, " k-points"  )') nk1,nk2,nk3
-
-  write(6,*) '  do you want to modify Wigner-Seitz cell search size ?'
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'     ws_search_size_yesno'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-     write(6,*) '  please enter Wigner Seitz cell search size'
-     write(6,*) '  recomended is 2 2 2 minimum'
-
-     read(5,*) ws_n1,ws_n2,ws_n3
-     write(ioreplay,*) ws_n1,ws_n2,ws_n3,'     ws_search_size'
-  else
-   ws_n1 = 2
-   ws_n2 = 2
-   ws_n3 = 2
-  endif
 
 ! Allocates the arrays and calls int_pnt
 ! It is uniform nk1 nk2 nk3 grid with zero shift.
@@ -469,8 +467,15 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   neig_pw = neig + 2
 
+! NEXTRA more are calculated so that a degenerate level is not cut
+
+  neig_dia = neig_pw + NEXTRA
+
   mxdorb = norb_ao
-  mxdbnd = neig_pw
+  mxdbnd = neig_dia
+
+  neig_kmin = neig_dia
+  neig_kmax = 0
 
 ! 1 prints warnings, 2 the table of overlaps
 
@@ -479,7 +484,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   write(6,*)
   write(6,*) '  number k-points:', nkpt
   write(6,*) '  number of atomic orbitals:', norb_ao
-  write(6,*) '  number of eigenvalues calculated with plane waves:', neig_pw
+  write(6,*) '  number of eigenvalues calculated with plane waves:', neig_dia
   write(6,*) '  total charge:', nint(ztot)
   write(6,*)
 
@@ -516,8 +521,55 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
     nspin = 1
   endif
 
+! atomic site of each basis function, in the order of atomic_orbital_c16,
+! spinors as in ao_h_and_s_spin_orbit
+
+  natsite = 0
+  do k = 1,ntype
+    natsite = natsite + natom(k)
+  enddo
+
+  allocate(tau_site(3,natsite))
+  allocate(isite(nspin*norb_ao))
+
+  n = 0
+  do k = 1,ntype
+    do j = 1,natom(k)
+      n = n + 1
+      tau_site(:,n) = rat(:,j,k)
+    enddo
+  enddo
+
+  i = 0
+  do k = 1,ntype
+    ib = max(1,min(jbset(k),n_bsets(k)))
+    do j = 1,norbat(ib,k)
+      do m = 1,2*lorb(j,ib,k)+1
+        n = 0
+        do kk = 1,k-1
+          n = n + natom(kk)
+        enddo
+        do kk = 1,natom(k)
+          i = i + 1
+          if(lso) then
+            isite(2*i-1) = n + kk
+            isite(2*i) = n + kk
+          else
+            isite(i) = n + kk
+          endif
+        enddo
+      enddo
+    enddo
+  enddo
+
+! all target energies are used (unmatched states keep their atomic
+! orbital energy), so that no degenerate level is cut by nequal
+
   call NonOrthoInterpInit(noiData, lso, loptical, nk1,nk2,nk3,           &
-      ws_n1,ws_n2,ws_n3, adot, nkpt, nspin*norb_ao, nspin*neig)
+      adot, natsite, tau_site, isite, nkpt, nspin*norb_ao, nspin*norb_ao)
+
+  deallocate(tau_site)
+  deallocate(isite)
 
   allocate(ev_pw(nspin*norb_ao,nkpt))
   allocate(ev_pw_irred(nspin*norb_ao,nkpt))
@@ -570,9 +622,10 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
       rkpt(3) = rk_irred(3,irk)
 
       ipr = 0
-      nocc = neig_pw
+      neig_k = neig_dia
+      nocc = neig_dia
 
-      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc,         &
+      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_k, nocc,          &
           flgpsd, ipr, ifail, icmax, iguess, epspsi,                     &
           ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
           sfact, veff, icmplx,                                           &
@@ -585,6 +638,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           .TRUE., n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,     &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdbnd, mxdscr, mxdlao, mxdset)
+
+!     complete levels (spin-orbit and the projection need symmetric sets of states)
+
+      call ao_int_neig_level(neig_pw, neig_dia, ei, neig_k)
+
+      neig_kmin = min(neig_kmin,neig_k)
+      neig_kmax = max(neig_kmax,neig_k)
 
 !     loop over the grid points equivalent to irk
 
@@ -657,7 +717,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
         enddo
 
         call psi_rot_inv_shift(mtrx(:,:,jsym), tnp(:,jsym),              &
-            kmap2, kgshift, neig_pw,                                     &
+            kmap2, kgshift, neig_k,                                      &
             rkpt, mtxd, isort, psi,                                      &
             rk_grid(:,ikg), mtxd, isort_t, psi_t,                        &
             ng, kgv,                                                     &
@@ -677,7 +737,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 !         spin-orbit at the grid point, spinors as in ao_h_and_s_spin_orbit
 
           call spin_orbit_perturb(rk_grid(:,ikg), mtxd, isort_t,         &
-              neig_pw, psi_t, ei, ei_so, psi_so, .TRUE.,                 &
+              neig_k, psi_t, ei, ei_so, psi_so, .TRUE.,                  &
               ng, kgv,                                                   &
               nqnl, delqnl, vkb, nkb,                                    &
               ntype, natom, rat, adot,                                   &
@@ -692,7 +752,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           enddo
           enddo
 
-          call zgemm('c', 'n', 2*norb_ao, 2*neig_pw, 2*mtxd, C_UM,       &
+          call zgemm('c', 'n', 2*norb_ao, 2*neig_k, 2*mtxd, C_UM,        &
               bas_so, 2*mxddim, psi_so, 2*mxddim, C_ZERO,                &
               bmat, nspin*mxdorb)
 
@@ -714,13 +774,13 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
               mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,    &
               mxdscr, mxdlao, mxdset)
 
-          call ao_int_proj_hamilt(0, XNMIN, 2*norb_ao, 2*neig_pw, ei_so, &
+          call ao_int_proj_hamilt(0, XNMIN, 2*norb_ao, 2*neig_k, ei_so,  &
               bmat, Hao, S, hmtb, nsel,                                  &
               nspin*mxdorb, nspin*mxdbnd)
 
         else
 
-          call zgemm('c', 'n', norb_ao, neig_pw, mtxd, C_UM,             &
+          call zgemm('c', 'n', norb_ao, neig_k, mtxd, C_UM,              &
               bas, mxddim, psi_t, mxddim, C_ZERO,                        &
               bmat, nspin*mxdorb)
 
@@ -741,7 +801,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
               mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxddim, mxdorb,    &
               mxdscr, mxdlao, mxdset)
 
-          call ao_int_proj_hamilt(0, XNMIN, norb_ao, neig_pw, ei,        &
+          call ao_int_proj_hamilt(0, XNMIN, norb_ao, neig_k, ei,         &
               bmat, Hao, S, hmtb, nsel,                                  &
               nspin*mxdorb, nspin*mxdbnd)
 
@@ -849,9 +909,10 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdorb, mxdscr, mxdlao, mxdset)
 
-      nocc = neig_pw
+      neig_k = neig_dia
+      nocc = neig_dia
 
-      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_pw, nocc, flgpsd, &
+      call h_kb_dia_all('pw  ', emax, ZERO, rkpt, neig_k, nocc, flgpsd,  &
           ipr, ifail, icmax, iguess, epspsi,                             &
           ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
           sfact, veff, icmplx,                                           &
@@ -865,12 +926,19 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
           mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim,        &
           mxdbnd, mxdscr, mxdlao, mxdset)
 
+!     complete levels (spin-orbit needs symmetric sets of states)
+
+      call ao_int_neig_level(neig_pw, neig_dia, ei, neig_k)
+
+      neig_kmin = min(neig_kmin,neig_k)
+      neig_kmax = max(neig_kmax,neig_k)
+
       if(lso) then
 
 !     spin-orbit states are matched directly, as spin-orbit may change the order
 
         call spin_orbit_perturb(rkpt, mtxd, isort,                       &
-            neig_pw, psi, ei, ei_so, psi_so, .TRUE.,                     &
+            neig_k, psi, ei, ei_so, psi_so, .TRUE.,                      &
             ng, kgv,                                                     &
             nqnl, delqnl, vkb, nkb,                                      &
             ntype, natom, rat, adot,                                     &
@@ -884,14 +952,14 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
             mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve)
 
         call ao_match_state(iprmatch, XMIN, 2*mtxd,                      &
-            2*neig_pw, psi_so, ei_so, 2*norb_ao, psi_ao_so, ei_ao_so,    &
+            2*neig_k, psi_so, ei_so, 2*norb_ao, psi_ao_so, ei_ao_so,     &
             ei_match, imatch, xover,                                     &
             2*mxddim, 2*mxdbnd, 2*mxdorb)
 
       else
 
         call ao_match_state(iprmatch, XMIN, mtxd,                        &
-            neig_pw, psi, ei, norb_ao, psi_ao, ei_ao,                    &
+            neig_k, psi, ei, norb_ao, psi_ao, ei_ao,                     &
             ei_match, imatch, xover,                                     &
             mxddim, mxdbnd, mxdorb)
 
@@ -1041,8 +1109,43 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 !-------------------------------------------------------------------------
 
   write(6,*)
+  write(6,'("   plane-wave states used (complete levels) from ",i5,      &
+      &     " to ",i5)') neig_kmin, neig_kmax
+  write(6,*)
   write(6,*) '  Finishing Setup'
   call NonOrthoInterpFinishSetup(noiData)
+
+! symmetry check, eigenvalues in the star of a general k-point
+
+  allocate(ev_sym(nspin*norb_ao))
+
+  rksym(1) = 0.1234_REAL64
+  rksym(2) = 0.2345_REAL64
+  rksym(3) = 0.3456_REAL64
+  call NonOrthoInterpRun(noiData, rksym, ev_interp)
+
+  xsymerr = ZERO
+  do isym = 1,ntrans
+    do itr = 1,-1,-2
+      do j = 1,3
+        rkpt(j) = itr*(mtrx(j,1,isym)*rksym(1) +                         &
+                       mtrx(j,2,isym)*rksym(2) +                         &
+                       mtrx(j,3,isym)*rksym(3))
+      enddo
+      call NonOrthoInterpRun(noiData, rkpt, ev_sym)
+      do j = 1,nspin*norb_ao
+        xsymerr = max(xsymerr,abs(ev_sym(j) - ev_interp(j)))
+      enddo
+    enddo
+  enddo
+
+  write(6,*)
+  write(6,'("   Largest eigenvalue difference in the star of a ",        &
+      &     "k-point (symmetry check): ",e10.2," eV")') xsymerr*HARTREE
+  write(6,*)
+
+  deallocate(ev_sym)
+
   write(6,*) '  Writing to file for later use.'
   call NonOrthoInterpWriteToFile(noiData)
   write(6,*)
