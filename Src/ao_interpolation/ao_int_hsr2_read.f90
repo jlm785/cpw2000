@@ -17,7 +17,7 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         24 October 2026.
+!>  \date         23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_int_hsr2_read(io, meta_cpw2000, title, subtitle,           &
@@ -27,7 +27,7 @@ subroutine ao_int_hsr2_read(io, meta_cpw2000, title, subtitle,           &
     lso, loptical, imtb, mp_grid, nband,                                 &
     mxdtyp, mxdatm, mxdlqp, mxdlao)
 
-! Written 24 October 2026. claude
+! Written 23 October 2026. claude
 
   implicit none
 

@@ -18,12 +18,12 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         24 October 2026.
+!>  \date         23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_use(ioreplay)
 
-! Written 24 October 2026 from ao_interpolation_sub (Carlos Loia Reis,
+! Written 23 October 2026 from ao_interpolation_sub (Carlos Loia Reis,
 ! Jose Luis Martins and others). claude
 
   use NonOrthoInterp

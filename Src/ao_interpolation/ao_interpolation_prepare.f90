@@ -25,11 +25,12 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 24 October 2026.
+!>  \date         2014. 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 
-subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
+subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
+        lso, loptical, imtb,                                             &
         emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,               &
         adot, ntype, natom, rat, ntrans, mtrx, tnp,                      &
         ng, kgv, phase, conj,                                            &
@@ -67,7 +68,9 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 ! ao_h_and_s and atomic_orbital_c16 without icmplx. 23 October 2026. JLM+claude
 ! Wigner-Seitz search size question removed, atomic sites for the nearest images, symmetry check. 23 October 2026. JLM+claude
 ! Plane-wave states in complete levels at each k-point (neig_k, ao_int_neig_level), nequal = all states. 23 October 2026. JLM+claude
-! imtb returned, the file (hsr2.dat) is written by the caller. 24 October 2026. JLM+claude WARNING NEW API
+! imtb returned, the file (hsr2.dat) is written by the caller. 23 October 2026. JLM+claude WARNING NEW API
+! Questions moved to ao_int_prepare_questions (nk1, nk2, nk3, lso, loptical, imtb are arguments,
+! ioreplay removed), symmetry check in ao_int_sym_check. 23 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -78,11 +81,12 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
 ! input
 
-  integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
-
   type(noiData_t)                    ::  noiData                         !<  see NonOrthoInterp
 
-  integer, intent(out)               ::  imtb                            !<  MTB method, 1 projection of plane-wave states, 2 matching
+  integer, intent(in)                ::  nk1, nk2, nk3                   !<  grid of k-points
+  logical, intent(in)                ::  lso                             !<  if true uses spin-orbit
+  logical, intent(in)                ::  loptical                        !<  if true calculates optical matrix elements
+  integer, intent(in)                ::  imtb                            !<  MTB method, 1 projection of plane-wave states, 2 matching
 
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
@@ -163,8 +167,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
   complex(REAL64), allocatable       ::  psi_ao(:,:)                     !  component j of atomic orbital eigenvector i (guess on input)
   complex(REAL64), allocatable       ::  hpsi_ao(:,:)                    !  H | psi >
 
-  real(REAL64), allocatable          ::  ev_pw(:,:), ev_pw_irred(:,:), ev_interp(:)
-  real(REAL64), allocatable          ::  ev_sym(:)                       !  eigenvalues at a symmetry related k-point
+  real(REAL64), allocatable          ::  ev_pw(:,:), ev_pw_irred(:,:)
   real(REAL64), allocatable          ::  tau_site(:,:)                   !  lattice coordinates of the atomic sites
   integer, allocatable               ::  isite(:)                        !  atomic site of each basis function
   complex(REAL64), allocatable       ::  Hao(:,:), S(:,:), dh0drk_AO(:,:,:)
@@ -207,7 +210,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 ! projection of the plane-wave states
 
   logical                            ::  lproj                           !  modified tight-binding by projection (otherwise by matching states)
-  integer                            ::  ios
   integer, allocatable               ::  igofkg(:,:,:)                   !  index of G-vector from its components
   integer, allocatable               ::  isort_t(:)                      !  isort of the grid point
   complex(REAL64), allocatable       ::  psi_t(:,:)                      !  plane-wave states rotated to the grid point
@@ -228,10 +230,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
 
 !--------------------------------------------------------------------
-  integer           ::  nk1,nk2,nk3
   integer           ::  natsite                                          !  number of atomic sites (atoms)
-  integer           ::  isym, itr                                        !  symmetry operation, time reversal
-  real(REAL64)      ::  rksym(3)                                         !  k-point for the symmetry test
   real(REAL64)      ::  xsymerr                                          !  largest eigenvalue difference in the star
 
   integer           ::  nkpt, lmax
@@ -256,11 +255,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
   integer           ::  mxdpnt
 
-  logical           ::  lso                                              !  if true uses spin-orbit
-  logical           ::  loptical                                         !  if true calculates optical matrix elements
   integer           ::  nspin                                            !  1 for no spin-orbit, 2 for spin orbit calculation
 
-  character(len=1)  ::  yesno
 
 
 ! parameters
@@ -323,14 +319,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
   write(6,*) '  initializing ao interpolation'
   write(6,*)
 
-  write(6,*) '  please enter grid of k-points'
-  write(6,*) '  recomended is 4 4 4 minimum'
-
-  read(5,*) nk1,nk2,nk3    ! this is to be removed
-  write(ioreplay,*) nk1,nk2,nk3,'     k-point grid'
-
-  write(6,'( "  interpolation in a mesh of", i3," x ",i3," x ",i3, " k-points"  )') nk1,nk2,nk3
-
 ! Allocates the arrays and calls int_pnt
 ! It is uniform nk1 nk2 nk3 grid with zero shift.
 
@@ -352,70 +340,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
   deallocate(indk)
   deallocate(w_mesh)
 
-!----------------------------------------------------
-
-  write(6,*)
-  write(6,*) '  do you want a calculation including Spin-Orbit (y/n) ?'
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'     spin-orbit'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-    lso = .TRUE.
-  else
-    lso = .FALSE.
-  endif
-
-  if(lso) then
-    write(6,*)
-    write(6,*) '  calculation will be done using SO perturbation.'
-    write(6,*)
-  endif
-
-!----------------------------------------------------
-
-  write(6,*)
-  write(6,*) '  do you want a calculation including Hamiltonian Derivatives (y/n) ?'
-  write(6,*) '  this will be needed to compute the dielectric function '
-  write(6,*) '  using interpolation (it is memory intensive...).'
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'     optical'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-    loptical = .TRUE.
-  else
-    loptical = .FALSE.
-  endif
-  if(loptical) then
-    write(6,*)
-    write(6,*) '  calculation will also include dh0drk computation.'
-    write(6,*)
-  endif
-
-  write(6,*)
-  write(6,*) '  How should the plane-wave energies be transferred to the'
-  write(6,*) '  atomic orbital hamiltonian?'
-  write(6,*) '  1)  projection of the plane-wave states (recommended)'
-  write(6,*) '  2)  matching of atomic orbital and plane-wave states (older method)'
-  write(6,*)
-  read(5,*,iostat=ios) imtb
-  if(ios /= 0) imtb = 1
-  if(imtb /= 2) imtb = 1
-  write(ioreplay,*) imtb,'     MTB method'
-
   lproj = .TRUE.
   if(imtb == 2) lproj = .FALSE.
-
-  if(lproj) then
-    write(6,*)
-    write(6,*) '  plane-wave states projected on the atomic orbitals'
-    write(6,*)
-  else
-    write(6,*)
-    write(6,*) '  atomic orbital and plane-wave states are matched'
-    write(6,*)
-  endif
 
 ! allocates and fills the uniform grid
 
@@ -576,7 +502,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
   allocate(ev_pw(nspin*norb_ao,nkpt))
   allocate(ev_pw_irred(nspin*norb_ao,nkpt))
-  allocate(ev_interp(nspin*norb_ao))
   allocate(Hao(nspin*norb_ao,nspin*norb_ao))
   allocate(S(nspin*norb_ao,nspin*norb_ao))
   allocate(dh0drk_AO(nspin*norb_ao,nspin*norb_ao,3))
@@ -1120,34 +1045,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
 ! symmetry check, eigenvalues in the star of a general k-point
 
-  allocate(ev_sym(nspin*norb_ao))
-
-  rksym(1) = 0.1234_REAL64
-  rksym(2) = 0.2345_REAL64
-  rksym(3) = 0.3456_REAL64
-  call NonOrthoInterpRun(noiData, rksym, ev_interp)
-
-  xsymerr = ZERO
-  do isym = 1,ntrans
-    do itr = 1,-1,-2
-      do j = 1,3
-        rkpt(j) = itr*(mtrx(j,1,isym)*rksym(1) +                         &
-                       mtrx(j,2,isym)*rksym(2) +                         &
-                       mtrx(j,3,isym)*rksym(3))
-      enddo
-      call NonOrthoInterpRun(noiData, rkpt, ev_sym)
-      do j = 1,nspin*norb_ao
-        xsymerr = max(xsymerr,abs(ev_sym(j) - ev_interp(j)))
-      enddo
-    enddo
-  enddo
-
-  write(6,*)
-  write(6,'("   Largest eigenvalue difference in the star of a ",        &
-      &     "k-point (symmetry check): ",e10.2," eV")') xsymerr*HARTREE
-  write(6,*)
-
-  deallocate(ev_sym)
+  call ao_int_sym_check(noiData, ntrans, mtrx, xsymerr)
 
   write(6,*)
 
@@ -1182,7 +1080,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
 
   deallocate(ev_pw)
   deallocate(ev_pw_irred)
-  deallocate(ev_interp)
   deallocate(Hao)
   deallocate(S)
   deallocate(dh0drk_AO)

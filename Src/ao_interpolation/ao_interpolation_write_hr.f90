@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2020, 24 October 2026.
+!>  \date         2020, 23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_write_hr(mtb, adot, ioreplay)
@@ -24,7 +24,7 @@ subroutine ao_interpolation_write_hr(mtb, adot, ioreplay)
 ! Documentation, indentation, ao_int_, 8 October 2024. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, BOHR). 3 October 2026. JLM+claude
 ! Wigner-Seitz search size question removed, nearest images of the hoppings in a single list (ndegen = 1). 23 October 2026. JLM+claude
-! The MTB data is an argument (was read again from hsr.dat). 24 October 2026. JLM+claude WARNING NEW API
+! The MTB data is an argument (was read again from hsr.dat). 23 October 2026. JLM+claude WARNING NEW API
 
   use NonOrthoInterp
 

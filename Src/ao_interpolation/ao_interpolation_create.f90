@@ -17,13 +17,14 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         24 October 2026.
+!>  \date         23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_create(ioreplay)
 
-! Written 24 October 2026 from ao_interpolation_sub (Carlos Loia Reis,
+! Written 23 October 2026 from ao_interpolation_sub (Carlos Loia Reis,
 ! Jose Luis Martins and others). claude
+! Questions of the MTB calculation (ao_int_prepare_questions) asked here. 23 October 2026. JLM+claude
 
   use cpw_variables
   use NonOrthoInterp
@@ -73,6 +74,9 @@ subroutine ao_interpolation_create(ioreplay)
   real(REAL64)       ::  epspsi                                          !  accuracy of eigenvalues
   integer            ::  icmax                                           !  maximum number of iterations for diagonalization
   integer            ::  imtb                                            !  MTB method, 1 projection, 2 matching
+  integer            ::  nk1, nk2, nk3                                   !  grid of k-points
+  logical            ::  lso                                             !  if true uses spin-orbit
+  logical            ::  loptical                                        !  if true calculates optical matrix elements
   character(len=60)  ::  filename
   character(len=1)   ::  yesno
 
@@ -139,9 +143,15 @@ subroutine ao_interpolation_create(ioreplay)
       atorb_%jbset,                                                      &
       dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
 
+! grid, spin-orbit, optical matrix elements and MTB method
+
+  call ao_int_prepare_questions(ioreplay, nk1, nk2, nk3,                 &
+      lso, loptical, imtb)
+
 ! modified tight-binding hamiltonian
 
-  call ao_interpolation_prepare(ioreplay, noiData, imtb,                 &
+  call ao_interpolation_prepare(noiData, nk1, nk2, nk3,                  &
+     lso, loptical, imtb,                                                &
      pwexp_%emax, flags_%flgdal, flags_%flgpsd,                          &
      iguess, epspsi, icmax, pseudo_%ztot,                                &
      crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                    &

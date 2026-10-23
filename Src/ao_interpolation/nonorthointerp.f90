@@ -15,7 +15,7 @@ module NonOrthoInterp
 ! Atomic sites (tau, isite) replace the Wigner-Seitz search size, new hsr.dat
 ! content. 23 October 2026. JLM+claude
 ! Write and read on an open unit (file hsr2.dat with a header), FileInfo
-! removed. 24 October 2026. JLM+claude
+! removed. 23 October 2026. JLM+claude
   use FourierInterpolation
   implicit none
   integer, parameter,private          :: REAL64 = selected_real_kind(12)

@@ -13,7 +13,8 @@ src90 = ao_h_and_s.f90                           ao_interpolation_sub.f90       
         nonorthointerp.f90                       ao_interpolation_create.f90       \
         ao_interpolation_use.f90                 ao_int_hsr2_write.f90             \
         ao_int_hsr2_size.f90                     ao_int_hsr2_read.f90              \
-        ao_int_hsr2_print.f90
+        ao_int_hsr2_print.f90                    ao_int_prepare_questions.f90      \
+        ao_int_sym_check.f90
 
 
 
@@ -51,6 +52,12 @@ ao_int_hsr2_read.o:  ao_int_hsr2_read.f90
 
 ao_int_hsr2_print.o:  ao_int_hsr2_print.f90
 	$(F77) -c $(FCOPTS) ao_int_hsr2_print.f90
+
+ao_int_prepare_questions.o:  ao_int_prepare_questions.f90
+	$(F77) -c $(FCOPTS) ao_int_prepare_questions.f90
+
+ao_int_sym_check.o:  ao_int_sym_check.f90 nonorthointerp.o
+	$(F77) -c $(FCOPTS) ao_int_sym_check.f90
 
 ao_h_and_s.o:  ao_h_and_s.f90
 	$(F77) -c $(FCOPTS) ao_h_and_s.f90

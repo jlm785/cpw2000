@@ -16,7 +16,7 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         24 October 2026.
+!>  \date         23 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_int_hsr2_print(title, subtitle, ztot, emax,                &
@@ -24,7 +24,7 @@ subroutine ao_int_hsr2_print(title, subtitle, ztot, emax,                &
     lso, loptical, imtb, mp_grid, nband,                                 &
     mxdtyp, mxdlao)
 
-! Written 24 October 2026. claude
+! Written 23 October 2026. claude
 
   implicit none
 
