@@ -2297,6 +2297,13 @@ The grid must be dense enough for the Fourier interpolation of the atomic orbita
 hamiltonian.  For hexagonal crystals use in plane a multiple of three, for example
 \texttt{6 6 4} for graphite instead of \texttt{4 4 4}.
 
+The modified tight-binding data are written to the file \texttt{hsr2.dat}, which also
+contains the crystal structure, the symmetry operations and the chosen atomic basis set.
+If the file exists, the code describes it and asks if it should be used.  All the
+calculations (band structures, density of states, dielectric function, unfolding, and the
+files for {\sc wannier90} and {\sc WannierTools}) can then be done from \texttt{hsr2.dat}
+alone, without \texttt{PW\_RHO\_V.DAT} or the pseudopotential files.
+
 \subsection{Plot of charge densities and potentials}
 
 Plots or prepares the plots of real functions electron density, $\rho(\vec r)$, effective potential,

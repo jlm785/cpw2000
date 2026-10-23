@@ -15,15 +15,16 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2020, 23 October 2026.
+!>  \date         2020, 24 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine ao_interpolation_write_hr(adot, ioreplay)
+subroutine ao_interpolation_write_hr(mtb, adot, ioreplay)
 
 ! Written by Carlos Lois Reis in an unknown date.
 ! Documentation, indentation, ao_int_, 8 October 2024. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, BOHR). 3 October 2026. JLM+claude
 ! Wigner-Seitz search size question removed, nearest images of the hoppings in a single list (ndegen = 1). 23 October 2026. JLM+claude
+! The MTB data is an argument (was read again from hsr.dat). 24 October 2026. JLM+claude WARNING NEW API
 
   use NonOrthoInterp
 
@@ -31,12 +32,13 @@ subroutine ao_interpolation_write_hr(adot, ioreplay)
 
   integer, parameter           :: REAL64 = selected_real_kind(12)
 
-  type (noiData_t) :: mtb
   type(fiData_t)  :: ortho
 
 ! input
 
   integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
+
+  type(noiData_t)                    ::  mtb                             !<  see NonOrthoInterp
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
 
@@ -65,8 +67,6 @@ subroutine ao_interpolation_write_hr(adot, ioreplay)
   real(REAL64), parameter     ::  BOHR = 0.5291772105_REAL64
   real(REAL64), parameter     ::  HARTREE = 27.211386246_REAL64
 
-
-  call NonOrthoInterpReadFromFile(mtb)
 
   nband = mtb%nband
 

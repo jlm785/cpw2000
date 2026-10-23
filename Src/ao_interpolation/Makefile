@@ -10,7 +10,10 @@ src90 = ao_h_and_s.f90                           ao_interpolation_sub.f90       
         ao_interpolation_out_band_fold_full.f90  ao_interpolation_write_wt_in.f90  \
         ao_interpolation_out_dos.f90             fourier_interpolation.f90         \
         ao_interpolation_out_ie.f90              ao_interpolation_prepare.f90      \
-        nonorthointerp.f90
+        nonorthointerp.f90                       ao_interpolation_create.f90       \
+        ao_interpolation_use.f90                 ao_int_hsr2_write.f90             \
+        ao_int_hsr2_size.f90                     ao_int_hsr2_read.f90              \
+        ao_int_hsr2_print.f90
 
 
 
@@ -28,8 +31,26 @@ fourier_interpolation.o:  fourier_interpolation.f90
 nonorthointerp.o:  nonorthointerp.f90  fourier_interpolation.o
 	$(F77) -c $(FCOPTS) nonorthointerp.f90
 
-ao_interpolation_sub.o:  ao_interpolation_sub.f90 mods nonorthointerp.o
+ao_interpolation_sub.o:  ao_interpolation_sub.f90
 	$(F77) -c $(FCOPTS) ao_interpolation_sub.f90
+
+ao_interpolation_create.o:  ao_interpolation_create.f90 mods nonorthointerp.o
+	$(F77) -c $(FCOPTS) ao_interpolation_create.f90
+
+ao_interpolation_use.o:  ao_interpolation_use.f90 nonorthointerp.o
+	$(F77) -c $(FCOPTS) ao_interpolation_use.f90
+
+ao_int_hsr2_write.o:  ao_int_hsr2_write.f90
+	$(F77) -c $(FCOPTS) ao_int_hsr2_write.f90
+
+ao_int_hsr2_size.o:  ao_int_hsr2_size.f90
+	$(F77) -c $(FCOPTS) ao_int_hsr2_size.f90
+
+ao_int_hsr2_read.o:  ao_int_hsr2_read.f90
+	$(F77) -c $(FCOPTS) ao_int_hsr2_read.f90
+
+ao_int_hsr2_print.o:  ao_int_hsr2_print.f90
+	$(F77) -c $(FCOPTS) ao_int_hsr2_print.f90
 
 ao_h_and_s.o:  ao_h_and_s.f90
 	$(F77) -c $(FCOPTS) ao_h_and_s.f90

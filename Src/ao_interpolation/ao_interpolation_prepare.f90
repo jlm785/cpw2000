@@ -25,11 +25,11 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 23 October 2026.
+!>  \date         2014. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 
-subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
+subroutine ao_interpolation_prepare(ioreplay, noiData, imtb,             &
         emax, flgdal, flgpsd, iguess, epspsi, icmax, ztot,               &
         adot, ntype, natom, rat, ntrans, mtrx, tnp,                      &
         ng, kgv, phase, conj,                                            &
@@ -67,6 +67,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! ao_h_and_s and atomic_orbital_c16 without icmplx. 23 October 2026. JLM+claude
 ! Wigner-Seitz search size question removed, atomic sites for the nearest images, symmetry check. 23 October 2026. JLM+claude
 ! Plane-wave states in complete levels at each k-point (neig_k, ao_int_neig_level), nequal = all states. 23 October 2026. JLM+claude
+! imtb returned, the file (hsr2.dat) is written by the caller. 24 October 2026. JLM+claude WARNING NEW API
 
 
   use NonOrthoInterp
@@ -80,6 +81,8 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
 
   type(noiData_t)                    ::  noiData                         !<  see NonOrthoInterp
+
+  integer, intent(out)               ::  imtb                            !<  MTB method, 1 projection of plane-wave states, 2 matching
 
   integer, intent(in)                ::  mxdtyp                          !<  array dimension of types of atoms
   integer, intent(in)                ::  mxdatm                          !<  array dimension of number of atoms of a given type
@@ -204,7 +207,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 ! projection of the plane-wave states
 
   logical                            ::  lproj                           !  modified tight-binding by projection (otherwise by matching states)
-  integer                            ::  imtb                            !  choice of method
   integer                            ::  ios
   integer, allocatable               ::  igofkg(:,:,:)                   !  index of G-vector from its components
   integer, allocatable               ::  isort_t(:)                      !  isort of the grid point
@@ -399,6 +401,7 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
   write(6,*)
   read(5,*,iostat=ios) imtb
   if(ios /= 0) imtb = 1
+  if(imtb /= 2) imtb = 1
   write(ioreplay,*) imtb,'     MTB method'
 
   lproj = .TRUE.
@@ -1146,8 +1149,6 @@ subroutine ao_interpolation_prepare(ioreplay, noiData,                   &
 
   deallocate(ev_sym)
 
-  write(6,*) '  Writing to file for later use.'
-  call NonOrthoInterpWriteToFile(noiData)
   write(6,*)
 
   deallocate(vscr)

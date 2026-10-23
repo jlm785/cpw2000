@@ -14,6 +14,8 @@
 module NonOrthoInterp
 ! Atomic sites (tau, isite) replace the Wigner-Seitz search size, new hsr.dat
 ! content. 23 October 2026. JLM+claude
+! Write and read on an open unit (file hsr2.dat with a header), FileInfo
+! removed. 24 October 2026. JLM+claude
   use FourierInterpolation
   implicit none
   integer, parameter,private          :: REAL64 = selected_real_kind(12)
@@ -142,9 +144,13 @@ module NonOrthoInterp
   end subroutine NonOrthoInterpSetGridData
 
 
-    subroutine NonOrthoInterpWriteToFile(this)
+    subroutine NonOrthoInterpWriteToFile(this,io)
+
+!   writes to the open unformatted unit io (after the header of hsr2.dat)
+
     implicit none
     type(noiData_t) :: this
+    integer io
     integer ir, idir
 
 !! experimental
@@ -153,26 +159,24 @@ module NonOrthoInterp
 !    real(REAL64), allocatable    :: ev_wrk(:)
 !!
 
-    open(unit=777,file='hsr.dat',form='unformatted')
+    write(io) this %nband
+    write(io) this %nequal
+    write(io) this %lso, this %loptical
 
-    write(777) this %nband
-    write(777) this %nequal
-    write(777) this %lso, this %loptical
+    write(io) this %fiData %real_metric(:,:)
 
-    write(777) this %fiData %real_metric(:,:)
+    write(io) this %fiData %mp_grid(1), this %fiData %mp_grid(2), this %fiData %mp_grid(3)
 
-    write(777) this %fiData %mp_grid(1), this %fiData %mp_grid(2), this %fiData %mp_grid(3)
+    write(io) this %eref
 
-    write(777) this %eref
-
-    write(777) this %fiData %natsite
-    write(777) this %fiData %tau(:,:)
-    write(777) this %fiData %isite(:)
+    write(io) this %fiData %natsite
+    write(io) this %fiData %tau(:,:)
+    write(io) this %fiData %isite(:)
 
     do ir=1,this %fiData %nrpts
 !      do iband=1,this %nband
 !      do jband=1,this %nband
-        write(777) this %fiData %ham_r(:,:,ir)
+        write(io) this %fiData %ham_r(:,:,ir)
 !      enddo
 !      enddo
       call progress(ir,2*(this %fiData %nrpts))
@@ -182,7 +186,7 @@ module NonOrthoInterp
     do ir=1,this %fiData %nrpts
 !      do iband=1,this %nband
 !      do jband=1,this %nband
-        write(777) this %fiData %S_r(:,:,ir)
+        write(io) this %fiData %S_r(:,:,ir)
 !      enddo
 !      enddo
       call progress(this% fiData %nrpts+ir,(2*this %fiData %nrpts))
@@ -192,12 +196,11 @@ module NonOrthoInterp
     if ( this %loptical == 1) then
       do ir=1,this %fiData %nrpts
         do idir=1,3
-            write(777) this %fiData % dh0drk_GridR(:,:,idir,ir)
+            write(io) this %fiData % dh0drk_GridR(:,:,idir,ir)
         enddo
       enddo
     endif
 
-    close(unit=777)
 
 !!   experimental section
 
@@ -217,75 +220,38 @@ module NonOrthoInterp
     end subroutine NonOrthoInterpWriteToFile
 
 
-    subroutine NonOrthoInterpFileInfo(this)
-      implicit none
-      type(noiData_t) :: this
-      open(unit=777,file='hsr.dat',form='unformatted')
-      read(777) this %nband
-      read(777) this %nequal
-      read(777) this %lso, this %loptical
-      read(777) this %fiData % real_metric(:,:)
-      read(777) this %fiData %mp_grid(1), this %fiData %mp_grid(2), this %fiData %mp_grid(3)
-
-      write(*,*) '  hsr.dat file was prepared with the following setup:'
-
-       write(6,*)
-       write(6,*) '  real-space metric'
-       write(6,*)
-       write(6,'(3x ,3(1x,f16.8),5x," metric  g11,g12,g13 ")')           &
-     &        this%fiData%real_metric(1,1),this%fiData%real_metric(1,2),this%fiData%real_metric(1,3)
-       write(6,'(20x,2(1x,f16.8),5x," metric      g22,g23 ")')           &
-     &                  this%fiData%real_metric(2,2),this%fiData%real_metric(2,3)
-       write(6,'(38x,     f16.8 ,5x," metric          g33 ")')           &
-     &                            this%fiData%real_metric(3,3)
-
-
-      write(*,*) '  k-grid:'
-      write(*,*) this %fiData %mp_grid(:)
-      if(this %lso ==1) then
-        write(*,*) '  Spin-Orbit: yes'
-      else
-        write(*,*) '  Spin-Orbit: no'
-      endif
-      if(this %loptical ==1) then
-        write(*,*) '  dh0drk: yes'
-      else
-        write(*,*) '  dh0drk: no'
-      endif
-
-      close(unit=777)
-
-    end subroutine NonOrthoInterpFileInfo
 
 
 
-    subroutine NonOrthoInterpReadFromFile(this)
+    subroutine NonOrthoInterpReadFromFile(this,io)
+
+!   reads from the open unformatted unit io (after the header of hsr2.dat)
+
     implicit none
     type(noiData_t) :: this
+    integer io
     integer ir, nrpts, nband, idir
     integer natsite
     real(REAL64), allocatable :: tau(:,:)
     integer, allocatable :: isite(:)
 
-    open(unit=777,file='hsr.dat',form='unformatted')
-
 !    write(*,*) 'deb1: '
 
-    read(777) this %nband
-    read(777) this %nequal
-    read(777) this %lso, this %loptical
+    read(io) this %nband
+    read(io) this %nequal
+    read(io) this %lso, this %loptical
 
-    read(777) this %fiData %real_metric(:,:)
+    read(io) this %fiData %real_metric(:,:)
 
-    read(777) this %fiData %mp_grid(1), this %fiData %mp_grid(2), this %fiData %mp_grid(3)
+    read(io) this %fiData %mp_grid(1), this %fiData %mp_grid(2), this %fiData %mp_grid(3)
 
-    read(777) this %eref
+    read(io) this %eref
 
-    read(777) natsite
+    read(io) natsite
     allocate(tau(3,natsite))
     allocate(isite(this %nband))
-    read(777) tau(:,:)
-    read(777) isite(:)
+    read(io) tau(:,:)
+    read(io) isite(:)
 
     nband = this %nband
 
@@ -314,7 +280,7 @@ module NonOrthoInterp
     do ir=1,this %fiData %nrpts
 !      do iband=1,this %nband
 !      do jband=1,this %nband
-        read(777) this %fiData %ham_r(:,:,ir)
+        read(io) this %fiData %ham_r(:,:,ir)
 !      enddo
 !      enddo
     enddo
@@ -324,7 +290,7 @@ module NonOrthoInterp
     do ir=1,this %fiData %nrpts
 !      do iband=1,this %nband
 !      do jband=1,this %nband
-        read(777) this %fiData %S_r(:,:,ir)
+        read(io) this %fiData %S_r(:,:,ir)
 !      enddo
 !      enddo
     enddo
@@ -335,7 +301,7 @@ module NonOrthoInterp
       allocate( this%fiData%dh0drk_GridR(this %nband,this %nband,3,this %fiData %nrpts))
       do ir=1,this %fiData %nrpts
         do idir=1,3
-            read(777) this %fiData % dh0drk_GridR(:,:,idir,ir)
+            read(io) this %fiData % dh0drk_GridR(:,:,idir,ir)
         enddo
       enddo
     endif
@@ -343,7 +309,6 @@ module NonOrthoInterp
 
 
 
-    close(unit=777)
 
     end subroutine NonOrthoInterpReadFromFile
 

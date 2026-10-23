@@ -11,14 +11,15 @@
 ! https://github.com/jlm785/cpw2000                          !
 !------------------------------------------------------------!
 
-!>  This subroutines reads a file with the atomic structure and
-!>  the effective potential and charge density and writes file
-!>  with the information for the atomic orbital interpolation
-!>  MTB (Modified Tight Binding) method.
+!>  Driver for the atomic orbital interpolation, MTB (Modified Tight
+!>  Binding) method.  If the file hsr2.dat exists it may be used,
+!>  otherwise the MTB hamiltonian is calculated from PW_RHO_V.DAT and
+!>  written to hsr2.dat (ao_interpolation_create).  The results are
+!>  then calculated from hsr2.dat (ao_interpolation_use).
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 23 October 2026.
+!>  \date         December 18, 2013, 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -43,509 +44,129 @@ subroutine ao_interpolation_sub(ioreplay)
 ! Choice of atomic basis set (cpw_pp_atorb_questions), consistency with hsr.dat. 20 October 2026. JLM+claude
 ! tnp passed to ao_interpolation_prepare (projection method). 20 October 2026. JLM+claude
 ! icmplx no longer passed to ao_interpolation_out_band_fold_full and ao_interpolation_w90. 23 October 2026. JLM+claude
-
-
-  use cpw_variables
-  use NonOrthoInterp
+! Split in ao_interpolation_create and ao_interpolation_use, file hsr2.dat. 24 October 2026. JLM+claude
 
   implicit none
 
-  type(noiData_t)                   ::  noiData
-  logical                           ::  hsr_exists
+  integer, parameter          :: REAL64 = selected_real_kind(12)
 
+! input
 
-!  integer, parameter          :: REAL64 = selected_real_kind(12)
+  integer, intent(in)                ::  ioreplay                        !<  tape number for reproducing calculations
 
-  integer, intent(in)         :: ioreplay                                !<  tape number for reproducing calculations
+! header of hsr2.dat
 
-  type(dims_t)                       ::  dims_                           !<  array dimensions
+  integer                            ::  mxdtyp                          !  array dimension of types of atoms
+  integer                            ::  mxdatm                          !  array dimension of number of atoms of a given type
+  integer                            ::  mxdlao                          !  array dimension of orbital per atom type
+  integer                            ::  mxdlqp                          !  array dimension of the radial functions
 
-! dimensions
-
-!  integer                            ::  mxdtyp                          !  array dimension of types of atoms
-!  integer                            ::  mxdatm                          !  array dimension of number of atoms of a given type
-
-!  integer                            ::  mxdgve                          !  array dimension for g-space vectors
-!  integer                            ::  mxdnst                          !  array dimension for g-space stars
-!  integer                            ::  mxdcub                          !  array dimension for 3-index g-space
-
-!  integer                            ::  mxdlqp                          !  array dimension for local potential
-!  integer                            ::  mxdlao                          !  array dimension of orbital per atom type
-
-  type(dims_t)                       ::  dims_in_                        !<  input array dimensions
-
-! flags
-
-  type(flags_t)                      ::  flags_                          !<  computational flags
-
-!  character(len=6)                   ::  flgpsd
-!  character(len=4)                   ::  flgdal                          !  dual approximation if equal to 'DUAL'
-!  character(len=6)                   ::  flgscf                          !  type of self consistent field and diagonalizatioN
-
-  character(len=4)                   ::  flgdal_in                       !  whether the dual approximation is used
-
-! atomic structure variables
-
-  type(crys_t)                       ::  crys_                           !<  crystal structure
-
-!  real(REAL64)                       ::  alatt                           !  lattice constant
-
-!  real(REAL64)                       ::  adot(3,3)                       !  metric in direct space
-!  integer                            ::  ntype                           !  number of types of atoms
-!  integer,allocatable                ::  natom(:)                        !  number of atoms of type i
-!  character(len=2),allocatable       ::  nameat(:)                       !  chemical symbol for the type i
-!  real(REAL64),allocatable           ::  rat(:,:,:)                      !  k-th component (in lattice coordinates) of the position of the n-th atom of type i
-
-! reciprocal space
-
-  type(recip_t)                      ::  recip_                          !<  reciprocal space information
-
-!  integer                            ::  ng                              !  total number of g-vectors with length less than gmax
-!  integer, allocatable               ::  kgv(:,:)                        !  i-th component (reciprocal lattice coordinates) of the n-th g-vector ordered by stars of increasing length
-!  complex(REAL64), allocatable       ::  phase(:)                        !  phase factor of G-vector n
-!  real(REAL64), allocatable          ::  conj(:)                         !  is -1 if one must take the complex conjugate of x*phase
-!  integer                            ::  ns                              !  number os stars with length less than gmax
-!  integer, allocatable               ::  inds(:)                         !  star to which g-vector n belongs
-!  integer                            ::  kmax(3)                         !  max value of kgv(i,n)
-!  integer, allocatable               ::  indv(:)                         !  kgv(i,indv(jadd)) is the g-vector associated with jadd jadd is defined by the g-vector components and kmax
-!  integer, allocatable               ::  mstar(:)                        !  number of g-vectors in the j-th star
-!  real(REAL64), allocatable          ::  ek(:)                           !  kinetic energy (Hartree) of g-vectors in star j
-!  integer, allocatable               ::  izstar(:)                       !  is 0 if the phase=0
-
-  type(recip_t)                      ::  recip_in_                       !<  reciprocal space information
-
-!  integer                            ::  ngin                            !  input value of ng
-!  integer, allocatable               ::  kgvin(:,:)                      !  input values of kgv
-!  complex(REAL64), allocatable       ::  phasein(:)                      !  phase factor of G-vector n
-!  real(REAL64), allocatable          ::  conjin(:)                       !  is -1 if one must take the complex conjugate of x*phase
-!  integer                            ::  nsin                            !  input value of ns
-!  integer                            ::  kmaxin(3)                       !  max value of kgvin(i,n)
-!  integer, allocatable               ::  mstarin(:)                      !  input values of kgv
-
-! space group information
-
-  type(spaceg_t)                     ::  spaceg_                         !<  space group information
-
-!  integer                            ::  ntrans                          !  number of symmetry operations in the factor group
-!  integer                            ::  mtrx(3,3,48)                    !  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
-!  real(REAL64)                       ::  tnp(3,48)                       !  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
-
-!   pseudo-potential (Kleinman-Bylander)
-
-
-  type(pseudo_t)                     ::  pseudo_                         !<  pseudo-potential (Kleinman-Bylander)
-
-!  real(REAL64)                       ::  ealraw                          !  G=0 contrib. to the total energy. (non norm. to vcell, Hartree)
-!  real(REAL64), allocatable          ::  vloc  (:,:)                     !  local pseudopotential for atom k (hartree)
-!  real(REAL64), allocatable          ::  dcor(:,:)                       !  core charge density for atom k
-!  real(REAL64), allocatable          ::  dval (:,:)                      !  valence charge density for atom k
-
-!  real(REAL64), allocatable          ::  zv(:)                           !  valence of atom with type i
-
-!  real(REAL64)                       ::  ztot                            !  total charge density (electrons/cell)
-!  integer, allocatable               ::  nqnl(:)                         !  number of points for pseudo interpolation for atom k
-!  real(REAL64), allocatable          ::  delqnl(:)                       !  step used in the pseudo interpolation for atom k
-
-!  real(REAL64), allocatable          ::  vkb(:,:,:,:)                    !  kb nonlocal pseudo. for atom k, ang. mom. l. (not normalized to vcell, hartree)
-!  integer, allocatable               ::  nkb(:,:,:)                      !   kb pseudo.  normalization for atom k, ang. mom. l
-
-! k-point data
-
-  type(kpoint_t)                     ::  kpoint_                         !<  k-point data
-
-!  integer                            ::  nx,ny,nz                        !  divisions of Brillouin zone for integration (Monkhorst-Pack)
-!  real(REAL64)                       ::  sx,sy,sz                        !  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
-
-! atomic orbitals in G-space
-
-  type(atorb_t)                      ::  atorb_                          !<  atomic orbitals in G-space
-
-!  logical                            ::  latorb                          !  indicates if all atoms have information about atomic orbitals
-
-!  integer, allocatable               ::  norbat(:)                       !  number of atomic orbitals for atom k
-!  integer, allocatable               ::  lorb(:,:)                       !  angular momentum of orbital n of atom k
-!  real(REAL64), allocatable          ::  wvfao(:,:,:)                    !  wavefunction for atom k, ang. mom. l
-
-!  integer, allocatable               ::  nqwf(:)                         !  number of points for wavefunction interpolation for atom k
-!  real(REAL64), allocatable          ::  delqwf(:)                       !  step used in the wavefunction interpolation for atom k
-
-  type(pwexp_t)                      ::  pwexp_                          !<  plane-wave expansion choices
-
-!  real(REAL64)                       ::  emax                            !  kinetic energy cutoff of plane wave expansion (hartree).
-!  real(REAL64)                       ::  teleck                          !  electronic temperature (in kelvin)
-
-!  integer                            ::  nbandin                         !  target for number of bands
-
-  type(chdens_t)                     ::  chdens_in_                      !<  input charge densities
-
-!  complex(REAL64), allocatable       ::  den(:)                          !  total charge density for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  denc(:)                         !  core charge density for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  dens(:)                         !  spherical atomic valence charge density for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  dend(:)                         !  bonding charge density from previous md step
-!  complex(REAL64), allocatable       ::  dend1(:)                        !  bonding charge density from second previous md step
-
-  type(vcomp_t)                      ::  vcomp_in_                       !<  local potential contributions
-
-!  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vhar(:)                         !  Hartree potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vxc(:)                          !  Hartree+exchange+correlation potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  veff(:)                         !  Effective potential for the prototype G-vector in star j
-
-  type(vcomp_t)                      ::  vcomp_                          !<  local potential contributions
-
-!  complex(REAL64), allocatable       ::  vion(:)                         !  ionic potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vhar(:)                         !  Hartree potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  vxc(:)                          !  Hartree+exchange+correlation potential for the prototype G-vector in star j
-!  complex(REAL64), allocatable       ::  veff(:)                         !  Effective potential for the prototype G-vector in star j
-
-  real(REAL64)                       ::  emax_in                          !  kinetic energy cutoff of plane wave expansion (hartree).
-  real(REAL64)                       ::  efermi                           !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
-
-
-  type(strfac_t)                     ::  strfac_                         !<  structure factors
-
-!  integer                            ::  icmplx                          !  indicates if the structure factor is complex
-!  complex(REAL64), allocatable       ::  strfac_%sfact(:,:)              !  structure factor for atom k and star i
-
-! information about the calculation
-
-  character(len=4)                   ::  author                          !  type of xc wanted (CA=PZ , PW92 , PBE)
-  character(len=4)                   ::  xcbase                          !  meta-GGA functional used in xc_mgga
-  character(len=4)                   ::  tausrc                          !  source of tau, 'PSI ' for generalized Kohn-Sham
-  logical                            ::  lgks                            !  generalized Kohn-Sham meta-GGA (vtau term)
-
-  character(len=60)                  ::  pwline                          !  identifier of the calculation.  May contain miscellaneous information!
-  character(len=50)                  ::  title                           !  title for plots
-  character(len=140)                 ::  subtitle                        !  title for plots
   character(len=250)                 ::  meta_cpw2000                    !  metadata from cpw2000
+  character(len=50)                  ::  title                           !  title for plots
+  character(len=140)                 ::  subtitle                        !  subtitle for plots
+  real(REAL64)                       ::  adot(3,3)                       !  metric in direct space
+  real(REAL64)                       ::  ztot                            !  total charge density (electrons/cell)
+  real(REAL64)                       ::  emax                            !  kinetic energy cutoff of plane wave expansion (hartree)
+  integer                            ::  ntype                           !  number of types of atoms
+  integer, allocatable               ::  natom(:)                        !  number of atoms of type i
+  character(len=2), allocatable      ::  nameat(:)                       !  chemical symbol for the type i
+  real(REAL64), allocatable          ::  rat(:,:,:)                      !  lattice coordinates of atom j of type i
+  integer                            ::  ntrans                          !  number of symmetry operations in the factor group
+  integer                            ::  mtrx(3,3,48)                    !  rotation matrix of the symmetry operations
+  real(REAL64)                       ::  tnp(3,48)                       !  2*pi* fractional translation of the symmetry operations
+  integer, allocatable               ::  norbat(:,:)                     !  number of atomic orbitals of atom type nt
+  integer, allocatable               ::  lorb(:,:,:)                     !  angular momentum of orbital n of atom type nt
+  integer, allocatable               ::  nqwf(:)                         !  number of points for wavefunction interpolation
+  real(REAL64), allocatable          ::  delqwf(:)                       !  step used in the wavefunction interpolation
+  real(REAL64), allocatable          ::  wvfao(:,:,:,:)                  !  (1/q**l) * wavefunction for atom type nt, orbital n
+  integer                            ::  lso, loptical                   !  spin-orbit, optical matrix elements (1 if present)
+  integer                            ::  imtb                            !  MTB method, 1 projection, 2 matching
+  integer                            ::  mp_grid(3)                      !  grid of k-points of the MTB calculation
+  integer                            ::  nband                           !  number of basis functions
 
 ! other variables
 
-  integer           ::  iotape
-
-
-  integer           :: iguess                                            !  kept for compatibility
-  real(real64)      :: epspsi                                            !  accuracy of eigenvalues
-  integer           :: icmax                                             !  maximum number of iterations for diagonalization
-
-  character(len=60)  ::  filename
-
+  logical            ::  lexist, lok, lcreate
   character(len=1)   ::  yesno
 
-  logical            ::  l_use_hsr
+! parameters
 
-  integer            ::  norbtot                                         !  number of atomic orbitals in the unit cell
-  integer            ::  nspin_hsr                                       !  1 without, 2 with spin-orbit in hsr.dat
+  integer, parameter :: IOHSR = 777                                      !  tape number of hsr2.dat
 
-
-
-! hard coded values, change if you know what you are doing...
-
-  flags_%flgpsd = 'PSEUKB'
-  iguess = 0
-  epspsi = 0.0001
-  icmax = 40
-
-! writes preamble to standard output
 
   write(6,*)
   write(6,'("  Analysis of the electronic structure ")')
+  write(6,'("  with the atomic orbital interpolation (MTB)")')
   write(6,*)
 
-! open file and reads data
+  lcreate = .TRUE.
 
-  filename = 'PW_RHO_V.DAT'
-  iotape = 21
+  inquire(file='hsr2.dat', exist=lexist)
 
-  call cpw_pp_band_dos_init(filename, iotape,                            &
-       dims_, crys_, spaceg_, flags_, pwexp_, pseudo_, kpoint_,          &
-       atorb_, efermi,  author,                                          &
-       pwline, title, subtitle ,meta_cpw2000,                            &
-       dims_in_, recip_in_, chdens_in_, vcomp_in_, emax_in, flgdal_in)
+  if(lexist) then
 
-! prepares calculation
+    open(unit=IOHSR, file='hsr2.dat', form='unformatted', status='old')
 
-  pwexp_%emax = emax_in
+    call ao_int_hsr2_size(IOHSR, lok, ntype, mxdatm, mxdlao, mxdlqp)
 
-  call cpw_pp_band_prepare(                                              &
-     dims_, crys_, spaceg_, recip_, pwexp_, strfac_,  vcomp_,            &
-     dims_in_, recip_in_, vcomp_in_)
+    if(lok) then
 
-! generalized Kohn-Sham meta-GGA
+      mxdtyp = ntype
 
-  call xc_author_tau(author, xcbase, tausrc)
-  lgks = .FALSE.
-  if(tausrc == 'PSI ') lgks = .TRUE.
+      allocate(natom(mxdtyp), nameat(mxdtyp), rat(3,mxdatm,mxdtyp))
+      allocate(norbat(1,mxdtyp), lorb(mxdlao,1,mxdtyp))
+      allocate(nqwf(mxdtyp), delqwf(mxdtyp))
+      allocate(wvfao(-2:mxdlqp,mxdlao,1,mxdtyp))
 
+      call ao_int_hsr2_read(IOHSR, meta_cpw2000, title, subtitle,        &
+          adot, ztot, emax, ntype, natom, nameat, rat,                   &
+          ntrans, mtrx, tnp,                                             &
+          norbat, lorb, nqwf, delqwf, wvfao,                             &
+          lso, loptical, imtb, mp_grid, nband,                           &
+          mxdtyp, mxdatm, mxdlqp, mxdlao)
 
-  write(6,*)
-  write(6,*) '  Do you want to use the dual approximation (y/n)?'
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   dual'
+      call ao_int_hsr2_print(title, subtitle, ztot, emax,                &
+          ntype, natom, nameat, norbat, lorb,                            &
+          lso, loptical, imtb, mp_grid, nband,                           &
+          mxdtyp, mxdlao)
 
-  flags_%flgdal = '    '
-  if(yesno == 'y' .or. yesno == 'Y') then
-    flags_%flgdal = 'DUAL'
-    write(6,*)
-    write(6,*) '  Will use DUAL approximation'
-    write(6,*)
-  else
-    write(6,*)
-    write(6,*) '  Will not use dual approximation'
-    write(6,*)
-  endif
+      deallocate(natom, nameat, rat)
+      deallocate(norbat, lorb)
+      deallocate(nqwf, delqwf)
+      deallocate(wvfao)
 
-! choice of the atomic basis set
+      write(6,*) '  Do you want to use it (y/n)?'
+      write(6,*)
+      read(5,*) yesno
+      write(ioreplay,*) yesno,'   use hsr2.dat'
 
-  call cpw_pp_atorb_questions(ioreplay,                                  &
-      crys_%ntype, crys_%nameat,                                         &
-      atorb_%n_bsets, atorb_%norbat, atorb_%lorb,                        &
-      atorb_%jbset,                                                      &
-      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+      if(yesno == 'y' .or. yesno == 'Y') then
+        lcreate = .FALSE.
+        write(6,*)
+        write(6,*) '  using the existing hsr2.dat'
+        write(6,*)
+      else
+        write(6,*)
+        write(6,*) '  recalculates the MTB data'
+        write(6,*)
+      endif
 
-  call size_nbaslcao(crys_%ntype, crys_%natom, atorb_%n_bsets,           &
-      atorb_%jbset, atorb_%norbat, atorb_%lorb, norbtot,                 &
-      dims_%mxdtyp, dims_%mxdlao, dims_%mxdset)
+    else
 
-
-
-!-------------------AO INTERPOLATION ------------------------------
-!         write(6,*) '  deb ztot=', ztot
-
-  inquire (file='hsr.dat', exist=hsr_exists)
-
-  l_use_hsr = .FALSE.
-  if(hsr_exists) then
-
-     write(6,*)
-     write(6,*) '  I found a file containing ao interpolation setup data.'
-     write(6,*)
-
-     call NonOrthoInterpFileInfo(noiData)
-
-!    hsr.dat does not record the atomic basis set, checks the number of orbitals
-
-     nspin_hsr = 1
-     if(noiData%lso == 1) nspin_hsr = 2
-
-     if(noiData%nband /= nspin_hsr*norbtot) then
-
-       write(6,*)
-       write(6,'("   hsr.dat has ",i6," atomic orbitals, the chosen ",   &
-           &     "basis set has ",i6)') noiData%nband/nspin_hsr, norbtot
-       write(6,*) '  It was prepared with another basis set, will recalculate'
-       write(6,*)
-
-       hsr_exists = .FALSE.
-
-     endif
-
-  endif
-
-  if(hsr_exists) then
-
-     write(6,*)
-     write(6,*) '  Do you want to use it? (y/n)'
-     write(6,*)
-     read(5,*) yesno
-     write(ioreplay,*) yesno,'   use hsr'
-
-     if(yesno == 'y' .or. yesno == 'Y') then
-
-       l_use_hsr = .TRUE.
-
-       write(6,*)
-       write(6,*) '   using existing hsr file for MTB'
-       write(6,*)
-
-     else
-
-       write(6,*)
-       write(6,*) '   recalculates the MTB data'
-       write(6,*)
-
-     endif
-
-  endif
-
-
-  if(l_use_hsr) then
-    call NonOrthoInterpReadFromFile(noiData)
-  else
-
-    call ao_interpolation_prepare(ioreplay,noiData,                      &
-       pwexp_%emax, flags_%flgdal, flags_%flgpsd,                        &
-       iguess, epspsi, icmax, pseudo_%ztot,                              &
-       crys_%adot, crys_%ntype, crys_%natom, crys_%rat,                  &
-       spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                        &
-       recip_%ng, recip_%kgv, recip_%phase, recip_%conj,                 &
-       recip_%ns, recip_%inds, recip_%kmax,                              &
-       recip_%indv, recip_%ek,                                           &
-       strfac_%sfact, strfac_%icmplx,                                    &
-       vcomp_%veff, lgks, vcomp_%vtau,                                   &
-       pseudo_%nqnl, pseudo_%delqnl, pseudo_%vkbraw, pseudo_%nkb,        &
-       atorb_%n_bsets, atorb_%jbset,                                     &
-       atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                        &
-       atorb_%wvfao, atorb_%lorb,                                        &
-       dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve, dims_%mxdnst,           &
-       dims_%mxdlqp, dims_%mxdcub, dims_%mxdlao, dims_%mxdset)
-
-  endif
-
-  write(6,*)
-  write(6,*) '  do you want a band structure with unfolding'
-  write(6,*) '  using ao interpolation? (y/n)'
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   band unfold'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-    write(6,*)
-    write(6,*) '     band structure with unfolding  '
-    write(6,*) '         (ao interpolation)         '
-
-    call ao_interpolation_out_band_fold_full(ioreplay,                   &
-        meta_cpw2000, title, subtitle, noiData,                          &
-        pwexp_%emax, pseudo_%ztot,                                       &
-        crys_%adot, crys_%ntype, crys_%natom, crys_%nameat,              &
-        crys_%rat,                                                       &
-        recip_%ng, recip_%kgv,                                           &
-        atorb_%n_bsets, atorb_%jbset,                                    &
-        atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
-        atorb_%wvfao, atorb_%lorb,                                       &
-        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve,dims_%mxdlqp,           &
-        dims_%mxdlao, dims_%mxdset)
-
-    write(6,*) '     '
-    write(6,*) '     completed'
-    write(6,*)
-
-  endif
-
-
-  write(6,*)
-  write(6,*) '  do you want a band structure '
-  write(6,*) '  using ao interpolation? (y/n)'
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   band'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-    write(6,*) '     band structure (ao interpolation)'
-
-    call ao_interpolation_out_band(title, subtitle,                      &
-        noiData, pseudo_%ztot, crys_%adot)
-    write(6,*) '     '
-    write(6,*) '     completed'
-    write(6,*)
-
-  endif
-
-
-  write(6,*)
-  write(6,*) '  do you want prepare file for density of states '
-  write(6,*) '  using ao interpolation? (y/n)'
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   dos prepare'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-    write(6,*) '     files for density of states (ao interpolation)'
-
-    call ao_interpolation_out_dos(noiData, pseudo_%ztot, crys_%adot,     &
-        spaceg_%ntrans, spaceg_%mtrx)
-
-
-    write(6,*) '     '
-    write(6,*) '     completed'
-    write(6,*)
-
-  endif
-
-
-  if(noiData % loptical == 1) then
-
-    write(6,*)
-    write(6,*) '  do you want prepare file for the dielectric function '
-    write(6,*) '  using ao interpolation? (y/n)'
-    write(6,*)
-    read(5,*) yesno
-    write(ioreplay,*) yesno,'   ie_prepare'
-
-    if(yesno == 'y' .or. yesno == 'Y') then
-      write(6,*) '     files for dielectric function calculation (ao interpolation)'
-
-      call ao_interpolation_out_ie(noiData, pseudo_%ztot, crys_%adot,    &
-          spaceg_%ntrans, spaceg_%mtrx)
-
-      write(6,*) '     '
-      write(6,*) '     completed'
+      write(6,*)
+      write(6,*) '  hsr2.dat was written by another version, recalculates'
       write(6,*)
 
     endif
 
-  endif
-
-
-  write(6,*)
-  write(6,*) '  do you want the files for Wannier90 run? '
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   w90_interface'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-    call ao_interpolation_w90(noiData,                                   &
-        pwexp_%emax, pseudo_%ztot,                                       &
-        crys_%adot,                                                      &
-        crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,               &
-        recip_%ng, recip_%kgv,                                           &
-        atorb_%n_bsets, atorb_%jbset,                                    &
-        atorb_%norbat, atorb_%nqwf, atorb_%delqwf,                       &
-        atorb_%wvfao, atorb_%lorb,                                       &
-        dims_%mxdtyp, dims_%mxdatm, dims_%mxdgve,dims_%mxdlqp,           &
-        dims_%mxdlao, dims_%mxdset)
+    close(unit=IOHSR)
 
   endif
 
+  if(lcreate) call ao_interpolation_create(ioreplay)
 
-  write(6,*)
-  write(6,*) '  do you want prepare file compatible with WannierTools? '
-  write(6,*)
-  read(5,*) yesno
-  write(ioreplay,*) yesno,'   write hr'
-
-  if(yesno == 'y' .or. yesno == 'Y') then
-
-     call ao_interpolation_write_hr(crys_%adot, ioreplay)
-
-     call ao_interpolation_write_wt_in(noiData, pseudo_%ztot,            &
-          crys_%adot, crys_%ntype, crys_%natom,                          &
-          crys_%nameat, crys_%rat, atorb_%n_bsets, atorb_%jbset,         &
-          atorb_%norbat, atorb_%lorb,                                    &
-          dims_%mxdtyp, dims_%mxdatm, dims_%mxdlao, dims_%mxdset)
-
-     write(6,*) '     '
-     write(6,*) '     completed'
-
-  endif
-
-
-  call NonOrthoInterpFinish(noiData)
-
-  write(6,*)
-  write(6,*) '  All Done with ao interpolation!'
-  write(6,*)
-
-!  stop
-
-!-------------------------------------------------------------------
-
+  call ao_interpolation_use(ioreplay)
 
   return
 
 end subroutine ao_interpolation_sub
-
