@@ -15,10 +15,10 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         1990. 7 October 2026.
+!>  \date         1990. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
+subroutine ditsp_c16_loop(ipr, epspsi, wgt, epsa,                        &
     lortho, lsafe, ihkp, lnewanl,                                        &
     neig, mtxd, nexact, niter, ndeg, nconv,                              &
     mcref, mc, xmax,                                                     &
@@ -38,6 +38,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Indentation, diag_rq, 17 March 2024. JLM
 ! Modified, generalized Kohn-Sham meta-GGA, hk_psi_c16 replaced by hk_psi_driver_c16. 7 October 2026. claude
+! Weighted errors (wgt, tighter convergence of occupied states). 24 October 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -54,6 +55,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
 
   integer, intent(in)                ::  ipr                             !<  print control. 0 no printing, 2 lots of stuff
   real(REAL64), intent(in)           ::  epspsi                          !<  criteria for convergence
+  real(REAL64), intent(in)           ::  wgt(mxdbnd)                     !<  weight of the squared error of eigenvector n (see ditsp_weight)
   real(REAL64), intent(in)           ::  epsa                            !<  eigenvalue energy scale
   integer, intent(in)                ::  mc                              !<  index of current inner iteration
 
@@ -163,7 +165,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
   xmax = zero
   nmax = min(ndeg,niter)
   do n = nconv+1,nmax
-    if(work(n) > xmax) xmax = work(n)
+    if(wgt(n)*work(n) > xmax) xmax = wgt(n)*work(n)
   enddo
   if(ipr > 3) write(6,'("  In ditspc_loop: current error values",        &
                   &     " of error work(n) = ",/,20(2X,5E13.5,/))')      &
@@ -231,7 +233,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
           xmax = zero
           nmax = min(niter,ndeg)
           do n = nconv+1,nmax
-            if(work(n) > xmax) xmax = work(n)
+            if(wgt(n)*work(n) > xmax) xmax = wgt(n)*work(n)
           enddo
           if(xmax < epspsi*epspsi .and. lsafe .and.                 &
                                       niter >= ndeg) then
@@ -271,7 +273,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
     ntst = nconv
     do n = nconv+1,niter
 
-      if(work(n) > 0.01*epspsi*epspsi) exit
+      if(wgt(n)*work(n) > 0.01*epspsi*epspsi) exit
 
       ntst = n
     enddo
@@ -345,7 +347,7 @@ subroutine ditsp_c16_loop(ipr, epspsi, epsa,                             &
         ntst = nconv
         do n = nconv+1,nmax
 
-          if(work(n) > 0.01*epspsi*epspsi) exit
+          if(wgt(n)*work(n) > 0.01*epspsi*epspsi) exit
 
           ntst = n
         enddo

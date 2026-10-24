@@ -12,18 +12,20 @@
 !------------------------------------------------------------!
 
 !>  Given |psi> and H|psi> estimates the error in the
-!>  eigenvector estimates of the maximum error: max | H |psi> - |psi><psi|H|psi> |^2.
+!>  eigenvector estimates of the maximum error: max | H |psi> - |psi><psi|H|psi> |^2,
+!>  each weighted by wgt (looser convergence of empty states).
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         11 June 2020.
+!>  \date         11 June 2020. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
+subroutine ditsp_error(xmax, neig, mtxd, psi, hpsi, wgt,                 &
     mxddim, mxdbnd)
 
 ! Written 11 June 2020 from previous code. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! Weighted errors (wgt, tighter convergence of occupied states). 24 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -40,10 +42,11 @@ subroutine ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
 
   complex(REAL64), intent(in)        ::  psi(mxddim,mxdbnd)              !<  |psi>
   complex(REAL64), intent(in)        ::  hpsi(mxddim,mxdbnd)             !<  H |psi>
+  real(REAL64), intent(in)           ::  wgt(mxdbnd)                     !<  weight of the squared error of eigenvector n (see ditsp_weight)
 
 ! output
 
-  real(REAL64), intent(out)          ::  xmax                            !<  maximum error: | H |psi> - |psi><psi|H|psi> |^2
+  real(REAL64), intent(out)          ::  xmax                            !<  maximum weighted error: wgt * | H |psi> - |psi><psi|H|psi> |^2
 
 ! local allocatable array
 
@@ -75,6 +78,7 @@ subroutine ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
     call zcopy(mtxd, hpsi(:,n), 1, xerror, 1)
     call zaxpy(mtxd, cmplx(-egn,ZERO,REAL64), psi(:,n), 1, xerror, 1)
     xm = real(zdotc(mtxd,xerror,1,xerror,1),REAL64)
+    xm = wgt(n)*xm
     if(xmax < xm) xmax = xm
   enddo
 

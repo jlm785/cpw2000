@@ -17,7 +17,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 23 October 2026.
+!>  \date         18 october 1993. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -57,6 +57,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
+! neig returns the number of eigenvectors including the degeneracy of the last level (within mxdbnd). 24 October 2026. JLM+claude
 
 
   implicit none
@@ -285,6 +286,10 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
         mxddim, 2*ndeg, mxdbnd)
 
   endif
+
+! number of eigenvectors including the degeneracy of the last level
+
+  neig = ndeg
 
   deallocate(bas)
   deallocate(hbas)

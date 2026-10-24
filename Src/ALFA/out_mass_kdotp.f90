@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         18 january 2022. 16 October 2026.
+!>  \date         18 january 2022. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_mass_kdotp(ioreplay,                                      &
@@ -44,6 +44,7 @@ subroutine out_mass_kdotp(ioreplay,                                      &
 ! neigk, nmodel+1 was passed to intent(inout) in h_kb_dia_all. 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! nocc = neigk, all states converged to epspsi (nocc now used in h_kb_dia_all). 24 October 2026. JLM+claude
 
   implicit none
 
@@ -299,8 +300,8 @@ subroutine out_mass_kdotp(ioreplay,                                      &
   allocate(ekpsi(mxdbnd))
 
 
-  nocc = nmodel
   neigk = nmodel+1
+  nocc = neigk
 
   call h_kb_dia_all('pw  ', emax, ZERO, rk0, neigk, nocc,                &
       flgpsd, ipr, ifail, icmax, iguess, epspsi,                         &

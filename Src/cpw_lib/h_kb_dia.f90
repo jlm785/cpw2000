@@ -16,10 +16,10 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 15 October 2026.
+!>  \date         18 october 1993. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
+subroutine h_kb_dia(emax, esmear, rkpt, neig, nocc, flgpsd,              &
     ipr, ifail, icmax, iguess, epspsi,                                   &
     ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                      &
     sfact, veff, icmplx,                                                 &
@@ -49,6 +49,8 @@ subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
 ! Added the commented out alternative call to hamilt_kb_alt. 16 Mrch 2024. JLM
 ! Modified, generalized Kohn-Sham meta-GGA (lgks, vtau, vtaumsh, hamilt_mgga_add). 6 October 2026. JLM+claude
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
+! nocc, empty states converged to looser tolerances. 24 October 2026. JLM+claude WARNING NEW API
+! neig from ditsp_c16 returned (includes the degeneracy of the last level, was a copy). 24 October 2026. JLM+claude
 
 
   implicit none
@@ -114,6 +116,7 @@ subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
 ! input and output
 
   integer, intent(inout)             ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
+  integer, intent(in)                ::  nocc                            !<  number of occupied states, converged to epspsi, empty states are looser (see ditsp_weight)
   complex(REAL64), intent(inout)     ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i (guess on input)
 
   integer, intent(inout)             ::  mtxd                            !<  dimension of the hamiltonian
@@ -143,7 +146,6 @@ subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
   integer         ::  mxdanl,mxdsml
   integer         ::  nanl, nanlso, nanlspin
   integer         ::  mtxds
-  INTEGER         ::  NDUM
 
   logical         ::  lnewanl                                            !  indicates that anlga has been recalculated (not used in default implementation)
 
@@ -206,12 +208,10 @@ subroutine h_kb_dia(emax, esmear, rkpt, neig, flgpsd,                    &
 !       ntype, natom, rat, adot,                                           &
 !       mxdtyp, mxdatm, mxdgve, mxdnst, mxdcub, mxdlqp, mxddim, mxdsml)
 
-  NDUM = NEIG
-
   lnewanl = .TRUE.
 
   call ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,             &
-      NDUM, mtxd, mtxds,                                                 &
+      neig, nocc, mtxd, mtxds,                                           &
       psi, hpsi, ei,                                                     &
       ekpg, isort, vscr, kmscr,                                          &
       lgks, rkpt, adot, vtaumsh,                                         &

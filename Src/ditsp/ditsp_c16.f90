@@ -19,11 +19,11 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         February 1990, 7 October 2026.
+!>  \date         February 1990, 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
-    neig, mtxd, mtxds,                                                   &
+    neig, nocc, mtxd, mtxds,                                             &
     psi, hpsi, ei,                                                       &
     ekpg, isort, vscr, kmscr,                                            &
     lgks, rkpt, adot, vtaumsh,                                           &
@@ -44,6 +44,8 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 ! Modified, qmod-->ekpg in hk_psi. 13 February 2021. JLM
 ! Indentation. 28 September 2026. JLM+claude
 ! Modified, lgks, rkpt, adot, vtaumsh for generalized Kohn-Sham meta-GGA. 7 October 2026. claude
+! nocc, empty states converged to looser tolerances (ditsp_weight). 24 October 2026. JLM+claude WARNING NEW API
+! neig returns the number of eigenvectors including the degeneracy of the last level (within mxdbnd). 24 October 2026. JLM+claude
 
 
   implicit none
@@ -65,6 +67,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
   integer, intent(in)                ::  iguess                          !<  if =1 uses neig guess eigenvectors in xvecr
   real(REAL64), intent(in)           ::  epspsi                          !<  criteria for convergence
 
+  integer, intent(in)                ::  nocc                            !<  number of occupied states, converged to epspsi, empty states are looser (see ditsp_weight)
   integer, intent(in)                ::  mtxd                            !<  dimension of the hamiltonian
   integer, intent(in)                ::  mtxds                           !<  dimension of the small hamiltonian
 
@@ -130,6 +133,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 ! allocatable arrays
 
   real(REAL64),allocatable           ::  eg(:)
+  real(REAL64),allocatable           ::  wgt(:)                          !  weight of the squared error of eigenvector n
 
   complex(REAL64),allocatable        ::  bas(:,:)
   complex(REAL64),allocatable        ::  hbas(:,:)
@@ -143,6 +147,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 ! initializations
 
   allocate(eg(mxddim))
+  allocate(wgt(mxdbnd))
 
   ifail = 0
   xmax = 1.0
@@ -222,6 +227,10 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 
   endif
 
+! weights of the errors, empty states converge to looser tolerances
+
+  call ditsp_weight(nocc, neig, epspsi, wgt, mxdbnd)
+
 ! tests for non-iterative diagonalization
 
   if(mtxds >= mtxd) then
@@ -240,6 +249,16 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 
     endif
 
+!   completes the last degenerate level (within mxdbnd)
+
+    epsa = max(epspsi,abs((eg(neig)-eg(1))/real(50*neig,REAL64)))
+    ndeg = neig
+    do i = neig+1,min(mtxds,mxdbnd)
+      if(eg(i) - eg(i-1) > epsa) exit
+      ndeg = i
+    enddo
+    neig = ndeg
+
     do n = 1,neig
     do i = 1,mtxd
       psi(i,n) = vsm(i,n)
@@ -253,7 +272,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
   else
 
     if(iguess /= 0.and. ipr > 2) then
-      call ditsp_error(xmax2, neig, mtxd, psi, hpsi,                     &
+      call ditsp_error(xmax2, neig, mtxd, psi, hpsi, wgt,                &
           mxddim, mxdbnd)
       write(6,*)
       write(6,*) '  From the guess eigenvectors '
@@ -279,7 +298,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
     ihkpsum = ihkpsum + ihkp
 
     if(ipr > 2) then
-      call ditsp_error(xmax2, neig, mtxd, psi, hpsi,                     &
+      call ditsp_error(xmax2, neig, mtxd, psi, hpsi, wgt,                &
           mxddim, mxdbnd)
       write(6,*)
       write(6,*) '  After ditsp_c16_start with iguess = ',iguess
@@ -322,7 +341,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
         if(ipr > 3) write(6,'("  ic = ",i6,"  mc = ",i6,            &
             &         "  nconv = ",i6,"  niter = ",i6)') ic,mc,nconv,niter
 
-        call ditsp_c16_loop(ipr, epspsi, epsa,                           &
+        call ditsp_c16_loop(ipr, epspsi, wgt, epsa,                      &
             lortho, lsafe, ihkp, lnewanl,                                &
             neig, mtxd, nexact, niter, ndeg, nconv,                      &
             mcref, mc, xmax,                                             &
@@ -338,7 +357,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
         ihkpsum = ihkpsum + ihkp
 
         if(ipr > 3) then
-          call ditsp_error(xmax2, neig, mtxd, psi, hpsi,                 &
+          call ditsp_error(xmax2, neig, mtxd, psi, hpsi, wgt,            &
               mxddim, mxdbnd)
           write(6,*)
           write(6,*) '  After ditsp_c16_loop with mc = ',mc
@@ -353,7 +372,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 
       if(lconv) then
         if(ipr > 2) then
-          call ditsp_error(xmax2, neig, mtxd, psi, hpsi,                 &
+          call ditsp_error(xmax2, neig, mtxd, psi, hpsi, wgt,            &
               mxddim, mxdbnd)
           write(6,*)
           write(6,*) '  After ditsp_c16_loop convergence '
@@ -375,7 +394,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
           anlga, xnlkb, nanl,                                            &
           mxddim, mxdsml, mxdbnd, mxdgve, mxdscr, mxdanl)
 
-      call ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
+      call ditsp_error(xmax, neig, mtxd, psi, hpsi, wgt,                 &
           mxddim, mxdbnd)
 
       if(ipr > 2) then
@@ -401,6 +420,10 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
 
 
     enddo
+
+!   number of eigenvectors including the degeneracy of the last level
+
+    neig = ndeg
 
     deallocate(bas)
     deallocate(hbas)
@@ -438,6 +461,7 @@ subroutine ditsp_c16(ipr, ifail, icmax, iguess, epspsi, lnewanl,         &
   enddo
 
   deallocate(eg)
+  deallocate(wgt)
 
   return
 

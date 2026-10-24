@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 2020. 23 October 2026.
+!>  \date         May 2020. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
@@ -46,6 +46,8 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 ! esmear, smearing of the kinetic energy cutoff (kinetic_smear). 15 October 2026. JLM+claude WARNING NEW API
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! h_kb_dia_ao without icmplx. 23 October 2026. JLM+claude
+! nocc used, empty states converged to looser tolerances. 24 October 2026. JLM+claude
+! neig may increase to include the degeneracy of the last level (within mxdbnd), the caller decides. 24 October 2026. JLM+claude
 
   implicit none
 
@@ -70,7 +72,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
   real(REAL64), intent(in)           ::  emax                            !<  largest kinetic energy included in hamiltonian diagonal. (hartree).
   real(REAL64), intent(in)           ::  esmear                          !<  smearing of the kinetic energy cutoff (hartree), no smearing if zero
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
-  integer, intent(in)                ::  nocc                            !<  number of ocupied eigenvectors for strict convergence (in reserve for later use).
+  integer, intent(in)                ::  nocc                            !<  number of occupied eigenvectors, converged to epspsi, empty states are looser (see ditsp_weight).  nocc = neig converges all to epspsi
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
 
   integer, intent(in)                ::  ipr                             !<  print control. 0 no printing, 2 lots of stuff
@@ -128,7 +130,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
 ! input and output
 
-  integer, intent(inout)             ::  neig                            !<  number of eigenvectors (requested on input, modified by degeneracies on output)
+  integer, intent(inout)             ::  neig                            !<  number of eigenvectors (requested on input, increased to complete the last degenerate level within mxdbnd on output)
   complex(REAL64), intent(inout)     ::  psi(mxddim,mxdbnd)              !<  component j of eigenvector i (guess on input)
 
   integer, intent(inout)             ::  mtxd                            !<  dimension of the hamiltonian
@@ -148,6 +150,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 ! allocatable local arrays
 
   integer, allocatable               ::  isort_tr(:)
+  real(REAL64), allocatable          ::  wgt(:)                          !  weight of the squared error of eigenvector n
 
 ! local variables
 
@@ -155,6 +158,8 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
   logical        ::  lhpsi
   real(REAL64)   ::  xmax
   integer        ::  norbtot
+  integer        ::  neig_req                                            !  requested number of eigenvectors (neig may increase for degeneracies)
+  integer        ::  neig_guess                                          !  number of eigenvectors of the atomic orbital guess
 
   logical        ::  lkshift                                             !  shift is needed
   real(REAL64)   ::  qualpsi                                             !  estimate of the quality of psi after applying the shift.  1 good, 0 terrible.
@@ -173,10 +178,10 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
   integer        ::  i
 
-! AVOIDS WARNINGS UNTIL NOCC IS IMPLEMENTED
-  IFAIL = NOCC
 
   ifail = 0
+
+  neig_req = neig
 
 
 ! deals with k-points far away from the 1st Brillouin zone
@@ -228,8 +233,12 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
       lhpsi = .TRUE.
 
-      call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AOJC  ',     &
-          veffr1, lhpsi,                                                 &
+!     guess only, the number of states is decided by h_kb_dia
+
+      neig_guess = neig
+
+      call h_kb_dia_ao(emax, esmear, rk_tmp, neig_guess, flgpsd,         &
+          'AOJC  ', veffr1, lhpsi,                                       &
           ng, kgv,                                                       &
           nqnl, delqnl, vkb, nkb,                                        &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
@@ -246,7 +255,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
     endif
 
-    call h_kb_dia(emax, esmear, rk_tmp, neig, flgpsd,                    &
+    call h_kb_dia(emax, esmear, rk_tmp, neig, nocc, flgpsd,              &
         ipr, ifail, icmax, iguess_local, epspsi,                         &
         ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                  &
         sfact, veff, icmplx,                                             &
@@ -260,7 +269,9 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
         mxdscr)
 
     if(ifail /= 0) then
-      call ditsp_error(xmax, neig, mtxd, psi, hpsi,                      &
+      allocate(wgt(mxdbnd))
+      call ditsp_weight(nocc, neig_req, epspsi, wgt, mxdbnd)
+      call ditsp_error(xmax, neig, mtxd, psi, hpsi, wgt,                 &
           mxddim, mxdbnd)
 
       if(xmax > 4.0*epspsi*epspsi) then
@@ -281,6 +292,8 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
         endif
 
       endif
+
+      deallocate(wgt)
 
     endif
 
