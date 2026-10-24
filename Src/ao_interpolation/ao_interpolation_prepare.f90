@@ -25,7 +25,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 23 October 2026.
+!>  \date         2014. 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -71,6 +71,7 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
 ! imtb returned, the file (hsr2.dat) is written by the caller. 23 October 2026. JLM+claude WARNING NEW API
 ! Questions moved to ao_int_prepare_questions (nk1, nk2, nk3, lso, loptical, imtb are arguments,
 ! ioreplay removed), symmetry check in ao_int_sym_check. 23 October 2026. JLM+claude WARNING NEW API
+! copy norb_k of norb_ao passed to h_kb_dia_all (intent(inout) neig). 24 October 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -240,6 +241,7 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
   integer           ::  neig_dia                                         !  number of states in the plane-wave diagonalization
   integer           ::  neig_k                                           !  number of plane-wave states used at the k-point (complete levels)
   integer           ::  neig_kmin, neig_kmax                             !  range of neig_k
+  integer           ::  norb_k                                           !  copy of norb_ao for h_kb_dia_all (neig is intent(inout))
   integer           ::  iprmatch                                         !  print control for ao_match_state
   integer           ::  nocc
 
@@ -819,11 +821,12 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
       lkpg = .FALSE.
       ipr = 0
 
-      nocc = norb_ao
+      norb_k = norb_ao
+      nocc = norb_k
 
 !   THERE IS A LOT OF DUPLICATION HERE
 
-      call h_kb_dia_all('ao  ', emax, ZERO, rkpt, norb_ao, nocc, flgpsd, &
+      call h_kb_dia_all('ao  ', emax, ZERO, rkpt, norb_k, nocc, flgpsd,  &
           ipr, ifail, icmax, iguess, epspsi,                             &
           ng, kgv, phase, conj, ns, inds, kmax, indv, ek,                &
           sfact, veff, icmplx,                                           &
