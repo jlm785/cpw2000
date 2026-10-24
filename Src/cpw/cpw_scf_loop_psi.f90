@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026, 16 October 2026.
+!>  \date         12 May 2026, 24 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
@@ -32,6 +32,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) in h_kb_dia_all. 15 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
+! nocc from the occupations of the previous iteration, empty states converged to looser tolerances. 24 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -118,7 +119,8 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 
   integer                ::  ipr, nrka
   character(len=4)       ::  diag_type                                   !  selects diagonalization, 'pw  ','ao  ','aojc'
-  integer                ::  nocc
+  integer                ::  nocc                                        !  number of states converged to epspsi (occupied in the previous iteration)
+  integer                ::  iocc                                        !  offset of the k-point in the occupations of the previous iteration
 
   integer                ::  ifail                                       !  if ifail=0 the subroutine was successfull. Otherwise ifail indicates the number of correct digits.
 
@@ -126,6 +128,10 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
   character(len=5)       ::  labelk
 
   real(REAL64)           ::  veffr1
+
+! parameters
+
+  real(REAL64), parameter    ::  OCCMIN = 1.0E-4_REAL64                  !  states with larger occupation are occupied
 
 ! counters
 
@@ -143,6 +149,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 
   minifail = 100
   iel = 0
+  iocc = 0
 
   do irk = 1,kpoint_%nrk
 
@@ -181,7 +188,16 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
       if(iprglob > 2) ipr = 1
 
       diag_type = 'pw  '
+
+!     after the first iteration the empty states are converged to a looser tolerance
+
       nocc = neig
+      if(iter > 1) then
+        nocc = 0
+        do j = 1,neig
+          if(psiallk_%occ_allk(iocc+j) > OCCMIN) nocc = j
+        enddo
+      endif
 
       call h_kb_dia_all(diag_type, pwexp_%emax, pwexp_%esmear, rkpt,     &
           neig, nocc, flags_%flgpsd, ipr, ifail, acc_%icdiagmax,         &
@@ -257,6 +273,11 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 
 
     hamallk_%mtxd_allk(irk) = mtxd
+
+!   offset of the next k-point in the previous occupations (before nband changes)
+
+    iocc = iocc + kpoint_%nband(irk)
+
     kpoint_%nband(irk) = neig
 
 
