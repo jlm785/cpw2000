@@ -15,13 +15,14 @@
 !>  from the cpw.in file
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.04
-!>  \date         22 April 2021, 23 January 2022.
+!>  \version      5.13
+!>  \date         22 April 2021, 28 October 2026.
 !>  \copyright    GNU Public License v2
 
 program cpwin_geom
 
 ! Added call to sym_space_group_name. 23 January 2022. JLM
+! Interactive, analysis in voronoi_analysis. 28 October 2026. JLM+claude
 
   use esdf
 
@@ -46,44 +47,20 @@ program cpwin_geom
   real(REAL64), allocatable          ::  atmass(:)                       !<  atomic mass of atoms of type i
   character(len=2), allocatable      ::  nameat(:)                       !<  chemical symbol for the type i
 
-  character(len=250)                 ::  meta_pwdat                      !<  metadata
-
-! metric variables
-
-  real(REAL64)                       ::  adotnig(3,3), adotsym(3,3)
-  integer                            ::  ibravais, mtotal(3,3)
-  real(REAL64)                       ::  avec(3,3)
-  real(REAL64)                       ::  aconv(3,3), avecnig(3,3)
-
-! space group
-
-  integer                            ::  ntrans                          !<  number of symmetry operations in the factor group
-  integer                            ::  mtrx(3,3,48)                    !<  rotation matrix (in reciprocal lattice coordinates) for the k-th symmetry operation of the factor group
-  real(REAL64)                       ::  tnp(3,48)                       !<  2*pi* i-th component (in lattice coordinates) of the fractional translation vector associated with the k-th symmetry operation of the factor group
-
-  integer                            ::  code_group                      !  point group
-
-
-! neighbour variables
-
-  integer, allocatable               ::  nneighb(:,:)                    !<  number of neighbors for each atom
-  integer, allocatable               ::  neighbtype(:,:,:)               !<  type of nth neighbors for each atom
-  real(REAL64), allocatable          ::  rneighb(:,:,:,:)                !<  relative position of the n-th neighbor
-  real(REAL64), allocatable          ::  wneighb(:,:,:)                  !<  strength of the n-th neighbor bond
-
 ! other variables
 
   integer               ::  ipr
   character(len=6)      ::  fcpwin                                       !<  filename with input data (new style)
   logical               ::  lgeom, lgeom2
 
-! parameter
-
-  real(REAL64), parameter ::  TOL = 1.0E-6_REAL64
-  integer, parameter      ::  MXDNB = 40
+  integer               ::  ioreplay = 35                                !<  hard coded tape unit for replay
+  character(len=15)     ::  fname = 'replay_geom.dat'                    !<  hard coded filename for replay
 
   fcpwin = 'cpw.in'
   ipr = 3
+
+  open(unit = ioreplay, file = fname,  status = 'UNKNOWN',               &
+                    form = 'FORMATTED')
 
   call size_mxdtyp_mxdatm_esdf(ipr, fcpwin, lgeom,                       &
               mxdtyp, mxdatm)
@@ -106,49 +83,9 @@ program cpwin_geom
 
     if(lgeom2) then
 
-      ipr = 1
-      call metric_ident(adot, adotnig, adotsym, ibravais, mtotal,        &
-                      avec, aconv, avecnig, TOL, ipr)
-
-      call sym_identify(1, ipr, TOL,                                     &
-          ntrans, mtrx, tnp,                                             &
-          adot, ntype, natom, rat,                                       &
+      call voronoi_analysis(ioreplay,                                    &
+          adot, ntype, natom, nameat, rat,                               &
           mxdtyp, mxdatm)
-
-      call sym_point_group_name(adot, 1, code_group, ntrans, mtrx)
-
-      call sym_space_group_name(ibravais, code_group, ntrans, mtrx, tnp)
-
-      allocate(nneighb(mxdatm,mxdtyp))
-      allocate(neighbtype(MXDNB,mxdatm,mxdtyp))
-      allocate(rneighb(3,MXDNB,mxdatm,mxdtyp))
-      allocate(wneighb(MXDNB,mxdatm,mxdtyp))
-
-      call voronoi_neighb(adot, ntype, natom, nameat, rat,               &
-                       nneighb, neighbtype, rneighb, wneighb,            &
-                       mxdtyp, mxdatm, MXDNB)
-
-      call voronoi_neighb_print(adot, ntype, natom, nameat, rat,         &
-                       nneighb, neighbtype, rneighb, wneighb,            &
-                       mxdtyp, mxdatm, MXDNB)
-
-      write(6,*)
-      write(6,*) '  Preparing a CIF file from crystal data.'
-      write(6,*) '  Uploading it to FINDSYM web site'
-      write(6,*) '  (https://stokes.byu.edu/iso/findsym.php)'
-      write(6,*) '  Will identify the space group of the crystal'
-      write(6,*) '  and you can download a CIF file with that information.'
-      write(6,*) '  The downloaded file can be converted to input for other'
-      write(6,*) '  electronic structure codes with cif2cell.'
-      write(6,*) '  (https://pypi.org/project/cif2cell/)'
-      write(6,*)
-
-      call write_cif(adot, ntype, natom, nameat, rat,                    &
-                       mxdtyp, mxdatm)
-
-      deallocate(nneighb)
-      deallocate(neighbtype)
-      deallocate(rneighb)
 
     else
       write(6,*)
@@ -168,6 +105,8 @@ program cpwin_geom
     write(6,*) '  to find mxdtyp, mxdatm '
     write(6,*)
   endif
+
+  close(unit = ioreplay)
 
   stop
 end program cpwin_geom

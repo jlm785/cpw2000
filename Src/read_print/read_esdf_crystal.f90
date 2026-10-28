@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         2017-2021, 8 July 2025.
+!>  \date         2017-2021, 8 July 2025, 28 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf_crystal(ipr,                                        &
@@ -29,6 +29,7 @@ subroutine read_esdf_crystal(ipr,                                        &
 ! Modified, documentation, August 10 2019. JLM
 ! Modified, prints reciprocal lattice vectors, 16 April 2021. JLM
 ! Modified to allow "negative" volumes. 8 July 2025. JLM
+! nat_1 initialized, consistency check only if lgeom. 28 October 2026. JLM+claude
 
 
   use esdf
@@ -479,32 +480,40 @@ subroutine read_esdf_crystal(ipr,                                        &
 
 ! checks consistency
 
-  if(esdf_defined('NumberOfAtoms')) then
-    nat_1 = esdf_integer('NumberOfAtoms',1)
-  endif
+  if(lgeom) then
 
-  nat_2 = 0
-  do nt = 1,ntype
-    if(natom(nt) == 0) then
+    nat_2 = 0
+    do nt = 1,ntype
+      if(natom(nt) == 0) then
+        write(6,*)
+        write(6,*) '    Stopped in read_esdf_crystal.'
+        write(6,*) '    Could not find coordinates for atom type ', nameat(nt)
+        write(6,*)
+
+        stop
+
+      endif
+      nat_2 = nat_2 + natom(nt)
+    enddo
+
+!   NumberOfAtoms < 1 or absent means it is set by AtomicCoordinates
+
+    nat_1 = nat_2
+    if(esdf_defined('NumberOfAtoms')) then
+      nat_1 = esdf_integer('NumberOfAtoms',1)
+      if(nat_1 < 1) nat_1 = nat_2
+    endif
+
+    if(nat_1 /= nat_2) then
       write(6,*)
       write(6,*) '    Stopped in read_esdf_crystal.'
-      write(6,*) '    Could not find coordinates for atom type ', nameat(nt)
+      write(6,*) '    Number of atoms found: ', nat_2
+      write(6,*) '    Expected nymber of atoms: ',nat_1
       write(6,*)
 
       stop
 
     endif
-    nat_2 = nat_2 + natom(nt)
-  enddo
-
-  if(nat_1 /= nat_2) then
-    write(6,*)
-    write(6,*) '    Stopped in read_esdf_crystal.'
-    write(6,*) '    Number of atoms found: ', nat_2
-    write(6,*) '    Expected nymber of atoms: ',nat_1
-    write(6,*)
-
-    stop
 
   endif
 
