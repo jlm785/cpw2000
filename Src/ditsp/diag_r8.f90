@@ -16,12 +16,13 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
-!>  \date         29 January 2023.
+!>  \date         29 January 2023, 28 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
 
 ! Adapted from diag_c16
+! dsyev instead of dsyevd (MKL bug). 28 October 2026. JLM+claude
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -42,9 +43,8 @@ subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
 
 ! local variables and arrays
 
-  integer    ::  lwork,liwork
+  integer    ::  lwork
   real(REAL64), allocatable    :: work(:)
-  integer, allocatable            :: iwork(:)
 
 ! counters
 
@@ -56,33 +56,33 @@ subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
   enddo
   enddo
 
-! finds the dimension of work arrays
+! finds the dimension of work array
 
-  allocate(work(2),iwork(2))
+  allocate(work(2))
 
   lwork = -1
-  liwork = -1
-  call dsyevd( 'V', 'L', neig, vec, mxdbnd , ev, work,lwork,iwork,liwork, info )
+  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
 
   if( info /= 0) then
      write(6,*)
      write(6,*)'    ERROR    diag_r8 FAILED A, info = ',info
      write(6,*)
 
+     deallocate(work)
+
      return
 
   endif
 
-  lwork = int( work( 1 ) )
-  liwork = iwork( 1 )
+  lwork = max(1,3*neig-1,int( work( 1 ) ))
 
-  deallocate(work,iwork)
+  deallocate(work)
 
-  allocate(work(lwork),iwork(liwork))
+  allocate(work(lwork))
 
-  call dsyevd( 'V', 'L', neig, vec, mxdbnd , ev, work,lwork,iwork,liwork, info )
+  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
 
-  deallocate(work,iwork)
+  deallocate(work)
 
   if( info /= 0) then
      write(6,*)

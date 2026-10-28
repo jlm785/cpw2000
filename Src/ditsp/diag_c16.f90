@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         June 2012, 7 January 2014.
+!>  \date         June 2012, 28 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_c16(neig, ham, ev, vec, mxdbnd, info)
@@ -25,6 +25,7 @@ subroutine diag_c16(neig, ham, ev, vec, mxdbnd, info)
 ! Modified, documentation, January 2020. JLM
 ! Modified 7 January 2014, style. jlm
 ! Indentation. 28 September 2026. JLM+claude
+! zheev instead of zheevd (MKL bug). 28 October 2026. JLM+claude
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -45,10 +46,9 @@ subroutine diag_c16(neig, ham, ev, vec, mxdbnd, info)
 
 ! local variables and arrays
 
-  integer    ::  lwork,liwork,lrwork
+  integer    ::  lwork
   complex(REAL64), allocatable    :: work(:)
   real(REAL64), allocatable       :: rwork(:)
-  integer, allocatable            :: iwork(:)
 
 ! counters
 
@@ -60,37 +60,34 @@ subroutine diag_c16(neig, ham, ev, vec, mxdbnd, info)
   enddo
   enddo
 
-! finds the dimension of work arrays
+! finds the dimension of work array
 
-  allocate(work(2),rwork(2),iwork(2))
+  allocate(work(2))
+  allocate(rwork(max(1,3*neig-2)))
 
   lwork = -1
-  liwork = -1
-  lrwork = -1
-  call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork,     &
-      lrwork, iwork, liwork, info )
+  call zheev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork, info )
 
   if( info /= 0) then
      write(6,*)
      write(6,*)'    ERROR    diag_c16 FAILED A, info = ',info
      write(6,*)
 
+     deallocate(work,rwork)
+
      return
 
   endif
 
-  lwork = int( work( 1 ) )
-  lrwork = int( rwork( 1 ) )
-  liwork = iwork( 1 )
+  lwork = max(1,2*neig-1,int( work( 1 ) ))
 
-  deallocate(work,rwork,iwork)
+  deallocate(work)
 
-  allocate(work(lwork),rwork(lrwork),iwork(liwork))
+  allocate(work(lwork))
 
-  call zheevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork,     &
-      lrwork, iwork, liwork, info )
+  call zheev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, rwork, info )
 
-  deallocate(work,rwork,iwork)
+  deallocate(work,rwork)
 
   if( info /= 0) then
      write(6,*)
