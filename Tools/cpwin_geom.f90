@@ -12,7 +12,7 @@
 !------------------------------------------------------------!
 
 !>  Performs the analysis of the crystal geometry
-!>  from the cpw.in file
+!>  from the cpw.in, cpw.out or other esdf file
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
@@ -23,6 +23,7 @@ program cpwin_geom
 
 ! Added call to sym_space_group_name. 23 January 2022. JLM
 ! Interactive, analysis in voronoi_analysis. 28 October 2026. JLM+claude
+! Choice of file (cpw.in, cpw.out, other). 28 October 2026. JLM+claude
 
   use esdf
 
@@ -50,19 +51,64 @@ program cpwin_geom
 ! other variables
 
   integer               ::  ipr
-  character(len=6)      ::  fcpwin                                       !<  filename with input data (new style)
+  character(len=200)    ::  fcpwin                                       !<  filename with input data (new style)
   logical               ::  lgeom, lgeom2
+  logical               ::  lex                                          !<  file exists
+  integer               ::  ichoice, iblank
 
   integer               ::  ioreplay = 35                                !<  hard coded tape unit for replay
   character(len=15)     ::  fname = 'replay_geom.dat'                    !<  hard coded filename for replay
 
-  fcpwin = 'cpw.in'
   ipr = 3
 
   open(unit = ioreplay, file = fname,  status = 'UNKNOWN',               &
                     form = 'FORMATTED')
 
-  call size_mxdtyp_mxdatm_esdf(ipr, fcpwin, lgeom,                       &
+! choice of file with the crystal structure
+
+  write(6,*)
+  write(6,*) '  Which file has the crystal structure?'
+  write(6,*)
+  write(6,*) '  1) cpw.in'
+  write(6,*) '  2) cpw.out (optimized structure after a relaxation)'
+  write(6,*) '  3) enter filename'
+  write(6,*)
+
+  read(5,*) ichoice
+  write(ioreplay,*) ichoice,'   file choice'
+
+  if(ichoice == 1) then
+    fcpwin = 'cpw.in'
+  elseif(ichoice == 2) then
+    fcpwin = 'cpw.out'
+  elseif(ichoice == 3) then
+    write(6,*)
+    write(6,*) '  Enter file name'
+    write(6,*)
+    read(5,'(a)') fcpwin
+    fcpwin = adjustl(fcpwin)
+    iblank = index(fcpwin,' ')
+    if(iblank > 0) fcpwin(iblank:) = ' '
+    write(ioreplay,'(1x,a,"   filename")') trim(fcpwin)
+  else
+    fcpwin = 'cpw.in'
+    write(6,*)
+    write(6,*) '  Wrong answer, using cpw.in'
+    write(6,*)
+  endif
+
+  inquire(file = trim(fcpwin), exist = lex)
+
+  if(.not. lex) then
+    write(6,*)
+    write(6,*) '  STOPPED in cpwin_geom:  file ',trim(fcpwin),' does not exist'
+    write(6,*)
+
+    stop
+
+  endif
+
+  call size_mxdtyp_mxdatm_esdf(ipr, trim(fcpwin), lgeom,                 &
               mxdtyp, mxdatm)
 
   if(lgeom) then
@@ -72,7 +118,7 @@ program cpwin_geom
     allocate(atmass(mxdtyp))
     allocate(nameat(mxdtyp))
 
-    call esdf_init(fcpwin)
+    call esdf_init(trim(fcpwin))
 
     call read_esdf_crystal(ipr,                                          &
         adot, ntype, natom, nameat, rat,                                 &
@@ -89,7 +135,7 @@ program cpwin_geom
 
     else
       write(6,*)
-      write(6,*) '  could not get enough information from ',fcpwin
+      write(6,*) '  could not get enough information from ',trim(fcpwin)
       write(6,*) '  to figure out the geometry'
       write(6,*)
     endif
@@ -101,7 +147,7 @@ program cpwin_geom
 
   else
     write(6,*)
-    write(6,*) '  could not get enough information from ',fcpwin
+    write(6,*) '  could not get enough information from ',trim(fcpwin)
     write(6,*) '  to find mxdtyp, mxdatm '
     write(6,*)
   endif
