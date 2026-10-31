@@ -130,7 +130,8 @@ ifeq ($(IFORTX),true)
          FCOMP=-qopenmp
          # FCOMP=-openmp
       else
-         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0 -diag-disable=10448
+         # FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -fp-stack-check -g -O0 -diag-disable=10448
+         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fp-stack-check -g -O0 -diag-disable=10448
          FCOMP=
       endif
 
@@ -141,10 +142,12 @@ ifeq ($(IFORTX),true)
    ifeq ($(F77),ifx)
 
       ifeq ($(DEBUG),false)
+         FCOMP=-qopenmp
          FCOPTS=-xHost -O3 $(PROF)
          #  FCOPTS=-xCORE-AVX2 -O3 $(PROF)
       else
-         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -g -O0
+         # FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -g -O0
+         FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -g -O0
       endif
 
    endif
@@ -228,7 +231,8 @@ ifeq ($(F77),gfortran)
 
    else
 
-      FCOPTS=-g -Wall -fbounds-check -pedantic-errors -ffpe-trap=zero,invalid,overflow,underflow
+      # FCOPTS=-g -Wall -fbounds-check -pedantic-errors -ffpe-trap=zero,invalid,overflow,underflow
+      FCOPTS=-g -Wall -fbounds-check -pedantic-errors -ffpe-trap=zero,invalid,overflow
       FCOMP=
       FCEXTRA=
 
