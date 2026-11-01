@@ -17,12 +17,12 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         18 october 1993. 24 October 2026.
+!>  \date         18 october 1993. 31 October 2026.
 !>  \copyright    GNU Public License v2
 
 
 
-subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
+subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf, ipr,    &
     veffr1, lhpsi,                                                       &
     ng, kgv,                                                             &
     nqnl, delqnl, vkb, nkb,                                              &
@@ -58,6 +58,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
 ! neig returns the number of eigenvectors including the degeneracy of the last level (within mxdbnd). 24 October 2026. JLM+claude
+! ipr, prints the conditioning of the overlap matrix. 31 October 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -81,6 +82,7 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   real(REAL64), intent(in)           ::  rkpt(3)                         !<  component in lattice coordinates of the k-point
   character(len=6), intent(in)       ::  flgpsd                          !<  type of pseudopotential
   character(len=6), intent(in)       ::  flgscf                          !<  type of scf calculation
+  integer, intent(in)                ::  ipr                             !<  print control, if > 0 prints the conditioning of the overlap matrix
 
   real(REAL64), intent(in)           ::  veffr1                          !<  Average value (veff(1)) of the effective potential.
   logical, intent(in)                ::  lhpsi                           !<  indicates that H | psi> should be also calculated
@@ -139,6 +141,8 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
   complex(REAL64), allocatable        ::  hbas(:,:)                      !  H | bas >
   integer, allocatable                ::  infolcao(:,:)                  !  information about the original atomic orbital.  (type of atom, atom of that type, n,l,m)
   complex(REAL64), allocatable        ::  psibas(:,:)                    !  wavefunctions in atomic basis
+  complex(REAL64), allocatable        ::  ovsm(:,:), vsm(:,:)            !  overlap of the atomic orbitals and eigenvectors
+  real(REAL64), allocatable           ::  evs(:)                         !  eigenvalues of the overlap
 
 ! local variables
 
@@ -149,10 +153,13 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
 
   logical       ::  lnewanl                                              !  indicates that anlga has been recalculated (not used in default implementation)
   logical       ::  lhpsiloc                                             !  local value of lhpsi
+  integer       ::  info
 
 ! constants
 
-  real(REAL64), parameter ::  ZERO = 0.0_REAL64
+  real(REAL64), parameter ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  complex(REAL64), parameter  ::  C_ZERO = cmplx(ZERO,ZERO,REAL64)
+  complex(REAL64), parameter  ::  C_UM = cmplx(UM,ZERO,REAL64)
 
 ! counters
 
@@ -220,6 +227,24 @@ subroutine h_kb_dia_ao(emax, esmear, rkpt, neig, flgpsd, flgscf,         &
       mxdtyp, mxdatm, mxdlqp, mxddim, mxdorb, mxdgve, mxdlao, mxdset)
 
   deallocate(infolcao)
+
+! conditioning of the overlap matrix (near linear dependence of the basis)
+
+  if(ipr > 0) then
+
+    allocate(ovsm(nbasorb,nbasorb), vsm(nbasorb,nbasorb), evs(nbasorb))
+
+    call zgemm('c', 'n', nbasorb, nbasorb, mtxd, C_UM, bas, mxddim,      &
+        bas, mxddim, C_ZERO, ovsm, nbasorb)
+    call diag_c16(nbasorb, ovsm, evs, vsm, nbasorb, info)
+
+    write(6,'("   atomic orbital overlap at k = ",3f9.4,"   smallest ",  &
+        &     "and largest eigenvalue ",2e11.3,"   ratio ",e11.3)')      &
+        rkpt, evs(1), evs(nbasorb), evs(1)/evs(nbasorb)
+
+    deallocate(ovsm, vsm, evs)
+
+  endif
 
   if(neig > nbasorb) then
     write(6,'("   STOPPED in h_kb_dia_ao   number of orbitals ",         &

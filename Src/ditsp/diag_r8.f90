@@ -14,15 +14,22 @@
 !>  interface with lapack.
 !>  diagonalizes a real symmetric matrix
 !>
+!>  Uses dsyevd (divide and conquer), the fastest for all eigenvectors.
+!>  The code for dsyev (QR, slower) and dsyevr (MRRR) is kept in
+!>  comments at the end.  With MKL, dsyevd and dsyevr may divide by
+!>  zero legitimately, so they stop if the code is compiled with
+!>  trapping of floating point exceptions (ifx -fpe0).
+!>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
-!>  \date         29 January 2023, 28 October 2026.
+!>  \date         29 January 2023, 1 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
 
 ! Adapted from diag_c16
 ! dsyev instead of dsyevd (MKL bug). 28 October 2026. JLM+claude
+! dsyevd again, dsyev and dsyevr in comments. 1 November 2026. JLM+claude
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -43,8 +50,9 @@ subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
 
 ! local variables and arrays
 
-  integer    ::  lwork
-  real(REAL64), allocatable    :: work(:)
+  integer    ::  lwork,liwork
+  real(REAL64), allocatable       :: work(:)
+  integer, allocatable            :: iwork(:)
 
 ! counters
 
@@ -56,33 +64,37 @@ subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
   enddo
   enddo
 
-! finds the dimension of work array
+! finds the dimension of work arrays
 
-  allocate(work(2))
+  allocate(work(2),iwork(2))
 
   lwork = -1
-  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
+  liwork = -1
+  call dsyevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork,            &
+      iwork, liwork, info )
 
   if( info /= 0) then
      write(6,*)
      write(6,*)'    ERROR    diag_r8 FAILED A, info = ',info
      write(6,*)
 
-     deallocate(work)
+     deallocate(work,iwork)
 
      return
 
   endif
 
-  lwork = max(1,3*neig-1,int( work( 1 ) ))
+  lwork = int( work( 1 ) )
+  liwork = iwork( 1 )
 
-  deallocate(work)
+  deallocate(work,iwork)
 
-  allocate(work(lwork))
+  allocate(work(lwork),iwork(liwork))
 
-  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
+  call dsyevd( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork,            &
+      iwork, liwork, info )
 
-  deallocate(work)
+  deallocate(work,iwork)
 
   if( info /= 0) then
      write(6,*)
@@ -94,5 +106,132 @@ subroutine diag_r8(neig, ham, ev, vec, mxdbnd, info)
   endif
 
   return
+
+! Alternative with dsyev.  Replace the code from "finds the dimension
+! of work arrays" to the end, there is no iwork.
+!
+!  allocate(work(2))
+!
+!  lwork = -1
+!  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
+!
+!  if( info /= 0) then
+!     write(6,*)
+!     write(6,*)'    ERROR    diag_r8 FAILED A, info = ',info
+!     write(6,*)
+!
+!     deallocate(work)
+!
+!     return
+!
+!  endif
+!
+!  lwork = max(1,3*neig-1,int( work( 1 ) ))
+!
+!  deallocate(work)
+!
+!  allocate(work(lwork))
+!
+!  call dsyev( 'V', 'L', neig, vec, mxdbnd , ev, work, lwork, info )
+!
+!  deallocate(work)
+!
+!  if( info /= 0) then
+!     write(6,*)
+!     write(6,*)'    ERROR    diag_r8 FAILED B, info = ',info
+!     write(6,*)
+!
+!     return
+!
+!  endif
+!
+!  return
+
+! Alternative with dsyevr.  It destroys the input matrix, so ham is copied
+! to a and not to vec, and the eigenvectors are returned in vec.
+! Extra declarations:
+!
+!  real(REAL64), allocatable       :: a(:,:)                          !  copy of ham, destroyed by dsyevr
+!  integer, allocatable            :: isuppz(:)                       !  support of eigenvectors
+!
+!  integer         ::  m                                              !  number of eigenvalues found
+!  real(REAL64)    ::  vl, vu, abstol
+!  integer         ::  il, iu
+!
+!  real(REAL64), parameter  :: ZERO = 0.0_REAL64
+!
+! Code (replaces everything after the declarations):
+!
+!  allocate(a(neig,neig))
+!
+!  do i=1,neig
+!  do j=1,neig
+!    a(j,i) = ham(j,i)
+!  enddo
+!  enddo
+!
+!  allocate(isuppz(2*max(1,neig)))
+!
+!! all eigenvalues, vl, vu, il, iu not referenced
+!
+!  vl = ZERO
+!  vu = ZERO
+!  il = 1
+!  iu = neig
+!  abstol = ZERO
+!
+!  allocate(work(2),iwork(2))
+!
+!  lwork = -1
+!  liwork = -1
+!  call dsyevr( 'V', 'A', 'L', neig, a, neig, vl, vu, il, iu, abstol,     &
+!      m, ev, vec, mxdbnd, isuppz, work, lwork, iwork, liwork, info )
+!
+!  if( info /= 0) then
+!     write(6,*)
+!     write(6,*)'    ERROR    diag_r8 FAILED A, info = ',info
+!     write(6,*)
+!
+!     deallocate(work,iwork)
+!     deallocate(a,isuppz)
+!
+!     return
+!
+!  endif
+!
+!  lwork = max(1,26*neig,int( work( 1 ) ))
+!  liwork = max(1,10*neig,iwork( 1 ))
+!
+!  deallocate(work,iwork)
+!
+!  allocate(work(lwork),iwork(liwork))
+!
+!  call dsyevr( 'V', 'A', 'L', neig, a, neig, vl, vu, il, iu, abstol,     &
+!      m, ev, vec, mxdbnd, isuppz, work, lwork, iwork, liwork, info )
+!
+!  deallocate(work,iwork)
+!  deallocate(a,isuppz)
+!
+!  if( info /= 0) then
+!     write(6,*)
+!     write(6,*)'    ERROR    diag_r8 FAILED B, info = ',info
+!     write(6,*)
+!
+!     return
+!
+!  endif
+!
+!  if( m /= neig) then
+!     write(6,*)
+!     write(6,*)'    ERROR    diag_r8 FAILED C, found ',m,' of ',neig,' eigenvalues'
+!     write(6,*)
+!
+!     info = -100
+!
+!     return
+!
+!  endif
+!
+!  return
 
 end subroutine diag_r8

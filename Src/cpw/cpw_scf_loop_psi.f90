@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026, 24 October 2026.
+!>  \date         12 May 2026, 31 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
@@ -33,6 +33,7 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 ! pwexp_%esmear (smearing of the kinetic energy cutoff) in h_kb_dia_all. 15 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 ! nocc from the occupations of the previous iteration, empty states converged to looser tolerances. 24 October 2026. JLM+claude
+! ipr set for the atomic orbital diagonalization (was undefined at the first k-point). 31 October 2026. JLM+claude
 
 
   use cpw_variables
@@ -235,6 +236,9 @@ subroutine cpw_scf_loop_psi(iprglob, iter, minifail,                     &
 
       veffr1 = real(vcomp_%veff(1),REAL64)
       nocc = neig
+
+      ipr = 0
+      if(iprglob > 2) ipr = 1
 
       if(flags_%flgscf == 'AOJCPW') diag_type = 'aojc'
       if(flags_%flgscf == 'AOJC  ') diag_type = 'aojc'

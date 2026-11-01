@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 2020. 24 October 2026.
+!>  \date         May 2020. 31 October 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
@@ -48,6 +48,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 ! h_kb_dia_ao without icmplx. 23 October 2026. JLM+claude
 ! nocc used, empty states converged to looser tolerances. 24 October 2026. JLM+claude
 ! neig may increase to include the degeneracy of the last level (within mxdbnd), the caller decides. 24 October 2026. JLM+claude
+! ipr passed to h_kb_dia_ao (conditioning of the overlap). 31 October 2026. JLM+claude
 
   implicit none
 
@@ -238,7 +239,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
       neig_guess = neig
 
       call h_kb_dia_ao(emax, esmear, rk_tmp, neig_guess, flgpsd,         &
-          'AOJC  ', veffr1, lhpsi,                                       &
+          'AOJC  ', 0, veffr1, lhpsi,                                    &
           ng, kgv,                                                       &
           nqnl, delqnl, vkb, nkb,                                        &
           n_bsets, jbset, norbat, nqwf, delqwf, wvfao, lorb,             &
@@ -299,7 +300,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
   elseif(diag_type == "aojc") then
 
-    call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AOJC  ',       &
+    call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AOJC  ', ipr,  &
         veffr1, lhpsi,                                                   &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &
@@ -315,7 +316,7 @@ subroutine h_kb_dia_all(diag_type, emax, esmear, rkpt, neig, nocc,       &
 
   elseif(diag_type == "ao  ") then
 
-    call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AO    ',       &
+    call h_kb_dia_ao(emax, esmear, rk_tmp, neig, flgpsd, 'AO    ', ipr,  &
         veffr1, lhpsi,                                                   &
         ng, kgv,                                                         &
         nqnl, delqnl, vkb, nkb,                                          &

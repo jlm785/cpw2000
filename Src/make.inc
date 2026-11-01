@@ -146,6 +146,7 @@ ifeq ($(IFORTX),true)
          FCOPTS=-xHost -O3 $(PROF)
          #  FCOPTS=-xCORE-AVX2 -O3 $(PROF)
       else
+         FCOMP=
          # FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -fpe0 -g -O0
          FCOPTS=-check all -warn all,nodec,interfaces,noexternal -gen-interfaces -traceback -g -O0
       endif
