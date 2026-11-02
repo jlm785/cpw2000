@@ -4,38 +4,43 @@
 #                                                                      #
 ########################################################################
 
-SystemLabel                   LiF      rocksalt
+SystemLabel                     alpha  F_2  conventional cell
 
 
 #------------------------------------------------
 # Crystal structure
 #------------------------------------------------
 
-LatticeConstant              7.608     bohr
+LatticeConstant               1.88973     bohr
 
 %block LatticeVectors
-         0.00000000         0.50000000         0.50000000
-         0.50000000         0.00000000         0.50000000
-         0.50000000         0.50000000         0.00000000
+   6.060753  0.000000 -0.716396
+   0.000000  3.655484  0.000000
+   0.000000  0.000000  6.887938
 %endblock LatticeVectors
 
-NumberOfSpecies                2
+NumberOfSpecies                1
 
-NumberOfAtoms                2
+NumberOfAtoms                8
 
 %block Chemical_Species_Label
-     1       3   Li
-     2       7   F
+     1       9    F
 %endblock Chemical_Species_Label
 
 AtomicCoordinatesFormat     Fractional
 
 %block AtomicCoordinatesAndAtomicSpecies
-         0.00000000      0.00000000      0.00000000        1     #  Li       1
-         0.50000000      0.50000000      0.50000000        2     #  F        1
+       0.745053    0.169032    0.905352    1     #   F       1
+       0.254947    0.169032    0.594648    1     #   F       2
+       0.254947    0.830968    0.094648    1     #   F       3
+       0.745053    0.830968    0.405352    1     #   F       4
+       0.245053    0.669032    0.905352    1     #   F       5
+       0.754947    0.669032    0.594648    1     #   F       6
+       0.754947    0.330968    0.094648    1     #   F       7
+       0.245053    0.330968    0.405352    1     #   F       8
 %endblock AtomicCoordinatesAndAtomicSpecies
 
-StructureSource               Wikipedia
+StructureSource               experimental
 
 #------------------------------------------------
 # Energy cutoff, bands,  and Brillouin mesh
@@ -43,15 +48,13 @@ StructureSource               Wikipedia
 
 PWEnergyCutoff                  80.0000      hartree
 
-NumberOfEigenStates                  10
+NumberOfEigenStates                  40
 
 %block kgrid_Monkhorst_Pack
-               4       0       0       0.500000
-               0       4       0       0.500000
-               0       0       4       0.500000
+               2       0       0       0.500000
+               0       2       0       0.500000
+               0       0       2       0.500000
 %endblock kgrid_Monkhorst_Pack
-
-StructureSource               experimental
 
 
 #------------------------------------------------
@@ -64,17 +67,17 @@ UseSymmetry                   .true.        # .true. , .false.
 
 MD.UseKeatingCorrections      .false.       # .true. , .false.
 
-MD.UseFixedkplusG             .false.        # .true. , .false.
+MD.UseFixedkplusG             .true.        # .true. , .false.
 
 TypeOfScfDiag                 PW            # PW,AO,AOJC,AOJCPW
 
-DualApproximation             .true.        #  .true. , .false.
+DualApproximation             .false.       #  .true. , .false.
 
 XC.Authors                    CA            # CA, PBE, TBL
 
 Xc.TBL.C                      1.04          # sets Tran-Blaha constant (if negative use calculated)
 
-PrintingLevel                 2              # 1, 2, 3
+PrintingLevel                 2             # 1, 2, 3
 
 
 #------------------------------------------------
