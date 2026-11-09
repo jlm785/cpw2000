@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 1993, 15 October 2026.
+!>  \date         October 1993, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
@@ -70,6 +70,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! Restart from lowest energy potential (no pmix), else in energy test, itmix = 1
 ! in first iteration of meta-GGA. 15 October 2026. JLM+claude
 ! Restart after a jump of the potential uses vhxcoutlow, no repeated diagonalization. 15 October 2026. JLM+claude
+! Harris-Foulkes etauvold with vtauin and tau of the previous iteration (was one iteration late). 9 November 2026. Lukas Bauer
 
   use cpw_variables
 
@@ -624,6 +625,19 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
 !  calculates the Harris-Foulkes functional energy
 
+!   The input density of the Harris-Foulkes functional is the density
+!   of the previous iteration (chdens_%den, exc), so the double counting
+!   term is int vtauin * tau of the previous iteration (tauold), with the
+!   vtauin of this iteration's hamiltonian.
+
+    etauvold = ZERO
+    if(lgks) then
+      etauvold = real(vtauin(1),REAL64)*real(tauold(1),REAL64)
+      do i = 2,recip_%ns
+        etauvold = etauvold + recip_%mstar(i)*real(vtauin(i)*conjg(tauold(i)),REAL64)
+      enddo
+    endif
+
     if(abs(itmix) /= 1 .and. .not. ljump) then
       call harris_weinert_foulkes(eharrfou, eband, etauvold, exc,        &
           ewald_%energy,                                                 &
@@ -705,16 +719,14 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
         recip_%inds, recip_%kmax, recip_%mstar, recip_%ek,               &
         dims_%mxdgve, dims_%mxdnst, mxdscr)
 
-!   int vtau * tau of the wave-functions, for the total energy and Harris-Foulkes
+!   int vtau * tau of the wave-functions, for the total energy.
+!   tau is kept in tauold for the Harris-Foulkes of the next iteration.
 
     etauv = ZERO
-    etauvold = ZERO
     if(lgks) then
       etauv = real(vtauin(1),REAL64)*real(tau_val(1),REAL64)
-      etauvold = real(vtauin(1),REAL64)*real(tauold(1),REAL64)
       do i = 2,recip_%ns
         etauv = etauv + recip_%mstar(i)*real(vtauin(i)*conjg(tau_val(i)),REAL64)
-        etauvold = etauvold + recip_%mstar(i)*real(vtauin(i)*conjg(tauold(i)),REAL64)
       enddo
       do i = 1,recip_%ns
         tauold(i) = tau_val(i)
