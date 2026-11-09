@@ -21,7 +21,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         December 18, 2013, 18 October 2026.
+!>  \date         December 18, 2013, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_pp_band_dos_opt(ioreplay)
@@ -51,6 +51,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 ! pseudo_%nq, pseudo_%delq, pseudo_%vkb renamed nqnl, delqnl, vkbraw. 14 October 2026. JLM+claude
 ! atorb_%n_bsets, atorb_%jbset, dims_%mxdset (several atomic basis sets). 16 October 2026. JLM+claude
 ! Choice of atomic basis set in cpw_pp_band_questions. 18 October 2026. JLM+claude
+! Task 7 (dual approximation) was rejected as invalid choice. 9 November 2026. JLM+claude
 
 
   use cpw_variables
@@ -330,7 +331,7 @@ subroutine cpw_pp_band_dos_opt(ioreplay)
 
       exit
 
-    elseif(itask < 0 .or. itask > 6) then
+    elseif(itask < 0 .or. itask > 7) then
 
       write(6,*) '  invalid choice '
       write(6,*) '  exiting this program section'

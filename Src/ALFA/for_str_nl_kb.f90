@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.0.5
-!>  \date         May 12 1990, 12 April 2022.
+!>  \date         May 12 1990, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
@@ -35,6 +35,7 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
 ! Added the f non-local contributions. 2 December 2021. JLM
 ! Corrected lmx bug. 12 April 2022. JLM
 ! Renamed occp to occ_x_wgk. 28 September 2026. JLM+claude
+! vq, dvq zero beyond the interpolation table (were left from the previous l or G). 9 November 2026. JLM+claude
 
 
   implicit none
@@ -298,6 +299,8 @@ subroutine for_str_nl_kb(fnlkb, strnlkb,                                 &
             if(ni < 0) ni = 0
             vint = ZERO
             dvintdxi = ZERO
+            vq = ZERO
+            dvq = ZERO
             if(ni < nqnl(k)-1) then
               xi  = xni - ni*UM
               vint = vkb(ni,l,0,k) * (UM+xi) * (UM-xi)                   &

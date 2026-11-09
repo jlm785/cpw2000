@@ -15,14 +15,16 @@
 !>  with respect to spin.
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         11 April 2024.
+!>  \version      5.13
+!>  \date         11 April 2024, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine psi_orient_spin(mtxd, neig, psi_sp, ei_sp,                    &
     mxddim, mxdbnd)
 
 ! Adapted form non-spin version. 11 April 2024. JLM
+! Phase applied to psi_sp(1:2*mtxd,n) only (rest of the column is undefined). 9 November 2026. JLM+claude
+! Phase choice with 2*mtxd. 11 November 2026. JLM+claude
 
 
 
@@ -170,7 +172,7 @@ subroutine psi_orient_spin(mtxd, neig, psi_sp, ei_sp,                    &
       xmax = real(psi_sp(1,n)*conjg(psi_sp(1,n)),REAL64)
       imax = 1
 
-      do i = 1,mtxd
+      do i = 1,2*mtxd
         tmax = real(psi_sp(i,n)*conjg(psi_sp(i,n)),REAL64)
         if(tmax > xmax + TOL) then
           imax = i
@@ -181,7 +183,7 @@ subroutine psi_orient_spin(mtxd, neig, psi_sp, ei_sp,                    &
       xmax = real(psi_sp(imax,n)*conjg(psi_sp(imax,n)),REAL64)
       xmax = sqrt(xmax)
       phase = conjg(psi_sp(imax,n)) / xmax
-      psi_sp(:,n) = phase*psi_sp(:,n)
+      psi_sp(1:2*mtxd,n) = phase*psi_sp(1:2*mtxd,n)
 
     enddo
   enddo

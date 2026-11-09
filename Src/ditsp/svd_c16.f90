@@ -15,7 +15,7 @@
 !>
 !>  \author       José Luís Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         February 2014, 19 August 2020.
+!>  \date         February 2014, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine svd_c16(psi, singval, mtxd, neig, info, mxddim, mxdbnd)
@@ -24,6 +24,7 @@ subroutine svd_c16(psi, singval, mtxd, neig, info, mxddim, mxdbnd)
 ! Modified, documentation, January 2020. JLM
 ! Modified, outputs the singular values, 19 August 2020. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! lrwork as documented in zgesdd (was below the documented minimum for 1.5 neig < mtxd < 1.9 neig). 9 November 2026. JLM+claude
 
 
   implicit none
@@ -59,6 +60,7 @@ subroutine svd_c16(psi, singval, mtxd, neig, info, mxddim, mxdbnd)
 ! local variables
 
   integer  ::  lwork, lrwork
+  integer  ::  mn, mx                                                   !  min and max of mtxd, neig
 
 
 !  lwork = 2*neig + mtxd
@@ -75,7 +77,9 @@ subroutine svd_c16(psi, singval, mtxd, neig, info, mxddim, mxdbnd)
   lwork = nint(real(work(1)))
   deallocate(work)
   allocate(work(lwork))
-  lrwork = 5*neig*neig + 7*neig
+  mn = min(mtxd,neig)
+  mx = max(mtxd,neig)
+  lrwork = mn*max(5*mn+7, 2*mx+2*mn+1)
   deallocate(rwork)
   allocate(rwork(lrwork))
 

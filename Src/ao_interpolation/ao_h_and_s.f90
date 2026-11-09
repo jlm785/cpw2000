@@ -142,7 +142,7 @@ subroutine ao_h_and_s(emax, rkpt, nbaslcao, flgpsd,                      &
 
   allocate(h0(mxdorb,mxdorb))
   allocate(ev_fake(mxdorb))
-
+  ev_fake(:) = ZERO
 
   if(flgpsd /= 'PSEUKB') then
     write(6,*)

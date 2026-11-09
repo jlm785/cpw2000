@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         April 10, 2014. 26 July 2024
+!>  \date         April 10, 2014. 9 November 2026
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_circuit_size(filename, iotape, ninterp, adot, ztot,  &
@@ -30,6 +30,7 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot, ztot,  &
 ! Modified, dx < EPS, 19 August 2020. JLM
 ! Modified trim(adjustl, 19 February 2022. JLM
 ! Modified API, added ztot to have at least valence states plus. 26 July 2024. JLM
+! dx = 0 if the first line has only nlines, neig (was undefined). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -99,6 +100,7 @@ subroutine out_band_circuit_size(filename, iotape, ninterp, adot, ztot,  &
     if(ioerr3 /= 0) then
 
       ldens = .FALSE.
+      dx = ZERO
 
       read(fline,*) nlines,neig
 

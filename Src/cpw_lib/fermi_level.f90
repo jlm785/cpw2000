@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins, Renata Wentzcovitch
 !>  \version      5.11
-!>  \date         June 16, 1987, 3 October 2026.
+!>  \date         June 16, 1987, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine fermi_level(el, ztot, teleck,                                 &
@@ -34,6 +34,8 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 ! Modified, documentation, January 2020. JLM
 ! Modified, indentation, ztot=0. March 5 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, TAUTOK). 3 October 2026. JLM+claude
+! Bracketing when the Fermi level is in the lowest level (xl was undefined), jmin=0 and jmax=iel
+! when all levels below/above are degenerate, zero temperature for a single level. 9 November 2026. JLM+claude
 
 
   implicit none
@@ -78,7 +80,7 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 
 ! counters
 
-  integer   ::    i, j
+  integer   ::    i, j, n
 
 ! constants
 
@@ -123,34 +125,33 @@ subroutine fermi_level(el, ztot, teleck,                                 &
   enddo
 
 ! finds degeneracies. ifrm identifies where the fermi level is
+! levels jmin+1 to jmax are degenerate with level ifrm
 
-  imx = ifrm - 1
-  if(ifrm > 1) then
-    do i=1,imx
-      jmin = ifrm - i
+  jmin = 0
+  do i = ifrm-1,1,-1
+    if (abs(el(ind(i))-el(ind(ifrm))) > EPS) then
+      jmin = i
 
-      if (abs(el(ind(jmin))-el(ind(ifrm))) > EPS) exit
+      exit
 
-    enddo
-  else
-    jmin = 0
-  endif
-  imx = ifrm + 1
-  if(ifrm < iel) then
-    do i=imx,iel
-      jmax = i
+    endif
+  enddo
 
-      if (abs(el(ind(jmax))-el(ind(ifrm))) > EPS) exit
+  jmax = iel
+  do i = ifrm+1,iel
+    if (abs(el(ind(i))-el(ind(ifrm))) > EPS) then
+      jmax = i-1
 
-    enddo
-    jmax = jmax - 1
-  else
-    jmax = ifrm
-  endif
+      exit
+
+    endif
+  enddo
 
   tempau = teleck / TAUTOK
 
-  if( tempau < EPS*abs(el(ind(iel))-el(ind(1))) ) then
+! zero temperature also for a single (or degenerate) level and no electrons
+
+  if( tempau <= EPS*abs(el(ind(iel))-el(ind(1))) .or. ztot < EPS ) then
 
 !   zero temperature
 
@@ -189,10 +190,14 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 
     maxit = 300
 
-!   bracket roots
+!   bracket roots.  Lower bound goes down from the level below
+!   the degenerate levels at ifrm, upper bound goes up from jmax.
+!   Outside the range of levels the step doubles.
 
-    do i=1,jmin
-      xl = el(ind(jmin - i + 1))
+    i = max(jmin,1)
+    xl = el(ind(i))
+    dx = tempau
+    do n = 1,maxit
       fl = - ztot/(2*UM)
       do j=1,iel
         arg = (el(ind(j)) - xl) / tempau
@@ -202,10 +207,19 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 
       if (fl < ZERO) exit
 
+      if(i > 1) then
+        i = i - 1
+        xl = el(ind(i))
+      else
+        xl = xl - dx
+        dx = 2*dx
+      endif
     enddo
 
-    do i = jmax,iel
-      xh = el(ind(i))
+    i = jmax
+    xh = el(ind(i))
+    dx = tempau
+    do n = 1,maxit
       fh = - ztot/(2*UM)
       do j=1,iel
         arg = (el(ind(j)) - xh) / tempau
@@ -215,7 +229,25 @@ subroutine fermi_level(el, ztot, teleck,                                 &
 
       if (fh > ZERO) exit
 
+      if(i < iel) then
+        i = i + 1
+        xh = el(ind(i))
+      else
+        xh = xh + dx
+        dx = 2*dx
+      endif
     enddo
+
+    if(fl >= ZERO .or. fh <= ZERO) then
+
+      write(6,*)
+      write(6,*) '   *** STOPPED in fermi_level  '
+      write(6,'("   could not bracket the Fermi level, not enough bands?",  &
+          &     2f12.6)') fl, fh
+
+      stop
+
+    endif
 
 !   finds root
 

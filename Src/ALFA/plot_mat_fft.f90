@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         before 27 May 2014, 4 February 2021.
+!>  \date         before 27 May 2014, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_mat_fft(rhopl,nx,ny,chd,id,n1,n2,n3,c0,dx,dy)
@@ -25,6 +25,7 @@ subroutine plot_mat_fft(rhopl,nx,ny,chd,id,n1,n2,n3,c0,dx,dy)
 ! Modified, quad_3D32pt, 18 october 2020. JLM
 ! Documentation, name, 4 february 2021. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Loop over k closed before the interpolation (kl(2), kl(3) were used before being set, work done 3 times). 9 November 2026. JLM+claude
 
 
   implicit none
@@ -64,13 +65,19 @@ subroutine plot_mat_fft(rhopl,nx,ny,chd,id,n1,n2,n3,c0,dx,dy)
   integer      ::  i1, i2, i3
   integer      ::  j1, j2, j3
 
+! constants
+
+  real(REAL64), parameter            ::  ZERO = 0.0_REAL64
+
 
   nn(1) = n1
   nn(2) = n2
   nn(3) = n3
   do i=1,nx
   do j=1,ny
-!   This is probably a BUG                              BUG
+
+!   lattice coordinates of the point and lower corner of the interpolation cell
+
     do k=1,3
       coor(k) = c0(k) + dx(k)*(i-1) + dy(k)*(j-1)
       coor(k) = nn(k)*coor(k)
@@ -79,41 +86,43 @@ subroutine plot_mat_fft(rhopl,nx,ny,chd,id,n1,n2,n3,c0,dx,dy)
       kl(k) = mod(kl(k),nn(k))
       if(kl(k) < 0) kl(k) = kl(k) + nn(k)
       kl(k) = kl(k) + 1
-
-! loop over 4x4x4 interpolation grid
-
-      do i1 = -1,2
-      do i2 = -1,2
-      do i3 = -1,2
-
-        j1 = kl(1) + i1
-        j2 = kl(2) + i2
-        j3 = kl(3) + i3
-        if(j1 <= 0) j1 = j1 + nn(1)
-        if(j1 > nn(1)) j1 = j1 - nn(1)
-        if(j2 <= 0) j2 = j2 + nn(2)
-        if(j2 > nn(2)) j2 = j2 - nn(2)
-        if(j3 <= 0) j3 = j3 + nn(3)
-        if(j3 > nn(3)) j3 = j3 - nn(3)
-
-        fp(i1,i2,i3) = chd(j1,j2,j3)
-
-      enddo
-      enddo
-      enddo
-
-      call quad_3D32pt(x,fl)
-
-      rhopl(i,j) = 0.0d0
-
-      do i1 = -1,2
-      do i2 = -1,2
-      do i3 = -1,2
-        rhopl(i,j) = rhopl(i,j) + fp(i1,i2,i3) * fl(i1,i2,i3)
-      enddo
-      enddo
-      enddo
     enddo
+
+!   loop over 4x4x4 interpolation grid
+
+    do i1 = -1,2
+    do i2 = -1,2
+    do i3 = -1,2
+
+      j1 = kl(1) + i1
+      j2 = kl(2) + i2
+      j3 = kl(3) + i3
+
+      if(j1 <= 0) j1 = j1 + nn(1)
+      if(j1 > nn(1)) j1 = j1 - nn(1)
+      if(j2 <= 0) j2 = j2 + nn(2)
+      if(j2 > nn(2)) j2 = j2 - nn(2)
+      if(j3 <= 0) j3 = j3 + nn(3)
+      if(j3 > nn(3)) j3 = j3 - nn(3)
+
+      fp(i1,i2,i3) = real(chd(j1,j2,j3),REAL64)
+
+    enddo
+    enddo
+    enddo
+
+    call quad_3D32pt(x,fl)
+
+    rhopl(i,j) = ZERO
+
+    do i1 = -1,2
+    do i2 = -1,2
+    do i3 = -1,2
+      rhopl(i,j) = rhopl(i,j) + fp(i1,i2,i3) * fl(i1,i2,i3)
+    enddo
+    enddo
+    enddo
+
   enddo
   enddo
 

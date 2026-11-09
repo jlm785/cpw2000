@@ -575,53 +575,59 @@ subroutine opt_rad_sub(ioreplay)
 
   call opt_rad_np(xnp, egap, tau, adot, (evbm+ecbm)/2-ezero, ehist, dhist, nhist)
 
-  nhradmin = 1
-  do i = 1,nhrad
-    if(e_rad_im(i) > EPS) exit
-    nhradmin = i
-  enddo
-  
-  do i = nhradmin,nhrad
+  if(xnp < EPS) then
+    write(6,*)
+    write(6,'("    The system seems to be a metal, Egap = ",f12.3)')
+    write(6,*) '   Radiative recombination coefficient not estimate'
+    write(6,*)
+  else
+    nhradmin = 1
+    do i = 1,nhrad
+      if(e_rad_im(i) > EPS) exit
+      nhradmin = i
+    enddo
+
+    do i = nhradmin,nhrad
+      e_mod = sqrt(e_rad_re(i)*e_rad_re(i) + e_rad_im(i)*e_rad_im(i))
+      xn_im = sqrt( (e_mod - e_rad_re(i)) / 2 )
+      xn_re = sqrt( (e_mod + e_rad_re(i)) / 2 )
+      abscoef = 2*ehrad(i)*xn_im*ALPHA
+      rsrad(i) = ehrad(i)*ehrad(i) * xn_re*xn_re * abscoef * exp(-(ehrad(i)-egap)/tau)
+    enddo
+
+! ! for use in the future
+
+    i = nhradmin
     e_mod = sqrt(e_rad_re(i)*e_rad_re(i) + e_rad_im(i)*e_rad_im(i))
-    xn_im = sqrt( (e_mod - e_rad_re(i)) / 2 )
     xn_re = sqrt( (e_mod + e_rad_re(i)) / 2 )
-    abscoef = 2*ehrad(i)*xn_im*ALPHA
-    rsrad(i) = ehrad(i)*ehrad(i) * xn_re*xn_re * abscoef * exp(-(ehrad(i)-egap)/tau)
-  enddo
 
-! for use in the future
+    rsint = ZERO
+    do i = nhradmin,nhrad-1
+      rsint = rsint + (rsrad(i)+rsrad(i+1)) * (ehrad(i+1)-ehrad(i)) / 2
+    enddo
 
-  i = nhradmin
-  e_mod = sqrt(e_rad_re(i)*e_rad_re(i) + e_rad_im(i)*e_rad_im(i))
-  xn_re = sqrt( (e_mod + e_rad_re(i)) / 2 )
+    pref = ALPHA / PI
+    pref = pref*pref
+    rsint = pref*rsint
 
-  rsint = ZERO
-  do i = nhradmin,nhrad-1
-    rsint = rsint + (rsrad(i)+rsrad(i+1)) * (ehrad(i+1)-ehrad(i)) / 2
-  enddo
+    write(6,'("  Energy gap ",f12.3," precision",f12.5)') egap*HARTREE, deltae*HARTREE
+    xni = sqrt(xnp*exp(-egap/tau))
+    xnisi = xni/(BOHR**3)
+    write(6,'("  intrinsic carrier concentration ",e12.3," au",5x,e12.3," SI",5x,e12.3,         &
+                 &  " per cubic cm" )') xni, xnisi, 1.0E-6*xnisi
+    write(6,*)
 
-  pref = ALPHA / PI
-  pref = pref*pref
-  rsint = pref*rsint
-  
-  write(6,'("  Energy gap ",f12.3," precision",f12.5)') egap*HARTREE, deltae*HARTREE
-  xni = sqrt(xnp*exp(-egap/tau))
-  xnisi = xni/(BOHR**3)
-  write(6,'("  intrinsic carrier concentration ",e12.3," au",5x,e12.3," SI",5x,e12.3,         &
-               &  " per cubic cm" )') xni, xnisi, 1.0E-6*xnisi
-  write(6,*)
-
-  write(6,'("  radiative recombination rate  ",e12.3," au")') rsint
-  write(6,'("  radiative recombination coefficient B  ",e12.3," au")') rsint/xnp
-  write(6,'("  Radiative recombination coefficient B = ",e11.3,               &
-             " SI (cubic meter per second)")') (rsint/xnp)*BOHR*BOHR*BOHR/AUT
-  write(6,*)
-  write(6,*)
-  write(6,'("  Radiative recombination coefficient B = ",e11.3," cm^3 / s  (cgs) ")')       &
-                  1.0E+6*(rsint/xnp)*BOHR*BOHR*BOHR/AUT
-  write(6,*)
-  write(6,*)
-
+    write(6,'("  radiative recombination rate  ",e12.3," au")') rsint
+    write(6,'("  radiative recombination coefficient B  ",e12.3," au")') rsint/xnp
+    write(6,'("  Radiative recombination coefficient B = ",e11.3,               &
+               " SI (cubic meter per second)")') (rsint/xnp)*BOHR*BOHR*BOHR/AUT
+    write(6,*)
+    write(6,*)
+    write(6,'("  Radiative recombination coefficient B = ",e11.3," cm^3 / s  (cgs) ")')       &
+                    1.0E+6*(rsint/xnp)*BOHR*BOHR*BOHR/AUT
+    write(6,*)
+    write(6,*)
+  endif
 
   call execute_command_line("rm " // filegrid // " 2> /dev/null ")
 

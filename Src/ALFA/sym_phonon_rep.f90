@@ -1,4 +1,4 @@
-﻿!------------------------------------------------------------!
+!------------------------------------------------------------!
 ! This file is distributed as part of the cpw2000 code and   !
 ! under the terms of the GNU General Public License. See the !
 ! file `LICENSE' in the root directory of the cpw2000        !

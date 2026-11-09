@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.06
-!>  \date         6 December 2022.
+!>  \date         6 December 2022, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
@@ -25,6 +25,8 @@ subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
        ntrans, mtrx, tnp,                                                &
        ntrans_q, mtrx_q, tnp_q,                                          &
        mxdtyp, mxdatm, mxdnat)
+
+! iseed (intent in) copied to idum, QE_random_matrix_new modifies it. 9 November 2026. JLM+claude
 
   implicit none
 
@@ -94,6 +96,8 @@ subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
 
   integer               ::  info, ipr, istatus
 
+  integer               ::  idum                                         !  seed for the random numbers, modified by ran2
+
 ! constants
 
   real(REAL64), parameter  ::  TOL = 1.0E-7_REAL64                        !  tolerance
@@ -140,8 +144,9 @@ subroutine sym_phonon_mode(qvec, vpol, nrep, irep, iseed,                &
 
   allocate(wdyn_qe (3, 3, nat_qe, nat_qe))
 
+  idum = iseed
   call QE_random_matrix_new (nat_qe, irt_qe, ntrans_q, lminus_q, irotm_q,      &
-       wdyn_qe, lgam_q, iseed)
+       wdyn_qe, lgam_q, idum)
 
 
   t_rev_q = 0

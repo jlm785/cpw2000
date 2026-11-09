@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         before 2015. 23 October 2026.
+!>  \date         before 2015. 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
@@ -47,6 +47,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
 ! esmear = 0 in hamilt_pw (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
+! ev_fake set to zero (was undefined, only dh0drk is used). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -153,6 +154,7 @@ subroutine ao_h_and_s_spin_orbit(emax, rkpt, nbaslcao, flgpsd,           &
 
   allocate(h0(2*mxdorb,2*mxdorb))
   allocate(ev_fake(2*mxdorb))
+  ev_fake(:) = ZERO
 
 
   if(flgpsd /= 'PSEUKB') then

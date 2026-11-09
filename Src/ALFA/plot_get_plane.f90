@@ -18,7 +18,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         11 February 2008, 4 February 2021.
+!>  \date         11 February 2008, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine plot_get_plane(ioreplay, adot,                                &
@@ -27,6 +27,7 @@ subroutine plot_get_plane(ioreplay, adot,                                &
 ! Writen 5 June 2014 fom older code of February 11,2008. JLM
 ! Documentation, name, 4 February 2021. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! Answer Y (upper case) was not accepted. 9 November 2026. JLM+claude
 
 
   implicit none
@@ -291,7 +292,7 @@ subroutine plot_get_plane(ioreplay, adot,                                &
     read(5,*) yesno
     write(ioreplay,'(2x,a1,"   orthogonal axis")') yesno
     
-    if(yesno == 'y' .or. yesno == 'y') then
+    if(yesno == 'y' .or. yesno == 'Y') then
       vy(1) = vy(1) - (xy/(xl*xl))*vx(1)
       vy(2) = vy(2) - (xy/(xl*xl))*vx(2)
       vy(3) = vy(3) - (xy/(xl*xl))*vx(3)

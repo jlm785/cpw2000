@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         8 may 2004, 23 October 2026.
+!>  \date         8 may 2004, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
@@ -54,6 +54,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! atomic_orbital_c16 without icmplx (no inversion symmetric combinations). 23 October 2026. JLM+claude
+! basxpsi(_so) second dimension is the number of bands, not orbitals (out of bounds if neig > nbaslcao). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -365,8 +366,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
     allocate(infolcao(5,mxdorb))
     allocate(infolcao_aux(5,mxdorb))
 
-    allocate(basxpsi(mxdorb,mxdorb,nrk))  !! check dimensions not consistent with out_band_info_fold :(
-!           allocate(basxpsi(mxdorb,mxdbnd,nrk2))
+    allocate(basxpsi(mxdorb,mxdbnd,nrk))
 
     allocate(S(mxdorb,mxdorb))
     allocate(S12(mxdorb,mxdorb))
@@ -380,7 +380,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
       allocate(infolcao_so(5,2*mxdorb))
       allocate(prod_so(2*mxdorb,2*mxdbnd))
       allocate(psi_in(2*mxddim,2*mxdorb))
-      allocate(basxpsi_so(2*mxdorb,2*mxdorb,nrk))  !! check dimensions
+      allocate(basxpsi_so(2*mxdorb,2*mxdbnd,nrk))
       lpsiso = .TRUE.
       allocate(psi_so(2*mxddim,2*mxdbnd))
     else

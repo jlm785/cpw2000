@@ -1,7 +1,9 @@
       subroutine dpofa(a,lda,n,info)
       implicit none
       integer lda,n,info
-      real*8 a(lda,1)
+      real*8 a(lda,*)
+c
+c     a(lda,*) instead of a(lda,1) (bounds checking). 9 November 2026. JLM+claude
 c
 c     dpofa factors a double precision symmetric positive definite
 c     matrix.

@@ -20,7 +20,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 16 October 2026.
+!>  \date         8 may 2004, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_kdotp_2nd(title, subtitle,                           &
@@ -57,6 +57,7 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! Removed unused psiold, psiold_so (their size used psi before it was calculated). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -138,12 +139,10 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
 
 ! variables for match_state
 
-  complex(REAL64),  allocatable      ::  psiold(:,:)                     !  old eigenvectors
   integer, allocatable               ::  imatch(:)                       !  new matching
   integer, allocatable               ::  isold(:)                        !  old isort
   integer, allocatable               ::  iperm(:), ipermold(:)           !  permutation of the eigenvalues
 
-  complex(REAL64),  allocatable      ::  psiold_so(:,:)                  !  old eigenvectors
   integer, allocatable               ::  imatch_so(:)                    !  new matching
   integer, allocatable               ::  iperm_so(:), ipermold_so(:)     !  permutation of the eigenvalues
 
@@ -221,9 +220,6 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
   integer           ::  natot          !  total number of atoms
   integer           ::  neltot         !  total number of electrons
   real(REAL64)      ::  emidgap        !  rough estimate of the mid-gap
-
-  real(REAL64)      ::  xsum
-  integer           ::  mxdold         ! psiold mxddim
 
   integer           ::  nder
 
@@ -449,19 +445,6 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
   enddo
   enddo
 
-! allocate psiold here.  Defines mtxdold such that it
-! has most of the spectral weight for highest eigenvalue
-
-  xsum = ZERO
-  do j = 1,mtxd0
-    xsum = xsum + real(psi(j,neig)*conjg(psi(j,neig)),REAL64)
-    mxdold = j
-    if(xsum > XSC) exit
-  enddo
-
-  allocate(psiold(mxdold,mxdbnd))
-  allocate(psiold_so(2*mxdold,2*mxdbnd))
-
   do irk=1,nrk2
 
 !   loop over k-points
@@ -549,12 +532,10 @@ subroutine out_band_kdotp_2nd(title, subtitle,                           &
      nvert, xcvert, nlines, ljump, nkstep, label, xklab)
 
 
-  deallocate(psiold)
   deallocate(imatch)
   deallocate(isold)
   deallocate(iperm,ipermold)
 
-  deallocate(psiold_so)
   deallocate(imatch_so)
   deallocate(iperm_so,ipermold_so)
 

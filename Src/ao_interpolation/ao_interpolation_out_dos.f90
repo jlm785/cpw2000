@@ -27,6 +27,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 ! Modfied, new dos file format June 2021. CLR
 ! Modified, e_of_k allocations, 14 Janury 2024. JLM
 ! Modified, indentation, ao_int_, 8 October 2024. JLM
+! Swapped the PW_DOS_SO with PW_DOS. 9 November 2026. JLM+claude
 
   use NonOrthoInterp
 
@@ -213,9 +214,9 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 
 
   if(noiData%lso==1) then
-    syscom = "rm PW_DOS.DAT"
-  else
     syscom = "rm PW_DOS_SO.DAT"
+  else
+    syscom = "rm PW_DOS.DAT"
   endif
   call execute_command_line(trim(syscom))
 

@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.11
-!>  \date         4 February 2014. 10 June 2020
+!>  \date         4 February 2014. 9 November 2026
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_match_state_so(imatch, neig,                         &
@@ -29,6 +29,7 @@ subroutine out_band_match_state_so(imatch, neig,                         &
 ! Dimension of psiold, 1 August 2019. JLM
 ! Removed icmplx, 10 June 2020. JLM
 ! Indentation, 29 October 2024. JLM
+! nmax was one less than the number of common G-vectors if all were common. 9 November 2026. JLM+claude
 
 
   implicit none
@@ -99,11 +100,16 @@ subroutine out_band_match_state_so(imatch, neig,                         &
     ibnew(isnew(i)) = i
   enddo
 
+  j = nmax
   do i=1,nmax
-    j = i
-    if( ibold(i) == 0  .or. ibnew(i) == 0 ) exit
+    if( ibold(i) == 0  .or. ibnew(i) == 0 ) then
+      j = i - 1
+
+      exit
+
+    endif
   enddo
-  nmax = j - 1
+  nmax = j
 
   allocate(prod(2*neig,2*neig))
   allocate(prodsq(2*neig*2*neig))

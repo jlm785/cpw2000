@@ -15,7 +15,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         May 2020, 23 October 2026.
+!>  \date         May 2020, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_w90(mtb,                                     &
@@ -34,6 +34,7 @@ subroutine ao_interpolation_w90(mtb,                                     &
 ! Debug prints commented. 4 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! icmplx removed (atomic_orbital_c16 without inversion symmetric combinations). 23 October 2026. JLM+claude WARNING NEW API
+! Returns with a warning if wannier90.x -pp fails (was a run time error in ifx). 9 November 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -170,6 +171,8 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
   integer    ::   i, j
 
+  logical    ::   lexist                                                 !  wan.nnkp was written
+
 ! constants
 
   real(REAL64), parameter     ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
@@ -302,7 +305,22 @@ subroutine ao_interpolation_w90(mtb,                                     &
 
 ! RELEVANT CODE SHOULD BE EXTRACTED FROM WANNIER90 TO SIMPLIFY THIS...
 
-  call execute_command_line("rm ./wan.nnkp  ; wannier90.x -pp wan")
+! || true: a missing wannier90.x (exit status 127) is a run time error in ifx
+
+  call execute_command_line("rm -f ./wan.nnkp  ; wannier90.x -pp wan || true")
+
+  inquire(file = 'wan.nnkp', exist = lexist)
+
+  if(.not. lexist) then
+    write(6,*)
+    write(6,*) '   WARNING in ao_interpolation_w90:  wannier90.x -pp wan did not write wan.nnkp'
+    write(6,*) '   Is wannier90.x in the PATH?'
+    write(6,*) '   wan.win was written, the other Wannier90 files were not.'
+    write(6,*)
+
+    return
+
+  endif
 
   call execute_command_line('grep -A1 "begin nnkpts" wan.nnkp | tail -n 1 > inf.txt')
 

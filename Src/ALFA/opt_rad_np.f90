@@ -17,6 +17,7 @@
 subroutine opt_rad_np(xnp, egap, tau, adot, evbmez, ehist, dhist, nhist)
 
 ! Written 16 October 2020. JLM
+! lmetal and istart initialized (egap, xnp were undefined), dhist(istart), ivbm, icbm printed. 9 November 2026. JLM+claude
 ! copyright  Jose Luis Martins/INESC-MN
 
 ! version 4.98
@@ -67,6 +68,7 @@ subroutine opt_rad_np(xnp, egap, tau, adot, evbmez, ehist, dhist, nhist)
 
 ! identifies band edges according to DOS, not the "rough" estimates
 
+  istart = 0
   do i = 1,nhist
     if(ehist(i) > evbmez) then
       istart = i
@@ -76,7 +78,16 @@ subroutine opt_rad_np(xnp, egap, tau, adot, evbmez, ehist, dhist, nhist)
     endif
   enddo
 
-  if(abs(dhist(i)) > EPS) then
+  if(istart == 0) then
+    write(6,'("   STOPPED in opt_rad_np :  mid of the gap above histogram range.")')
+
+    stop
+
+  endif
+
+  lmetal = .FALSE.
+
+  if(abs(dhist(istart)) > EPS) then
 
     write(6,'("   error in opt_rad_np :  mid of the gap misidentified.")')
 
@@ -105,7 +116,7 @@ subroutine opt_rad_np(xnp, egap, tau, adot, evbmez, ehist, dhist, nhist)
     enddo
 
     if(ivbm > icbm) then
-      write(6,'("  opt_rad_np:  ivbm, icbm = ",2i8)')
+      write(6,'("  opt_rad_np:  ivbm, icbm = ",2i8)') ivbm, icbm
 
       stop
 

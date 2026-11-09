@@ -19,6 +19,7 @@ subroutine opt_kk_im(ehist, e_im, e_re, nhist)
 ! Written by Carlos Loia Reis. July 2020
 ! Modified, documentation, 20 September 2020. JLM
 ! Modified, tail of e_im, 17 December 2020. JLM
+! f, fp, fpp zero at the singular point i = j (were undefined). 9 November 2026. JLM+claude
 ! copyright  Carlos Loia Reis/INESC-MN
 
 ! version 4.99
@@ -144,6 +145,14 @@ subroutine opt_kk_im(ehist, e_im, e_re, nhist)
         fpp(i) = fpp(i) -  4*x(i)*x(i)*yp(i)/( (-a*a+x(i)*x(i))*(-a*a+x(i)*x(i)) )
         fpp(i) = fpp(i) +  2*yp(i)/( (-a*a+x(i)*x(i)) )
         fpp(i) = fpp(i) +  x(i)*ypp(i)/( (-a*a+x(i)*x(i)) )
+
+      else
+
+!       singular point, only enters spliq with a zero length interval
+
+        f(i) = ZERO
+        fp(i) = ZERO
+        fpp(i) = ZERO
 
       endif
     enddo

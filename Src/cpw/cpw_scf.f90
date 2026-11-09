@@ -71,6 +71,7 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 ! in first iteration of meta-GGA. 15 October 2026. JLM+claude
 ! Restart after a jump of the potential uses vhxcoutlow, no repeated diagonalization. 15 October 2026. JLM+claude
 ! Harris-Foulkes etauvold with vtauin and tau of the previous iteration (was one iteration late). 9 November 2026. Lukas Bauer
+! tau only for 1:ns (tauc_g, tau_val undefined above ns after a cell change). 9 November 2026. JLM+claude
 
   use cpw_variables
 
@@ -697,10 +698,10 @@ subroutine cpw_scf(flgaopw, iprglob, iguess, kmscr,                      &
 
     if(lxctau) then
       if(lxcmgga) then
-        tau(:) = tau_val(:) + psding_%tauc_g(:)
+        tau(1:recip_%ns) = tau_val(1:recip_%ns) + psding_%tauc_g(1:recip_%ns)
         dtau_dadot(:,:,:) = dtau_val_dadot(:,:,:)
       else
-        tau(:) = tau_val(:)
+        tau(1:recip_%ns) = tau_val(1:recip_%ns)
         dtau_dadot(:,:,:) = ZERO
       endif
     endif

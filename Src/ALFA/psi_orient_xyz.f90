@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.12
-!>  \date         30 October 2023. 4 November 2025.
+!>  \date         30 October 2023. 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
@@ -28,6 +28,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
 ! Written 30 October 2023.  JLM
 ! Modified TOL, coeficients, overwrites psi. 10 April 2024. JLM
 ! Modified interface to psi_kin_psi, 4 November 2025. JLM
+! Phase applied to psi(1:mtxd,n) only (rest of the column is undefined). 9 November 2026. JLM+claude
 
 
 
@@ -206,7 +207,7 @@ subroutine psi_orient_xyz(rkpt, adot, mtxd, neig, isort,                 &
       xmax = real(psi(imax,n)*conjg(psi(imax,n)),REAL64)
       xmax = sqrt(xmax)
       phase = conjg(psi(imax,n)) / xmax
-      psi(:,n) = phase*psi(:,n)
+      psi(1:mtxd,n) = phase*psi(1:mtxd,n)
 
     enddo
   enddo

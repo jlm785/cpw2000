@@ -18,7 +18,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         4 February 2021, 22 September 2026
+!>  \date         4 February 2021, 9 November 2026
 !>  \copyright    GNU Public License v2
 
 subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
@@ -28,6 +28,7 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
 ! modified, f90, subroutine, 27 May 2014. JLM
 ! Documentation, merge rho/psi. 4 February 2021. JLM
 ! Modified, kmscr renamed to kmfft. 22 September 2026. JLM
+! At least 2 points in nx, ny (division by nx-1 in plot_get_plane). 9 November 2026. JLM+claude
 
 
   implicit none
@@ -224,6 +225,13 @@ subroutine plot_contour(ioreplay, func, adot, ng, kgv, mxdgve)
   write(6,*)
 
   read(5,*) nx,ny
+  if(nx < 2 .or. ny < 2) then
+    nx = max(nx,2)
+    ny = max(ny,2)
+    write(6,*)
+    write(6,'("   At least 2 points in each direction, using ",2i8)') nx, ny
+    write(6,*)
+  endif
   write(ioreplay,'(2(2x,i8),"   2D plot grid")') nx,ny
 
   allocate(rhopl(nx,ny))

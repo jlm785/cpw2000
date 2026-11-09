@@ -16,7 +16,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         February 29, 2020. 8 October 2026.
+!>  \date         February 29, 2020. 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
@@ -32,6 +32,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 ! Modified, nanlspin, indentation, 30 November 2023. JLM
 ! Generalized Kohn-Sham meta-GGA, vtau term in the derivatives. 8 October 2026. JLM+claude
 ! dvtaudk_psi*_c16 renamed dhtaudk_psi*_c16. 13 October 2026. JLM+claude
+! nder (was 2) in psi_vnl_sp_psi_der, second derivative projectors are only calculated for nder = 2. 9 November 2026. JLM+claude
 
 
   implicit none
@@ -205,7 +206,7 @@ subroutine kdotp_matrix_so_pert(mtxd, neig, psi, ei, rkpt, isort, nder,  &
 
 ! add non-local spin-orbit pseudopotential
 
-  call psi_vnl_sp_psi_der(mtxd, neig, nanlso, psi, 2,                    &
+  call psi_vnl_sp_psi_der(mtxd, neig, nanlso, psi, nder,                 &
       vnlso0, dvnlso0drk, d2vnlso0drk2,                                  &
       anlsop, anlsom, xnlkbso, danlsopdrk, danlsomdrk,                   &
       d2anlsopdrk2, d2anlsomdrk2,                                        &

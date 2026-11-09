@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         2 July 2014. 3 October 2026.
+!>  \date         2 July 2014. 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
@@ -33,6 +33,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
 ! Modified to allow values in a given direction. 23 October2025. JLM
 ! Modified, includes spin degeneracy in sumations. Correct factor in F_xyz. 3 November2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
+! 2/3 in double precision (was single precision 2.0/3.0), missing comma in format. 9 November 2026. JLM+claude
 
 
   implicit none
@@ -257,7 +258,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
               &   4x,3f12.5)')                                         &
               ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                  &
               real(ematif(ij)),                                        &
-              (2.0/3.0)*real(ematif(ij))/efmei(ij),                    &
+              (2*UM/3)*real(ematif(ij),REAL64)/efmei(ij),              &
               (abs(ematcar(ij,k))**2,k=1,3),                           &
               (2*abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
         else
@@ -269,7 +270,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
               &   4x,f12.5)')                                          &
               ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,                  &
               real(ematif(ij)),                                        &
-              (2.0/3.0)*real(ematif(ij))/efmei(ij),                    &
+              (2*UM/3)*real(ematif(ij),REAL64)/efmei(ij),              &
               ematdirsq, 2*ematdirsq/efmei(ij)
         endif
 
@@ -340,7 +341,7 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
      if(abs(efmei(indx(leveigs(n,1)))) > TOL) then
 
         write(6,*)
-        write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):"f12.5)')   &
+        write(6,'("  excitation:",i5,6x,"degeneracy:",i5,6x,"energy(eV):",f12.5)')  &
               n, levdeg(n), efmei(indx(leveigs(n,1)))*HARTREE
         write(6,*)
         if(lxyz) then
@@ -378,20 +379,20 @@ subroutine out_band_oscillator_strength(neig, ei, dh0drk, adot,          &
             ematdirsq = ematdirsq*ematdirsq
             xsum = xsum + ematdirsq
           endif
-          so = so + (2.0/3.0)*real(ematif(ij))/efmei(ij)
+          so = so + (2*UM/3)*real(ematif(ij),REAL64)/efmei(ij)
 
           if(lxyz) then
-            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
-                &   3f12.5,4x,3f12.5)')                                    &
-              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,   &
-              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),      &
-              (abs(ematcar(ij,k))**2,k=1,3),                               &
+            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,              &
+                &   3f12.5,4x,3f12.5)')                                          &
+              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,         &
+              real(ematif(ij)), (2*UM/3)*real(ematif(ij),REAL64)/efmei(ij),      &
+              (abs(ematcar(ij,k))**2,k=1,3),                                     &
               (2*abs(ematcar(ij,k))**2/efmei(ij),k=1,3)
           else
-            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,        &
-                &   f12.5,4x,f12.5)')                                      &
-              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,   &
-              real(ematif(ij)), (2.0/3.0)*real(ematif(ij))/efmei(ij),      &
+            write(6,'(f10.3,i5,f10.3,i5,f10.3,2x,f12.5,4x,f12.5,4x,              &
+                &   f12.5,4x,f12.5)')                                            &
+              efmei(ij)*HARTREE, ii, ei(ii)*HARTREE, jj, ei(jj)*HARTREE,         &
+              real(ematif(ij)), (2*UM/3)*real(ematif(ij),REAL64)/efmei(ij),      &
               ematdirsq, 2*ematdirsq/efmei(ij)
           endif
 

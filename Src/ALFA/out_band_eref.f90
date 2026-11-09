@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         September 4, 2014, 3 October 2026.
+!>  \date         September 4, 2014, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
@@ -30,6 +30,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 ! Modified, efermi, 29 November 2021. JLM
 ! Modified, extra information about local of CBM and VBM, 13 August 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
+! Gamma energies also from the first k-point, not printed if gamma is not in the path. 9 November 2026. JLM+claude
 
   implicit none
 
@@ -41,7 +42,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
   integer, intent(in)                ::  neig                            !<  number of eigenvectors (without spin)
   integer, intent(in)                ::  nrk                             !<  number of k-points in path
 
-  real(REAL64), intent(in)           ::  rk(3,nrk)                            !<  k-point to be plotted in lattice coordinates
+  real(REAL64), intent(in)           ::  rk(3,nrk)                       !<  k-point to be plotted in lattice coordinates
   real(REAL64), intent(in)           ::  ztot                            !<  total charge density (electrons/cell)
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
   integer, intent(in)                ::  ispin                           !<  spin degeneracy (must be 1 or 2)
@@ -68,6 +69,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
   real(REAL64)          ::  rk_vbm(3)      !  k-point of valence band maximum
   real(REAL64)          ::  rk_cbm(3)      !  k-point of conduction band minimum
   real(REAL64)          ::  gam_vb, gam_cb !  eigenvalues at gamma
+  logical               ::  lgam           !  gamma is in the path
 
 
 ! constants
@@ -105,6 +107,8 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 
       n = min(nint(ztot/ispin + 0.01),2*neig/ispin-1)
 
+      lgam = .FALSE.
+
       if(n == 0) then
 
 !       Exceptional case ztot = 0 or just one band...
@@ -135,6 +139,14 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
         rk_vbm(:) = rk(:,1)
         rk_cbm(:) = rk(:,1)
 
+        if(abs(rk(1,1)-nint(rk(1,1))) < EPS .and.                        &
+           abs(rk(2,1)-nint(rk(1,2))) < EPS .and.                        &
+           abs(rk(3,1)-nint(rk(1,3))) < EPS) then
+          gam_vb = e_of_k(indx(n),1)
+          gam_cb = e_of_k(indx(n+1),1)
+          lgam = .TRUE.
+        endif
+
         if(nrk > 1) then
 
           do irk = 2,nrk
@@ -156,10 +168,12 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 
 !           gets information for Gamma point
 
-            if(abs(rk(1,irk)) < EPS .and. abs(rk(2,irk)) < EPS .and.     &
-               abs(rk(3,irk)) < EPS) then
+            if(abs(rk(1,irk)-nint(rk(1,irk))) < EPS .and.    &
+               abs(rk(2,irk)-nint(rk(2,irk))) < EPS .and.     &
+               abs(rk(3,irk)-nint(rk(3,irk))) < EPS) then
               gam_vb = e_of_k(indx(n),irk)
               gam_cb = e_of_k(indx(n+1),irk)
+              lgam = .TRUE.
             endif
 
           enddo
@@ -190,9 +204,11 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
            &     " band minimum (eV) ",a16)') evbm*HARTREE,ecbm*HARTREE,cso
         write(6,'(3f8.3,8x,3f8.3,"   at these k-points")') rk_vbm(:), rk_cbm(:)
         write(6,*)
-        write(6,'(2f12.6,"   energies at gamma for bands ",2i5 )')       &
-            gam_vb*HARTREE, gam_cb*HARTREE, n, n+1
-        write(6,*)
+        if(lgam) then
+          write(6,'(2f12.6,"   energies at gamma for bands ",2i5 )')     &
+              gam_vb*HARTREE, gam_cb*HARTREE, n, n+1
+          write(6,*)
+        endif
 
       else
 
@@ -244,4 +260,4 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 
   return
 
-  end subroutine out_band_eref
+end subroutine out_band_eref
