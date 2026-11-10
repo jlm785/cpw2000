@@ -19,8 +19,8 @@
 !>  needs module from libxcf03.f90
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
-!>  \version      5.05
-!>  \date         29 September 2022.
+!>  \version      5.13
+!>  \date         29 September 2022. 10 November 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine xc_lda( author, rho, epsx, epsc, vx, vc )
 
 !  Written 29 September 2022. JLM
 !  Split from Carlos Loia Reis previous code.
+!  chrsameinfo, rho < EPS as in Src, PW92 is LDA_C_PW_MOD (13). 10 November 2026. JLM+claude
 
   use xc_f03_lib_m
 
@@ -37,76 +38,98 @@ subroutine xc_lda( author, rho, epsx, epsc, vx, vc )
 
 ! input
 
-  character(len = *), intent(in)     ::  author                          !<  type of correlation wanted.
+  character(len = *), intent(in)     ::  author                          !<  type of correlation wanted (CA = PZ, VWN, WI, PW92)
   real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
 
 ! output
 
-  real(REAL64), intent(out)          ::  epsx                            !<  ZERO exchange energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  epsc                            !<  ZERO correlation energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  vx                              !<  Tran-Blaha exchange potential (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  vc                              !<  LDA correlation potential (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  epsx                            !<  exchange energy density (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  epsc                            !<  correlation energy density (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  vx                              !<  exchange potential (hartree/bohr^3)
+  real(REAL64), intent(out)          ::  vc                              !<  correlation potential (hartree/bohr^3)
 
 ! libxc interface stuff
 
-  TYPE(xc_f03_func_t)        ::  xc_func
-!  TYPE(xc_f03_func_info_t)   ::  xc_info
-  integer(8), parameter      ::  np = 1
+  type(xc_f03_func_t)        ::  xc_func
+  integer(8), parameter      ::  NP = 1
   integer                    ::  func_id
   real(REAL64)               ::  rhotmp(1)
   real(REAL64)               ::  etmp(1)
   real(REAL64)               ::  vtmp(1)
 
-! E x c h a n g e
+! functions
 
-  func_id = 1
-  rhotmp(1) = rho
+  logical                            ::  chrsameinfo                     !  strings are the same irrespective of case or blanks
 
-   call xc_f03_func_init(xc_func, func_id, XC_UNPOLARIZED)
-     call xc_f03_lda_exc_vxc(xc_func, np, rhotmp, etmp, vtmp)
-   call xc_f03_func_end(xc_func)
+! parameters
 
-   epsx = etmp(1)
-   vx = vtmp(1)
+  real(REAL64), parameter  :: ZERO = 0.0_REAL64
+  real(REAL64), parameter  :: EPS = 1.0E-24_REAL64
 
-! C o r r e l a t i o n
 
-  if ( author == 'ca' .or. author == 'CA' .or.                           &
-       author == 'pz' .or. author == 'PZ') then
+  if(rho < EPS) then
 
-  func_id = 9
-
-  elseif ( author == 'vwn' .or. author == 'VWN' ) then
-
-!   V o s k o     W i l k     and     N u s a i r
-
-  func_id = 7
-
-  elseif ( author == 'wi' .or. author == 'WI') then
-
-!   W i g n e r
-
-  func_id = 2
-
-  elseif ( author == 'pw92' .or. author == 'PW92' ) then
-
-!   P e r d e w     &     W a n g     1 9 9 2
-
-  func_id = 12
+    epsx = ZERO
+    epsc = ZERO
+    vx = ZERO
+    vc = ZERO
 
   else
-    write(6,'("  STOPPED  in xc_lda (libxc):   unknown correlation")')
-    write(6,*) '     ',author
 
-    stop
+    if ( chrsameinfo(author, 'CA' ) .or.  chrsameinfo(author, 'PZ' ) ) then
 
-  endif
+!     P e r d e w    a n d     Z u n g e r
 
-  call xc_f03_func_init(xc_func, func_id, XC_UNPOLARIZED)
-    call xc_f03_lda_exc_vxc(xc_func, np, rhotmp, etmp, vtmp)
+      func_id = 9                                                        !  LDA_C_PZ
+
+    elseif ( chrsameinfo(author, 'VWN' ) ) then
+
+!     V o s k o     W i l k     and     N u s a i r
+
+      func_id = 7                                                        !  LDA_C_VWN
+
+    elseif ( chrsameinfo(author, 'WI' ) ) then
+
+!     W i g n e r
+
+      func_id = 2                                                        !  LDA_C_WIGNER
+
+    elseif ( chrsameinfo(author, 'PW92' ) ) then
+
+!     P e r d e w     &     W a n g     1 9 9 2,   same constants as xc_lda_c_pw92 in Src
+
+      func_id = 13                                                       !  LDA_C_PW_MOD
+
+    else
+
+      write(6,'("  STOPPED  in xc_lda (libxc):   unknown correlation")')
+      write(6,*) '     ',author
+
+      stop
+
+    endif
+
+    rhotmp(1) = rho
+
+!   E x c h a n g e
+
+    call xc_f03_func_init(xc_func, 1, XC_UNPOLARIZED)                    !  LDA_X
+    call xc_f03_lda_exc_vxc(xc_func, NP, rhotmp, etmp, vtmp)
+    call xc_f03_func_end(xc_func)
+
+    epsx = etmp(1)
+    vx = vtmp(1)
+
+!   C o r r e l a t i o n
+
+    call xc_f03_func_init(xc_func, func_id, XC_UNPOLARIZED)
+    call xc_f03_lda_exc_vxc(xc_func, NP, rhotmp, etmp, vtmp)
+    call xc_f03_func_end(xc_func)
+
     epsc = etmp(1)
     vc = vtmp(1)
-  call xc_f03_func_end(xc_func)
+
+  endif
 
   return
 

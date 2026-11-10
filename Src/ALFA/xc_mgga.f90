@@ -804,7 +804,7 @@ end subroutine xc_mgga_x_task
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         25 November 2025.
+!>  \date         25 November 2025. 10 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
@@ -812,6 +812,8 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
 
 ! Written 25 November 2025. JLM
 ! xc_tau, 23 April 2026. JLM
+! Exponent of fxalpha for alpha > 2.5 corrected (c2x/(1-alpha)), 10 November 2026. JLM+claude
+! C2 calculated from polynomial coefficients as in libxc, 10 November 2026. JLM+claude
 
   implicit none
 
@@ -870,7 +872,6 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   real(REAL64), parameter  ::  DX = 1.24_REAL64
   real(REAL64), parameter  ::  C1X = 0.667_REAL64
   real(REAL64), parameter  ::  C2X = 0.8_REAL64
-  real(REAL64), parameter  ::  C2 = -0.162742_REAL64
   real(REAL64), parameter  ::  DP2 = 0.361_REAL64
 
   real(REAL64), parameter  ::  ETA = 0.001_REAL64
@@ -886,6 +887,11 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
   real(REAL64), parameter  ::  CX5 =-0.887998041597_REAL64
   real(REAL64), parameter  ::  CX6 = 0.234528941479_REAL64
   real(REAL64), parameter  ::  CX7 =-0.023185843322_REAL64
+
+! C2 = -(sum_i i*CX_i) (1 - H0X) as in libxc (rounded value -0.162742 in paper)
+
+  real(REAL64), parameter  ::  DFX2 = CX1 + 2*CX2 + 3*CX3 + 4*CX4 + 5*CX5 + 6*CX6 + 7*CX7
+  real(REAL64), parameter  ::  C2 = -DFX2*(UM - H0X)
 
 ! Avoids calculating irrelevant exponentials compared to unity
 
@@ -923,7 +929,7 @@ subroutine xc_mgga_x_r2scan(rho, grho, tau, epsx, dexdr, dexdgr, dexdtau )
     fxalpha = exp(-C1X*alpha / (UM-alpha))
     d_fxalpha_dalpha = -C1X*fxalpha / ((UM-alpha)*(UM-alpha))
   elseif(alpha > 2.5) then
-    fxalpha = -DX*exp(C2X*alpha / (UM-alpha))
+    fxalpha = -DX*exp(C2X / (UM-alpha))
     d_fxalpha_dalpha = C2X*fxalpha / ((UM-alpha)*(UM-alpha))
   else
     fxalpha = CX0 + alpha*(CX1 + alpha*(CX2 + alpha*(CX3 + alpha*(CX4 +    &
@@ -976,7 +982,7 @@ end subroutine xc_mgga_x_r2scan
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         20 November 2025.
+!>  \date         20 November 2025. 10 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
@@ -984,6 +990,8 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
 
 ! Written 20 November 2025. JLM
 ! xc_tau, 23 April 2026. JLM
+! Exponent of fc for alpha > 2.5 corrected (c2c/(1-alpha)), 10 November 2026. JLM+claude
+! CHI0 with all digits as in libxc, 10 November 2026. JLM+claude
 
   implicit none
 
@@ -1056,7 +1064,7 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   real(REAL64), parameter  ::  B1C = 0.0285764_REAL64
   real(REAL64), parameter  ::  B2C = 0.0889_REAL64
   real(REAL64), parameter  ::  B3C = 0.125541_REAL64
-  real(REAL64), parameter  ::  CHI0 = 0.128025_REAL64  !  0.1280504?
+  real(REAL64), parameter  ::  CHI0 = 0.12802585262625815_REAL64        !  value from libxc, 0.128026 in paper
   real(REAL64), parameter  ::  GAM = (UM-log(2*UM)) / (PI*PI)
 
   real(REAL64), parameter  ::  BETAMB = 0.066724550603149220_REAL64  ! 0.066725_REAL64
@@ -1221,7 +1229,7 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
     fc = exp(-C1C*alpha / (UM-alpha))
     d_fc_dalpha = -C1C*fc / ((UM-alpha)*(UM-alpha))
   elseif(alpha > 2.5) then
-    fc = -DC*exp(C2C*alpha / (UM-alpha))
+    fc = -DC*exp(C2C / (UM-alpha))
     d_fc_dalpha = C2C*fc / ((UM-alpha)*(UM-alpha))
   else
     fc = CC0 + alpha*(CC1 + alpha*(CC2 + alpha*(CC3 + alpha*(CC4 +    &
@@ -1245,72 +1253,3 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   return
 
 end subroutine xc_mgga_c_r2scan
-
-
-!>  Computes the Thomas-Fermi von Weizsaker kinetic energy
-!   functional and its derivatives.
-!>
-!>  \author       J.L. Martins
-!>  \version      5.13
-!>  \date         22 April 2026.
-!>  \copyright    GNU Public License v2
-
-subroutine xc_tau(rho, grho, tauunif, tausingle,                         &
-                  d_tauunif_dr, d_tausingle_dr, d_tausingle_dgr)
-
-! Written 22 April 2026, extracted xc_mgga. JLM
-
-  implicit none
-
-  integer, parameter          :: REAL64 = selected_real_kind(12)
-
-! input
-
-  real(REAL64), intent(in)           ::  rho                             !<  electron density (1/bohr^3)
-  real(REAL64), intent(in)           ::  grho                            !<  gradient of the electron density (1/bohr^4)
-
-! output
-
-  real(REAL64), intent(out)          ::  tauunif                         !<  Thomas-Fermi kinetic energy density (hartree/bohr^3)
-  real(REAL64), intent(out)          ::  tausingle                       !<  von Weizsaker correction to tauunif (hartree/bohr^3)
-
-  real(REAL64), intent(out)          ::  d_tauunif_dr                    !<  d tauunif / d rho
-  real(REAL64), intent(out)          ::  d_tausingle_dr                  !<  d tausingle / d rho
-  real(REAL64), intent(out)          ::  d_tausingle_dgr                 !<  d tausingle / d grho
-
-! local variables
-
-  real(REAL64)     ::  rs                                                !  Wigner-Seitz radius
-  real(REAL64)     ::  xkf, d_xkf_dr                                     !  Fermi wave-vector and derivative
-  real(REAL64)     ::  grloc                                             !  local value of grho
-
-! parameters
-
-  real(REAL64), parameter  ::  PI = 3.14159265358979323846_REAL64
-  real(REAL64), parameter  ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
-  real(REAL64), parameter  ::  AKF = (9*PI/4)**(UM/(3*UM))
-
-
-  rs = (3/(4*PI*rho))**(UM/3)
-
-! avoids noisy data
-
-  grloc = grho
-  if(grho < ZERO) grloc = ZERO
-
-
-  xkf = AKF / rs                                                         !  (3*PI*PI * rho)**(UM/3)
-  d_xkf_dr = (UM/3) * xkf / rho                                          !  (UM/3)*(3*PI*PI * rho)**(UM/3) / rho
-
-  tauunif = (3*UM / 10) * xkf*xkf * rho
-  d_tauunif_dr = (3*UM / 10) * xkf*xkf + 2*(3*UM / 10) * xkf*d_xkf_dr * rho
-
-  tausingle = grloc*grloc / (8*rho)                                      !   xkf*xkf * rho * s*s /2
-  d_tausingle_dr = -tausingle/rho
-  d_tausingle_dgr = 2* grloc / (8*rho)
-
-  return
-
-end subroutine xc_tau
-
-

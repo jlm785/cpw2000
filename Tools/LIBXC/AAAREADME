@@ -1,17 +1,49 @@
-This subroutines allow the use of libxc (https://tddft.org/programs/libxc/)
+This subroutines allow the use of libxc (https://libxc.gitlab.io/)
 instead of the subroutines included with the cpw2000 code.
 Just compile this subroutines with the main program BEFORE linking to the libpw library.
 
-Here are examples that you can change according to your directory structure
+They replace the four entry points of the exchange and correlation in Src/ALFA:
 
- ifort -qmkl ../../Src/cpw_variables.f90 ../../Src/cpw.f90 libxcf03.f90 LIBXC/*.f90 ../../Src/libpw_ifort.a -L/home/jlm/_pw/libxc/lib -lxcf03 -lxc
+   xc_lda_libxc.f90        xc_lda         CA=PZ, VWN, WI, PW92 (libxc 9, 7, 2, 13) with LDA_X (1)
+   xc_gga_libxc.f90        xc_gga         PBE (libxc 101 and 130)
+   xc_mgga_libxc.f90       xc_mgga        LAK (342, 345), TASK (707 with PW92 13), R2SC (497, 498)
+   xc_mgga_vxc_libxc.f90   xc_mgga_vxc    TB09=TBL (208), BR (from 208 with c = 2/3)
 
- gfortran ../../Src/cpw_variables.f90 ../../Src/cpw.f90 libxcf03.f90 LIBXC/*.f90 ../../Src/libpw_gfortran.a -L/home/jlm/_pw/libxc/lib -lopenblas -lpthread -lgomp -lxcf03 -lxc
+Functionals are identified by their numbers, which work with libxc 5, 6 and 7.
+In libxc 7 the named constants (XC_LDA_X, ...) are in the module xc_f03_funcs_m.
 
-you need the modules from libxcf03.f90.
+Here are examples that you can change according to your directory structure,
+with libxc installed in $HOME/other_codes, and from the Src directory
+
+ ifx -qopenmp -xHost -O3 cpw_variables.f90 cpw.f90 $HOME/other_codes/include/libxcf03.f90 ../Tools/LIBXC/*.f90  \
+     libpw_ifx.a $HOME/other_codes/lib/libxc.a -qmkl -o cpw_libxc.exe
+
+ gfortran -fopenmp -O3 cpw_variables.f90 cpw.f90 $HOME/other_codes/include/libxcf03.f90 ../Tools/LIBXC/*.f90  \
+     libpw_gfortran.a $HOME/other_codes/lib/libxc.a -lopenblas -lpthread -lgomp -o cpw_libxc.exe
+
+and the same with cpw_post_process.f90.
+
+you need the modules from libxcf03.f90, compiled with the same compiler as cpw2000.
+The .mod files installed by libxc only work with the compiler that compiled libxc.
+In the libxc build directory libxcf03.f90 is src/libxcf03.f90 (remove the lines
+starting with # if the compiler complains).
+
+Comparison with the native subroutines (WORK/xc_test/test_xc_grid.f90, libxc 7.1.2,
+November 2026), largest relative difference on a grid of rho, s, alpha:
+
+   LDA, LAK, TASK, R2SC, TB09, BR     1E-13 or better for alpha > 0
+   PBE                                4E-6, the native version uses beta and gamma
+                                      of the original paper, libxc more digits
+
+By default libxc enforces sigma <= 8 rho tau (Fermi hole curvature), which changes
+the results where tau < tau_W (alpha < 0).  The native subroutines do not, and
+neither do these ones (LFHC = .FALSE. in xc_mgga_libxc.f90 and xc_mgga_vxc_libxc.f90).
+alpha < 0 appears with numerical noise (low cutoff with a core kinetic energy
+density) and systematically in the Thomas-Fermi deorbitalized versions (R2TF, LATF,
+TATF).  Where tau <= 0 libxc uses its tau threshold, so results differ there.
+At alpha = 0 exactly libxc LAK and TASK use the left limit of the derivatives,
+the native subroutines the right limit.
 
 You have to implement yourself other functionals if you want.
 Check the elk code (https://elk.sourceforge.io/) for inspiration, as it looks neat
 and similar to the present case.
-
-
