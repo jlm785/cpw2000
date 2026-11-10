@@ -16,14 +16,15 @@
 !>  implements tetra_QE.pdf (from quantm espresso)
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
-!>  \version      4.99
-!>  \date         2020-2021
+!>  \version      5.13
+!>  \date         2020-2021, 10 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine dosf_tet(vol,e,Fk,nhist,ehist,dhist,lunif)
 
 ! Adapted from dos_cub July 2020. CLR
 ! Modified, documentation, 19 September 2020. JLM
+! gI1 = g*I1, etc. (I1 of the notes multiplied by g), avoids 0/0 when ei = e1 = e2. 10 November 2026. JLM+claude
 ! copyright  J.L.Martins, Carlos Loia Reis, INESC-MN.
 
   implicit none
@@ -60,7 +61,8 @@ subroutine dosf_tet(vol,e,Fk,nhist,ehist,dhist,lunif)
   REAL(REAL64)    ::  f31, f32, f34
   REAL(REAL64)    ::  f41, f42, f43
 
-  REAL(REAL64)    ::  fk1,fk2,fk3,fk4, g, I1, I2, I3, I4
+  REAL(REAL64)    ::  fk1,fk2,fk3,fk4, g
+  REAL(REAL64)    ::  gI1, gI2, gI3, gI4                            !  g*I1, etc. of the notes
 
   integer, allocatable         ::   ind(:)
 
@@ -192,12 +194,12 @@ subroutine dosf_tet(vol,e,Fk,nhist,ehist,dhist,lunif)
 
          g = 3*f14*f24*f34/(e4-ei)
 
-         I1 = f14/(3*UM)
-         I2 = f24/(3*UM)
-         I3 = f34/(3*UM)
-         I4 = (f41+f42+f43)/(3*UM)
+         gI1 = g*f14/(3*UM)
+         gI2 = g*f24/(3*UM)
+         gI3 = g*f34/(3*UM)
+         gI4 = g*(f41+f42+f43)/(3*UM)
 
-         dhist(i) = dhist(i) + g*vol*(fk1*I1 + fk2*I2 + fk3*I3 + fk4*I4)
+         dhist(i) = dhist(i) + vol*(fk1*gI1 + fk2*gI2 + fk3*gI3 + fk4*gI4)
 
 !!
 !         de = (e4-ei)*(e4-ei) / dn1
@@ -209,20 +211,20 @@ subroutine dosf_tet(vol,e,Fk,nhist,ehist,dhist,lunif)
 
          g = 3*(f23*f31+f32*f24)/(e4-e1)
 
-         I1 = f14/(3*UM)
-         I1 = I1 + f13*f31*f23/(g*(e4-e1))
+         gI1 = g*f14/(3*UM)
+         gI1 = gI1 + f13*f31*f23/(e4-e1)
 
-         I2 = f23/(3*UM)
-         I2 = I2 + f24*f24*f32/(g*(e4-e1))
+         gI2 = g*f23/(3*UM)
+         gI2 = gI2 + f24*f24*f32/(e4-e1)
 
-         I3 = f32/(3*UM)
-         I3 = I3 + f31*f31*f23/(g*(e4-e1))
+         gI3 = g*f32/(3*UM)
+         gI3 = gI3 + f31*f31*f23/(e4-e1)
 
-         I4 = f41/(3*UM)
-         I4 = I4 + f42*f24*f32/(g*(e4-e1))
+         gI4 = g*f41/(3*UM)
+         gI4 = gI4 + f42*f24*f32/(e4-e1)
 
 
-         dhist(i) = dhist(i) + g*vol*(fk1*I1 + fk2*I2 + fk3*I3 + fk4*I4)
+         dhist(i) = dhist(i) + vol*(fk1*gI1 + fk2*gI2 + fk3*gI3 + fk4*gI4)
 
 !!
 !           de = (e4-ei)*(ei-e2)/dn2 + (e3-ei)*(ei-e1)/dn3
@@ -234,13 +236,13 @@ subroutine dosf_tet(vol,e,Fk,nhist,ehist,dhist,lunif)
 
         g= 3*f21*f31*f41/(ei-e1)
 
-        I1 = (f12 + f13+ f14)/(3*UM)
-        I2 = f21/(3*UM)
-        I3 = f31/(3*UM)
-        I4 = f41/(3*UM)
+        gI1 = g*(f12 + f13+ f14)/(3*UM)
+        gI2 = g*f21/(3*UM)
+        gI3 = g*f31/(3*UM)
+        gI4 = g*f41/(3*UM)
 
 
-        dhist(i) = dhist(i) + g*vol*(fk1*I1 + fk2*I2 + fk3*I3 + fk4*I4)
+        dhist(i) = dhist(i) + vol*(fk1*gI1 + fk2*gI2 + fk3*gI3 + fk4*gI4)
 
 !!
 !        de = (ei-e1)*(ei-e1) / dn4
