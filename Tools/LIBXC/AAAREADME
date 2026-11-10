@@ -41,8 +41,9 @@ neither do these ones (LFHC = .FALSE. in xc_mgga_libxc.f90 and xc_mgga_vxc_libxc
 alpha < 0 appears with numerical noise (low cutoff with a core kinetic energy
 density) and systematically in the Thomas-Fermi deorbitalized versions (R2TF, LATF,
 TATF).  Where tau <= 0 libxc uses its tau threshold, so results differ there.
-At alpha = 0 exactly libxc LAK and TASK use the left limit of the derivatives,
-the native subroutines the right limit.
+Near alpha = 0 (1 - tau_W/tau < 4E-11) libxc LAK and TASK freeze alpha, so the
+derivatives through alpha vanish; the native subroutines use the right limit
+(alpha -> 0+), which agrees with finite differences of the energy.
 
 You have to implement yourself other functionals if you want.
 Check the elk code (https://elk.sourceforge.io/) for inspiration, as it looks neat
