@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         15 October 2020, 3 October 2026.
+!>  \date         15 October 2020, 9 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine opt_rad_sub(ioreplay)
@@ -24,6 +24,7 @@ subroutine opt_rad_sub(ioreplay)
 ! Written 15-30 October 2020. JLM
 ! based on optical subroutine by Carlos Loia Reis. July 2020
 ! Constants updated to CODATA 2022 (BOHR, TAUTOK). 3 October 2026. JLM+claude
+! No estimate of B if xnp = 0 (gap not found). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -575,10 +576,10 @@ subroutine opt_rad_sub(ioreplay)
 
   call opt_rad_np(xnp, egap, tau, adot, (evbm+ecbm)/2-ezero, ehist, dhist, nhist)
 
-  if(xnp < EPS) then
+  if(xnp <= ZERO) then
     write(6,*)
-    write(6,'("    The system seems to be a metal, Egap = ",f12.3)')
-    write(6,*) '   Radiative recombination coefficient not estimate'
+    write(6,'("    The system seems to be a metal, Egap = ",f12.3)') egap*HARTREE
+    write(6,*) '   Radiative recombination coefficient not estimated'
     write(6,*)
   else
     nhradmin = 1

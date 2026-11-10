@@ -31,6 +31,7 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
 ! Modified, extra information about local of CBM and VBM, 13 August 2025. JLM
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE). 3 October 2026. JLM+claude
 ! Gamma energies also from the first k-point, not printed if gamma is not in the path. 9 November 2026. JLM+claude
+! Gamma or any reciprocal lattice vector (indices of the first k-point corrected). 9 November 2026. JLM+claude
 
   implicit none
 
@@ -140,8 +141,8 @@ subroutine out_band_eref(neig, nrk, rk, ztot, efermi, ispin, ivc,        &
         rk_cbm(:) = rk(:,1)
 
         if(abs(rk(1,1)-nint(rk(1,1))) < EPS .and.                        &
-           abs(rk(2,1)-nint(rk(1,2))) < EPS .and.                        &
-           abs(rk(3,1)-nint(rk(1,3))) < EPS) then
+           abs(rk(2,1)-nint(rk(2,1))) < EPS .and.                        &
+           abs(rk(3,1)-nint(rk(3,1))) < EPS) then
           gam_vb = e_of_k(indx(n),1)
           gam_cb = e_of_k(indx(n+1),1)
           lgam = .TRUE.
