@@ -21,7 +21,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         31 March 2026, 5 October 2026.
+!>  \date         31 March 2026, 11 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine  move_eos(energy, adot, lepi, lfinisheos)
@@ -33,6 +33,8 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 ! convergence when the prediction no longer moves, prediction kept
 ! inside the bracket. 3 October 2026. JLM+claude
 ! Fits the Birch equation of state with eqst_fit and prints the results. 5 October 2026. JLM+claude
+! The prediction is a trial point, the bracket is updated after comparing
+! its energy with the best point a3, the scan is centred on the prediction. 11 November 2026. JLM+claude
 
   implicit none
 
@@ -74,7 +76,6 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
   real(REAL64)          ::  atmp, etmp
   real(REAL64)          ::  curv                                         !  curvature of the parabola through the three points
-  real(REAL64)          ::  aold                                         !  last calculated point
   real(REAL64)          ::  fac
   real(REAL64)          ::  vcell, bdot(3,3)
 
@@ -294,23 +295,12 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
       endif
 
-      if(apred < a3) then
+!     the prediction is only a trial point, the bracket
+!     is updated when its energy is known
 
-        a2 = a3
-        e2 = e3
-        a3 = apred
-
-      else
-
-        a1 = a3
-        e1 = e3
-        a3 = apred
-
-      endif
-
-      fac = a3*a3 / adot(3,3)
+      fac = apred*apred / adot(3,3)
       if(lepi) then
-        adot(3,3) = a3*a3
+        adot(3,3) = apred*apred
       else
         do j = 1,3
         do i = 1,3
@@ -323,10 +313,39 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
 
   elseif(nstatus == 4) then
 
-!   improves minimum
+!   improves minimum.  a1 < a3 < a2 with e3 < e1 and e3 < e2,
+!   (a3, e3) is the lowest point found so far.
 
-    e3 = energy
-    a3 = sqrt(adot(3,3))
+    etmp = energy
+    atmp = sqrt(adot(3,3))
+
+    if(etmp < e3) then
+
+!     new lowest point, the old one becomes the end of the bracket on its side
+
+      if(atmp < a3) then
+        a2 = a3
+        e2 = e3
+      else
+        a1 = a3
+        e1 = e3
+      endif
+      a3 = atmp
+      e3 = etmp
+
+    else
+
+!     the trial point becomes the end of the bracket on its side
+
+      if(atmp < a3) then
+        a1 = atmp
+        e1 = etmp
+      else
+        a2 = atmp
+        e2 = etmp
+      endif
+
+    endif
 
     if(abs(a1 - a2) < EPS .or. abs(a2 - a3) < EPS .or. abs(a3 - a1) < EPS) then
       write(6,*)
@@ -371,25 +390,11 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
       endif
     endif
 
-    aold = a3
+!   next trial point
 
-    if(apred < a3) then
-
-      a2 = a3
-      e2 = e3
-      a3 = apred
-
-    else
-
-      a1 = a3
-      e1 = e3
-      a3 = apred
-
-    endif
-
-    fac = a3*a3 / adot(3,3)
+    fac = apred*apred / adot(3,3)
     if(lepi) then
-      adot(3,3) = a3*a3
+      adot(3,3) = apred*apred
     else
       do j = 1,3
       do i = 1,3
@@ -398,18 +403,19 @@ subroutine  move_eos(energy, adot, lepi, lfinisheos)
       enddo
     endif
 
-    if((a2 - a1) < DELTA/10 .or. abs(apred - aold) < DELTA/10) then
+    if((a2 - a1) < DELTA/10 .or. abs(apred - a3) < DELTA/10) then
 
 !     good enough estimate of the lattice constant.  The bracket may not
 !     shrink (the same end point is kept), so it also stops when the
-!     prediction no longer moves.  The scan around it has steps of DELTA.
+!     prediction is close to the lowest point.  The scan around the
+!     prediction has steps of DELTA.
 
       write(6,*)
-      write(6,'(5x,f14.3,"   move_eos lattice constant estimate")') a3
+      write(6,'(5x,f14.3,"   move_eos lattice constant estimate")') apred
       write(6,*)
       nstatus = 5
       do i = 1,9
-        as(i) = a3 + (i-5)*DELTA
+        as(i) = apred + (i-5)*DELTA
       enddo
       a3 = as(1)
       fac = a3*a3 / adot(3,3)

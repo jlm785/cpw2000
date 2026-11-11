@@ -4,39 +4,39 @@
 #                                                                      #
 ########################################################################
 
-SystemLabel     BeO Wurtzite    P6_3mc
+SystemLabel                     alpha  O2  conventional cell
 
 
 #------------------------------------------------
 # Crystal structure
 #------------------------------------------------
 
-LatticeConstant               5.121     bohr
+LatticeConstant               1.88973     bohr
 
 %block LatticeVectors
-         0.5  -0.866025403784   0.0
-         0.5   0.866025403784   0.0
-         0.0   0.0              1.6244
+    4.256937    0.000000   -2.049794
+    0.000000    4.729746    0.000000
+    0.000000    0.000000    4.625978
 %endblock LatticeVectors
 
-NumberOfSpecies                2
+NumberOfSpecies                1
 
 NumberOfAtoms                4
 
 %block Chemical_Species_Label
-     1     4   Be
-     2     8   O
+     1       8    O
 %endblock Chemical_Species_Label
 
 AtomicCoordinatesFormat     Fractional
 
 %block AtomicCoordinatesAndAtomicSpecies
-         0.33333333      0.66666667      0.50000000        1     #  Be      1
-         0.66666667      0.33333333      0.00000000        1     #  Be      2
-         0.33333333      0.66666667      0.12230000        2     #  O       1
-         0.66666667      0.33333333      0.62230000        2     #  O       2
+       0.937265 0.000000 0.852087    1     #   O       1
+       0.062735 0.000000 0.147913    1     #   O       2
+       0.437265 0.500000 0.852087    1     #   O       3
+       0.562735 0.500000 0.147913    1     #   O       4
 %endblock AtomicCoordinatesAndAtomicSpecies
 
+StructureSource               experimental
 
 #------------------------------------------------
 # Energy cutoff, bands,  and Brillouin mesh
@@ -44,15 +44,13 @@ AtomicCoordinatesFormat     Fractional
 
 PWEnergyCutoff                  80.0000      hartree
 
-NumberOfEigenStates                  12
+NumberOfEigenStates                  20
 
 %block kgrid_Monkhorst_Pack
-               3       0       0       0.500000
-               0       3       0       0.500000
+               2       0       0       0.500000
+               0       2       0       0.500000
                0       0       2       0.500000
 %endblock kgrid_Monkhorst_Pack
-
-StructureSource               experimental
 
 
 #------------------------------------------------
@@ -63,17 +61,19 @@ MD.TypeOfRun                  ONE           # ONE,EPILBF,MICRO,LANG,LBFSYM,VCSLN
 
 UseSymmetry                   .true.        # .true. , .false.
 
-MD.UseKeatingCorrections      .false.        # .true. , .false.
+MD.UseKeatingCorrections      .false.       # .true. , .false.
+
+MD.UseFixedkplusG             .true.        # .true. , .false.
 
 TypeOfScfDiag                 PW            # PW,AO,AOJC,AOJCPW
 
-DualApproximation             .false.         #  .true. , .false.
+DualApproximation             .false.       #  .true. , .false.
 
 XC.Authors                    CA            # CA, PBE, TBL
 
-Xc.TBL.C                      -1.04            # sets Tran-Blaha constant (if negative use calculated)
+Xc.TBL.C                      1.04          # sets Tran-Blaha constant (if negative use calculated)
 
-PrintingLevel                 2              # 1, 2, 3
+PrintingLevel                 2             # 1, 2, 3
 
 
 #------------------------------------------------
@@ -88,8 +88,9 @@ PrintingLevel                 2              # 1, 2, 3
 #MD.LengthTimeStep            2.4 fs          #
 #MD.FrictionFracInvTimeStep   20.0            #
 
-#MD.CG.Tolerance         0.0001 'har/bohr'  #
+#MD.CG.Tolerance         0.0001 'har/bohr'    #
 #MD.CG.StepMax                0.01 bohr       #
+#MD.CG.FixedkplusGTol    0.01 'har/bohr'      #
 
 #%block MD.TargetStress                       #
    0.0 0.0 0.0                                #

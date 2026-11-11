@@ -28,7 +28,7 @@ The .mod files installed by libxc only work with the compiler that compiled libx
 In the libxc build directory libxcf03.f90 is src/libxcf03.f90 (remove the lines
 starting with # if the compiler complains).
 
-Comparison with the native subroutines (WORK/xc_test/test_xc_grid.f90, libxc 7.1.2,
+Comparison with the native subroutines (Tools/LIBXC/test_xc_grid.f90, libxc 7.1.2,
 November 2026), largest relative difference on a grid of rho, s, alpha:
 
    LDA, LAK, TASK, R2SC, TB09, BR     1E-13 or better for alpha > 0

@@ -1023,7 +1023,7 @@ subroutine xc_mgga_c_r2scan( rho, grho, tau, epsc, decdr, decdgr, decdtau )
   real(REAL64)     ::  tauunif, d_tauunif_dr                             !  uniform limit of tau
   real(REAL64)     ::  alpha, d_alpha_dr, d_alpha_dgr, d_alpha_dtau      !  alpha parameter and derivatives
 
-  real(REAL64)     ::  eclda, vclda, d_eclda_dr
+  real(REAL64)     ::  eclda, d_eclda_dr       ! ,vclda
   real(REAL64)     ::  eclda0, d_eclda0_drs
 
   real(REAL64)     ::  tt, d_tt_drs, d_tt_ds
