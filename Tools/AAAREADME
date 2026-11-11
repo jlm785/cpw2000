@@ -17,6 +17,18 @@ cpwin_geom.f90
 
    Must be compiled with libpw.
 
+cpwin_2_lapw.f90
+
+   Reads the crystal structure, XC.Authors and k-point grid from cpw.in (or cpw.out,
+   or another file) and writes the input files elk.in for Elk and fleur_inpgen.in for
+   the Fleur input generator (inpgen -f fleur_inpgen.in).  The lattice vectors are the
+   usual ones of the metric (adot_to_avec_sym), atomic positions in lattice coordinates.
+   Muffin-tin radii, basis cutoffs and local orbitals are left to the defaults of each
+   code; for precise comparisons they must be set by hand.  Meta-GGAs (R2SC, TASK, LAK)
+   use libxc in both codes and need the develop branch of Fleur.
+
+   Must be compiled with libpw and the esdf modules, as cpwin_geom.f90.
+
 gen_PW.f90
 
    generates the input file cpw.in by answering a few questions about the crystal cell.  It can be adapted later in any text editor.
