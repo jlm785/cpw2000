@@ -14,8 +14,8 @@
 !>  Reads the fourier pseudo potentials and determines mxdlqp, mxdlao
 !>
 !>  \author       Jose Luis Martins
-!>  \version      5.12
-!>  \date         January 30 2008, 18 February 2026.
+!>  \version      5.13
+!>  \date         January 30 2008, 11 November 2026.
 !>  \copyright    GNU Public License v2
 
   subroutine size_mxdlqp_lao(ntype, nameat,                              &
@@ -29,6 +29,7 @@
 ! line wraps in free format writes, 12 July 2020. JLM
 ! Path to pseudopotential files. Indentation. 10 October 2025. JLM
 ! More than one atomic basis set. 18 February 2026. JLM
+! Stops if the unit for the pseudopotential is already in use. 11 November 2026. JLM+claude
 
 
   implicit none
@@ -54,6 +55,7 @@
 
   character(len=255)       ::  fnam                                      !  file to open
   integer                  ::  it                                        !  tape number
+  logical                  ::  lopen                                     !  unit it already in use
   integer                  ::  norb(-1:1)
   integer                  ::  nql,nqwf,lo(4,-1:1),nkbloc(0:3,-1:1)
   real(REAL64)             ::  eorb(0:3,-1:1)
@@ -86,6 +88,18 @@
 
 
     call read_pseudo_get_path(nameat(nt), fnam, pseudo_path, pseudo_suffix)
+
+    inquire(unit=it, opened=lopen)
+    if(lopen) then
+      write(6,*)
+      write(6,*) '   STOPPED in size_mxdlqp_lao'
+      write(6,'("    unit ",i6," for the pseudopotential of ",a2,       &
+         &      " is already in use")') it, nameat(nt)
+      write(6,*) '   change TapeToReadPseudo in cpw.in'
+
+      stop
+
+    endif
 
     open(unit=it,file=fnam,status='old',form='formatted')
 

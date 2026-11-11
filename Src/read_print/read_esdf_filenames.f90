@@ -13,17 +13,21 @@
 
 !>  Reads filenames and tape numbers from a file
 !>  opened by a previous edsf_init
+!>  The pseudopotential of species nt is read from unit itape_pseudo + nt,
+!>  so itape_pseudo must be at least 10 and the units must not include
+!>  the one used to save wave-functions.
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
-!>  \version      5.12
-!>  \date         10 October 2025.
+!>  \version      5.13
+!>  \date         10 October 2025, 11 November 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine read_esdf_filenames(ipr,                                      &
+subroutine read_esdf_filenames(ipr, ntype,                               &
     pseudo_path, pseudo_suffix, itape_pseudo,                            &
     save_psi_path, itape_save_psi)
 
 ! Written 10 October 2025. JLM
+! TapeToReadPseudo read from input, guards (>= 10, no overlap with TapeToSavePsi). 11 November 2026. JLM+claude
 
   use esdf
 
@@ -33,6 +37,7 @@ subroutine read_esdf_filenames(ipr,                                      &
 ! input
 
   integer, intent(in)                ::  ipr                             !<  print control: ipr < 3 no printing, except warnings.
+  integer, intent(in)                ::  ntype                           !<  number of types of atoms
 
 ! output
 
@@ -48,7 +53,7 @@ subroutine read_esdf_filenames(ipr,                                      &
   integer          ::  i, n
 
 
-! files for reading pseudopotentials  40 is hard coded
+! files for reading pseudopotentials, default tape 40
 
   do i = 1,200
     pseudo_path(i:i) = ' '
@@ -68,6 +73,17 @@ subroutine read_esdf_filenames(ipr,                                      &
   pseudo_suffix = '_POTKB_F.DAT'
   pseudo_suffix = esdf_string('PseudoSuffix',pseudo_suffix)
 
+  itape_pseudo = esdf_integer('TapeToReadPseudo',itape_pseudo)
+  if(itape_pseudo < 10) then
+    write(6,*)
+    write(6,*) '   WARNING   '
+    write(6,*)
+    write(6,'("   TapeToReadPseudo = ",i6," is less than 10, ",          &
+       &      "using the default 40")') itape_pseudo
+    write(6,*)
+    itape_pseudo = 40
+  endif
+
 ! files for saving wave-functions to disk
 
   do i = 1,200
@@ -83,6 +99,21 @@ subroutine read_esdf_filenames(ipr,                                      &
 
   itape_save_psi = esdf_integer('TapeToSavePsi',itape_save_psi)
   if(itape_save_psi < 10) itape_save_psi = 0
+
+! the wave-function file stays open while the pseudopotentials are read again
+
+  if(itape_save_psi > itape_pseudo .and.                                 &
+     itape_save_psi <= itape_pseudo + ntype) then
+    write(6,*)
+    write(6,*) '   STOPPED in read_esdf_filenames'
+    write(6,'("    TapeToSavePsi = ",i6," is one of the units ",i6,      &
+       &      " to ",i6," used for the pseudopotentials")')              &
+       itape_save_psi, itape_pseudo+1, itape_pseudo+ntype
+    write(6,*) '   change TapeToSavePsi or TapeToReadPseudo in cpw.in'
+
+    stop
+
+  endif
 
 
 ! prints the results

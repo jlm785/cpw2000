@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         June 2017, 16 October 2026.
+!>  \date         June 2017, 11 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
@@ -34,6 +34,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! MD.PWCutoffSmearing in the inactive options. 15 October 2026. JLM+claude
 ! MD.PWCutoffSmearing comment, RSTRT uses the type of the restarted run. 16 October 2026. JLM+claude
+! ChoiceOfDefaultAtomicBasisSet in the inactive options. 11 November 2026. JLM+claude
 
 
   implicit none
@@ -394,6 +395,13 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,'("#PathToPseudos                tmp             #")')
   write(io,'("#PseudoSuffix                 _POTKB_F.DAT    # _POTKB_F.DAT")')
   write(io,'("#TapeToReadPseudo             40              #")')
+  write(io,*)
+  write(io,'("#%block ChoiceOfDefaultAtomicBasisSet         #",          &
+     &    " species index, basis set (default 1)")')
+  do nt = 1,ntype
+    write(io,'(i6,i6,34x,"#  ",a2)') nt, 1, nameat(nt)
+  enddo
+  write(io,'("#%endblock ChoiceOfDefaultAtomicBasisSet      #")')
   write(io,*)
   write(io,'("#TapeToSavePsi                10              #")')
   write(io,'("#PathToSavePsi                tmp             #")')

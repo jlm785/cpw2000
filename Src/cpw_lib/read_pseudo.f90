@@ -20,7 +20,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         1980s, 18 October 2026.
+!>  \date         1980s, 11 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_pseudo(ipr, author,                                      &
@@ -48,6 +48,7 @@ subroutine read_pseudo(ipr, author,                                      &
 ! Reads more than one atomic basis set. 18 February 2026. JLM
 ! Reads the partial core kinetic energy density. 3 March 2026. JLM
 ! norbat(NB,nt) > mxdlao. 18 October 2026. JLM
+! Stops if the unit for the pseudopotential is already in use. 11 November 2026. JLM+claude
 
 
   implicit none
@@ -106,6 +107,7 @@ subroutine read_pseudo(ipr, author,                                      &
 
   character(len=255)       :: fnam
   integer                  :: it                !  tape number
+  logical                  :: lopen             !  unit it already in use
   character(len=2)         :: namel, icorr, icorrt
   character(len=3)         :: irel
   character(len=4)         :: icore
@@ -152,6 +154,18 @@ subroutine read_pseudo(ipr, author,                                      &
 !   open file
 
     call read_pseudo_get_path(nameat(nt), fnam, pseudo_path, pseudo_suffix)
+
+    inquire(unit=it, opened=lopen)
+    if(lopen) then
+      write(6,*)
+      write(6,*) '   STOPPED in read_pseudo'
+      write(6,'("    unit ",i6," for the pseudopotential of ",a2,       &
+         &      " is already in use")') it, nameat(nt)
+      write(6,*) '   change TapeToReadPseudo in cpw.in'
+
+      stop
+
+    endif
 
     open(unit=it,file=fnam,status='old',form='formatted')
 

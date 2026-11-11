@@ -15,7 +15,7 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         5 August 2002. 18 October 2026.
+!>  \date         5 August 2002. 11 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
@@ -47,6 +47,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! esmear, smearing of the kinetic energy cutoff (MD.PWCutoffSmearing). 15 October 2026. JLM+claude WARNING NEW API
 ! RSTRT default of esmear from the restart file, file_restart, iotape_restart, EPS. 16 October 2026. JLM+claude WARNING NEW API
 ! Old PW.DAT no longer accepted, lgeom, lbz removed, jbset (read_esdf_atorb_choice). 18 October 2026. JLM+claude WARNING NEW API
+! ntype passed to read_esdf_filenames (TapeToReadPseudo guard). 11 November 2026. JLM+claude
 
 
   use esdf
@@ -375,7 +376,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
       flgscf, flgdal, flgmix, teleck,                                    &
       itmax, icdiagmax, epscv, epscvao, epspsi, symkip, symtol)
 
-  call read_esdf_filenames(ipr,                                          &
+  call read_esdf_filenames(ipr, ntype,                                   &
       pseudo_path, pseudo_suffix, itape_pseudo,                          &
       save_psi_path, itape_save_psi)
 
