@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         Before February 2020, 14 October 2026.
+!>  \date         Before February 2020, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -28,6 +28,7 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 ! Written from previous code before February 2020 (November 2019?). JLM
 ! Modified, option to read/write wave-functions from/to disk. 12 October 2025. JLM
 ! psding_ (pseudopotential quantities in G-space for the crystal). 14 October 2026. JLM+claude WARNING NEW API (replaces pseudo_)
+! Symmetry operations must be exact for the new metric, which is not symmetrized, otherwise disable lkpg. 19 November 2026. JLM+claude
 
 
   use cpw_variables
@@ -69,6 +70,17 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 
   real(REAL64)         ::  adotnew(3,3)
 
+  real(REAL64)         ::  vcell, bdot(3,3)                              !  cell volume, metric in reciprocal space
+  real(REAL64)         ::  scal, tmp
+
+! parameters
+
+  real(REAL64), parameter  ::  TOLMET = 1.0E-10_REAL64                   !  The input structure was cleaned of noise with symtol.  From then on the metric is exact and a larger tolerance accepts operations of a nearby more symmetric lattice
+
+! counters
+
+  integer              ::  i, j, k, l, n
+
 
 ! do not adjust adot for symmetry
 
@@ -93,6 +105,36 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
 
   endif
 
+! the operations must leave the new metric invariant
+
+  if(lkpg) then
+
+    call adot_to_bdot(crys_%adot, vcell, bdot)
+
+    scal = maxval(abs(bdot))
+
+    do n = 1,spaceg_%ntrans
+      do j = 1,3
+      do i = 1,3
+        tmp = -bdot(i,j)
+        do l = 1,3
+        do k = 1,3
+          tmp = tmp + spaceg_%mtrx(k,i,n)*bdot(k,l)*spaceg_%mtrx(l,j,n)
+        enddo
+        enddo
+        if(abs(tmp) > TOLMET*scal) lkpg = .FALSE.
+      enddo
+      enddo
+    enddo
+
+    if(.not. lkpg) then
+      write(6,*)
+      write(6,*)   '  Switched off the fixed k+G mode'
+      write(6,*)
+    endif
+
+  endif
+
   if(lkpg) then
 
     call gsp_update_ek(recip_%ns, recip_%mstar, recip_%ek,          &
@@ -107,7 +149,7 @@ subroutine cpw_newcell(lkpg, symkip, iprglob, symtol, kmscr, lnewnrk,    &
     isym = 0
     if(symkip) isym = 1
     ipr = 0
-    tol = symtol
+    tol = min(symtol, TOLMET)
     if(iprglob > 0) ipr = 1
 
     call sym_identify(isym, ipr, tol,                               &

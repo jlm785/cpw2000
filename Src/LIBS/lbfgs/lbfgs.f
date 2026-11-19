@@ -15,6 +15,9 @@ c conjgr subroutine of SIESTA.
 c
 c  THE DIMENSIONS AND VARIABLES ARE NOT THE SAME!!!!!!!!!!!!!
 c
+c  A stop of setulb with a large gradient is not convergence.
+c  19 November 2026. JLM+claude
+c
 C  N     : INPUT SPACE DIMENSIONALITY
 C  M     ; MAXIMUM NUMBER OF VARIABLE METRIC CORRECTIONS
 C          USED TO DEFINE THE LIMITED MEMORY MATRIX
@@ -28,7 +31,8 @@ C  cntrol: MUST BE MADE ZERO BEFORE
 C          FIRST CALL. IF IT IS ZERO ON OUTPUT, MINIMIZATION IS
 C          CONVERGED. OTHERWISE, CALCULATE GRADIENT AT THE NEW
 C          POSITION AND CALL AGAIN THIS ROUTINE. 
-C          IF IT IS -1 AN ERROR HAS OCURRED
+c          If it is -1 an error has ocurred, if it is -2 the minimization
+c          stopped with a gradient larger than gtol.
 C
 C          DO NOT MODIFY ANY
 C          ARGUMENT OTHER THAN G BETWEEN CALLS.
@@ -119,7 +123,13 @@ C
          ENDDO
          IF(ICONV .EQ. 1) CNTROL = 0.0
        ELSEIF(TASK(1:4) .EQ. 'CONV') THEN
+c
+c        setulb also stops when the energy no longer decreases (factr)
+c
          CNTROL = 0.0
+         DO I=1,N
+           IF(ABS(G(I)) .GT. GTOL(I)) CNTROL =-2.0
+         ENDDO
        ELSE
          CNTROL =-1.0
        ENDIF

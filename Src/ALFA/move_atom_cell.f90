@@ -12,7 +12,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         January 2017. 17 March 2026.
+!>  \date         January 2017. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine move_atom_cell(flgcal, newcel, iconv, istmd,                  &
@@ -30,6 +30,7 @@ subroutine move_atom_cell(flgcal, newcel, iconv, istmd,                  &
 ! added move_epi_langevin, August 2019. JLM
 ! Indentation. 6 June 2024. JLM
 ! eosvol and eosepi. 17 March 2026. JLM
+! Symmetrizes the metric in VCSLBF. 19 November 2026. JLM+claude
 
   implicit none
 
@@ -163,6 +164,11 @@ subroutine move_atom_cell(flgcal, newcel, iconv, istmd,                  &
 
       call sym_rat(ntype, natom, rat, ntrans, mtrx, tnp,                 &
           mxdtyp, mxdatm)
+
+!     same for the metric.  Not in EPILBF, where the change of
+!     adot(3,3) may lower the symmetry of the cell.
+
+      if(flgcal == 'VCSLBF') call sym_adot(adot, ntrans, mtrx)
 
     elseif(flgcal == 'VCSMIC') then
 

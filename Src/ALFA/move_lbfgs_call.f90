@@ -23,7 +23,7 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         29 September 2006, 8 June 2014.
+!>  \date         29 September 2006, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
@@ -37,6 +37,9 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
 ! Modified to stabilize minstr=2. 8 June 2014. JLM
 ! Modified, documentation. 8 August 2019. JLM
 ! Indentation. 28 September 2026. JLM+claude
+! The cell gradient is the gradient of the enthalpy (stress = -2 d E / d adot),
+! same convergence criterion on the stress, stops after restarts
+! without progress. 19 November 2026. JLM+claude
 
 
   implicit none
@@ -91,6 +94,15 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
   logical              :: lmetric
   real(REAL64), save   :: cntrol
   real(REAL64), save   :: a0(3,3),b0(3,3),ad33
+
+  integer              ::  jat                                           !  number of variables of the atomic positions
+  integer, save        ::  nfail = 0                                     !  number of consecutive restarts without progress
+  real(REAL64), save   ::  entold = huge(ZERO)                           !  enthalpy at the previous restart
+
+! parameters of the test of restarts without progress
+
+  integer, parameter      :: MXFAIL = 3
+  real(REAL64), parameter :: ENTTOL = 1.0E-7_REAL64
 
 ! counters
 
@@ -191,7 +203,10 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
 
   endif
 
-! lattice parameters
+  jat = jc
+
+! lattice parameters.  stress = -2 d E / d adot, so the gradient of
+! the enthalpy with respect to the metric is half of strimb
 
   if(minstr == 1) then
 
@@ -214,7 +229,7 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
       gdav(jc) = ZERO
       do k=1,3
       do l=1,3
-        gdav(jc) = gdav(jc) - a0(i,k)*strimb(k,l)*a0(j,l)
+        gdav(jc) = gdav(jc) - a0(i,k)*strimb(k,l)*a0(j,l) / DOIS
       enddo
       enddo
     enddo
@@ -224,7 +239,7 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
 
     jc = jc + 1
     xdav(jc) = adot(3,3)/ad33
-    gdav(jc) = stress(3,3)*ad33
+    gdav(jc) = stress(3,3)*ad33 / DOIS
 
   endif
 
@@ -232,6 +247,13 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
   do i=1,ndav
     wa(i) = dxmax
     wa(ndav+i) = pgtol
+  enddo
+
+! pgtol is compared with the stress (errstr of force_stress_error),
+! which is twice the gradient
+
+  do i=jat+1,ndav
+    wa(ndav+i) = pgtol / DOIS
   enddo
 
 
@@ -330,6 +352,34 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
       iconv = -1
     endif
 
+  endif
+
+! a restart (iconv < 0) that does not lower the enthalpy will not help
+
+  if(iconv < 0) then
+
+    if(entpy > entold - ENTTOL) then
+      nfail = nfail + 1
+    else
+      nfail = 0
+    endif
+    entold = entpy
+
+    if(nfail >= MXFAIL) then
+      write(6,*)
+      write(6,*) '  WARNING   WARNING   WARNING   WARNING   WARNING'
+      write(6,*) '  move_lbfgs_call: the minimization stopped because'
+      write(6,*) '  restarts do not lower the energy.  The forces and'
+      write(6,*) '  stresses are NOT converged to the requested tolerance.'
+      write(6,*)
+      iconv = 1
+    endif
+
+  endif
+
+  if(iconv == 1) then
+    nfail = 0
+    entold = huge(ZERO)
   endif
 
   return
