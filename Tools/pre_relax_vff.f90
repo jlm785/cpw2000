@@ -17,7 +17,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         15 january 1999, 4 October 2026.
+!>  \date         15 january 1999, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 program pre_relax_vff
@@ -29,6 +29,7 @@ program pre_relax_vff
 ! Constants updated to CODATA 2022 (HARTREE, EV replaced by HARTREE, AUTOGPA, BOHR, ECHARGE). 3 October 2026. JLM+claude
 ! Indentation, REAL64 literals. 4 October 2026. JLM+claude
 ! Commented code for the old PW.DAT format removed. 18 October 2026. JLM+claude
+! Full kgrid_Monkhorst_Pack (mpgrid, mpshift) passed to cpw.out. 19 November 2026. JLM+claude
 
   implicit none
   integer, parameter          :: REAL64 = selected_real_kind(12)
@@ -98,8 +99,8 @@ program pre_relax_vff
 
   real(REAL64)                       ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
   integer                            ::  nbandin                         !<  target for number of bands
-  integer                            ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64)                       ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+  integer                            ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh (lines of kgrid_Monkhorst_Pack)
+  real(REAL64)                       ::  mpshift(3)                      !<  shift of the Monkhorst-Pack mesh
   character(len=250)                 ::  meta_pwdat                      !<  metadata from cpw_in or PW.DAT
 
 ! other variables
@@ -137,7 +138,7 @@ program pre_relax_vff
 
   call read_md_esdf(ipr,filename,flgcal,flgmod,                          &
       adot,ntype,natom,nameat,rat,atmass,alatt,lgeom,                    &
-      emax,nbandin,nx,ny,nz,sx,sy,sz,                                    &
+      emax,nbandin,mpgrid,mpshift,                                       &
       meta_pwdat,                                                        &
       tempk,tempinik,nstep,tstep,beta,iseed,pgtol,dxmax,                 &
       press,strext,celmas,                                               &
@@ -223,7 +224,7 @@ program pre_relax_vff
 
   call write_cpwout(10, filename, meta_pwdat, flgcal_new, callcode,      &
       adot, ntype, natom, nameat, rat, atmass, alatt,                    &
-      emax, nbandin, nx, ny, nz, sx, sy, sz,                             &
+      emax, nbandin, mpgrid, mpshift,                                    &
       .FALSE., .FALSE.,                                                  &
       mxdtyp, mxdatm)
 
@@ -529,12 +530,12 @@ end subroutine print_md_parameters
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         3 June 2019, 4 October 2026.
+!>  \date         3 June 2019, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_md_esdf(ipr,fname,flgcal,flgmod,                         &
     adot,ntype,natom,nameat,rat,atmass,alatt,lgeom,                      &
-    emax,nbandin,nx,ny,nz,sx,sy,sz,                                      &
+    emax,nbandin,mpgrid,mpshift,                                         &
     meta_cpw2000,                                                        &
     tempk,tempinik,nstep,tstep,beta,iseed,pgtol,dxmax,                   &
     press,strext,celmas,                                                 &
@@ -542,6 +543,7 @@ subroutine read_md_esdf(ipr,fname,flgcal,flgmod,                         &
 
 ! Adapted for md June 3 2019, JLM
 ! Indentation. 4 October 2026. JLM+claude
+! mpgrid, mpshift (general kgrid_Monkhorst_Pack). 19 November 2026. JLM+claude WARNING NEW API
 !
 
 
@@ -580,8 +582,8 @@ subroutine read_md_esdf(ipr,fname,flgcal,flgmod,                         &
 ! The next group of variables are not used im md, just passed to the next cpw.in
 
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
-  integer, intent(out)               ::  nx, ny, nz                      !<  size of the integration mesh in k-space (nx*ny*nz)
-  real(REAL64), intent(out)          ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+  integer, intent(out)               ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh (lines of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(out)          ::  mpshift(3)                      !<  shift of the Monkhorst-Pack mesh
   integer, intent(out)               ::  nbandin                         !<  target for number of bands
   character(len=250), intent(out)    ::  meta_cpw2000                    !<  metadata coded in cpw2000
 
@@ -667,7 +669,7 @@ subroutine read_md_esdf(ipr,fname,flgcal,flgmod,                         &
       mxdtyp,mxdatm)
 
   call read_esdf_bz(ipr,                                                 &
-      emax,nbandin,nx,ny,nz,sx,sy,sz,lbz)
+      emax,nbandin,mpgrid,mpshift,lbz)
 
   call read_esdf_rede(ipr,meta_cpw2000,lbz)
 

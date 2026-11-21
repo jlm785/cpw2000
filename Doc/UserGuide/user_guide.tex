@@ -642,10 +642,8 @@ This are the parameters whose values you would mention in a paper to allow repro
       \end{matrix}
   \end{equation*}
 
-  Specified as an integer $3 \times 3$ matrix and a real vector.  At present only the diagonal
-  elements of the matrix are relevant, but this format will alow an extension of
-  the method in the future and better compatibility with {\sc siesta}.
-
+  Specified as an integer $3 \times 3$ matrix and a real vector, with the same
+  convention as {\sc siesta}.
   It has three lines, each with three integers and a real.
   \begin{equation*}
       \begin{matrix}
@@ -654,8 +652,49 @@ This are the parameters whose values you would mention in a paper to allow repro
         m_{31}  &   m_{32}  &   m_{33}  & \quad  d_3 \\
       \end{matrix}
   \end{equation*}
-  In the direction $j$ the Brillouin zone will be divided in $m_{jj}$ sections and
-  a point with a shift of $d_j$ will be selected.
+  Line $i$ is a vector of a supercell of the crystal lattice,
+  $\mathbf{A}_i = \sum_j m_{ij}\, \mathbf{a}_j$, in units of the lattice vectors
+  $\mathbf{a}_j$.  The k-points are the points of the reciprocal lattice of the supercell,
+  shifted by $d_i$,
+  \begin{equation*}
+     \mathbf{k} = \sum_i (n_i + d_i)\, \mathbf{B}_i ,
+  \end{equation*}
+  where $\mathbf{B}_i$ are the reciprocal vectors of the supercell,
+  $\mathbf{A}_i \cdot \mathbf{B}_j = 2\pi\delta_{ij}$, and $n_i$ are integers.
+  There are $|\det m|$ points in the Brillouin zone.
+
+  For a diagonal matrix, in the direction $j$ the Brillouin zone will be divided
+  in $m_{jj}$ sections and a point with a shift of $d_j$ will be selected,
+  the usual Monkhorst-Pack grid.
+
+  The off-diagonal elements allow a mesh that does not depend on the choice
+  of the lattice vectors.  A diagonal grid follows the lattice vectors of the input,
+  and if they are not the conventional ones it may not have the symmetry of the lattice,
+  and the integration errors then have spurious anisotropies, for example in the stress.
+  For a face-centered cubic crystal with the lattice vectors
+  $(0,1/2,1/2)a$, $(1/2,0,1/2)a$ and $(1/2,1/2,0)a$ the block
+  \begin{equation*}
+      \begin{matrix}
+       -4  &  4  &  4  & \quad  0.5 \\
+        4  & -4  &  4  & \quad  0.5 \\
+        4  &  4  & -4  & \quad  0.5 \\
+      \end{matrix}
+  \end{equation*}
+  is the $4a \times 4a \times 4a$ supercell of the conventional cubic cell, with 256 points,
+  which has the full cubic symmetry (and of any distortion of the cubic lattice).
+  For the same lattice described with the vectors
+  $(1/\sqrt{2},0,0)a$, $(0,1/\sqrt{2},0)a$ and $(1/(2\sqrt{2}),1/(2\sqrt{2}),1/2)a$
+  (as a body-centered tetragonal lattice) the same mesh is
+  \begin{equation*}
+      \begin{matrix}
+        4  &  4  &  0  & \quad  0.5 \\
+        4  & -4  &  0  & \quad  0.5 \\
+       -4  & -4  &  8  & \quad  0.5 \\
+      \end{matrix}
+  \end{equation*}
+  while the diagonal $4\times4\times4$ grid of these vectors only has the tetragonal symmetry.
+  Internally the mesh is converted to an $n_x \times n_y \times n_z$ grid and an
+  integer matrix with determinant $\pm 1$ (subroutine \texttt{kgrid\_box}), which are printed.
 
   To use only the $\Gamma$ point (molecule in a supercell) use
   \begin{equation*}
@@ -671,8 +710,11 @@ This are the parameters whose values you would mention in a paper to allow repro
   multiple of three.  These are recipes that minimize the number of irreducible points
   and avoid breaking symmetry.
 
-  If the diagonal elements are non-positive it will default to $m_{ii}=1$,
-  printing a warning.  It also warns the presence of unused non-zero off-diagonal values.
+  The tool \texttt{Tools/cpwin\_kmesh.f90} (section~\ref{sec:kmesh}) chooses a mesh with
+  the symmetry of the lattice for a given quality, and evaluates the mesh of an existing file.
+
+  If the matrix is diagonal and some diagonal elements are non-positive they will
+  default to $m_{ii}=1$, printing a warning.  The program stops if the matrix is singular.
 
 %\begin{fdfentry}{XC!Authors}[string]<PZ>
 %  \newcommand\xcidx[1]{\index{exchange-correlation!#1}}
@@ -1594,7 +1636,7 @@ so the post-processing does not need the \texttt{cpw.in} or the pseudopotential 
 
 \subsubsection*{Content of the file}
 
-The records of the present version (2026.1) of the file are listed below.
+The records of the present version (2026.2) of the file are listed below.
 Character variables have the indicated length, integers are default integers
 and real and complex numbers are double precision (64 bits).
 
@@ -1611,10 +1653,11 @@ record & content & comments \\
 2  & \texttt{natom(1:ntype)} & number of atoms of each type \\
 3  & \texttt{bdate, btime} & date (9 characters) and time (8 characters) \\
 4  & \texttt{author, flgscf, flgdal} & exchange-correlation (4), SCF flag (6), dual approximation (4) \\
-5  & \texttt{emax, teleck, nx, ny, nz, sx, sy, sz, nband, alatt, efermi}
+5  & \texttt{emax, teleck, nx, ny, nz, sx, sy, sz, nband, alatt, efermi, mpgrid(3,3), mpshift(3)}
    & cutoff (Hartree), electronic temperature (K),
-     Monkhorst-Pack grid and shift, number of bands,
-     lattice constant, Fermi level (Hartree) \\
+     grid and shift of the box of the Monkhorst-Pack mesh (see \texttt{kgrid\_box}), number of bands,
+     lattice constant, Fermi level (Hartree), matrix (line by line) and shifts of the
+     \texttt{kgrid\_Monkhorst\_Pack} block \\
 6  & \texttt{meta\_pwdat, meta\_cpw2000} & metadata of the input file and of the calculation (250 each) \\
 7  & \texttt{adot, mtrx, tnp} & metric (bohr$^2$) and the \texttt{ntrans} symmetry operations \\
 8  & \texttt{nameat(1:ntype)} & chemical symbols (2 characters) \\
@@ -1679,6 +1722,7 @@ version & date & changes \\
 2021.1 & November 2021 & \texttt{efermi} in record 5 \\
 2026.0 & 2026          & \texttt{mxdset}, several atomic basis sets (development only) \\
 2026.1 & October 2026  & \texttt{vtau} and partial core kinetic energy density \\
+2026.2 & November 2026 & \texttt{mpgrid, mpshift} in record 5 (general Monkhorst-Pack mesh) \\
 \end{longtable}
 
 When reading older files the missing quantities are given default values:
@@ -1686,7 +1730,11 @@ before 2021.0 the symmetry operations are not in the file and \texttt{mxdlao} is
 before 2021.1 the Fermi level is not known and is estimated by the post-processing;
 before 2026.1 there is a single atomic basis set, the partial core kinetic energy density
 is zero, and for a meta-GGA with $\tau$ from the wave-functions \texttt{vtau} is set to zero
-with a warning, so the self-consistent calculation should be repeated.
+with a warning, so the self-consistent calculation should be repeated;
+before 2026.2 the Monkhorst-Pack mesh is diagonal, \texttt{mpgrid} is the diagonal
+matrix of \texttt{nx, ny, nz} and \texttt{mpshift} is \texttt{sx, sy, sz}.
+Older versions of the codes read the files of version 2026.2, ignoring the new
+quantities, but for a non-diagonal mesh they see the box.
 Files of the 2026.0 development version are not recognized.
 
 
@@ -2624,6 +2672,50 @@ for example to obtain a pdf file (see the commented lines in those files).
 The original code was written by David M. Wood in the early eighties
 for the Murnaghan fit, and the Birch fit was added in 1989.
 It has been modified many times since then.
+
+\subsection{Choice of the k-point mesh}
+\label{sec:kmesh}
+
+The program \texttt{Tools/cpwin\_kmesh.f90} reads \texttt{cpw.in} (or the file given as the
+first argument), chooses a \texttt{kgrid\_Monkhorst\_Pack} block and writes \texttt{cpw.out},
+a verbatim copy of the input where only that block is replaced (the old block is kept as comments),
+
+\noindent\texttt{cpw2000-5.x.y/WORK\$ ../Tools/cpwin\_kmesh.exe cpw.in 40}
+
+\noindent The second argument is the target $R_{cc}$ in bohr (it is asked if absent), and the third
+the tolerance $\delta$ for the parent lattice (default 0.05).  It is compiled as
+\texttt{cpwin\_geom.f90}, with \texttt{libpw.a} and the \texttt{esdf} modules.
+
+A mesh with supercell vectors $\mathbf{A}_i$ and shift $\mathbf{d}$ averages
+$e^{i\mathbf{k}\cdot\mathbf{R}}$ to
+$w(\mathbf{R}) = \cos(2\pi\, \mathbf{d}\cdot\mathbf{m})$ if $\mathbf{R} = \sum_i m_i \mathbf{A}_i$,
+and to zero otherwise, so the integration error of a periodic function
+$f(\mathbf{k}) = \sum_{\mathbf{R}} f_{\mathbf{R}}\, e^{i\mathbf{k}\cdot\mathbf{R}}$ is
+$\sum_{\mathbf{R}\neq 0} f_{\mathbf{R}}\, w(\mathbf{R})$.
+$R_{cc}$ is the length of the shortest lattice vectors (a star of symmetry related vectors)
+whose sum of $w(\mathbf{R})$ does not vanish.  For an unshifted mesh it is the length of the
+shortest supercell vector (twice the \texttt{kgrid\_cutoff} of {\sc siesta}, Moreno and Soler,
+Phys. Rev. B {\bf 45}, 13891 (1992)), and a shift may cancel whole stars, as in the special
+points of Chadi and Cohen, Phys. Rev. B {\bf 8}, 5747 (1973).  As $f_{\mathbf{R}}$ decreases
+with $|\mathbf{R}|$, $R_{cc}$ measures the quality of the mesh independently of the size of
+the cell, and the same target can be used for a crystal and for its supercells.
+
+Only meshes with the full symmetry of the parent lattice are considered.  The parent lattice is
+the lattice of highest symmetry within a strain $\delta$ of the lattice of the file.  The
+effective mesh then does not change when the symmetry of the crystal changes, for example in the
+epitaxial relaxation of a cubic crystal (a mesh without that symmetry gives jumps in the energy
+and spurious anisotropic stresses when the symmetry changes).  Among the invariant meshes with
+$R_{cc}$ larger than the target the one with the smallest number of irreducible k-points is
+chosen, and the best meshes with fewer irreducible k-points are listed.  For a face-centered cubic
+lattice the meshes with 2 and 10 irreducible k-points are the special points of Chadi and Cohen.
+The mesh is fixed in lattice coordinates, so it can be chosen before a relaxation.
+
+If the file has the \texttt{Rede.Superlattice} block (with \texttt{Rede.NumberOfLatticePlanes})
+the program also writes the block with the same k-points in the primitive cell of the superlattice,
+for the bulk calculations that are compared with the superlattice.  If that block does not have the
+symmetry of the lattice of the primitive cell, the bulk calculation should use
+\texttt{UseSymmetry .false.} (or the lattice of the superlattice) to use the same k-points.
+The cheapest mesh whose block in the primitive cell has that symmetry is also given.
 
 \subsection{Remove gnuplot commands from 2D plot files}
 

@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 October 2018. 7 October 2026.
+!>  \date         12 October 2018. 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw2o_pwrhov2other(ioreplay)
@@ -26,6 +26,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
 ! Removed unused variables, 14 November 2024. JLM
 ! Converted to a subroutine called by cpw_post_process. 25 February 2025. JLM
 ! vtau, several atomic basis sets and core tau from pw_rho_v_in. 7 October 2026. JLM+claude
+! mpgrid, mpshift (general Monkhorst-Pack mesh) to the abinit and QE writers. 20 November 2026. JLM+claude
 
   implicit none
 
@@ -58,8 +59,10 @@ subroutine pw2o_pwrhov2other(ioreplay)
   character(len=250)                 ::  meta_cpw2000                    !  metadata from cpw2000
 
   integer                            ::  nbandin                         !  target for number of bands
-  integer                            ::  nx,ny,nz                        !  divisions of Brillouin zone for integration (Monkhorst-Pack)
-  real(REAL64)                       ::  sx,sy,sz                        !  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
+  integer                            ::  nx,ny,nz                        !  divisions of Brillouin zone for integration (box of the Monkhorst-Pack mesh)
+  real(REAL64)                       ::  sx,sy,sz                        !  shift of points in division of Brillouin zone for integration (box of the Monkhorst-Pack mesh)
+  integer                            ::  mpgrid(3,3)                     !  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64)                       ::  mpshift(3)                      !  shift of the mesh in units of the reciprocal vectors of the supercell
   real(REAL64)                       ::  alatt                           !  lattice constant
   real(REAL64)                       ::  efermi                          !  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -194,7 +197,8 @@ subroutine pw2o_pwrhov2other(ioreplay)
   call pw_rho_v_in(filename, iotape, ipr,                                &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdalin,                                       &
-         emaxin, teleck, nx,ny,nz, sx,sy,sz, nbandin, alatt, efermi,     &
+         emaxin, teleck, nx,ny,nz, sx,sy,sz, mpgrid, mpshift,            &
+         nbandin, alatt, efermi,                                         &
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ngin, kmaxin, kgvin, phasein, conjin, nsin, mstarin,            &
@@ -216,7 +220,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
   if(yesno == 'Y' .or. yesno == 'y') then
 
     call pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,          &
-        emax, nx,ny,nz,                                                  &
+        emax, mpgrid, mpshift,                                           &
         mxdtyp, mxdatm)
 
     write(6,*)
@@ -236,7 +240,7 @@ subroutine pw2o_pwrhov2other(ioreplay)
 
     call pw2o_qe_pwscf_in(meta_cpw2000,                                  &
         adot, ntype, natom, nameat, rat, alatt,                          &
-        emax, nbandin, nx,ny,nz, sx,sy,sz,                               &
+        emax, nbandin, mpgrid, mpshift,                                  &
         mxdtyp, mxdatm)
 
     write(6,*)

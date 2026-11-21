@@ -16,12 +16,12 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         June 2017, 11 November 2026.
+!>  \date         June 2017, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
     adot, ntype, natom, nameat, rat, atmass, alatt,                      &
-    emax, nbandin, nx,ny,nz, sx,sy,sz,                                   &
+    emax, nbandin, mpgrid, mpshift,                                      &
     lkeat, ltbl,                                                         &
     mxdtyp, mxdatm)
 
@@ -35,6 +35,7 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
 ! MD.PWCutoffSmearing in the inactive options. 15 October 2026. JLM+claude
 ! MD.PWCutoffSmearing comment, RSTRT uses the type of the restarted run. 16 October 2026. JLM+claude
 ! ChoiceOfDefaultAtomicBasisSet in the inactive options. 11 November 2026. JLM+claude
+! Full kgrid_Monkhorst_Pack block (mpgrid, mpshift). 19 November 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -66,12 +67,8 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
   integer, intent(in)                ::  nbandin                         !<  target for number of bands
 
-  integer, intent(in)                ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
-  integer, intent(in)                ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
-  integer, intent(in)                ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
-  real(REAL64), intent(in)           ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
-  real(REAL64), intent(in)           ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
-  real(REAL64), intent(in)           ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
+  integer, intent(in)                ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(in)           ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell (usually 0.5)
 
   logical, intent(in)                ::  lkeat                           !<  sets the keating option
   logical, intent(in)                ::  ltbl                            !<  toggles XC between TBL and CA
@@ -273,9 +270,9 @@ subroutine write_cpwout(io, filename, meta_pwdat, flgcal, callcode,      &
   write(io,*)
 
   write(io,'("%block kgrid_Monkhorst_Pack")')
-  write(io,'(8x,3(2x,i6),3x,f12.6)')  nx,0,0,sx
-  write(io,'(8x,3(2x,i6),3x,f12.6)')  0,ny,0,sy
-  write(io,'(8x,3(2x,i6),3x,f12.6)')  0,0,nz,sz
+  do i = 1,3
+    write(io,'(8x,3(2x,i6),3x,f12.6)')  (mpgrid(i,j),j=1,3), mpshift(i)
+  enddo
   write(io,'("%endblock kgrid_Monkhorst_Pack")')
   write(io,*)
 

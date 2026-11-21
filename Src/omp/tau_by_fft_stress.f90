@@ -23,11 +23,11 @@
 !>
 !>  \author       Carlos Loia Reis, José Luís Martins
 !>  \version      5.13
-!>  \date         14 June 2026. 13 October 2026.
+!>  \date         14 June 2026. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
-    nx, ny, nz, sx, sy, sz,                                              &
+    nx, ny, nz, sx, sy, sz, kmat,                                        &
     mtxd, neig, occ_x_wgk, isort, psi,                                   &
     rkpt, irk, adot,                                                     &
     ntrans, mtrx, tnp,                                                   &
@@ -41,6 +41,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
 ! weights from occ_x_wgk. 29 September 2026. JLM+claude
 ! d tau / d bdot on the real space mesh of the potential. 29 September 2026. JLM+claude
 ! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
+! kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -63,6 +64,7 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
   real(REAL64), intent(in)           ::  sx                              !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 1
   real(REAL64), intent(in)           ::  sy                              !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 2
   real(REAL64), intent(in)           ::  sz                              !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 3
+  integer, intent(in)                ::  kmat(3,3)                       !<  k-point = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz), identity for the usual mesh
 
   logical, intent(in)                ::  ldtau                           !<  also calculates d tauk / d adot for use in stress
   integer, intent(in)                ::  kmscr(7)                        !<  max value of kgv(i,n) used for the potential fft mesh and fft mesh size
@@ -145,6 +147,8 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
   real(REAL64)    ::  dx, dy, dz
   real(REAL64)    ::  rk_loc(3)                                          !  k-point corresponding to ix, iy, iz
   real(REAL64)    ::  diff
+  real(REAL64)    ::  xb(3)
+  logical         ::  lref                                               !  ix, iy, iz is the reference point
   integer         ::  npoint                                             !  number of mesh points equivalent to irk
 
   integer         ::  mxdffs, mxdwrs                                     !  dimensions for the fft on the mesh of the potential
@@ -288,15 +292,23 @@ subroutine tau_by_fft_stress(tauk, ldtau, kmscr, dtau_dadot,             &
 
     npoint = npoint + 1
 
-!   same expression as in int_pnt
+!   same expression as in int_pnt (modulo a reciprocal lattice vector)
 
-    rk_loc(1) = ((ix-1) + sx) * dx
-    rk_loc(2) = ((iy-1) + sy) * dy
-    rk_loc(3) = ((iz-1) + sz) * dz
+    xb(1) = ((ix-1) + sx) * dx
+    xb(2) = ((iy-1) + sy) * dy
+    xb(3) = ((iz-1) + sz) * dz
 
-    if(abs( (rk_loc(1)-rk(1,irk))*(rk_loc(1)-rk(1,irk)) +                &
-            (rk_loc(2)-rk(2,irk))*(rk_loc(2)-rk(2,irk)) +                &
-            (rk_loc(3)-rk(3,irk))*(rk_loc(3)-rk(3,irk)) ) < EPS) then
+    do j = 1,3
+      rk_loc(j) = kmat(j,1)*xb(1) + kmat(j,2)*xb(2) + kmat(j,3)*xb(3)
+    enddo
+
+    lref = .TRUE.
+    do j = 1,3
+      diff = rk_loc(j) - rk(j,irk)
+      if(abs(diff - nint(diff)) > EPS) lref = .FALSE.
+    enddo
+
+    if(lref) then
 
 !     it is the reference point
 

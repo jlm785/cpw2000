@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         8 may 2004, 16 October 2026.
+!>  \date         8 may 2004, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
@@ -51,6 +51,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
 ! The reference states are calculated in an inefficient way....
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
   implicit none
 
@@ -157,6 +158,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
 
   logical                            ::  lpsiso                          !  If true calculates the spin-orbit perturbed wave-functions
 
@@ -318,7 +320,12 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   write(6,*) "  nc subdivision is", nc(1),nc(2),nc(3)
   write(6,*)
 
-  call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call size_mxdnrk(nx,ny,nz, sx,sy,sz, kmat, adot, ntrans, mtrx,         &
   mxdnrk)
 
   allocate(kmap(3,nx,ny,nz))
@@ -327,7 +334,7 @@ subroutine out_dos_glk(diag_type, lworkers, xsvd, csvd,                  &
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
 
-  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
+  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, kmat, ipr,                    &
   adot,                                                                  &
   ntrans, mtrx,                                                          &
   nrk, rk, wgk, nband, indk, kmap,                                       &

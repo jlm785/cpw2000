@@ -17,16 +17,19 @@
 !>  is identified from the records.  Files before version 2026.1 have
 !>  one atomic basis set, no core kinetic energy density and no vtau
 !>  (set to zero, with a warning for the generalized Kohn-Sham meta-GGA).
+!>  Files before version 2026.2 have a diagonal Monkhorst-Pack mesh,
+!>  returned as mpgrid = diag(nx,ny,nz), mpshift = (sx,sy,sz).
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 16, 2014, 13 October 2026.
+!>  \date         May 16, 2014, 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in(filename, io, ipr,                                &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal,                                         &
-         emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi,         &
+         emax, teleck, nx,ny,nz, sx,sy,sz, mpgrid, mpshift,              &
+         nband, alatt, efermi,                                           &
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
@@ -51,6 +54,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 ! vtau, several atomic basis sets, core tau, old files recognized. 7 October 2026. JLM+claude
 ! Logical assignments written as if statements. 12 October 2026. JLM+claude
 ! lnew replaced by fversion, version of the file format. 13 October 2026. JLM+claude
+! mpgrid, mpshift (general Monkhorst-Pack mesh). 20 November 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -92,6 +96,8 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   real(REAL64), intent(out)          ::  sx                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 1
   real(REAL64), intent(out)          ::  sy                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 2
   real(REAL64), intent(out)          ::  sz                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 3
+  integer, intent(out)               ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(out)          ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
   real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -145,7 +151,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
 
 ! local variables
 
-  character(len=6)    ::  fversion                                       !  version of the file format (2013.0, ..., 2026.1)
+  character(len=6)    ::  fversion                                       !  version of the file format (2013.0, ..., 2026.2)
   character(len=4)    ::  xcbase                                         !  meta-GGA functional used in xc_mgga
   character(len=4)    ::  tausrc                                         !  source of tau, 'PSI ' for generalized Kohn-Sham
 
@@ -168,7 +174,7 @@ subroutine pw_rho_v_in(filename, io, ipr,                                &
   call pw_rho_v_in_crystal_calc(io, fversion,                            &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
-         nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
+         nx,ny,nz, sx,sy,sz, mpgrid, mpshift, nband, alatt, efermi,      &
          ng ,ns,                                                         &
          ntrans, mtrx, tnp,                                              &
          adot, ntype, natom, nameat, rat,                                &

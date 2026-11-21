@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins, Carlos Loia Reis
 !>  \version      5.13
-!>  \date         8 may 2004, 9 November 2026.
+!>  \date         8 may 2004, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
@@ -55,6 +55,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
 ! atomic_orbital_c16 without icmplx (no inversion symmetric combinations). 23 October 2026. JLM+claude
 ! basxpsi(_so) second dimension is the number of bands, not orbitals (out of bounds if neig > nbaslcao). 9 November 2026. JLM+claude
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
   implicit none
 
@@ -157,6 +158,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
 
   integer                            ::  ifail                           !  if ifail=0 h_kb_dia_all was successfull. Otherwise ifail indicates the number of correct digits.
   integer                            ::  iguess                          !  if guess eigenvectors are available, iguess = 1, otherwise iguess = 0
@@ -307,7 +309,12 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
     sz = 0.0
   endif
 
-  call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call size_mxdnrk(nx,ny,nz, sx,sy,sz, kmat, adot, ntrans, mtrx,         &
   mxdnrk)
 
 
@@ -317,7 +324,7 @@ subroutine out_dos(diag_type, lworkers, lproj, lso,                      &
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
 
-  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
+  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, kmat, ipr,                    &
       adot,                                                              &
       ntrans, mtrx,                                                      &
       nrk, rk, wgk, nband, indk, kmap,                                   &

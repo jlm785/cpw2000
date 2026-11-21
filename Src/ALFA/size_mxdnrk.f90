@@ -16,10 +16,10 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         May 5, 2014, 31 July 2014.
+!>  \date         May 5, 2014, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
+subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, kmat, adot, ntrans, mtrx,     &
       mxdnrk)
 
 ! written May 5, 2014. JLM
@@ -27,6 +27,7 @@ subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
 ! modified to be faster O(N^2) -> O(NlogN). 31 July 2014. JLM
 ! Modified, documentation, January 2020. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -41,6 +42,7 @@ subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
   real(REAL64), intent(in)           ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
   real(REAL64), intent(in)           ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
   real(REAL64), intent(in)           ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
+  integer, intent(in)                ::  kmat(3,3)                       !<  k-point = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz), identity for the usual mesh
 
   real(REAL64), intent(in)           ::  adot(3,3)                       !<  metric in real space
   integer, intent(in)                ::  ntrans                          !<  number of symmetry operations in the factor group
@@ -67,6 +69,8 @@ subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
   logical           ::  lfound, lfoundinv
   real(REAL64)      ::  bdot(3,3), vcell
   real(REAL64)      ::  xt(3),xtmod
+  real(REAL64)      ::  xb(3)
+  logical           ::  lident
 
   integer           ::  mxdpnt
 
@@ -96,6 +100,14 @@ subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
 ! kmap is used to mark reducible k points and also to
 ! map reducible to irreducible k points
 
+  lident = .TRUE.
+  do j = 1,3
+  do i = 1,3
+    if(i == j .and. kmat(i,j) /= 1) lident = .FALSE.
+    if(i /= j .and. kmat(i,j) /= 0) lident = .FALSE.
+  enddo
+  enddo
+
   dx = UM / nx
   dy = UM / ny
   dz = UM / nz
@@ -107,6 +119,13 @@ subroutine size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,           &
     xk(1,n) = (i-1 + sx) * dx
     xk(2,n) = (j-1 + sy) * dy
     xk(3,n) = (k-1 + sz) * dz
+    if(.not. lident) then
+      xb(:) = xk(:,n)
+      do l = 1,3
+        xk(l,n) = kmat(l,1)*xb(1) + kmat(l,2)*xb(2) + kmat(l,3)*xb(3)
+        xk(l,n) = xk(l,n) - floor(xk(l,n))
+      enddo
+    endif
     kmap(n) = n
   enddo
   enddo

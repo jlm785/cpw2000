@@ -29,6 +29,23 @@ cpwin_2_lapw.f90
 
    Must be compiled with libpw and the esdf modules, as cpwin_geom.f90.
 
+cpwin_kmesh.f90
+
+   Filter that reads cpw.in (or the file given as first argument), chooses a general
+   Monkhorst-Pack mesh (kgrid_Monkhorst_Pack block) and writes cpw.out, a verbatim copy
+   of the input where only that block is replaced (the old block is kept as comments).
+
+   cpwin_kmesh.exe  [file  [R_cc target in bohr  [delta]]]
+
+   Only meshes with the symmetry of the parent lattice (the highest symmetry within a
+   strain delta, default 0.05) are considered.  The quality R_cc is the length of the
+   shortest lattice vectors whose mesh average does not cancel (Chadi-Cohen).  Among the
+   meshes with R_cc >= target the one with the fewest irreducible k-points is chosen.
+   If Rede.Superlattice is present it also gives the block with the same k-points in the
+   primitive cell, for the bulk calculations.
+
+   Must be compiled with libpw and the esdf modules, as cpwin_geom.f90.
+
 gen_PW.f90
 
    generates the input file cpw.in by answering a few questions about the crystal cell.  It can be adapted later in any text editor.

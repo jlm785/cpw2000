@@ -16,13 +16,14 @@
 !>
 !>  \author       José Luís Martins
 !>  \version      5.13
-!>  \date         Before 20 February 2020.
+!>  \date         Before 20 February 2020. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_bzint(iprglob, lnewnrk,                                   &
     dims_, kpoint_, crys_, spaceg_, pwexp_)
 
 ! Indentation. 28 September 2026. JLM+claude
+! kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude
 
   use cpw_variables
 
@@ -44,7 +45,8 @@ subroutine cpw_bzint(iprglob, lnewnrk,                                   &
   integer               ::  maxnrk                                       !  provisional array dimensions
 
   call size_mxdnrk(kpoint_%nx, kpoint_%ny, kpoint_%nz, kpoint_%sx,       &
-      kpoint_%sy, kpoint_%sz, crys_%adot, spaceg_%ntrans, spaceg_%mtrx,  &
+      kpoint_%sy, kpoint_%sz, kpoint_%kmat,                              &
+      crys_%adot, spaceg_%ntrans, spaceg_%mtrx,                          &
       maxnrk)
 
 ! mxdpnt = kpoint_%nx*kpoint_%ny*kpoint_%nz
@@ -94,7 +96,7 @@ subroutine cpw_bzint(iprglob, lnewnrk,                                   &
   if(iprglob > 0) ipr = 1
 
   call int_pnt(pwexp_%nbandin, kpoint_%nx, kpoint_%ny, kpoint_%nz,       &
-      kpoint_%sx, kpoint_%sy, kpoint_%sz, ipr,                           &
+      kpoint_%sx, kpoint_%sy, kpoint_%sz, kpoint_%kmat, ipr,             &
       crys_%adot,                                                        &
       spaceg_%ntrans, spaceg_%mtrx,                                      &
       kpoint_%nrk, kpoint_%rk, kpoint_%wgk, kpoint_%nband,               &

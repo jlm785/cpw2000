@@ -22,12 +22,13 @@
 !>
 !>  \author       claude
 !>  \version      5.13
-!>  \date         11 November 2026.
+!>  \date         11 November 2026. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 program cpwin_2_lapw
 
 ! Written 11 November 2026. claude
+! New API of read_esdf_bz, stops for a non-diagonal kgrid_Monkhorst_Pack. 19 November 2026. JLM+claude
 
   use esdf
 
@@ -57,6 +58,8 @@ program cpwin_2_lapw
   integer                            ::  nbandin                         !<  target for number of bands
   integer                            ::  nx, ny, nz                      !<  size of the integration mesh in k-space
   real(REAL64)                       ::  sx, sy, sz                      !<  offset of the integration mesh (usually 0.5)
+  integer                            ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh (lines of kgrid_Monkhorst_Pack)
+  real(REAL64)                       ::  mpshift(3)                      !<  shift of the Monkhorst-Pack mesh
 
 ! lattice vectors
 
@@ -161,7 +164,7 @@ program cpwin_2_lapw
       mxdtyp, mxdatm)
 
   call read_esdf_bz(ipr,                                                 &
-      emax, nbandin, nx,ny,nz, sx,sy,sz, lbz)
+      emax, nbandin, mpgrid, mpshift, lbz)
 
   author = 'CA  '
   author = esdf_string('XC.Authors', author)
@@ -178,7 +181,26 @@ program cpwin_2_lapw
 
   endif
 
-  if(.not. lbz) then
+! Elk and Fleur only have the diagonal Monkhorst-Pack meshes
+
+  if(lbz) then
+    if(mpgrid(1,2) /= 0 .or. mpgrid(1,3) /= 0 .or. mpgrid(2,1) /= 0 .or.  &
+       mpgrid(2,3) /= 0 .or. mpgrid(3,1) /= 0 .or. mpgrid(3,2) /= 0) then
+      write(6,*)
+      write(6,*) '  STOPPED in cpwin_2_lapw:  the kgrid_Monkhorst_Pack of ',  &
+                 trim(fcpwin),' is not diagonal'
+      write(6,*)
+
+      stop
+
+    endif
+    nx = mpgrid(1,1)
+    ny = mpgrid(2,2)
+    nz = mpgrid(3,3)
+    sx = mpshift(1)
+    sy = mpshift(2)
+    sz = mpshift(3)
+  else
     nx = 4
     ny = 4
     nz = 4

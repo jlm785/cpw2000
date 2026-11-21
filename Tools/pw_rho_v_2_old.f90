@@ -8,6 +8,7 @@ program pw_rho_v_2_old
 
 ! Updated to the current pw_rho_v_in, pw_rho_v_in_size, size_mxdlqp_lao and
 ! read_write_pseudo (new quantities are read and ignored), f77 columns removed. 10 November 2026. JLM+claude
+! mpgrid, mpshift from pw_rho_v_in, warning for a general mesh. 20 November 2026. JLM+claude
 
 ! version 5.13
 
@@ -45,6 +46,8 @@ program pw_rho_v_2_old
   integer                            ::  nband                      !<  target for number of bands
   integer                            ::  nx,ny,nz                   !<  divisions of Brillouin zone for integration (Monkhorst-Pack)
   real(REAL64)                       ::  sx,sy,sz                   !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack)
+  integer                            ::  mpgrid(3,3)                !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j
+  real(REAL64)                       ::  mpshift(3)                 !<  shift of the mesh in units of the reciprocal vectors of the supercell
   real(REAL64)                       ::  alatt                      !<  lattice constant
   real(REAL64)                       ::  efermi                     !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -191,7 +194,8 @@ program pw_rho_v_2_old
   call pw_rho_v_in('PW_RHO_V.DAT', io, ipr,                         &
          pwline, title, subtitle, meta_cpw2000,                     &
          author, flgscf, flgdal, emax, teleck,                      &
-         nx, ny, nz, sx, sy, sz, nband, alatt, efermi,              &
+         nx, ny, nz, sx, sy, sz, mpgrid, mpshift,                   &
+         nband, alatt, efermi,                                      &
          adot, ntype, natom, nameat, rat,                           &
          ntrans, mtrx, tnp,                                         &
          ng, kmax, kgv, phase, conj, ns, mstar,                     &
@@ -201,6 +205,17 @@ program pw_rho_v_2_old
          nq, delq, vkb, nkb, vloc, dcor, dval, tauc_q,              &
          n_bsets, norbat, nqwf, delqwf, wvfao, lorb, latorb,        &
          mxdtyp, mxdatm, mxdgve, mxdnst, mxdlqp, mxdlao, mxdset)
+
+! the old format only has the box of a general Monkhorst-Pack mesh
+
+  if(mpgrid(1,2) /= 0 .or. mpgrid(1,3) /= 0 .or. mpgrid(2,1) /= 0 .or.  &
+     mpgrid(2,3) /= 0 .or. mpgrid(3,1) /= 0 .or. mpgrid(3,2) /= 0) then
+    write(6,*)
+    write(6,*) '   WARNING:  the Monkhorst-Pack mesh is not diagonal'
+    write(6,*) '   the old file will have the box ',nx,ny,nz
+    write(6,*) '   with shifts ',sx,sy,sz,' which is a different mesh'
+    write(6,*)
+  endif
 
 ! the pseudopotential files must be in the current directory
 

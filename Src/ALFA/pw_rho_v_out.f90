@@ -15,17 +15,18 @@
 !>  potential and charge density for later processing
 !>  by cpw_post_process.  For the generalized Kohn-Sham meta-GGA
 !>  it also writes vtau.
-!>  The file is written in version 2026.1 of the format.  The
+!>  The file is written in version 2026.2 of the format.  The
 !>  versions are described in pw_rho_v_in_crystal_calc.
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         22 April 2021, 7 October 2026.
+!>  \date         22 April 2021, 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
          meta_pwdat, meta_cpw2000,                                       &
-         emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi,         &
+         emax, teleck, nx,ny,nz, sx,sy,sz, mpgrid, mpshift,              &
+         nband, alatt, efermi,                                           &
          adot, ntype, natom, nameat, rat,                                &
          ntrans, mtrx, tnp,                                              &
          ng, kmax, kgv, phase, conj, ns, mstar,                          &
@@ -48,6 +49,7 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
 ! Modified, preliminary modifications for more than one basis set. 18 February 2026. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! mxdset in the first record, vtau for generalized Kohn-Sham. 7 October 2026. JLM+claude
+! mpgrid, mpshift at the end of the fifth record (version 2026.2). 20 November 2026. JLM+claude WARNING NEW API
 
   implicit none
 
@@ -90,6 +92,8 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   real(REAL64), intent(in)           ::  sx                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 1
   real(REAL64), intent(in)           ::  sy                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 2
   real(REAL64), intent(in)           ::  sz                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 3
+  integer, intent(in)                ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(in)           ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell
   real(REAL64), intent(in)           ::  alatt                           !<  lattice constant
   real(REAL64), intent(in)           ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -141,7 +145,8 @@ subroutine pw_rho_v_out(filename, io, author, tblaha, flgscf, flgdal,    &
   write(io) bdate,btime
 
   write(io) author, flgscf, flgdal
-  write(io) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
+  write(io) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi,       &
+            ((mpgrid(i,j),j=1,3),i=1,3), (mpshift(i),i=1,3)
 
   write(io) meta_pwdat, meta_cpw2000
 

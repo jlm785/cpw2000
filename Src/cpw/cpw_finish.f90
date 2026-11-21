@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         201x, 7 October 2026.
+!>  \date         201x, 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
@@ -27,6 +27,8 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
 ! added efermi 29 November 2021. JLM
 ! added filename for pseudo and psi to disk. 10 October 2025. JLM
 ! vtau passed to pw_rho_v_out. 7 October 2026. JLM+claude
+! kpoint_%mpgrid, kpoint_%mpshift to write_cpwout. 19 November 2026. JLM+claude
+! kpoint_%mpgrid, kpoint_%mpshift to pw_rho_v_out. 20 November 2026. JLM+claude
 
 
   use cpw_variables
@@ -64,6 +66,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
      meta_pwdat, meta_cpw2000,                                           &
      pwexp_%emax, pwexp_%teleck, kpoint_%nx, kpoint_%ny,                 &
      kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
+     kpoint_%mpgrid, kpoint_%mpshift,                                    &
      pwexp_%nbandin, crys_%alatt, efermi,                                &
      crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,      &
      spaceg_%ntrans, spaceg_%mtrx, spaceg_%tnp,                          &
@@ -82,8 +85,7 @@ subroutine cpw_finish(fname, iotape, meta_pwdat, meta_cpw2000,           &
   call write_cpwout(io, filename, meta_pwdat, flgcal, callcode,          &
      crys_%adot, crys_%ntype, crys_%natom, crys_%nameat,                 &
      crys_%rat, crys_%atmass, crys_%alatt,                               &
-     pwexp_%emax, pwexp_%nbandin, kpoint_%nx, kpoint_%ny,                &
-     kpoint_%nz, kpoint_%sx, kpoint_%sy, kpoint_%sz,                     &
+     pwexp_%emax, pwexp_%nbandin, kpoint_%mpgrid, kpoint_%mpshift,       &
      .FALSE., .TRUE.,                                                    &
      dims_%mxdtyp, dims_%mxdatm)
 

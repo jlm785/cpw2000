@@ -70,7 +70,7 @@ subroutine move_lbfgs_call(energy, rat, force, adot, stress,             &
 
 ! output:
 
-  integer, intent(out)            ::  iconv                              !<  status of minimization: success=0, failure=-1,tryagain=1
+  integer, intent(out)            ::  iconv                              !<  converged=1 (or WARNING, no progress), continue=0, restart=-1 (call again with istmin = 0)
 
 ! scratch
 

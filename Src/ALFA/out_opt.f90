@@ -17,7 +17,7 @@
 !>
 !>  \author       Carlos Loia reis, Jose Luis Martins
 !>  \version      5.13
-!>  \date         7 June 2020. 16 October 2026.
+!>  \date         7 June 2020. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine out_opt(diag_type, lworkers,                                  &
@@ -44,6 +44,7 @@ subroutine out_opt(diag_type, lworkers,                                  &
 ! pot_local with name of the quantity (printing). 12 October 2026. JLM+claude
 ! esmear = 0 in h_kb_dia_all (no kinetic energy smearing in post-processing). 15 October 2026. JLM+claude
 ! Several atomic basis sets, n_bsets, jbset, mxdset. 16 October 2026. JLM+claude WARNING NEW API
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
 
   implicit none
@@ -161,6 +162,7 @@ subroutine out_opt(diag_type, lworkers,                                  &
 ! local variables
 
   integer                            ::  mxdscr                          !  array dimension for screening potential
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
 
   integer                            ::  mxddim                          !  array dimension for the hamiltonian
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
@@ -293,7 +295,12 @@ subroutine out_opt(diag_type, lworkers,                                  &
   endif
 
 
-  call size_mxdnrk(nx,ny,nz, sx,sy,sz, adot, ntrans, mtrx,               &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call size_mxdnrk(nx,ny,nz, sx,sy,sz, kmat, adot, ntrans, mtrx,         &
   mxdnrk)
 
   allocate(kmap(3,nx,ny,nz))
@@ -302,7 +309,7 @@ subroutine out_opt(diag_type, lworkers,                                  &
   allocate(rk(3,mxdnrk))
   allocate(wgk(mxdnrk))
 
-  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                          &
+  call int_pnt(nbandi, nx,ny,nz, sx,sy,sz, kmat, ipr,                    &
     adot, ntrans, mtrx,                                                  &
     nrk, rk, wgk, nband, indk, kmap,                                     &
     mxdnrk, mxdbnd)

@@ -16,16 +16,17 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 November 2020.
+!>  \date         12 November 2020. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                &
+subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz, kmat,          &
     adot,                                                                &
     nrk, rk, wgk, dkg,                                                   &
     mxdnrk)
 
 ! Extracted from int_pnt. 12 November 2020. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude WARNING NEW API
 
 ! nx, ny, and nz are the number of points in the three
 ! directions dermined by the lattice wave vectors. sx, sy, and
@@ -46,6 +47,7 @@ subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                &
   real(REAL64), intent(in)        ::  sx                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 1
   real(REAL64), intent(in)        ::  sy                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 2
   real(REAL64), intent(in)        ::  sz                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 3
+  integer, intent(in)             ::  kmat(3,3)                          !<  k-point = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz), identity for the usual mesh
   integer, intent(in)             ::  ipr                                !<  controls printing (0,1,2). Higher value for more details
   real(REAL64), intent(in)        ::  adot(3,3)                          !<  metric in direct space
 
@@ -73,6 +75,12 @@ subroutine print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                &
      & " parameters :")') nrk
     write(6,'(4x,"n =",3i5,6x,"s =",3f6.2,6x,"nb =",i5)')                &
                nx,ny,nz,sx,sy,sz,nbandi
+    if(kmat(1,1) /= 1 .or. kmat(2,2) /= 1 .or. kmat(3,3) /= 1 .or.       &
+       kmat(1,2) /= 0 .or. kmat(1,3) /= 0 .or. kmat(2,3) /= 0 .or.       &
+       kmat(2,1) /= 0 .or. kmat(3,1) /= 0 .or. kmat(3,2) /= 0) then
+      write(6,'(4x,"k-point = kmat (n + s)/n  with kmat =",3(3x,3i4))')  &
+               ((kmat(i,j),j=1,3),i=1,3)
+    endif
     write(6,*)
   endif
 

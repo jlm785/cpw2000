@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and many others
 !>  \version      5.13
-!>  \date         November   2019, 16 October 2026.
+!>  \date         November   2019, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 module cpw_variables
@@ -28,6 +28,7 @@ module cpw_variables
 ! pwexp_%esmear, smearing of the kinetic energy cutoff. 15 October 2026. JLM+claude
 ! filename_%file_restart, filename_%iotape_restart. 16 October 2026. JLM+claude
 ! atorb_t with several atomic basis sets (old new_atorb_t), jbset. 16 October 2026. JLM+claude
+! kpoint_%mpgrid, kpoint_%mpshift, kpoint_%kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude
 
 
   implicit none
@@ -260,8 +261,12 @@ module cpw_variables
 
   type  ::  kpoint_t
 
-    integer                            ::  nx, ny, nz                    !<  size of the integration mesh in k-space (nx*ny*nz)
-    real(REAL64)                       ::  sx, sy, sz                    !<  offset of the integration mesh (usually 0.5)
+    integer                            ::  mpgrid(3,3)                   !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+    real(REAL64)                       ::  mpshift(3)                    !<  shift of the Monkhorst-Pack mesh in units of the reciprocal vectors of the supercell
+
+    integer                            ::  nx, ny, nz                    !<  size of the integration mesh in k-space (nx*ny*nz), in box coordinates (see kgrid_box)
+    real(REAL64)                       ::  sx, sy, sz                    !<  offset of the integration mesh (usually 0.5), in box coordinates
+    integer                            ::  kmat(3,3)                     !<  rk = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz), identity for a diagonal mpgrid
 
     integer                            ::  nrk                           !<  number of k-points for integration in the irreducible wedge of the brillouin zone
     real(REAL64), allocatable          ::  rk(:,:)                       !<  j-th component (reciprocal lattice coordinates) of the i-th k-point in the integration mesh

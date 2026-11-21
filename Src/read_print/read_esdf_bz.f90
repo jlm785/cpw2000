@@ -16,16 +16,17 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         16 June 2017.
+!>  \date         16 June 2017. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf_bz(ipr,                                             &
-   emax, nbandin, nx,ny,nz, sx,sy,sz, lbz)
+   emax, nbandin, mpgrid, mpshift, lbz)
 
 ! Written June 16, 2017. jlm
 ! Modified, documentation, August 10 2019. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Indentation, 28 September 2026. JLM
+! Off-diagonal elements of kgrid_Monkhorst_Pack, mpgrid, mpshift. 19 November 2026. JLM+claude WARNING NEW API
 
 
 
@@ -46,12 +47,8 @@ subroutine read_esdf_bz(ipr,                                             &
 
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
 
-  integer, intent(out)               ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
-  integer, intent(out)               ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
-  integer, intent(out)               ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
-  real(REAL64), intent(out)          ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
-  real(REAL64), intent(out)          ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
-  real(REAL64), intent(out)          ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
+  integer, intent(out)               ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(out)          ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell (usually 0.5)
 
   integer, intent(out)               ::  nbandin                         !<  target for number of bands
   logical, intent(out)               ::  lbz                             !<  indicates if Brillouin Zone data was successfully read.
@@ -59,9 +56,9 @@ subroutine read_esdf_bz(ipr,                                             &
 ! local variables
 
   integer                    ::  nlines
-  integer                    ::  nmat(3,3)
-  real(REAL64)               ::  sxyz(3)
   integer                    ::  ioerr
+  logical                    ::  ldiag
+  integer                    ::  idet
 
 ! parameters
 
@@ -156,7 +153,7 @@ subroutine read_esdf_bz(ipr,                                             &
     ioerr = 0
     do i=1,nlines
 
-      read(block_data(i),*,iostat=ioerr) (nmat(i,j),j=1,3),sxyz(i)
+      read(block_data(i),*,iostat=ioerr) (mpgrid(i,j),j=1,3),mpshift(i)
 
       if(ioerr /= 0) then
         write(6,*)
@@ -169,49 +166,48 @@ subroutine read_esdf_bz(ipr,                                             &
 
     enddo
 
-    nx = nmat(1,1)
-    ny = nmat(2,2)
-    nz = nmat(3,3)
+!   line i is the supercell vector i in units of the lattice vectors (as in siesta)
 
-    sx = sxyz(1)
-    sy = sxyz(2)
-    sz = sxyz(3)
+    ldiag = .TRUE.
+    do i = 1,3
+    do j = 1,3
+      if(i /= j .and. mpgrid(i,j) /= 0) ldiag = .FALSE.
+    enddo
+    enddo
 
-    if(nmat(1,2) /= 0 .OR. nmat(1,3) /= 0 .OR. nmat(2,1) /= 0 .OR.       &
-       nmat(2,3) /= 0 .OR. nmat(3,1) /= 0 .OR. nmat(3,1) /= 0) then
-      write(6,*)
-      write(6,*) '   WARNING '
-      write(6,*) '   in kgrid_Monkhorst_Pack non-zero off-diagonal'
-      write(6,*) '   values are not implemented'
-      write(6,*)
-      write(6,'(3i6)') (nmat(1,j),j=1,3)
-      write(6,'(3i6)') (nmat(2,j),j=1,3)
-      write(6,'(3i6)') (nmat(3,j),j=1,3)
-      write(6,*)
-    endif
+    if(ldiag) then
 
-    if(nx < 1) then
-      nx = 1
-      write(6,*)
-      write(6,*) '   WARNING'
-      write(6,*)
-      write(6,*) '   nx was 0 or negative. Set to 1.'
-    endif
+      do i = 1,3
+        if(mpgrid(i,i) < 1) then
+          mpgrid(i,i) = 1
+          write(6,*)
+          write(6,*) '   WARNING'
+          write(6,*)
+          write(6,'("    diagonal element ",i1," of kgrid_Monkhorst_Pack ",  &
+             &      "was 0 or negative. Set to 1.")') i
+        endif
+      enddo
 
-    if(ny < 1) then
-      ny = 1
-      write(6,*)
-      write(6,*) '   WARNING'
-      write(6,*)
-      write(6,*) '   ny was 0 or negative. Set to 1.'
-    endif
+    else
 
-    if(nz < 1) then
-      nz = 1
-      write(6,*)
-      write(6,*) '   WARNING'
-      write(6,*)
-      write(6,*) '   nz was 0 or negative. Set to 1.'
+      idet = mpgrid(1,1)*(mpgrid(2,2)*mpgrid(3,3) - mpgrid(2,3)*mpgrid(3,2))  &
+           - mpgrid(1,2)*(mpgrid(2,1)*mpgrid(3,3) - mpgrid(2,3)*mpgrid(3,1))  &
+           + mpgrid(1,3)*(mpgrid(2,1)*mpgrid(3,2) - mpgrid(2,2)*mpgrid(3,1))
+
+      if(idet == 0) then
+        write(6,*)
+        write(6,*) '    Stopped in read_esdf_bz'
+        write(6,*) '    the kgrid_Monkhorst_Pack matrix is singular'
+        write(6,*)
+        write(6,'(3i6)') (mpgrid(1,j),j=1,3)
+        write(6,'(3i6)') (mpgrid(2,j),j=1,3)
+        write(6,'(3i6)') (mpgrid(3,j),j=1,3)
+        write(6,*)
+
+        stop
+
+      endif
+
     endif
 
   else
@@ -222,13 +218,13 @@ subroutine read_esdf_bz(ipr,                                             &
     write(6,*)
     write(6,*) '   Using default values for BZ integration'
 
-    nx = 4
-    ny = 4
-    nz = 4
-
-    sx = 0.5
-    sy = 0.5
-    sz = 0.5
+    do j = 1,3
+    do i = 1,3
+      mpgrid(i,j) = 0
+    enddo
+    mpgrid(j,j) = 4
+    mpshift(j) = 0.5
+    enddo
   endif
 
 
@@ -241,8 +237,10 @@ subroutine read_esdf_bz(ipr,                                             &
     write(6,*)
     write(6,'("   The value of emax is: ",e12.3)') emax
     write(6,'("   The value of nbandin is: ",i8)') nbandin
-    write(6,'("   The value of nx,ny,nz is: ",3i5)') nx,ny,nz
-    write(6,'("   The value of sx,sy,sz is: ",3f10.3)') sx,sy,sz
+    write(6,*) '  The kgrid_Monkhorst_Pack supercell and shift are:'
+    do i = 1,3
+      write(6,'(5x,3i6,f10.3)') (mpgrid(i,j),j=1,3), mpshift(i)
+    enddo
     write(6,*)
     write(6,*)
   endif

@@ -26,20 +26,25 @@
 !>           (only used in development, not recognized)
 !>  2026.1   core kinetic energy density, vtau for the generalized
 !>           Kohn-Sham meta-GGA (October 2026)
+!>  2026.2   mpgrid, mpshift at the end of the fifth record, general
+!>           Monkhorst-Pack mesh (November 2026)
 !>
+!>  nx,ny,nz,sx,sy,sz are the box of the mesh (see kgrid_box).  For files
+!>  before 2026.2 the mesh is diagonal, mpgrid = diag(nx,ny,nz) and
+!>  mpshift = (sx,sy,sz).
 !>  The atomic basis set is written since 2014.  Before 2021.0 the
 !>  maximum number of atomic orbitals mxdlao is not in the file
 !>  and is taken as 4 (hardcoded value until December 2015).
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         May 16, 2014, 13 October 2026.
+!>  \date         May 16, 2014, 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
          pwline, title, subtitle, meta_cpw2000,                          &
          author, flgscf, flgdal, emax, teleck,                           &
-         nx,ny,nz, sx,sy,sz, nband, alatt, efermi,                       &
+         nx,ny,nz, sx,sy,sz, mpgrid, mpshift, nband, alatt, efermi,      &
          ng, ns,                                                         &
          ntrans, mtrx, tnp,                                              &
          adot, ntype, natom, nameat, rat,                                &
@@ -61,6 +66,7 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
 ! Modified, printing of the information about the xc functional. 25 November 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! fversion, version of the file format. 13 October 2026. JLM+claude WARNING NEW API
+! mpgrid, mpshift, version 2026.2. 20 November 2026. JLM+claude WARNING NEW API
 
 
   implicit none
@@ -79,7 +85,7 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
 
 ! output
 
-  character(len=6), intent(out)      ::  fversion                        !<  version of the file format (2013.0, ..., 2026.1)
+  character(len=6), intent(out)      ::  fversion                        !<  version of the file format (2013.0, ..., 2026.2)
 
   character(len=60), intent(out)     ::  pwline                          !<  identification of the calculation
   character(len=50), intent(out)     ::  title                           !<  title for plots
@@ -114,6 +120,8 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
   real(REAL64), intent(out)          ::  sx                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 1
   real(REAL64), intent(out)          ::  sy                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 2
   real(REAL64), intent(out)          ::  sz                              !<  shift of points in division of Brillouin zone for integration (Monkhorst-Pack), direction 3
+  integer, intent(out)               ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(out)          ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell
   real(REAL64), intent(out)          ::  alatt                           !<  lattice constant
   real(REAL64), intent(out)          ::  efermi                          !<  eigenvalue of highest occupied state (T=0) or fermi energy (T/=0), Hartree
 
@@ -126,6 +134,7 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
   character(len=140)  ::  line140
   character(len=250)  ::  line250
   integer             ::  ioerr, ioerr2
+  logical             ::  ldiag
 
 ! counters
 
@@ -246,20 +255,50 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
 
 ! backcompatibilty blues
 
-  read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
-
-  if(ioerr == 0) then
-    if(fversion == '2021.0') fversion = '2021.1'
-  else
-    efermi = -1000.0
-    backspace(io)
-    read(io,iostat = ioerr2) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
-    if(ioerr2 /= 0) then
-      nband = 0
-      alatt = -1.0
+  ioerr = 1
+  if(fversion == '2026.1') then
+    read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz,            &
+          nband, alatt, efermi,                                          &
+          ((mpgrid(i,j),j=1,3),i=1,3), (mpshift(i),i=1,3)
+    if(ioerr == 0) then
+      fversion = '2026.2'
+    else
       backspace(io)
-      read(io) emax, teleck, nx,ny,nz, sx,sy,sz
     endif
+  endif
+
+  if(fversion /= '2026.2') then
+
+    read(io,iostat = ioerr) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt, efermi
+
+    if(ioerr == 0) then
+      if(fversion == '2021.0') fversion = '2021.1'
+    else
+      efermi = -1000.0
+      backspace(io)
+      read(io,iostat = ioerr2) emax, teleck, nx,ny,nz, sx,sy,sz, nband, alatt
+      if(ioerr2 /= 0) then
+        nband = 0
+        alatt = -1.0
+        backspace(io)
+        read(io) emax, teleck, nx,ny,nz, sx,sy,sz
+      endif
+    endif
+
+!   older files have a diagonal mesh
+
+    do j = 1,3
+    do i = 1,3
+      mpgrid(i,j) = 0
+    enddo
+    enddo
+    mpgrid(1,1) = nx
+    mpgrid(2,2) = ny
+    mpgrid(3,3) = nz
+    mpshift(1) = sx
+    mpshift(2) = sy
+    mpshift(3) = sz
+
   endif
 
 
@@ -270,11 +309,26 @@ subroutine pw_rho_v_in_crystal_calc(io, fversion,                        &
     write(6,*)
     write(6,'("  The electronic temperature was ",f12.3," K")') teleck
   endif
+  ldiag = .TRUE.
+  do j = 1,3
+  do i = 1,3
+    if(i /= j .and. mpgrid(i,j) /= 0) ldiag = .FALSE.
+  enddo
+  enddo
+
   write(6,*)
-  write(6,'("  The Brillouin zone integrations were done on a ",         &
-    &   "Monkhorst-Pack grid of",i5," x ",i5," x ",i5,                   &
-    &   "    points")') nx,ny,nz
-  write(6,'("  with a shift of",3f10.3)') sx,sy,sz
+  if(ldiag) then
+    write(6,'("  The Brillouin zone integrations were done on a ",       &
+      &   "Monkhorst-Pack grid of",i5," x ",i5," x ",i5,                 &
+      &   "    points")') nx,ny,nz
+    write(6,'("  with a shift of",3f10.3)') sx,sy,sz
+  else
+    write(6,'("  The Brillouin zone integrations were done on a ",       &
+      &   "general Monkhorst-Pack grid (supercell, shift)")')
+    do i = 1,3
+      write(6,'(8x,3i6,3x,f10.3)') (mpgrid(i,j),j=1,3), mpshift(i)
+    enddo
+  endif
 
 ! In current code line250 == meta_cpw2000.   However that was not true
 ! in earlier codes.  Back compatibility makes this awkward.

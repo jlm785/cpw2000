@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         12 May 2026. 13 October 2026.
+!>  \date         12 May 2026. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -29,6 +29,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
 ! renamed occp to occ_x_wgk.  28 September 2026. JLM+claude
 ! tau_by_fft_stress. 1 October 2026. JLM+claude
 ! dtau_dadot (d tau / d adot at fixed volume) instead of dtau_dbdot. 13 October 2026. JLM+claude   WARNING NEW API
+! kpoint_%kmat to tau_by_fft_stress. 19 November 2026. JLM+claude
 
 
   use cpw_variables
@@ -153,7 +154,7 @@ subroutine cpw_scf_loop_rho(ektot, ekl, lxctau, lxcmgga, tau,            &
 
         call tau_by_fft_stress(tauk, .TRUE., kmscr, dtau_k_dadot,        &
             kpoint_%nx, kpoint_%ny, kpoint_%nz,                          &
-            kpoint_%sx, kpoint_%sy, kpoint_%sz,                          &
+            kpoint_%sx, kpoint_%sy, kpoint_%sz, kpoint_%kmat,            &
             mtxd, neig, occ_x_wgk,                                       &
             hamallk_%isort_allk(:,irk), psiallk_%psi_allk(:,:,irkpsi),   &
             rkpt, irk, crys_%adot,                                       &

@@ -13,14 +13,15 @@
 
 !>  writes the pwscf.in file for use in QuantumEspresso
 !>
+!>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         15 October 2018, 25 February 2025.
+!>  \version      5.13
+!>  \date         15 October 2018, 20 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
     adot, ntype, natom, nameat, rat, alatt,                              &
-    emax, nbandin, nx,ny,nz, sx,sy,sz,                                   &
+    emax, nbandin, mpgrid, mpshift,                                      &
     mxdtyp, mxdatm)
 
 ! Written 15 October 2018.
@@ -29,6 +30,18 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
 ! Removed unused variables, 14 November 2024. JLM
 ! Extracted pw2o_qe_convert_crys_struct. 25 February 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! mpgrid, mpshift, explicit list of k-points for a general mesh. 20 November 2026. JLM+claude WARNING NEW API
+! K_POINTS automatic only if the QE and cpw lattice vectors are the same. 20 November 2026. JLM+claude
+
+
+! A diagonal Monkhorst-Pack mesh with shifts 0 or 1/2 is written
+! as K_POINTS automatic if the QE lattice vectors are the same as
+! the cpw lattice vectors.  Other meshes are written as an explicit
+! list (K_POINTS crystal, in the QE lattice vectors) of the points
+! in the irreducible wedge of the lattice point group (holohedry),
+! as QE expects, with weights normalized to one.
+
+
 
   implicit none
 
@@ -52,16 +65,41 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
   real(REAL64), intent(in)           ::  emax                            !< kinetic energy cutoff of plane wave expansion (Hartree).
   integer, intent(in)                ::  nbandin                         !< target for number of bands
 
-  integer, intent(in)                ::  nx                              !< size of the integration mesh in k-space (nx*ny*nz), direction 1
-  integer, intent(in)                ::  ny                              !< size of the integration mesh in k-space (nx*ny*nz), direction 2
-  integer, intent(in)                ::  nz                              !< size of the integration mesh in k-space (nx*ny*nz), direction 3
-  real(REAL64), intent(in)           ::  sx                              !< offset of the integration mesh (usually 0.5), direction 1
-  real(REAL64), intent(in)           ::  sy                              !< offset of the integration mesh (usually 0.5), direction 2
-  real(REAL64), intent(in)           ::  sz                              !< offset of the integration mesh (usually 0.5), direction 3
+  integer, intent(in)                ::  mpgrid(3,3)                     !< supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(in)           ::  mpshift(3)                      !< shift of the mesh in units of the reciprocal vectors of the supercell
 
 ! allocatable array
 
   real(REAL64), allocatable          ::  rat_qe(:,:)
+
+  real(REAL64), allocatable          ::  rk(:,:)                         !  k-points in the irreducible wedge of the holohedry (cpw lattice coordinates)
+  real(REAL64), allocatable          ::  wgk(:)                          !  weights of the k-points
+  integer, allocatable               ::  nband(:)                        !  not used
+  integer, allocatable               ::  indk(:,:)                       !  not used
+  integer, allocatable               ::  kmap(:,:,:,:)                   !  not used
+
+! k-point mesh
+
+  integer                            ::  nx, ny, nz                      !  box of the mesh (see kgrid_box)
+  real(REAL64)                       ::  sx, sy, sz                      !  shifts of the box
+  integer                            ::  kmat(3,3)                       !  rk = kmat (((i-1)+sx)/nx, ...)
+  logical                            ::  lauto                           !  mesh can be written as K_POINTS automatic
+  integer                            ::  mxdnrk, nrk
+  integer                            ::  norbit                          !  sum of the sizes of the orbits of the irreducible points
+  real(REAL64)                       ::  sumw
+  real(REAL64)                       ::  tqe(3,3)                        !  QE lattice vectors in cpw lattice coordinates
+  real(REAL64)                       ::  avinv(3,3)                      !  inverse of avec
+  real(REAL64)                       ::  vcell
+  real(REAL64)                       ::  xkqe(3)
+
+! lattice point group (holohedry)
+
+  integer                            ::  ntrh                            !  number of operations of the holohedry
+  integer                            ::  mtrxh(3,3,48)                   !  operations in reciprocal lattice coordinates
+  real(REAL64)                       ::  tnph(3,48)                      !  zero
+  real(REAL64)                       ::  adoth(3,3)                      !  copy of adot (sym_identify symmetrizes it)
+  integer                            ::  nath(1)                         !  one atom ...
+  real(REAL64)                       ::  rath(3,1,1)                     !  ... at the origin
 
 ! metric variables
 
@@ -83,7 +121,14 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
 
 ! counters
 
-  integer       ::  nt, i, j, k
+  integer       ::  nt, i, j, k, n
+
+! parameters
+
+  real(REAL64), parameter ::  ZERO = 0.0_REAL64, UM = 1.0_REAL64
+  real(REAL64), parameter ::  EPS = 1.0E-8_REAL64
+  real(REAL64), parameter ::  TOLSYM = 1.0E-5_REAL64
+  real(REAL64), parameter ::  TOLT = 1.0E-4_REAL64
 
 
   mxdnat = 0
@@ -174,14 +219,171 @@ subroutine pw2o_qe_pwscf_in(meta_pwdat,                                  &
   enddo
   enddo
 
-  write(io,'("K_POINTS {automatic}")')
-  write(io,'(6(2x,i6))') nx,ny,nz,nint(2*sx),nint(2*sy),nint(2*sz)
+! k-points
+
+  call kgrid_box(mpgrid, mpshift, nx, ny, nz, sx, sy, sz, kmat)
+
+! QE lattice vectors in cpw lattice coordinates, tqe = avec^-1 avec_qe
+
+  avinv(1,1) = avec(2,2)*avec(3,3) - avec(3,2)*avec(2,3)
+  avinv(1,2) = avec(3,2)*avec(1,3) - avec(1,2)*avec(3,3)
+  avinv(1,3) = avec(1,2)*avec(2,3) - avec(2,2)*avec(1,3)
+  avinv(2,1) = avec(2,3)*avec(3,1) - avec(3,3)*avec(2,1)
+  avinv(2,2) = avec(3,3)*avec(1,1) - avec(1,3)*avec(3,1)
+  avinv(2,3) = avec(1,3)*avec(2,1) - avec(2,3)*avec(1,1)
+  avinv(3,1) = avec(2,1)*avec(3,2) - avec(3,1)*avec(2,2)
+  avinv(3,2) = avec(3,1)*avec(1,2) - avec(1,1)*avec(3,2)
+  avinv(3,3) = avec(1,1)*avec(2,2) - avec(2,1)*avec(1,2)
+
+  vcell = avec(1,1)*avinv(1,1) + avec(2,1)*avinv(1,2) + avec(3,1)*avinv(1,3)
+
+  do j = 1,3
+  do i = 1,3
+    tqe(i,j) = ( avinv(i,1)*avec_qe(1,j) + avinv(i,2)*avec_qe(2,j) +    &
+                 avinv(i,3)*avec_qe(3,j) ) / vcell
+  enddo
+  enddo
+
+! K_POINTS automatic is along the QE lattice vectors.  It is used
+! if they are the cpw lattice vectors and the mesh is a usual grid.
+
+  lauto = .TRUE.
+  do j = 1,3
+  do i = 1,3
+    if(i /= j .and. abs(tqe(i,j)) > TOLT) lauto = .FALSE.
+    if(i == j .and. abs(tqe(i,j) - UM) > TOLT) lauto = .FALSE.
+  enddo
+  enddo
+  do j = 1,3
+  do i = 1,3
+    if(i /= j .and. kmat(i,j) /= 0) lauto = .FALSE.
+    if(i == j .and. kmat(i,j) /= 1) lauto = .FALSE.
+  enddo
+  enddo
+  if(abs(sx) > EPS .and. abs(sx - UM/2) > EPS) lauto = .FALSE.
+  if(abs(sy) > EPS .and. abs(sy - UM/2) > EPS) lauto = .FALSE.
+  if(abs(sz) > EPS .and. abs(sz - UM/2) > EPS) lauto = .FALSE.
+
+  if(lauto) then
+
+    write(io,'("K_POINTS {automatic}")')
+    write(io,'(6(2x,i6))') nx,ny,nz,nint(2*sx),nint(2*sy),nint(2*sz)
+
+  else
+
+!   holohedry, lattice with one atom at the origin
+
+    adoth = adot
+    nath(1) = 1
+    rath(1,1,1) = ZERO
+    rath(2,1,1) = ZERO
+    rath(3,1,1) = ZERO
+
+    call sym_identify(1, 0, TOLSYM, ntrh, mtrxh, tnph,                   &
+        adoth, 1, nath, rath, 1, 1)
+
+!   irreducible k-points of the holohedry
+
+    call size_mxdnrk(nx,ny,nz, sx,sy,sz, kmat, adot, ntrh, mtrxh,        &
+        mxdnrk)
+
+    allocate(rk(3,mxdnrk))
+    allocate(wgk(mxdnrk))
+    allocate(nband(mxdnrk))
+    allocate(indk(6,mxdnrk))
+    allocate(kmap(3,nx,ny,nz))
+
+    call int_pnt(1, nx,ny,nz, sx,sy,sz, kmat, 0, adot, ntrh, mtrxh,      &
+        nrk, rk, wgk, nband, indk, kmap, mxdnrk, 1)
+
+!   is the mesh invariant under the holohedry?
+
+    norbit = 0
+    do n = 1,nrk
+      call orbit_size(rk(:,n), ntrh, mtrxh, k)
+      norbit = norbit + k
+    enddo
+
+    if(norbit /= nx*ny*nz) then
+      write(6,*)
+      write(6,*) '   WARNING:  the k-point mesh is not invariant under the'
+      write(6,*) '   point group of the lattice.  QE will use the mesh'
+      write(6,*) '   symmetrized by the lattice point group, with ',norbit
+      write(6,*) '   instead of ',nx*ny*nz,' points.  cpw used the same'
+      write(6,*) '   mesh only if the crystal has the symmetry of the lattice.'
+      write(6,*)
+    endif
+
+    sumw = ZERO
+    do n = 1,nrk
+      sumw = sumw + wgk(n)
+    enddo
+
+    write(io,'("K_POINTS {crystal}")')
+    write(io,'(2x,i8)') nrk
+    do n = 1,nrk
+      do j = 1,3
+        xkqe(j) = tqe(1,j)*rk(1,n) + tqe(2,j)*rk(2,n) + tqe(3,j)*rk(3,n)
+      enddo
+      write(io,'(4(2x,f16.12))') (xkqe(j),j=1,3), wgk(n)/sumw
+    enddo
+
+    deallocate(rk)
+    deallocate(wgk)
+    deallocate(nband)
+    deallocate(indk)
+    deallocate(kmap)
+
+  endif
 
   close(unit = io)
 
   deallocate(rat_qe)
 
   return
+
+  contains
+
+! number of distinct points in the orbit of k under the operations and inversion (time reversal)
+
+  subroutine orbit_size(xk, nop, mop, norb)
+
+    real(REAL64), intent(in)   ::  xk(3)
+    integer, intent(in)        ::  nop
+    integer, intent(in)        ::  mop(3,3,48)
+    integer, intent(out)       ::  norb
+
+    real(REAL64)   ::  xorb(3,96), xt(3), d
+    logical        ::  lnew
+    integer        ::  iop, isg, m, l
+
+    norb = 0
+    do iop = 1,nop
+    do isg = 1,-1,-2
+      do l = 1,3
+        xt(l) = isg*(mop(l,1,iop)*xk(1) + mop(l,2,iop)*xk(2) + mop(l,3,iop)*xk(3))
+      enddo
+      lnew = .TRUE.
+      do m = 1,norb
+        d = ZERO
+        do l = 1,3
+          d = max(d, abs(xt(l) - xorb(l,m) - nint(xt(l) - xorb(l,m))))
+        enddo
+        if(d < EPS) then
+          lnew = .FALSE.
+
+          exit
+
+        endif
+      enddo
+      if(lnew) then
+        norb = norb + 1
+        xorb(:,norb) = xt(:)
+      endif
+    enddo
+    enddo
+
+  end subroutine orbit_size
 
 end subroutine pw2o_qe_pwscf_in
 

@@ -17,13 +17,15 @@
 !>  rediscovered by Monkhorst-Pack in the context
 !>  of electronic structure calculations.
 !>  Symmetry is used to reduce the total number of k-points
+!>  The mesh is  rk = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz),
+!>  kmat is the identity except for general meshes (see kgrid_box).
 !>
 !>  \author       Sverre Froyen Jose Luis Martins
 !>  \version      5.13
-!>  \date         1 June 1987. 11 September 2015.
+!>  \date         1 June 1987. 11 September 2015, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
-subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
+subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, kmat, ipr,                &
       adot,                                                              &
       ntrans, mtrx,                                                      &
       nrk, rk, wgk, nband, indk,  kmap,                                  &
@@ -43,6 +45,7 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
 ! Modified, documentation, January 2020. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
 ! Indentation, 28 September 2026. JLM
+! kmat, general Monkhorst-Pack mesh. 19 November 2026. JLM+claude WARNING NEW API
 
 ! nbandi is the number of eigenvalues to be computed
 ! nx, ny, and nz are the number of points in the three
@@ -65,6 +68,7 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
   real(REAL64), intent(in)        ::  sx                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 1
   real(REAL64), intent(in)        ::  sy                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 2
   real(REAL64), intent(in)        ::  sz                                 !<  offset of the integration mesh (0.5 for Monkhorst-Pack, 0.0 for DOS), direction 3
+  integer, intent(in)             ::  kmat(3,3)                          !<  k-point = kmat (((i-1)+sx)/nx, ((j-1)+sy)/ny, ((k-1)+sz)/nz), identity for the usual mesh
   integer, intent(in)             ::  ipr                                !<  controls printing (0,1,2). Higher value for more details
   real(REAL64), intent(in)        ::  adot(3,3)                          !<  metric in direct space
   integer, intent(in)             ::  ntrans                             !<  number of symmetry operations in the factor group
@@ -102,6 +106,8 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
   real(REAL64)  ::  diff
   logical       ::  lsame, lsame2
   real(REAL64)  ::  xt(3),xtmod
+  real(REAL64)  ::  xb(3)
+  logical       ::  lident
 
   integer       ::  mxdpnt
 
@@ -141,6 +147,14 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
 ! kmark is used to mark reducible k points and also to
 ! map reducible to irreducible k points
 
+  lident = .TRUE.
+  do j = 1,3
+  do i = 1,3
+    if(i == j .and. kmat(i,j) /= 1) lident = .FALSE.
+    if(i /= j .and. kmat(i,j) /= 0) lident = .FALSE.
+  enddo
+  enddo
+
   dx = UM / nx
   dy = UM / ny
   dz = UM / nz
@@ -152,6 +166,13 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
     xk(1,n) = ((i-1) + sx) * dx
     xk(2,n) = ((j-1) + sy) * dy
     xk(3,n) = ((k-1) + sz) * dz
+    if(.not. lident) then
+      xb(:) = xk(:,n)
+      do l = 1,3
+        xk(l,n) = kmat(l,1)*xb(1) + kmat(l,2)*xb(2) + kmat(l,3)*xb(3)
+        xk(l,n) = xk(l,n) - floor(xk(l,n))
+      enddo
+    endif
     kmark(n) = n
     iback(1,n) = i
     iback(2,n) = j
@@ -398,7 +419,7 @@ subroutine int_pnt(nbandi, nx,ny,nz, sx,sy,sz, ipr,                      &
 
 ! prints the result
 
-  call print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz,                    &
+  call print_int_pnt(ipr, nbandi, nx,ny,nz, sx,sy,sz, kmat,              &
       adot,                                                              &
       nrk, rk, wgk, dkg,                                                 &
       mxdnrk)

@@ -16,7 +16,7 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         November 2019, 18 October 2026.
+!>  \date         November 2019, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine cpw_read_data(fcpwin, vdriv,                                  &
@@ -33,6 +33,7 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
 ! filename_%file_restart, filename_%iotape_restart to read_esdf. 16 October 2026. JLM+claude
 ! atorb_%jbset, choice of atomic basis set, read_esdf_atorb_choice. 18 October 2026. JLM+claude
 ! Old PW.DAT format removed (fpwdat, iopw), jbset from read_esdf. 18 October 2026. JLM+claude WARNING NEW API
+! General Monkhorst-Pack mesh, kgrid_box. 19 November 2026. JLM+claude
 
   use cpw_variables
 
@@ -111,8 +112,7 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
       crys_%adot, crys_%ntype, crys_%natom, crys_%nameat, crys_%rat,     &
           crys_%atmass, crys_%alatt,                                     &
       pwexp_%emax, pwexp_%esmear, pwexp_%nbandin,                        &
-      kpoint_%nx, kpoint_%ny, kpoint_%nz, kpoint_%sx, kpoint_%sy,        &
-          kpoint_%sz,                                                    &
+      kpoint_%mpgrid, kpoint_%mpshift,                                   &
       meta_cpw2000,                                                      &
       symkip, symtol,                                                    &
       xc_%author, xc_%tblaha,                                            &
@@ -134,6 +134,12 @@ subroutine cpw_read_data(fcpwin, vdriv,                                  &
 
 
   meta_pwdat = meta_cpw2000
+
+! box mesh equivalent to the general Monkhorst-Pack mesh
+
+  call kgrid_box(kpoint_%mpgrid, kpoint_%mpshift,                        &
+      kpoint_%nx, kpoint_%ny, kpoint_%nz,                                &
+      kpoint_%sx, kpoint_%sy, kpoint_%sz, kpoint_%kmat)
 
 
 ! prints type of calculation near the top of output file

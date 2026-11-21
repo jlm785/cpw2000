@@ -463,8 +463,8 @@ subroutine gen_latt(ioreplay, alatt, iop, vec, avec, conv)
       write(6,*) ' body centered cubic '
 
       write(6,*) ' enter the lattice constant a'
-      write(ioreplay,'(1x,f9.4,5x,"latt")') a
       read(5,*) a
+      write(ioreplay,'(1x,f9.4,5x,"latt")') a
 
       alatt = a
       do i=1,3

@@ -49,8 +49,11 @@ subroutine sym_adot(adot, ntrans, mtrx)
   integer       ::  i, j, k, l, n
 
 
-! An operation leaves the metric invariant if  m^-1 adot (m^-1)^T = adot.
-! The inverses are also in the group, so the sum can be done with m.
+! mtrx acts on reciprocal lattice coordinates.  The same operation in direct
+! lattice coordinates is  d = (mtrx^-1)^T,  as G.r is invariant.  In lattice
+! coordinates mtrx is not orthogonal,  mtrx^-1 /= mtrx^T  in general.
+! The metric is invariant if  d^T adot d = mtrx^-1 adot (mtrx^-1)^T = adot.
+! The inverses are also in the group, so the sum can be done with mtrx.
 
   do j = 1,3
   do i = 1,3

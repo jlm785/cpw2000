@@ -20,7 +20,7 @@
 !>
 !>  \author       Jose Luis Martins
 !>  \version      5.13
-!>  \date         October 2018, 18 October 2026.
+!>  \date         October 2018, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 program pwdat2cpwin
@@ -28,6 +28,7 @@ program pwdat2cpwin
 ! Written October 2018. JLM
 ! New API of write_cpwout, options from an old cpw.in, size_mxdtyp_mxdatm
 !   and read_data moved here from the library. 18 October 2026. JLM+claude
+! New API of write_cpwout (mpgrid, mpshift). 19 November 2026. JLM+claude
 
   use esdf
 
@@ -56,6 +57,8 @@ program pwdat2cpwin
   integer                            ::  nbandin                         !  target for number of bands
   integer                            ::  nx, ny, nz                      !  size of the integration mesh in k-space (nx*ny*nz)
   real(REAL64)                       ::  sx, sy, sz                      !  offset of the integration mesh (usually 0.5)
+  integer                            ::  mpgrid(3,3)                     !  supercell of the Monkhorst-Pack mesh (lines of kgrid_Monkhorst_Pack)
+  real(REAL64)                       ::  mpshift(3)                      !  shift of the Monkhorst-Pack mesh
 
 ! options
 
@@ -133,9 +136,17 @@ program pwdat2cpwin
 
   fileout = 'cpw_from_pwdat.in'
 
+  mpgrid(:,:) = 0
+  mpgrid(1,1) = nx
+  mpgrid(2,2) = ny
+  mpgrid(3,3) = nz
+  mpshift(1) = sx
+  mpshift(2) = sy
+  mpshift(3) = sz
+
   call write_cpwout(21, fileout, meta_pwdat, flgcal, 'pwdat2cpwin  ',    &
       adot, ntype, natom, nameat, rat, atmass, alatt,                    &
-      emax, nbandin, nx, ny, nz, sx, sy, sz,                             &
+      emax, nbandin, mpgrid, mpshift,                                    &
       lkeat, ltbl,                                                       &
       mxdtyp, mxdatm)
 

@@ -15,13 +15,13 @@
 !>
 !>  \author       Jose Luis Martins and Carlos Loia Reis
 !>  \version      5.13
-!>  \date         5 August 2002. 11 November 2026.
+!>  \date         5 August 2002. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
     flgpsd, flgscf, flgdal, flgmix,                                      &
     adot, ntype, natom, nameat, rat, atmass, alatt,                      &
-    emax, esmear, nbandin, nx, ny, nz, sx, sy, sz,                       &
+    emax, esmear, nbandin, mpgrid, mpshift,                              &
     meta_cpw2000,                                                        &
     symkip, symtol,                                                      &
     author, tblaha, iprglob, itmax, icdiagmax, epscv, epscvao, epspsi,   &
@@ -48,6 +48,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
 ! RSTRT default of esmear from the restart file, file_restart, iotape_restart, EPS. 16 October 2026. JLM+claude WARNING NEW API
 ! Old PW.DAT no longer accepted, lgeom, lbz removed, jbset (read_esdf_atorb_choice). 18 October 2026. JLM+claude WARNING NEW API
 ! ntype passed to read_esdf_filenames (TapeToReadPseudo guard). 11 November 2026. JLM+claude
+! mpgrid, mpshift (general kgrid_Monkhorst_Pack) instead of nx,...,sz. 19 November 2026. JLM+claude WARNING NEW API
 
 
   use esdf
@@ -89,12 +90,8 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   real(REAL64), intent(out)          ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
   real(REAL64), intent(out)          ::  esmear                          !<  smearing of the kinetic energy cutoff (Hartree), no smearing if zero
 
-  integer, intent(out)               ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
-  integer, intent(out)               ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
-  integer, intent(out)               ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
-  real(REAL64), intent(out)          ::  sx                              !<  offset of the integration mesh (usually 0.5), direction 1
-  real(REAL64), intent(out)          ::  sy                              !<  offset of the integration mesh (usually 0.5), direction 2
-  real(REAL64), intent(out)          ::  sz                              !<  offset of the integration mesh (usually 0.5), direction 3
+  integer, intent(out)               ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(out)          ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell (usually 0.5)
 
   integer, intent(out)               ::  nbandin                         !<  target for number of bands
 
@@ -306,7 +303,7 @@ subroutine read_esdf(fname, vdriv, flgcal, flgkeat,                      &
   endif
 
   call read_esdf_bz(ipr,                                                 &
-      emax, nbandin, nx, ny, nz, sx, sy, sz, lbz)
+      emax, nbandin, mpgrid, mpshift, lbz)
 
 ! smearing of the kinetic energy cutoff (see kinetic_smear).  By default
 ! only for runs with variable cell, with the value recommended by ABINIT

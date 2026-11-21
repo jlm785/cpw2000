@@ -19,7 +19,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         November 2018, 4 October 2026.
+!>  \date         November 2018, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
@@ -30,6 +30,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
 ! Documentation, missing or incomplete argument description. 28 September 2026. JLM+claude
 ! Constants updated to CODATA 2022 (HARTREE). 3 October 2026. JLM+claude
 ! Progress print commented. 4 October 2026. JLM+claude
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -84,6 +85,7 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
   integer                            ::  ipr,nrk2
   logical                            ::  lfile
   integer                            ::  nbandi2,nx2,ny2,nz2
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
   real(REAL64)                       ::  sx2,sy2,sz2
   real(REAL64)                       ::  vcell, bdot(3,3)
 
@@ -146,7 +148,12 @@ subroutine ao_interpolation_out_ie(noiData,ztot,adot,ntrans,mtrx)
   allocate(w2(mxdpnt))
 
 
-  call int_pnt(nbandi2, nx2, ny2, nz2, sx2, sy2, sz2, ipr,               &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call int_pnt(nbandi2, nx2, ny2, nz2, sx2, sy2, sz2, kmat, ipr,         &
       adot,                                                              &
       ntrans, mtrx,                                                      &
       nrk2, rk2, w2, nband2, indk2, kmap2,                               &

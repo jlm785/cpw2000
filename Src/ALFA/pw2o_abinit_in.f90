@@ -13,21 +13,30 @@
 
 !>  writes an abinit.in file consistent with the data on PW_RHO_V.DAT
 !>
+!>
 !>  \author       Jose Luis Martins
-!>  \version      5.11
-!>  \date         30 October 2018. 25 February 2025
+!>  \version      5.13
+!>  \date         30 October 2018. 20 November 2026
 !>  \copyright    GNU Public License v2
 
 subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
-    emax, nx,ny,nz,                                                      &
+    emax, mpgrid, mpshift,                                               &
     mxdtyp, mxdatm)
-
 
 ! Written 30 October 2018.
 ! Documentation, 12 february 2021. JLM
 ! Removed unused variables, 14 November 2024. JLM
 ! Cleanup, change of name, 25 February 2025. JLM
 ! Documentation, one argument per declaration. 28 September 2026. JLM+claude
+! mpgrid, mpshift, kptrlatt for a general mesh, shiftk. 20 November 2026. JLM+claude WARNING NEW API
+
+
+! The Monkhorst-Pack mesh is written with ngkpt if it is diagonal and
+! with kptrlatt otherwise.  The columns of kptrlatt (the first three
+! numbers in the input are the first column) are the supercell vectors
+! in reduced coordinates, i.e. the lines of the cpw block, and shiftk
+! is in units of the k-point lattice, as mpshift.
+
 
   implicit none
 
@@ -48,15 +57,15 @@ subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
 
   real(REAL64), intent(in)           ::  emax                            !<  kinetic energy cutoff of plane wave expansion (Hartree).
 
-  integer, intent(in)                ::  nx                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 1
-  integer, intent(in)                ::  ny                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 2
-  integer, intent(in)                ::  nz                              !<  size of the integration mesh in k-space (nx*ny*nz), direction 3
+  integer, intent(in)                ::  mpgrid(3,3)                     !<  supercell of the Monkhorst-Pack mesh,  A_i = sum_j mpgrid(i,j) a_j  (line i of kgrid_Monkhorst_Pack)
+  real(REAL64), intent(in)           ::  mpshift(3)                      !<  shift of the mesh in units of the reciprocal vectors of the supercell
 
 ! local:
 
   real(REAL64)          ::  avec(3,3),bvec(3,3)
   integer               ::  nat
   integer               ::  io                                           !  tape number
+  logical               ::  ldiag                                        !  diagonal mesh
 
   integer, allocatable  ::  iznuc(:)
 
@@ -128,8 +137,22 @@ subroutine pw2o_abinit_in(adot, ntype, natom, nameat, rat, alatt,        &
   write(io,*) '#Definition of the k-point grid'
   write(io,'("kptopt",4x,i5)') 1
   write(io,'("chksymbreak",2x,i2)') 0
-  write(io,'("ngkpt",3(5x,i5))')  nx,ny,nz
+  ldiag = .TRUE.
+  do j = 1,3
+  do i = 1,3
+    if(i /= j .and. mpgrid(i,j) /= 0) ldiag = .FALSE.
+  enddo
+  enddo
+  if(ldiag) then
+    write(io,'("ngkpt",3(5x,i5))')  mpgrid(1,1),mpgrid(2,2),mpgrid(3,3)
+  else
+    write(io,'("kptrlatt")')
+    do i = 1,3
+      write(io,'(3(5x,i5))') (mpgrid(i,j),j=1,3)
+    enddo
+  endif
   write(io,'("nshiftk",3x,i5)') 1
+  write(io,'("shiftk",3(5x,f12.8))') (mpshift(i),i=1,3)
   write(io,*)
   write(io,*)
 

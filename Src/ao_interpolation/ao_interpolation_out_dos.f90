@@ -16,7 +16,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.11
-!>  \date         July 2014, 8 October 2024.
+!>  \date         July 2014, 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
@@ -28,6 +28,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 ! Modified, e_of_k allocations, 14 Janury 2024. JLM
 ! Modified, indentation, ao_int_, 8 October 2024. JLM
 ! Swapped the PW_DOS_SO with PW_DOS. 9 November 2026. JLM+claude
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
   use NonOrthoInterp
 
@@ -63,6 +64,7 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
 !      local variables
 
   integer                            ::  mxdbnd                          !  array dimension for the number of bands
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
   integer                            ::  mxdpnt                          !  dimensions for dos k-points
 
   integer                            ::  neig                            !  number of eigenvectors required (maybe modified on output)
@@ -125,7 +127,12 @@ subroutine ao_interpolation_out_dos(noiData, ztot, adot, ntrans, mtrx)
   allocate(rk2(3,mxdpnt))
   allocate(w2(mxdpnt))
 
-  call int_pnt(nbandi2, nx2, ny2, nz2, sx2, sy2, sz2, ipr,               &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call int_pnt(nbandi2, nx2, ny2, nz2, sx2, sy2, sz2, kmat, ipr,         &
       adot,                                                              &
       ntrans, mtrx,                                                      &
       nrk2, rk2, w2, nband2, indk2, kmap2,                               &

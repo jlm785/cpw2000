@@ -25,7 +25,7 @@
 !>
 !>  \author       Carlos Loia Reis
 !>  \version      5.13
-!>  \date         2014. 24 October 2026.
+!>  \date         2014. 19 November 2026.
 !>  \copyright    GNU Public License v2
 
 
@@ -72,6 +72,7 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
 ! Questions moved to ao_int_prepare_questions (nk1, nk2, nk3, lso, loptical, imtb are arguments,
 ! ioreplay removed), symmetry check in ao_int_sym_check. 23 October 2026. JLM+claude WARNING NEW API
 ! copy norb_k of norb_ao passed to h_kb_dia_all (intent(inout) neig). 24 October 2026. JLM+claude
+! kmat (identity) in int_pnt. 19 November 2026. JLM+claude
 
 
   use NonOrthoInterp
@@ -182,6 +183,7 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
 ! local variables
 
   integer                            ::  mxdorb                          !  array dimension for orbitals
+  integer                            ::  kmat(3,3)                       !  identity, usual Monkhorst-Pack mesh in int_pnt
   integer                            ::  ib                              !  basis set used, consistent with atomic_orbital_c16
   integer                            ::  mxdbnd                          !  array dimension for pw bands
   integer                            ::  mxdscr                          !  array dimension for screening potential
@@ -332,7 +334,12 @@ subroutine ao_interpolation_prepare(noiData, nk1, nk2, nk3,              &
   allocate(rk_irred(3,mxdpnt))
   allocate(w_mesh(mxdpnt))
 
-  call int_pnt(1, nk1,nk2,nk3, ZERO,ZERO,ZERO, 2,                        &
+  kmat(:,:) = 0
+  kmat(1,1) = 1
+  kmat(2,2) = 1
+  kmat(3,3) = 1
+
+  call int_pnt(1, nk1,nk2,nk3, ZERO,ZERO,ZERO, kmat, 2,                  &
       adot,                                                              &
       ntrans, mtrx,                                                      &
       nrk_irred, rk_irred, w_mesh, wrk_nband, indk, kmap,                &
